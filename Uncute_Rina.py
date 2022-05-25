@@ -1,4 +1,4 @@
-version = "0.1.2"
+version = "0.1.3"
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
@@ -53,7 +53,7 @@ async def on_message(message):
     if message.author.bot:
         return
     if client.user.mentioned_in(message):
-        if ("cute" in message.content and "not" not in message.content and "uncute" not in message.content) or "not uncute" in message.content:
+        if (("cutie" in message.content or "cute" in message.content) and "not" not in message.content and "uncute" not in message.content) or "not uncute" in message.content:
             responses = [
                 "I'm not cute >_<",
                 "Nyaa~",
@@ -81,7 +81,9 @@ async def on_message(message):
                 "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
                 "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
                 "...",
-                "Hey that's not how it works!"]
+                "Hey that's not how it works!",
+                "Hey my lie detector said you are lying.",
+                "You know i'm not a mirror, right?"]
             await message.channel.send(random.choice(responses))
     return
 
@@ -117,6 +119,14 @@ async def on_member_update(before, after):
     if role not in before.roles and role in after.roles:
         await addToData(after,"verified")
 
+@client.event
+async def on_raw_reaction_add(reaction):
+    global settings
+    #get the message id from reaction.message_id through the channel (with reaction.channel_id) (oof lengthy process)
+    message = await client.get_channel(reaction.channel_id).fetch_message(reaction.message_id)
+    if reaction.emoji.name == '❌' and reaction.member != client.user:
+        if message.author == client.user:
+            await message.delete()
 
 @slash.slash(name="getdata",description="See joined, left, and recently verified users in x days")
 async def getData(ctx,range):
@@ -151,7 +161,7 @@ async def getData(ctx,range):
                     if mktime(datetime.now().timetuple())-range < time: # todo: globalize the time
                         column.append(time)
             table.append(len(column))
-        await ctx.send(f"In the past {int(range/86400)} days, `{table[0]}` members joined, `{table[1]}` left, and `{table[2]}` verified.",hidden=True)
+        await ctx.send(f"In the past {int(range/86400)} days, `{table[0]}` members joined, `{table[1]}` left, and `{table[2]}` was verified.",hidden=True)
     else:
         await ctx.send("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",hidden=True) #todo
     pass
