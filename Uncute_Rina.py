@@ -1,4 +1,4 @@
-version = "0.1.3"
+version = "0.1.4"
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
@@ -62,13 +62,13 @@ async def on_message(message):
                 "If you think I'm cute, then you must be uber-cute!!",
                 "I don't think so.",
                 "Haha. Good joke. Tell me another tomorrow",
-                "Ehe, cutie what do u need help with?"
+                "Ehe, cutie what do u need help with?",
                 "No, I'm !cute.",
                 "You too!",
                 "No, you are <3",
                 "[shocked] Wha- w. .. w what?? .. NOo? no im nott?\nwhstre you tslking about?",
                 "Oh you were talking to me? I thought you were talking about everyone else here,",
-                "Nope. I doubt it. There's no way I can be cute like you think I am",
+                "Nope. I doubt it. There's no way I can be as cute as you",
                 "Maybe.. Maybe I am cute.",
                 "If the sun was dying, would you still think I was cute?",
                 "Awww. Thanks sweety, but you've got the wrong number",
@@ -77,7 +77,7 @@ async def on_message(message):
                 "You gotta praise those around you as well. Cleo, for example, is very cute.",
                 "Oh by the way, did I say Mia was cute yet? I probably didn't. Mia? You're very cute",
                 "Such nice weather outside, isn't it? What- you asked me a question?\nNo you didn't, you're just talking to youself.",
-                "".join(random.choice("acefgi lnop; rsuw") for i in range(random.randint(10,25))),
+                "".join(random.choice("acefgilrsuwnopacefgilrsuwnopacefgilrsuwnop;;  ") for i in range(random.randint(10,25))), # 3:2 letters to symbols
                 "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
                 "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
                 "...",
