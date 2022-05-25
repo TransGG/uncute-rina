@@ -92,7 +92,7 @@ async def addToData(member, type):
     try:
         data[str(member.guild.id)]
     except:
-        if False:#len(data) == 0:
+        if len(data) == 0:
             #await ctx.send("Won't continue the event because the file is too short! Something probably went wrong when loading the file.\nChanging a setting now will overwrite and clear it (try again in a few seconds)")
             print("Did not set default settings because the dictionary is 0, so prevented overloading and loss of data")
             return
