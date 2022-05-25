@@ -1,4 +1,4 @@
-version = "0.1.0"
+version = "0.1.2"
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
@@ -37,8 +37,8 @@ dataTemplate = {
 #       etc.
 #   }
 # }
-
-defaultSettings = {}
+path = ""
+# dunno if i should delete this. Could be used if your file is not in the same folder as this program.
 
 @client.event
 async def on_ready():
@@ -50,11 +50,10 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    return
     if message.author.bot:
         return
     if client.user.mentioned_in(message):
-        if "cute" in message.content and "not" not in message.content:
+        if ("cute" in message.content and "not" not in message.content and "uncute" not in message.content) or "not uncute" in message.content:
             responses = [
                 "I'm not cute >_<",
                 "Nyaa~",
@@ -82,9 +81,9 @@ async def on_message(message):
                 "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
                 "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
                 "...",
-                ""]
-
+                "Hey that's not how it works!"]
             await message.channel.send(random.choice(responses))
+    return
 
 async def addToData(member, type):
     global data
@@ -179,6 +178,15 @@ def signal_handler(signal, frame):
         print("Excepted the runtime error, please ignore everything lol")
 
 signal.signal(signal.SIGINT, signal_handler) #notice KeyboardInterrupt, and run closing code (save files and exit)
+
+
+# import os
+# from dotenv import load_dotenv
+#
+# load_dotenv()
+#
+# TOKEN = os.getenv("DISCORD_TOKEN")
+
 client.run( #token v1
     open('token.txt',"r").read()
 )
