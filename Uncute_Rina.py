@@ -94,7 +94,7 @@ def getTableStatus(table):
         "label":{
             "new":" Create ",
             "open":" Join ",
-            "locked":" Join "
+            "locked":" Locked "
         }
     }
     msg = status["msg"][ table["status"] ]
@@ -800,7 +800,7 @@ async def tablemsgUpdate(ctx):
                 print(f"{c.name} / {c.id} didn't have the message")
         else:
             print("couldn't find message to update")
-    msg = await ctx.edit(embeds=[embed1,embed2],components=components)
+    msg = await msg.edit(embed=embed2,components=components)
     # tableInfo["msgChannel"] = msg.channel.id
     # tableInfo["message"] = msg.id
 
