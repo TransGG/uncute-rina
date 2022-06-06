@@ -1,6 +1,6 @@
 # dumb code for cool version updates
 path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "0.1.11" .split(".")
+fileVersion = "0.2.4" .split(".")
 version = open(path+"version.txt","r").read().split(".")
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
@@ -13,12 +13,13 @@ version = '.'.join(version)
 open(path+"version.txt","w").write(f"{version}")
 
 import discord # It's dangerous to go alone! Take this. /ref
+from discord import app_commands # v2.0, use slash commands
 from discord.ext import commands # required for client bot making
-from discord_slash import SlashCommand, SlashContext # required for making slash commands
-#from discord_slash.utils.manage_commands import create_permission # limit commands to roles/users
-#from discord_slash.model import SlashCommandPermissionType # limit commands to roles/users
-from discord_slash.utils.manage_commands import create_option, create_choice # set command argument limitations (string/int/bool)
-from discord_slash.context import ComponentContext # button responses
+# from discord_slash import SlashCommand, SlashContext # required for making slash commands
+# #from discord_slash.utils.manage_commands import create_permission # limit commands to roles/users
+# #from discord_slash.model import SlashCommandPermissionType # limit commands to roles/users
+# from discord_slash.utils.manage_commands import create_option, create_choice # set command argument limitations (string/int/bool)
+# from discord_slash.context import ComponentContext # button responses
 
 #from discord.utils import get #dunno what this is for tbh.
 import json #json used for settings file
@@ -50,8 +51,11 @@ client =  commands.Bot(intents = intents
 , activity = discord.Game(name="with slash (/) commands!"),
 allowed_mentions = discord.AllowedMentions(everyone = False))
 
-slash = SlashCommand(client, sync_commands=True)
-guild_ids = [960962996828516382]
+# tree = app_commands.CommandTree(client)
+# stats = app_commands.Group(name='stats', description='Get tag statistics')
+
+# slash = SlashCommand(client, sync_commands=True)
+# guild_ids = [960962996828516382]
 
 #default defining before settings
 settings = {}
@@ -284,82 +288,6 @@ async def on_voice_state_update(member, before, after):
         else:
             print(debug()+f"{member} left voice channel, but it wasn't empty yet, so it wasn't deleted.")
 
-@client.event
-async def on_interaction(ctx,interaction):
-    print(repr(interaction))
-    await interaction.respond(content="Button Clicked")
-
-@client.event
-async def on_component(ctx: ComponentContext):
-    global tableInfo
-    if len(tableInfo) == 0:
-        await ctx.send("Couldn't find table data. Please wait 1 second.",hidden=True)
-        return
-
-    if ctx.origin_message_id == tableInfo["message"]:
-        # check if user has a table role
-        # if user has no roles:
-        #   if table is new, add owner role, open table
-        #   if table is open, add member role
-        # if user has owner role, say they have to close the table instead of losing their role
-        # if user has member role, remove their role
-        #   if table is locked, announce it too
-        for tableId in tableInfo:
-            if type(tableInfo[tableId]) is int:
-                continue # probably message/channel id thing
-            table = tableInfo[tableId]
-            for role in ctx.author.roles:
-                if ctx.custom_id == tableId:
-                    if role.id == table["owner"]:
-                        await ctx.send(f"You can't leave this table because you are the owner. As owner, close table {table['id']} (/table close), or transfer the ownership to someone else (/table newowner <User>).",hidden=True)
-                        return
-                    elif role.id == table["member"]:
-                        await ctx.author.remove_roles(role,reason="Removed from table role after clicking on button.")
-                        await ctx.send(f"Successfully removed you from table {table['id']}",hidden=True)
-                        # send message in table chat
-                        category = discord.utils.find(lambda r: r.id == table["category"], ctx.guild.categories)
-                        channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-                        await channel.send(f"{ctx.author.nick or ctx.author.name} ({ctx.author.id}) left the table!", allowed_mentions=discord.AllowedMentions.none())
-
-                        return
-                elif role.id == table["owner"] or role.id == table["member"]:
-                    #if you already have a table role
-                    await ctx.send(f"You can currently only join one table at a time. Leave table {table['id']} first before you can join another!",hidden=True)
-                    return #todo; let them join multiple tables
-            # doesn't have the role yet
-            if ctx.custom_id == tableId:
-                if table["status"] == "new":
-                    # give Member the table role; open table
-                    role = discord.utils.find(lambda r: r.id == table["owner"], ctx.guild.roles)
-                    print(f"Creating table {table['id']} and adding {ctx.author} to it.")
-                    await ctx.author.add_roles(role)
-                    await ctx.send(f"Successfully created and joined table {table['id']}",hidden=True)
-                    tableInfo[tableId]["status"] = "join"
-                    # send message in table chat
-                    category = discord.utils.find(lambda r: r.id == table["category"], ctx.guild.categories)
-                    channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-                    await channel.send(f"This table was opened by {ctx.author.nick or ctx.author.name} ({ctx.author.id}).", allowed_mentions=discord.AllowedMentions.none())
-                    await channel.send(f"{ctx.author.nick or ctx.author.name} ({ctx.author.id}) joined the table as Table Owner", allowed_mentions=discord.AllowedMentions.none())
-                    return
-                elif table["status"] == "open":
-                    role = discord.utils.find(lambda r: r.id == table["member"], ctx.guild.roles)
-                    print(f"Adding {ctx.author} to table {table['id']}.")
-                    await ctx.author.add_roles(role)
-                    await ctx.send(f"Successfully joined table {table['id']}",hidden=True)
-                    # send message in table chat
-                    category = discord.utils.find(lambda r: r.id == table["category"], ctx.guild.categories)
-                    channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-                    await channel.send(f"{ctx.author.nick or ctx.author.name} ({ctx.author.id}) joined the table!", allowed_mentions=discord.AllowedMentions.none())
-                    return
-                else:
-                    print(f"{ctx.author} tried to join a locked table (Table {table['id']}).. somehow?")
-                    await ctx.send("I don't know how you did it.. But you can't join a locked table!",hidden=True)
-                    return
-        else:
-            print("huh nothing happened..")
-
-    print("on_component event")
-
 # @slash.component_callback()
 # async def buttonEvent(ctx: ComponentContext):
 #     print("component_callback")
@@ -391,66 +319,63 @@ class AnonymousVote:
     def getMessage(self):
         return self.question+f"\n`{len(self.upvotes)}` upvotes 🔺  and `{len(self.downvotes)}` downvotes 🔻"
 
-@slash.slash(name="anonymousvote",
-            description="Create a 2-choiced poll that people can react to, and will update msg to keep it anonymous",
-            options=[
-                create_option(
-                    name="question",
-                    description="Poll question to which people can upvote/downvote",
-                    option_type=3,
-                    required=True)])
-async def anonymousVote(ctx,question):
+# @slash.slash(name="anonymousvote", description="Create a 2-choiced poll that people can react to, and will update msg to keep it anonymous",
+#             options=[
+#                 create_option(
+#                     name="question",
+#                     description="Poll question to which people can upvote/downvote",
+#                     option_type=3,
+#                     required=True)])
+@client.tree.command(name="anonymousvote",description="Create a 2-choiced poll that people can react to, and will update msg to keep it anonymous")
+@app_commands.describe(question='Poll question to which people can upvote/downvote')
+async def anonymousVote(itx: discord.Interaction, question: str):
     global reactionmsgs
     # if len(reactionmsgs) == 0:
     #     await ctx.send("Won't continue the event because the file is too short! Something probably went wrong when loading the file.\nChanging the tracking file now will overwrite and clear its contents (try again in a few seconds)")
     #     print("Interrupted event because the dictionary is 0, so prevented overloading and loss of data")
     #     return
     voteMsg = AnonymousVote(question)
-    msg = await ctx.send(voteMsg.getMessage())
+    await itx.response.send_message(voteMsg.getMessage())
+    msg = await (await itx.original_message()).fetch()
     voteMsg.message_id = msg.id
     await msg.add_reaction("🔺")
     await msg.add_reaction("🔻")
     reactionmsgs[str(msg.id)] = voteMsg
 
-@slash.slash(name="version", description="Get bot version")
-async def botVersion(ctx):
-    await ctx.send(f"Bot is currently running on v{version}")
+@client.tree.command(name="version",description="Get bot version")
+async def botVersion(itx: discord.Interaction):
+    await itx.response.send_message(f"Bot is currently running on v{version}")
+    await client.tree.sync()
 
-# slash command format: https://dpyslash.readthedocs.io/en/latest/gettingstarted.html
-@slash.slash(name="getdata",
-            description="See joined, left, and recently verified users in x days",
-            options=[
-                create_option(
-                    name="period",
-                    description="Get data from [period] days ago",
-                    option_type=3,
-                    required=True),
-                create_option(
-                    name="doubles",
-                    description="If someone joined twice, are they counted double? (y/n or 1/0)",
-                    option_type=3,
-                    required=False)
-            ])
-async def getData(ctx,period, doubles="false"):
+@client.tree.command(name="update",description="Update slash-commands")
+async def updateCmds(itx: discord.Interaction):
+    await client.tree.sync()
+    await itx.response.send_message(f"Updated slash-commands")
+
+@client.tree.command(name="getdata",description="See joined, left, and recently verified users in x days")
+@app_commands.describe(period="Get data from [period] days ago",
+                       doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
+async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
     modRoles = [
-        discord.utils.find(lambda r: r.name == 'Test Admin', ctx.guild.roles),
-        discord.utils.find(lambda r: r.name == 'Head Staff', ctx.guild.roles),
-        discord.utils.find(lambda r: r.name == 'Core Staff', ctx.guild.roles),
-        discord.utils.find(lambda r: r.name == 'Chat Mod'  , ctx.guild.roles),
-        discord.utils.find(lambda r: r.name == 'Verifier'  , ctx.guild.roles)]
+        discord.utils.find(lambda r: r.name == 'Test Admin', itx.guild.roles),
+        discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
+        discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
+        discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles),
+        discord.utils.find(lambda r: r.name == 'Verifier'  , itx.guild.roles)]
         # there's gotta be a better way to do this..
     # new method for multiple roles /\, old method for single role \/
     # role = discord.utils.find(lambda r: r.name == 'Verifier', ctx.guild.roles)
     # if role in ctx.author.roles:
-    if len(set(modRoles).intersection(ctx.author.roles)) > 0:
+    if len(set(modRoles).intersection(itx.user.roles)) > 0:
         try:
             period = float(period)
             if period <= 0:
-                await ctx.send("Your period (data in the past [x] days) has to be above 0!",hidden=True)
+                await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",hidden=True)
                 return
         except:
-            await ctx.send("Your period has to be an integer for the amount of days that have passed",hidden=True)
+            await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",hidden=True)
             return
+
         values = {
             0:["false",'0','n','no','nah','nope','never','nein',"don't"],
             1:['true','1','y','ye','yes','okay','definitely','please']
@@ -469,11 +394,11 @@ async def getData(ctx,period, doubles="false"):
         currentTime = mktime(datetime.utcnow().timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
         minTime = int((currentTime-period)/accuracy)*accuracy
         maxTime = int(currentTime/accuracy)*accuracy
-        for y in data[str(ctx.guild.id)]:
+        for y in data[str(itx.guild_id)]:
             column = []
             results[y] = {}
-            for member in data[str(ctx.guild.id)][y]:
-                for time in data[str(ctx.guild.id)][y][member]:
+            for member in data[str(itx.guild_id)][y]:
+                for time in data[str(itx.guild_id)][y][member]:
                     #if the current time minus the amount of seconds in every day in the period since now, is still older than more recent joins, append it
                     if currentTime-period < time:
                         column.append(time)
@@ -499,7 +424,7 @@ async def getData(ctx,period, doubles="false"):
                 if maxTime < timeList[-1]:
                     maxTime = timeList[-1]
         minTimeDB = minTime
-        for y in data[str(ctx.guild.id)]:
+        for y in data[str(itx.guild.id)]:
             minTime = minTimeDB
             # print(y)
             # print(data[str(ctx.guild.id)][y])
@@ -540,59 +465,48 @@ async def getData(ctx,period, doubles="false"):
         ax1.set_ylabel("# of players joined")
         fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
         plt.savefig('joined.png')
-        await ctx.send(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",file=discord.File('joined.png') )
+        await itx.response.send_message(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",file=discord.File('joined.png') )
 
         # print(results)
         # await ctx.send(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",hidden=True)
     else:
-        await ctx.send("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",hidden=True) #todo
+        await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",hidden=True) #todo
     pass
 
-@slash.slash(name="editvc",
-            description="Edit your voice channel name or user limit",
-            options=[
-                create_option(
-                    name="name",
-                    description="Give your voice channel a name!",
-                    option_type=3,
-                    required=True),
-                create_option(
-                    name="limit",
-                    description="Give your voice channel a user limit!",
-                    option_type=4,
-                    required=False)
-            ])
-async def editVc(ctx,name,limit=0):
+@client.tree.command(name="editvc",description="Edit your voice channel name or user limit")
+@app_commands.describe(name="Give your voice channel a name!",
+                       limit="Give your voice channel a user limit!")
+async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
     global newVcs
     allowedRoles = [
-        discord.utils.find(lambda r: r.name == 'Verified'  , ctx.guild.roles)]
+        discord.utils.find(lambda r: r.name == 'Verified'  , itx.guild.roles)]
         # there's gotta be a better way to do this..
     # new method for multiple roles /\, old method for single role \/
     # role = discord.utils.find(lambda r: r.name == 'Verifier', ctx.guild.roles)
     # if role in ctx.author.roles:
-    if len(set(allowedRoles).intersection(ctx.author.roles)) > 0:
-        if ctx.author.voice is None:
-            print(debug()+f"{ctx.author} tried to make a new vc channel but isn't connected to a voice channel")
-            await ctx.send("You must be connected to a voice channel to use this command",hidden=True)
+    if len(set(allowedRoles).intersection(itx.user.roles)) > 0:
+        if itx.user.voice is None:
+            print(debug()+f"{itx.user} tried to make a new vc channel but isn't connected to a voice channel")
+            await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
             return
-        channel = ctx.author.voice.channel
+        channel = itx.user.voice.channel
         if channel.category.id not in [981558003822108733] or channel.id == 981557586723758091:
-            await ctx.send("You can't change that voice channel's name!",hidden=True)
+            await itx.response.send_message("You can't change that voice channel's name!",ephemeral=True)
             return
         if len(name) < 4:
-            await ctx.send("Your voice channel name needs to be at least 4 letters long!",hidden=True)
+            await itx.response.send_message("Your voice channel name needs to be at least 4 letters long!",ephemeral=True)
             return
         if len(name) > 35:
-            await ctx.send("Please don't make your voice channel name more than 35 letters long! (pls don't make it spammy)",hidden=True)
+            await itx.response.send_message("Please don't make your voice channel name more than 35 letters long! (pls don't make it spammy)",ephemeral=True)
             return
         if limit < 2 and limit != 0:
-            await ctx.send("The user limit of your channel must be a positive amount of people... (at least 2)",hidden=True)
+            await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2)",ephemeral=True)
             return
         if limit > 999:
-            await ctx.send("I don't think you need to account for that many people... (max 999)",hidden=True)
+            await itx.response.send_message("I don't think you need to account for that many people... (max 999)",ephemeral=True)
             return
         if name == "Untitled voice chat":
-            await ctx.send("Are you really going to change it to that..",hidden=True)
+            await itx.response.send_message("Are you really going to change it to that..",ephemeral=True)
 
         if channel.id in newVcs:
             # if you have made 2 renames in the past 10 minutes already
@@ -600,7 +514,7 @@ async def editVc(ctx,name,limit=0):
                 #ignore but still continue the command
                 pass
             elif newVcs[channel.id][0]+600 > mktime(datetime.now().timetuple()):
-                await ctx.send("You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n"+
+                await itx.response.send_message("You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n"+
                 f"You can rename it again <t:{newVcs[channel.id][0]+600}:R> (<t:{newVcs[channel.id][0]+600}:t>).")
                 # ignore entirely, don't continue command
                 return
@@ -611,405 +525,361 @@ async def editVc(ctx,name,limit=0):
             # create and continue command
             newVcs[channel.id] = []
         newVcs[channel.id].append(int(mktime(datetime.now().timetuple())))
-        category = discord.utils.find(lambda r: r.name == 'VC'      , ctx.guild.categories)
-        verified = discord.utils.find(lambda r: r.name == 'Verifier', ctx.guild.roles)
+        category = discord.utils.find(lambda r: r.name == 'VC'      , itx.guild.categories)
+        verified = discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)
         limitInfo = [" with a user limit of "+str(limit) if limit > 0 else ""][0]
         def pingSafe(str):
             return str.replace("@everyone","@ everyone").replace("@here","@ here").replace('`','\`').replace('@','\@').replace('>','\>')
-        await ctx.send(f"Voice channel renamed from \"{pingSafe(channel.name)}\" to \"{pingSafe(name)}\" (by {pingSafe(ctx.author.nick or ctx.author.name)}, {ctx.author.id})"+limitInfo, allowed_mentions=discord.AllowedMentions.none())
+        await itx.response.send_message(f"Voice channel renamed from \"{pingSafe(channel.name)}\" to \"{pingSafe(name)}\" (by {pingSafe(itx.user.nick or itx.user.name)}, {itx.user.id})"+limitInfo, allowed_mentions=discord.AllowedMentions.none())
         await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\""+limitInfo,user_limit=limit,name=name)
     else:
-        await ctx.send("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",hidden=True) #todo
+        await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",ephemeral=True) #todo
         return
 
-@slash.slash(name="table",
-            description="Edit a table system")
-async def table(ctx):
-    pass
+# @slash.slash(name="table",
+#             description="Edit a table system")
+# async def table(ctx):
+#     pass
 
-@slash.subcommand(base="table", subcommand_group="message",name="send",description="Send initial table object message. developmental purposes only",
-            options=[
-                create_option(
-                    name="channel",
-                    description="Which channel do you want to send the message in?",
-                    option_type=7,
-                    required=False)
-            ])
-async def tablemsgsend(ctx,channel=None):
-    if ctx.author.id != 262913789375021056:
-        ctx.send("Only Mia can send this message, due to developmental purposes. I hope you understand, otherwise just send a lil dm lol",hidden=True)
-    await tablemsg(ctx,channel)
-    {
-      # "embeds": [
-      #   {
-      #     "image": {
-      #       "url": "https://i.imgur.com/SBy90SG.png"
-      #     }
-      #   },
-      #   {
-      #     "title": "Join a Table",
-      #     "description": "Click one of the buttons below to join a table!~",
-      #     "color": 8481900,
-      #     "fields": [
-      #       {
-      #         "name": "<:red:964277761575387186> Table 1",
-      #         "value": "<@&981672127465934878>",
-      #         "inline": true
-      #       },
-      #       {
-      #         "name": "<:Purple:964277761344684072> Table 2",
-      #         "value": "<@&981672186223943750>",
-      #         "inline": true
-      #       },
-      #       {
-      #         "name": "<:green:964277760451285003> Table 3",
-      #         "value": "<@&981672223695851560>",
-      #         "inline": true
-      #       },
-      #       {
-      #         "name": "<:Blue:964277761294336111> Table 4",
-      #         "value": "<@&981672304645926953>",
-      #         "inline": true
-      #       },
-      #       {
-      #         "name": "<:Orange:964277761134977024> Table 5",
-      #         "value": "<@&981672374665633892>",
-      #         "inline": true
-      #       },
-      #       {
-      #         "name": "<:Yellow:964277761629884426> Table 6",
-      #         "value": "<@&981673889396563988>",
-      #         "inline": true
-      #       }
-      #     ],
-      #     "footer": {
-      #       "text": "UALL|981672127465934878|Table 1|964277761575387186\nUALL|981672186223943750|Table 2|964277761344684072\nUALL|981672223695851560|Table 3|964277760451285003\n[SPLIT]\nUALL|981672304645926953|Table 4|964277761294336111\nUALL|981672374665633892|Table 5|964277761134977024\nUALL|981673889396563988|Table 6|964277761629884426"
-      #     },
-      #     "image": {
-      #       "url": "https://i.imgur.com/t3zhm4k.png"
-      #     }
-      #   }
-      # ],
-      # "attachments": []
-    }
-
-async def tablemsg(ctx,channel=None):
-    global tableInfo
-    if len(tableInfo) == 0:
-        await ctx.send("Couldn't find table data. Please wait 1 second.",hidden=True)
-        return
-    if channel is not None and type(channel) is not discord.TextChannel:
-        await ctx.send("You did not mention a (correct) text channel!",hidden=True)
-        return
-    embed1 = discord.Embed(color=8481900, type='rich',description=" ")
-    embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
-        description="Click one of the buttons below to create or join a table!~")
-    embed1.set_image(url="https://i.imgur.com/SBy90SG.png")
-    embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
-
-    components = [{  "type": 1,"components":[]  }]
-    for x in tableInfo:
-        x = tableInfo[x]
-        try:
-            disabled,status,label = getTableStatus(x)
-        except TypeError:
-            continue
-        embed2.add_field(name=f'{x["emoji"]} Table {x["id"]} ({status})',value=f'<@&{x["member"]}>')
-        if ">" in x["emoji"]:
-            emoji = x["emoji"].replace(">","").split(":")
-            if len(emoji) > 1:
-                emoji = {"name":emoji[1],"id":emoji[2]}
-        else:
-            emoji = {"name":x["emoji"]}
-        component = {"type": 2,
-         "label": f'{label} {x["id"]}',
-         "style": 2,
-         "emoji": emoji,
-         "custom_id": "table"+x["id"],
-         "disabled": disabled}
-        components[0]["components"].append(component)
-
-    if channel:
-        ctx.channel_id, ctx.channel.id = [channel.id,channel.id]
-    if "message" in tableInfo:
-        print(f"I am looking for {tableInfo['message']}, most likely in {tableInfo['msgChannel']}")
-        await ctx.send("Checking for a message to delete first...",hidden=True)
-        try:
-            c = ctx.guild.text_channels[0]
-            c.id = tableInfo["msgChannel"]
-            await c.fetch_message(tableInfo["message"]).delete()
-        except:
-            print("Couldn't find message through ctx thing")
-            for c in ctx.guild.text_channels:
-                try:
-                    msg = await c.fetch_message(tableInfo["message"])
-                    print(f"Msg found in {c.name} / {c.id}!")
-                    await msg.delete()
-                    break
-                except:
-                    print(f"{c.name} / {c.id} didn't have the message")
-            else:
-                await ctx.send("Couldn't find a message to delete",hidden=True)
-    msg = await ctx.send(embeds=[embed1,embed2],components=components)
-    tableInfo["msgChannel"] = msg.channel.id
-    tableInfo["message"] = msg.id
-
-async def tablemsgUpdate(ctx):
-    global tableInfo
-    embed1 = discord.Embed(color=8481900, type='rich',description=" ")
-    embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
-        description="Click one of the buttons below to create or join a table!~")
-    embed1.set_image(url="https://i.imgur.com/SBy90SG.png")
-    embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
-
-    components = [{  "type": 1,"components":[]  }]
-    for x in tableInfo:
-        x = tableInfo[x]
-        try:
-            disabled,status,label = getTableStatus(x)
-        except TypeError:
-            continue
-        embed2.add_field(name=f'{x["emoji"]} Table {x["id"]} ({status})',value=f'<@&{x["member"]}>')
-        if ">" in x["emoji"]:
-            emoji = x["emoji"].replace(">","").split(":")
-            if len(emoji) > 1:
-                emoji = {"name":emoji[1],"id":emoji[2]}
-        else:
-            emoji = {"name":x["emoji"]}
-        component = {"type": 2,
-         "label": f'{label} {x["id"]}',
-         "style": 2,
-         "emoji": emoji,
-         "custom_id": "table"+x["id"],
-         "disabled": disabled}
-        components[0]["components"].append(component)
-
-    print(f"I am looking for {tableInfo['message']}, most likely in {tableInfo['msgChannel']}")
-    try:
-        c = ctx.guild.text_channels[0]
-        c.id = tableInfo["msgChannel"]
-        msg = await c.fetch_message(tableInfo["message"])
-    except:
-        print("Couldn't find message through ctx thing")
-        for c in ctx.guild.text_channels:
-            try:
-                msg = await c.fetch_message(tableInfo["message"])
-                print(f"Msg found in {c.name} / {c.id}!")
-                break
-            except:
-                print(f"{c.name} / {c.id} didn't have the message")
-        else:
-            print("couldn't find message to update")
-    msg = await msg.edit(embed=embed2,components=components)
-    # tableInfo["msgChannel"] = msg.channel.id
-    # tableInfo["message"] = msg.id
-
-@slash.subcommand(base="table",name="build",
-            options=[
-                create_option(
-                    name="id",
-                    description="Give the table a number: \"1\" for \"Table 1\", eg.",
-                    option_type=3,
-                    required=True),
-                create_option(
-                    name="category",
-                    description="Mention the table category",
-                    option_type=7,
-                    required=True),
-                create_option(
-                    name="owner",
-                    description="Ping/mention the table owner role",
-                    option_type=8,
-                    required=True),
-                create_option(
-                    name="member",
-                    description="Ping/mention the table (member) role",
-                    option_type=8,
-                    required=True),
-                create_option(
-                    name="emoji",
-                    description="Type the emoji (circle) for the table",
-                    option_type=3,
-                    required=True)
-            ])
-async def build(ctx,id,category,owner,member,emoji):
-    global tableInfo
-    if type(category) is not discord.CategoryChannel:
-        await ctx.send("You did not mention the right category!",hidden=True)
-        return
-    tableInfo["table"+id] = {
-        "id":id,
-        "category":category.id,
-        "owner":owner.id,
-        "member":member.id,
-        "emoji":emoji,
-        "status":"new",
-    }
-    await ctx.send(f"┬─┬ ノ( ゜-゜ノ) Created `Table {id}` with category:<#{category.id}>, owner:<@&{owner.id}>, member:<@&{member.id}>, emoji:{emoji}",allowed_mentions=discord.AllowedMentions.none())
-    #print(tableInfo)
-
-@slash.subcommand(base="table",name="destroy",
-            options=[
-                create_option(
-                    name="id",
-                    description="Give the table's ID: \"1\" for \"Table 1\", eg.",
-                    option_type=3,
-                    required=True),
-                ])
-async def destroy(ctx,id):
-    global tableInfo
-    for x in tableInfo:
-        try:
-            if tableInfo[x]["id"] == id:
-                del tableInfo[x]
-                await ctx.send(f"(╯°□°）╯︵ ┻━┻ Destroyed table {id} successfully. Happy now? ")
+class Table(app_commands.Group):
+    class TableButton(discord.ui.Button):
+        async def callback(self, itx: discord.Interaction):
+            global tableInfo, tablemsgupdate
+            if len(tableInfo) == 0:
+                await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
                 return
-        except TypeError: #probably the message/channel info
-            pass
-    await ctx.send(f"Finished command without any action, thus the id was likely incorrect",hidden=True)
+            if itx.message.id == tableInfo["message"]:
+                # check if user has a table role
+                # if user has no roles:
+                #   if table is new, add owner role, open table
+                #   if table is open, add member role
+                # if user has owner role, say they have to close the table instead of losing their role
+                # if user has member role, remove their role
+                #   if table is locked, announce it too
+                for tableId in tableInfo:
+                    if type(tableInfo[tableId]) is int:
+                        continue # probably message/channel id thing
+                    table = tableInfo[tableId]
+                    for role in itx.user.roles:
+                        if self.custom_id == tableId:
+                            if role.id == table["owner"]:
+                                await itx.response.send_message(f"You can't leave this table because you are the owner. As owner, close table {table['id']} (/table close), or transfer the ownership to someone else (/table newowner <User>).",ephemeral=True)
+                                return
+                            elif role.id == table["member"]:
+                                await itx.user.remove_roles(role,reason="Removed from table role after clicking on button.")
+                                await itx.response.send_message(f"Successfully removed you from table {table['id']}",ephemeral=True)
+                                # send message in table chat
+                                category = discord.utils.find(lambda r: r.id == table["category"], itx.guild.categories)
+                                channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
+                                await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) left the table!", allowed_mentions=discord.AllowedMentions.none())
+                                return
+                        elif role.id == table["owner"] or role.id == table["member"]:
+                            #if you already have a table role
+                            await itx.response.send_message(f"You can currently only join one table at a time. Leave table {table['id']} first before you can join another!",ephemeral=True)
+                            return #todo; let them join multiple tables
+                    # doesn't have the role yet
+                    if self.custom_id == tableId:
+                        if table["status"] == "new":
+                            # give Member the table role; open table
+                            role = discord.utils.find(lambda r: r.id == table["owner"], itx.guild.roles)
+                            print(f"Creating table {table['id']} and adding {itx.user} to it.")
+                            await itx.user.add_roles(role)
+                            await itx.response.send_message(f"Successfully created and joined table {table['id']}",ephemeral=True)
+                            tableInfo[tableId]["status"] = "open"
+                            # send message in table chat
+                            category = discord.utils.find(lambda r: r.id == table["category"], itx.guild.categories)
+                            channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
+                            await channel.send(f"This table was opened by {itx.user.nick or itx.user.name} ({itx.user.id}).", allowed_mentions=discord.AllowedMentions.none())
+                            await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) joined the table as Table Owner", allowed_mentions=discord.AllowedMentions.none())
+                            await this.tablemsgupdate(itx)
+                            return
+                        elif table["status"] == "open":
+                            role = discord.utils.find(lambda r: r.id == table["member"], itx.guild.roles)
+                            print(f"Adding {itx.user} to table {table['id']}.")
+                            await itx.user.add_roles(role)
+                            await itx.response.send_message(f"Successfully joined table {table['id']}",ephemeral=True)
+                            # send message in table chat
+                            category = discord.utils.find(lambda r: r.id == table["category"], itx.guild.categories)
+                            channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
+                            await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) joined the table!", allowed_mentions=discord.AllowedMentions.none())
+                            return
+                        else:
+                            print(f"{itx.user} tried to join a locked table (Table {table['id']}).. somehow?")
+                            await itx.response.send_message("I don't know how you did it.. But you can't join a locked table!",ephemeral=True)
+                            return
+                else:
+                    print("huh nothing happened..")
+            print("It didn't make it through or something :(")
 
-@slash.subcommand(base="table",name="lock", description="Lock your table, so no new players can join.")
-async def tableLock(ctx):
-    global tableInfo
-    if len(tableInfo) == 0:
-        await ctx.send("Couldn't find table data. Please wait 1 second.",hidden=True)
-        return
-    lockable = ""
-    if not "message" in tableInfo:
-        await ctx.send("There is no table message to update, thus I'm afraid you can't lock your table..",hidden=True)
-        return
-    for table in tableInfo:
+    async def tablemsg(self, itx: discord.Interaction,channel=None):
+        global tableInfo
+        if len(tableInfo) == 0:
+            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+            return
+        # if channel is not None and type(channel) is not discord.TextChannel:
+        #     await ctx.send("You did not mention a (correct) text channel!",hidden=True)
+        #     return
+        embed1 = discord.Embed(color=8481900, type='rich',description=" ")
+        embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
+            description="Click one of the buttons below to create or join a table!~")
+        embed1.set_image(url="https://i.imgur.com/SBy90SG.png")
+        embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
+
+        components = [{  "type": 1,"components":[]  }]
+        view = discord.ui.View()
+        for x in tableInfo:
+            x = tableInfo[x]
+            try:
+                disabled,status,label = getTableStatus(x)
+            except TypeError:
+                continue
+            embed2.add_field(name=f'{x["emoji"]} Table {x["id"]} ({status})',value=f'<@&{x["member"]}>')
+            view.add_item(self.TableButton(label=f'{label} {x["id"]}', disabled=disabled,
+                        custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"])))
+            # button = discord.ui.Button(style=discord.ButtonStyle.secondary, label=f'{label} {x["id"]}',
+            #             disabled=disabled, custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"]))
+            # view.add_item(button)
+
+        if channel:
+            itx.channel_id, itx.channel.id = [channel.id,channel.id]
+        if "message" in tableInfo:
+            print(f"I am looking for {tableInfo['message']}, most likely in {tableInfo['msgChannel']}")
+            await itx.response.defer(ephemeral=True)
+            try:
+                c = itx.guild.text_channels[0]
+                c.id = tableInfo["msgChannel"]
+                msg = await c.fetch_message(tableInfo["message"])
+                await msg.delete()
+            except:
+                print("Couldn't find message through itx thing")
+                for c in itx.guild.text_channels:
+                    try:
+                        msg = await c.fetch_message(tableInfo["message"])
+                        print(f"Msg found in {c.name} / {c.id}!")
+                        await msg.delete()
+                        break
+                    except:
+                        print(f"{c.name} / {c.id} didn't have the message")
+                else:
+                    await itx.followup.send("Couldn't find a message to delete",ephemeral=True)
+        await itx.followup.send("Sent message successfully.",ephemeral=True)
+        msg = await itx.channel.send(embeds=[embed1,embed2],view=view)#,components=components)
+        tableInfo["msgChannel"] = msg.channel.id
+        tableInfo["message"] = msg.id
+
+    async def tablemsgupdate(self, itx: discord.Interaction):
+        global tableInfo
+        embed1 = discord.Embed(color=8481900, type='rich',description=" ")
+        embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
+            description="Click one of the buttons below to create or join a table!~")
+        embed1.set_image(url="https://i.imgur.com/SBy90SG.png")
+        embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
+        view = discord.ui.View()
+        components = [{  "type": 1,"components":[]  }]
+        for x in tableInfo:
+            x = tableInfo[x]
+            try:
+                disabled,status,label = getTableStatus(x)
+            except TypeError:
+                continue
+            embed2.add_field(name=f'{x["emoji"]} Table {x["id"]} ({status})',value=f'<@&{x["member"]}>')
+            view.add_item(self.TableButton(label=f'{label} {x["id"]}', disabled=disabled,
+                        custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"])))
+
+        if "message" in tableInfo:
+            print(f"I am looking for {tableInfo['message']}, most likely in {tableInfo['msgChannel']}")
+            #await itx.response.defer(ephemeral=True)
+            c = itx.guild.text_channels[0]
+            c.id = tableInfo["msgChannel"]
+            msg = await c.fetch_message(tableInfo["message"])
+        await msg.edit(embeds=[embed1,embed2],view=view)
+
+
+    table = app_commands.Group(name='message', description='Edit a table system')
+    @table.command(name="send",description="Send initial table object message. developmental purposes only")
+    @app_commands.describe(channel="Which channel do you want to send the message in?")
+    async def tablemsgsend(self,itx: discord.Interaction, channel: discord.TextChannel = None):
+        if itx.user.id != 262913789375021056:
+            await itx.response.send_message("Only Mia can send this message, due to developmental purposes. I hope you understand, otherwise just send a lil dm lol",ephemeral=True)
+            return
+        await self.tablemsg(itx,channel)
+
+
+    @app_commands.command(name="build",description="Link a new table to the table system")
+    @app_commands.describe(id="Give the table a number: \"1\" for \"Table 1\", eg.",
+                           category="Mention the table category",
+                           owner="Ping/mention the table owner role",
+                           member="Ping/mention the table (member) role",
+                           emoji="Type the emoji (circle) for the table")
+    async def build(self, itx: discord.Interaction, id: str, category: discord.CategoryChannel, owner: discord.Role, member: discord.Role, emoji: str):
+        global tableInfo
+        tableInfo["table"+id] = {
+            "id":id,
+            "category":category.id,
+            "owner":owner.id,
+            "member":member.id,
+            "emoji":emoji,
+            "status":"new",
+        }
+        await itx.response.send_message(f"┬─┬ ノ( ゜-゜ノ) Created `Table {id}` with category:<#{category.id}>, owner:<@&{owner.id}>, member:<@&{member.id}>, emoji:{emoji}",allowed_mentions=discord.AllowedMentions.none())
+        await self.tablemsgupdate(itx)
+
+    @app_commands.command(name="destroy",description="Remove a table from the table system")
+    @app_commands.describe(id="Give the table a number: \"1\" for \"Table 1\", eg.")
+    async def destroy(self, itx: discord.Interaction, id: str):
+        global tableInfo
+        for x in tableInfo:
+            try:
+                if tableInfo[x]["id"] == id:
+                    del tableInfo[x]
+                    await itx.response.send_message(f"(╯°□°）╯︵ ┻━┻ Destroyed table {id} successfully. Happy now? ")
+                    await self.tablemsgupdate(itx)
+                    return
+            except TypeError: #probably the message/channel info
+                pass
+        await itx.response.send_message(f"Finished command without any action, thus the id was likely incorrect",ephemeral=True)
+
+    @app_commands.command(name="lock",description="Lock your table, so no new players can join.")
+    async def tableLock(self, itx: discord.Interaction):
+        global tableInfo
+        if len(tableInfo) == 0:
+            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+            return
+        lockable = ""
+        if not "message" in tableInfo:
+            await itx.response.send_message("There is no table message to update, thus I'm afraid you can't lock your table..",ephemeral=True)
+            return
+        for table in tableInfo:
+            try:
+                for role in itx.user.roles:
+                    if role.id == tableInfo[table]["owner"]:
+                        lockable = table
+                if lockable:
+                    break
+            except: #is message dictionary, probably
+                pass
+        if lockable == "":
+            await itx.response.send_message("You aren't a table owner, thus can't lock this table!",ephemeral=True)
+            return
+        tableInfo[lockable]["status"] = "locked"
+
+        # send update message in table chat
+        category = discord.utils.find(lambda r: r.id == tableInfo[lockable]["category"], itx.guild.categories)
+        channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
+        await channel.send("This table was locked by the table owner. No new players can join the table anymore.\nUse `/table unlock` as table owner to open the table again.")
+        await self.tablemsgupdate(itx)
+        await itx.response.send_message("Locked successfully",ephemeral=True)
+
+    @app_commands.command(name="unlock",description="Unlock your table, so new players can join again.")
+    async def tableUnlock(self, itx: discord.Interaction):
+        global tableInfo
+        if len(tableInfo) == 0:
+            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+            return
+        unlockable = ""
+        if not "message" in tableInfo:
+            await itx.response.send_message("There is no table message to update, thus I'm afraid you can't lock your table..",ephemeral=True)
+            return
+        for table in tableInfo:
+            try:
+                for role in itx.user.roles:
+                    if role.id == tableInfo[table]["owner"]:
+                        unlockable = table
+                if unlockable:
+                    break
+            except: #is message dictionary, probably
+                pass
+        if unlockable == "":
+            await itx.reponse.send_message("You aren't a table owner, thus can't unlock this table!",ephemeral=True)
+            return
+
+        tableInfo[unlockable]["status"] = "open"
+
+        # send update message in table chat
+        category = discord.utils.find(lambda r: r.id == tableInfo[unlockable]["category"], itx.guild.categories)
+        channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
+        await channel.send("This table was unlocked by the table owner. Players can join the table again.\nUse `/table lock` as table owner to lock the table.")
+        await self.tablemsgupdate(itx)
+        await itx.response.send_message("Unlocked successfully",ephemeral=True)
+
+    @app_commands.command(name="close",description="Close your table, a new group can start.")
+    async def tableClose(self, itx: discord.Interaction):
+        global tableInfo
+        if len(tableInfo) == 0:
+            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+            return
+        closable = ""
+        if not "message" in tableInfo:
+            await itx.response.send_message("There is no table message to update, thus I'm afraid you can't close your table..",ephemeral=True)
+            return
+        for table in tableInfo:
+            try:
+                for role in itx.user.roles:
+                    if role.id == tableInfo[table]["owner"]:
+                        closable = table
+                if closable:
+                    break
+            except: #is message dictionary, probably
+                pass
+        if closable == "":
+            await itx.response.send_message("You aren't a table owner, thus can't close this table!",ephemeral=True)
+            return
+        # remove every member and the owner from the table
+        ownerRole = discord.utils.find(lambda r: r.id == tableInfo[closable]["owner"], itx.guild.roles)
+        for member in ownerRole.members:
+            await member.remove_roles(ownerRole)
         try:
-            for role in ctx.author.roles:
-                if role.id == tableInfo[table]["owner"]:
-                    lockable = table
-            if lockable:
-                break
-        except: #is message dictionary, probably
-            pass
-    if lockable == "":
-        await ctx.send("You aren't a table owner, thus can't lock this table!",hidden=True)
-        return
-    tableInfo[lockable]["status"] = "locked"
+            memberRole = discord.utils.find(lambda r: r.id == tableInfo[closable]["member"], itx.guild.roles)
+            for member in memberRole.members:
+                await member.remove_roles(memberRole)
+        except TypeError:
+            print(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?")
 
-    # send update message in table chat
-    category = discord.utils.find(lambda r: r.id == tableInfo[lockable]["category"], ctx.guild.categories)
-    channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-    await channel.send("This table was locked by the table owner. No new players can join the table anymore.\nUse `/table unlock` as table owner to open the table again.")
-    await ctx.send("Locked successfully",hidden=True)
-    await tablemsgUpdate(ctx)
+        tableInfo[closable]["status"] = "new"
+        # send update message in table chat
+        category = discord.utils.find(lambda r: r.id == tableInfo[closable]["category"], itx.guild.categories)
+        channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
+        await channel.send("This table was closed by the table owner. A new table can be created now.")
+        await self.tablemsgupdate(itx)
+        await itx.response.send_message("Closed successfully",ephemeral=True)
 
-@slash.subcommand(base="table",name="unlock", description="Unlock your table, so new players can join again.")
-async def tableUnlock(ctx):
-    global tableInfo
-    if len(tableInfo) == 0:
-        await ctx.send("Couldn't find table data. Please wait 1 second.",hidden=True)
-        return
-    unlockable = ""
-    if not "message" in tableInfo:
-        await ctx.send("There is no table message to update, thus I'm afraid you can't lock your table..",hidden=True)
-        return
-    for table in tableInfo:
-        try:
-            for role in ctx.author.roles:
-                if role.id == tableInfo[table]["owner"]:
-                    unlockable = table
-            if unlockable:
-                break
-        except: #is message dictionary, probably
-            pass
-    if unlockable == "":
-        await ctx.send("You aren't a table owner, thus can't unlock this table!",hidden=True)
-        return
+    @app_commands.command(name="newowner",description="Transfer your ownership, in case you'd want someone else to have it instead.")
+    @app_commands.describe(user="Mention the user who you want to become the new owner.")
+    async def tableNewOwner(self, itx: discord.Interaction, user: discord.Member):
+        global tableInfo
+        if len(tableInfo) == 0:
+            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+            return
+        transfer = ""
+        for table in tableInfo:
+            try:
+                for role in itx.user.roles:
+                    if role.id == tableInfo[table]["owner"]:
+                        transfer = table
+                if transfer:
+                    break
+            except: #is message dictionary, probably
+                pass
+        if transfer == "":
+            await itx.response.send_message("You aren't a table owner, thus can't transfer your ownership of this table!",ephemeral=True)
+            return
+        if discord.utils.find(lambda r: r.id == tableInfo[transfer]["member"], newOwner.roles) is None:
+            await itx.response.send_message("To grant someone ownership, they must have joined the table first (have table member role)!",ephemeral=True)
+            return
+        # change owner roles
+        ownerRole = discord.utils.find(lambda r: r.id == tableInfo[transfer]["owner"], itx.guild.roles)
+        for member in ownerRole.members:
+            await member.remove_roles(ownerRole)
+        await newOwner.add_roles(ownerRole)
 
-    tableInfo[unlockable]["status"] = "open"
+        # send update message in table chat
+        category = discord.utils.find(lambda r: r.id == tableInfo[lockable]["category"], itx.guild.categories)
+        channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
+        await channel.send(f"This table's ownership was transferred from {itx.user.nick or itx.user.name} ({itx.user.id}) to {newOwner.nick or newOwner.name} ({newOwner.id}).",allowed_mentions=discord.AllowedMentions.none())
+        await itx.response.send_message(f"Ownership transferred successfully", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
-    # send update message in table chat
-    category = discord.utils.find(lambda r: r.id == tableInfo[unlockable]["category"], ctx.guild.categories)
-    channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-    await channel.send("This table was unlocked by the table owner. Players can join the table again.\nUse `/table lock` as table owner to lock the table.")
-    await ctx.send("Locked successfully",hidden=True)
 
-@slash.subcommand(base="table", name="close", description="Close your table, a new group can start.")
-async def tableClose(ctx):
-    global tableInfo
-    if len(tableInfo) == 0:
-        await ctx.send("Couldn't find table data. Please wait 1 second.",hidden=True)
-        return
-    closable = ""
-    if not "message" in tableInfo:
-        await ctx.send("There is no table message to update, thus I'm afraid you can't close your table..",hidden=True)
-        return
-    for table in tableInfo:
-        try:
-            for role in ctx.author.roles:
-                if role.id == tableInfo[table]["owner"]:
-                    closable = table
-            if closable:
-                break
-        except: #is message dictionary, probably
-            pass
-    if closable == "":
-        await ctx.send("You aren't a table owner, thus can't close this table!",hidden=True)
-        return
-    # remove every member and the owner from the table
-    ownerRole = discord.utils.find(lambda r: r.id == tableInfo[closable]["owner"], ctx.guild.roles)
-    for member in ownerRole.members:
-        await member.remove_roles(ownerRole)
-    try:
-        memberRole = discord.utils.find(lambda r: r.id == tableInfo[closable]["member"], ctx.guild.roles)
-        for member in memberRole.members:
-            await member.remove_roles(memberRole)
-    except TypeError:
-        print(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?")
-
-    tableInfo[closable]["status"] = "new"
-    # send update message in table chat
-    category = discord.utils.find(lambda r: r.id == tableInfo[closable]["category"], ctx.guild.categories)
-    channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-    await channel.send("This table was closed by the table owner. A new table can be created now.")
-    await ctx.send("Closed successfully",hidden=True)
-
-@slash.subcommand(base="table",name="newowner", description="Transfer your ownership, in case you'd want someone else to have it instead.",
-            options=[
-                create_option(
-                    name="newowner",
-                    description="Give the table's ID: \"1\" for \"Table 1\", eg.",
-                    option_type=6,
-                    required=True),
-                ])
-async def tableNewOwner(ctx,newOwner):
-    global tableInfo
-    if len(tableInfo) == 0:
-        await ctx.send("Couldn't find table data. Please wait 1 second.",hidden=True)
-        return
-    transfer = ""
-    for table in tableInfo:
-        try:
-            for role in ctx.author.roles:
-                if role.id == tableInfo[table]["owner"]:
-                    transfer = table
-            if transfer:
-                break
-        except: #is message dictionary, probably
-            pass
-    if transfer == "":
-        await ctx.send("You aren't a table owner, thus can't transfer your ownership of this table!",hidden=True)
-        return
-    if discord.utils.find(lambda r: r.id == tableInfo[transfer]["member"], newOwner.roles) is None:
-        await ctx.send("To grant someone ownership, they must have joined the table first (have table member role)!")
-        return
-    # change owner roles
-    ownerRole = discord.utils.find(lambda r: r.id == tableInfo[transfer]["owner"], ctx.guild.roles)
-    for member in ownerRole.members:
-        await member.remove_roles(ownerRole)
-    await newOwner.add_roles(ownerRole)
-
-    # send update message in table chat
-    category = discord.utils.find(lambda r: r.id == tableInfo[lockable]["category"], ctx.guild.categories)
-    channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-    await channel.send(f"This table's ownership was transferred from {ctx.author.nick or ctx.author.name} ({ctx.author.id}) to {newOwner.nick or newOwner.name} ({newOwner.id}).",allowed_mentions=discord.AllowedMentions.none())
-    await ctx.send(f"Ownership transferred successfully", allowed_mentions=discord.AllowedMentions.none(), hidden=True)
+client.tree.add_command(Table())
 
 @client.event
 async def on_error(event, *args, **kwargs):
