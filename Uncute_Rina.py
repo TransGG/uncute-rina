@@ -2,6 +2,7 @@
 path = "./config/" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
 fileVersion = "0.2.8" .split(".")
 version = open("version.txt","r").read().split(".")
+
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
     if int(fileVersion[v]) > int(version[v]):
@@ -27,11 +28,24 @@ import pickle # pickle used for reactionmsgs file
 import signal # save files when receiving KeyboardInterrupt
 import sys # exit program after Keyboardinterrupt signal is noticed
 
+
 import asyncio # used for asyncio.sleep() for debugging purposes (temporary, or at least, it should be- when i wrote this)
 
 from datetime import datetime, timedelta
 from time import mktime #for unix time code
 import random #for very uncute responses
+
+import pymongo
+from pymongo import MongoClient
+
+mongoURI = open("mongo.txt","r").read()
+cluster = MongoClient(mongoURI)
+db = cluster["Rina"]
+collection = db["Rina"]
+
+post = {"text": 1, "score": 1}
+collection.insert_one(post)
+
 
 # Dependencies:
 #   server members intent,
@@ -1058,6 +1072,4 @@ def signal_handler(signal, frame):
             print("double runtime error?")
 
 signal.signal(signal.SIGINT, signal_handler) #notice KeyboardInterrupt, and run closing code (save files and exit)
-client.run( #token v1
-    open('token.txt',"r").read()
-)
+client.run(open('token.txt',"r").read())
