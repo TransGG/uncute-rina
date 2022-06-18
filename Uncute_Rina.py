@@ -1,6 +1,6 @@
 # dumb code for cool version updates
 path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "0.2.6" .split(".")
+fileVersion = "0.2.7" .split(".")
 version = open(path+"version.txt","r").read().split(".")
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
@@ -34,11 +34,12 @@ from time import mktime #for unix time code
 import random #for very uncute responses
 
 # Dependencies:
-#   server members intent, message content intent,
+#   server members intent,
+#   message content intent,
 #   permissions:
 #       send messages
-#       read messages
-#       remove reactions on a message
+#       read channel history (find previous Table messages from a specific channel afaik)
+#       manage reactions on a message (anonymous vote) (disabled last time i edited this)
 #       create and delete voice channels
 #       move users between voice channels
 #       manage roles (for adding/removing table roles)
@@ -215,18 +216,22 @@ async def addToData(member, type):
         data[str(member.guild.id)][type][str(member.id)] = [mktime(datetime.now().timetuple())] #todo: make unlocalized, rather UTC time
     print("Successfully added new data to "+repr(type))
 
+def isVerified(itx: discord.Interaction):
+    roles = [
+             discord.utils.find(lambda r: r.name == 'Verified'  , itx.guild.roles),
+        ]
+    return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
+
 def isStaff(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Test Admin', itx.guild.roles),
+    roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0
+    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
 
 def isAdmin(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Test Admin', itx.guild.roles),
+    roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles)]
+             discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
     return len(set(roles).intersection(itx.user.roles)) > 0
 
 @client.event
@@ -247,7 +252,7 @@ async def on_member_update(before, after):
 async def on_raw_reaction_add(reaction):
     global settings, reactionmsgs
     #get the message id from reaction.message_id through the channel (with reaction.channel_id) (oof lengthy process)
-    message = await client.get_channel(reaction.channel_id).fetch_message(reaction.message_id)
+    message = client.get_channel(reaction.channel_id).fetch_message(reaction.message_id)
     if message.author == client.user:
         if reaction.emoji.name == '❌' and reaction.member != client.user:
             await message.delete()
@@ -265,52 +270,41 @@ async def on_raw_reaction_add(reaction):
 @client.event
 async def on_voice_state_update(member, before, after):
     global newVcs
-
-    # class VoiceNameTextbox(discord.ui.TextInput):
-    #     # name = discord.ui.TextInput(label='Name')
-    #     # answer = ui.TextInput(label='Answer', style=discord.TextStyle.paragraph)
-    #     async def on_submit(self, itx: discord.Interaction):
-    #         pass
-
+    vcHub = 986295510103121990
+    vcLog = 986304081234624554
+    vcCategory = 986295362715267153
     if after.channel is not None:
-        if after.channel.id == 981557586723758091:
-            after.channel.category.id = 981558003822108733
-            cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', after.channel.category.text_channels)
+        if after.channel.id == vcHub:
+            after.channel.category.id = vcCategory
             defaultName = "Untitled voice chat"
             vc = await after.channel.category.create_voice_channel(defaultName)
             await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
-            await cmdChannel.send(content=f"You have joined <#{vc.id}>, {member.nick or member.name}. Use `/editvc <name>` to rename your voice channel (or add a user limit) (follow the rules for your channel name)", delete_after=32, allowed_mentions=discord.AllowedMentions.none())
-            # modal = discord.ui.Modal(title="Give your voice channel a name! (or use /editvc)",custom_id="vcModal")
-            # modal.add_item(VoiceNameTextbox(label="Voice channel name", style=discord.TextStyle.short, custom_id="vcTextBox",
-            #             placeholder="this is a placeholder", default="This is default", required=True, min_length=2, max_length=35))
-
+            cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', after.channel.category.text_channels)
+            await cmdChannel.send(f"Voice channel \"{before.channel.name}\" created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
+            logChannel = client.get_channel(vcLog)
+            await logChannel.send(content=f"{member.nick or member.name} joined voice channel {vc.id}.", allowed_mentions=discord.AllowedMentions.none())
     if before.channel is None:
         print(debug()+f"{member} joined a (new) voice channel but wasn't in one before")
         return
     if before.channel in before.channel.guild.voice_channels:
-        if before.channel.category.id not in [981558003822108733]:
+        if before.channel.category.id not in [vcCategory]:
             print(debug()+"some user left a voice channel that wasn't in the 'deleting vcs' category, u know")
             return
         if after.channel in before.channel.guild.voice_channels:
             print(debug()+f"{member} left vc / joined to another voice channel")
-        if before.channel.id == 981557586723758091: # avoid deleting the hub channel
+        if before.channel.id == vcHub: # avoid deleting the hub channel
             print(debug()+f"{member} left the vc hub thing")
             return
         if len(before.channel.members) == 0:
-            # try:
-            cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
-            def pingSafe(str):
-                return str.replace("@everyone","@ everyone").replace("@here","@ here").replace('`','\`').replace('@','\@').replace('>','\>')
-            await cmdChannel.send(f"{pingSafe(member.nick or member.name)} left voice channel \"{pingSafe(before.channel.name)}\", and was the last one in it, so it was deleted.",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
+            # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
+            # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
             await before.channel.delete()
-            print(repr(newVcs)+"\n\n"+str(before.channel.id))
             try:
                 del newVcs[before.channel.id]
             except:
                 pass #haven't edit the channel yet
-            # except Exception as ex:
-            #     print(debug()+f"Tried to remove channel but couldn't",ex.message, ex)
-            #     raise ex
+            logChannel = client.get_channel(vcLog)
+            await logChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})", allowed_mentions=discord.AllowedMentions.none())
         else:
             print(debug()+f"{member} left voice channel, but it wasn't empty yet, so it wasn't deleted.")
 
@@ -345,13 +339,6 @@ class AnonymousVote:
     def getMessage(self):
         return self.question+f"\n`{len(self.upvotes)}` upvotes 🔺  and `{len(self.downvotes)}` downvotes 🔻"
 
-# @slash.slash(name="anonymousvote", description="Create a 2-choiced poll that people can react to, and will update msg to keep it anonymous",
-#             options=[
-#                 create_option(
-#                     name="question",
-#                     description="Poll question to which people can upvote/downvote",
-#                     option_type=3,
-#                     required=True)])
 @client.tree.command(name="anonymousvote",description="Create a 2-choiced poll that people can react to, and will update msg to keep it anonymous")
 @app_commands.describe(question='Poll question to which people can upvote/downvote')
 async def anonymousVote(itx: discord.Interaction, question: str):
@@ -498,9 +485,11 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
                        limit="Give your voice channel a user limit!")
 async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
     global newVcs
-    allowedRoles = [
-        discord.utils.find(lambda r: r.name == 'Verified'  , itx.guild.roles)]
-    if len(set(allowedRoles).intersection(itx.user.roles)) == 0:
+    # for convenience
+    vcHub = 986295510103121990
+    vcLog = 986304081234624554
+    vcCategory = 986295362715267153
+    if not isVerified(itx):
         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",ephemeral=True) #todo
         return
     if itx.user.voice is None:
@@ -508,7 +497,7 @@ async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
         await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
         return
     channel = itx.user.voice.channel
-    if channel.category.id not in [981558003822108733] or channel.id == 981557586723758091:
+    if channel.category.id not in [vcCategory] or channel.id == vcHub:
         await itx.response.send_message("You can't change that voice channel's name!",ephemeral=True)
         return
     if len(name) < 4:
@@ -518,7 +507,7 @@ async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
         await itx.response.send_message("Please don't make your voice channel name more than 35 letters long! (gets cut off/unreadable)",ephemeral=True)
         return
     if limit < 2 and limit != 0:
-        await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2)",ephemeral=True)
+        await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2; or 0)",ephemeral=True)
         return
     if limit > 999:
         await itx.response.send_message("I don't think you need to prepare for that many people... (max 999, or 0 for infinite)\nIf you need to, message Mia to change the limit",ephemeral=True)
@@ -546,10 +535,11 @@ async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
     category = discord.utils.find(lambda r: r.name == 'VC'      , itx.guild.categories)
     verified = discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)
     limitInfo = [" with a user limit of "+str(limit) if limit > 0 else ""][0]
-    def pingSafe(str):
-        return str.replace("@everyone","@ everyone").replace("@here","@ here").replace('`','\`').replace('@','\@').replace('>','\>')
-    await itx.response.send_message(f"Voice channel renamed from \"{pingSafe(channel.name)}\" to \"{pingSafe(name)}\" (by {pingSafe(itx.user.nick or itx.user.name)}, {itx.user.id})"+limitInfo, allowed_mentions=discord.AllowedMentions.none())
-    await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\""+limitInfo,user_limit=limit,name=name)
+    logChannel = client.get_channel(vcLog)
+    oldName = channel.name
+    await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", user_limit=limit,name=name)
+    await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
+    await itx.response.send_message(f"Voice channel successfully renamed from \"{oldName}\" to \"{name}\""+limitInfo, ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
 
 class Table(app_commands.Group):
     class TableButton(discord.ui.Button):
@@ -705,7 +695,7 @@ class Table(app_commands.Group):
         if "message" not in tableInfo:
             print("Couldn't find message in tableInfo")
             return False
-        c = await client.fetch_channel(960972420234231851)
+        c = await client.fetch_channel(985931648094834801)
         c.id = tableInfo["msgChannel"]
         msg = await c.fetch_message(tableInfo["message"])
         await msg.edit(embeds=[embed1,embed2],view=view)
