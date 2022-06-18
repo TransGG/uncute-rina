@@ -89,6 +89,14 @@ tableInfo = { # join or create/host a table!
     # },
     # "message":""
 }
+guildInfo = {
+    # "guildId":{
+    #     "vcHub":"",
+    #     "vcCategory":"",
+    #     "vcLog":""
+    # }
+}
+
 def getTableStatus(table):
     status = {
         "msg":{
@@ -114,7 +122,7 @@ print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Program started")
 
 @client.event
 async def on_ready():
-    global data, tableInfo, reactionmsgs
+    global data, tableInfo, reactionmsgs, guildInfo
     #load the data file.
     fileId = 0
     if len(data) == 0:
@@ -126,8 +134,10 @@ async def on_ready():
     if len(reactionmsgs) == 0:
         reactionmsgs = pickle.loads(open('reactionmsgs.txt', 'rb').read())
         fileId += 4
-        await Table.tablemsgupdate(Table)
-    print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Files loaded ({fileId}/7) and logged in as {client.user}, in version {version}")
+    if len(guildInfo) == 0:
+        guildInfo = json.loads(open(path+"guildInfo.json","r").read())
+        fileId += 8
+    print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Files loaded ({fileId}/15) and logged in as {client.user}, in version {version}")
 
 def debug():
     return f"{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
@@ -217,8 +227,7 @@ async def addToData(member, type):
     print("Successfully added new data to "+repr(type))
 
 def isVerified(itx: discord.Interaction):
-    roles = [
-             discord.utils.find(lambda r: r.name == 'Verified'  , itx.guild.roles),
+    roles = [discord.utils.find(lambda r: r.name == 'Verified'  , itx.guild.roles),
         ]
     return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
 
@@ -270,19 +279,22 @@ async def on_raw_reaction_add(reaction):
 @client.event
 async def on_voice_state_update(member, before, after):
     global newVcs
-    vcHub = 986295510103121990
-    vcLog = 986304081234624554
-    vcCategory = 986295362715267153
+    vcHub      = guildInfo[str(member.guild.id)]["vcHub"]
+    vcLog      = guildInfo[str(member.guild.id)]["vcLog"]
+    vcNoMic    = guildInfo[str(member.guild.id)]["vcNoMic"]
+    vcCategory = guildInfo[str(member.guild.id)]["vcCategory"]
+    print(guildInfo[str(member.guild.id)]["vcHub"],guildInfo[str(member.guild.id)]["vcLog"],guildInfo[str(member.guild.id)]["vcNoMic"],guildInfo[str(member.guild.id)]["vcCategory"])
+    print(vcHub == None, vcLog == None, vcNoMic == None, vcCategory == None)
     if after.channel is not None:
         if after.channel.id == vcHub:
             after.channel.category.id = vcCategory
             defaultName = "Untitled voice chat"
             vc = await after.channel.category.create_voice_channel(defaultName)
             await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
-            cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', after.channel.category.text_channels)
-            await cmdChannel.send(f"Voice channel \"{before.channel.name}\" created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
+            nomicChannel = client.get_channel(vcNoMic)
+            await nomicChannel.send(f"Voice channel <@{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
             logChannel = client.get_channel(vcLog)
-            await logChannel.send(content=f"{member.nick or member.name} joined voice channel {vc.id}.", allowed_mentions=discord.AllowedMentions.none())
+            await logChannel.send(content=f"{member.nick or member.name} joined voice channel {vc.id} (default name obv...).", allowed_mentions=discord.AllowedMentions.none())
     if before.channel is None:
         print(debug()+f"{member} joined a (new) voice channel but wasn't in one before")
         return
@@ -360,7 +372,6 @@ async def anonymousVote(itx: discord.Interaction, question: str):
 @client.tree.command(name="version",description="Get bot version")
 async def botVersion(itx: discord.Interaction):
     await itx.response.send_message(f"Bot is currently running on v{version}")
-    await client.tree.sync()
 
 @client.tree.command(name="update",description="Update slash-commands")
 async def updateCmds(itx: discord.Interaction):
@@ -486,9 +497,9 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
 async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
     global newVcs
     # for convenience
-    vcHub = 986295510103121990
-    vcLog = 986304081234624554
-    vcCategory = 986295362715267153
+    vcHub      = guildInfo[str(itx.guild.id)]["vcHub"]
+    vcLog      = guildInfo[str(itx.guild.id)]["vcLog"]
+    vcCategory = guildInfo[str(itx.guild.id)]["vcCategory"]
     if not isVerified(itx):
         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",ephemeral=True) #todo
         return
@@ -540,6 +551,31 @@ async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
     await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", user_limit=limit,name=name)
     await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
     await itx.response.send_message(f"Voice channel successfully renamed from \"{oldName}\" to \"{name}\""+limitInfo, ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
+
+@client.tree.command(name="editguildinfo",description="Edit guild settings (staff only)")
+@app_commands.describe(vc_hub="Mention the voice channel that should make a new voice channel when you join it",
+                       vc_log="Mention the channel in which logs should be posted",
+                       vc_category="Mention the category in which new voice channels should be created",
+                       vc_nomic="Mention the channel in which guide messages are sent ([x] joined, use /editvc to rename ur vc)")
+async def editGuildInfo(itx: discord.Interaction, vc_hub: discord.VoiceChannel = None, vc_log: discord.TextChannel = None, vc_category: discord.CategoryChannel = None, vc_nomic: discord.TextChannel = None):
+    if not isAdmin(itx):
+        await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
+        return
+    global guildInfo
+    # if len(guildInfo) == 0:
+    #     await itx.response.send_message("Couldn't find guild info. Please wait 1 second.",ephemeral=True)
+    #     return
+    if str(itx.guild.id) not in guildInfo:
+        guildInfo[str(itx.guild.id)] = {}
+    if vc_hub is not None:
+        guildInfo[str(itx.guild.id)]["vcHub"] = vc_hub.id
+    if vc_log is not None:
+        guildInfo[str(itx.guild.id)]["vcLog"] = vc_log.id
+    if vc_category is not None:
+        guildInfo[str(itx.guild.id)]["vcCategory"] = vc_category.id
+    if vc_nomic is not None:
+        guildInfo[str(itx.guild.id)]["vcNoMic"] = vc_nomic.id
+    await itx.response.send_message("Edited the settings.",ephemeral=True)
 
 class Table(app_commands.Group):
     class TableButton(discord.ui.Button):
@@ -986,6 +1022,7 @@ def signal_handler(signal, frame):
         print("Saved data file!")
     else:
         print("Couldn't save data (unsafe)! Not loaded in correctly!")
+
     if len(tableInfo) > 0:
         json.dump(tableInfo, open(path+"tableInfo.json","w"))
         print("Saved table file!")
@@ -997,6 +1034,13 @@ def signal_handler(signal, frame):
         print("Saved reactionmsgs data!")
     else:
         print("Couldn't save reactionmsgs data (unsafe)! Not loaded in correctly!")
+
+    if len(guildInfo) > 0:
+        json.dump(guildInfo, open(path+"guildInfo.json","w"))
+        print("Saved guild info!")
+    else:
+        print("Couldn't save guildInfo (unsafe)! Not loaded in correctly!")
+
 
     print("-=--- Finishing ---=-")
     try:
