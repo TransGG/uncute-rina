@@ -1,6 +1,6 @@
 # dumb code for cool version updates
 path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "0.2.7" .split(".")
+fileVersion = "0.2.8" .split(".")
 version = open(path+"version.txt","r").read().split(".")
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
@@ -46,6 +46,7 @@ import random #for very uncute responses
 
 intents = discord.Intents.default()
 intents.members = True #apparently this needs to be additionally defined cause it's not included in Intents.default()?
+intents.message_content = True #apparently it turned off my default intent or something: otherwise i can't send 1984, ofc.
 #setup default discord bot client settings, permissions, slash commands, and file paths
 client =  commands.Bot(intents = intents
 , command_prefix=commands.when_mentioned_or("/"), case_insensitive=True
@@ -96,6 +97,7 @@ guildInfo = {
     #     "vcLog":""
     # }
 }
+last1984msg = 0
 
 def getTableStatus(table):
     status = {
@@ -144,19 +146,23 @@ def debug():
 
 @client.event
 async def on_message(message):
+    global last1984msg
     if message.author.bot:
         return
-    # random cool commands
-    if message.content.startswith(":say "):
-        await message.channel.send(message.content.split(" ",1)[1].replace("[[del]]",""))
-        return
+    #random cool commands
+    # if message.content.startswith(":say "):
+    #     await message.channel.send(message.content.split(" ",1)[1].replace("[[del]]",""))
+    #     return
     if ("1984" in message.content or "nineteeneightyfour" in message.content.lower().replace(" ","").replace("-","")) and "@" not in message.content:
+        if last1984msg > mktime(datetime.utcnow().timetuple())-10*60:
+            return
         await message.reply(content="1984 is about a dictatorship where you are not allowed \
 to think your own thoughts, and any time you even think differently, the police come for you. \
 Our server is not like this as we give you freedom to think and do as you like, however, this \
 does not mean anarchy. Rules are in place to protect the users and ourselves from certain \
 consequences. **If you would like to know more, please read the book**\n\
 https://www.planetebook.com/1984/")
+        last1984msg = mktime(datetime.utcnow().timetuple())
     if client.user.mention in message.content.split():
         if ("not" in message.content or "uncute" in message.content) and "not uncute" not in message.content:
             await message.add_reaction("<:this:960916817801535528>")
@@ -207,7 +213,8 @@ https://www.planetebook.com/1984/")
             await message.channel.send(respond)
         else:
             await message.channel.send("Pinging me is fine, and has no consequences, but ```cs\n[ Please don't do it with other bots on this server. ]```You may unintentionally catch the attention of / anger the staff team with it.\nPs: I have slash commands, and no, i'm not cute",delete_after=16)
-    return
+
+    await client.process_commands(message)
 
 async def addToData(member, type):
     global data
@@ -283,8 +290,6 @@ async def on_voice_state_update(member, before, after):
     vcLog      = guildInfo[str(member.guild.id)]["vcLog"]
     vcNoMic    = guildInfo[str(member.guild.id)]["vcNoMic"]
     vcCategory = guildInfo[str(member.guild.id)]["vcCategory"]
-    print(guildInfo[str(member.guild.id)]["vcHub"],guildInfo[str(member.guild.id)]["vcLog"],guildInfo[str(member.guild.id)]["vcNoMic"],guildInfo[str(member.guild.id)]["vcCategory"])
-    print(vcHub == None, vcLog == None, vcNoMic == None, vcCategory == None)
     if after.channel is not None:
         if after.channel.id == vcHub:
             after.channel.category.id = vcCategory
