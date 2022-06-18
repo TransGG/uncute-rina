@@ -1,7 +1,7 @@
 # dumb code for cool version updates
-path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
+path = "./config/" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
 fileVersion = "0.2.8" .split(".")
-version = open(path+"version.txt","r").read().split(".")
+version = open("version.txt","r").read().split(".")
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
     if int(fileVersion[v]) > int(version[v]):
@@ -10,7 +10,7 @@ for v in range(len(fileVersion)):
 else:
     version[-1] = str(  int( version[-1] )+1  )
 version = '.'.join(version)
-open(path+"version.txt","w").write(f"{version}")
+open("version.txt","w").write(f"{version}")
 
 import discord # It's dangerous to go alone! Take this. /ref
 from discord import app_commands # v2.0, use slash commands
@@ -134,7 +134,7 @@ async def on_ready():
         tableInfo = json.loads(open(path+"tableInfo.json","r").read())
         fileId += 2
     if len(reactionmsgs) == 0:
-        reactionmsgs = pickle.loads(open('reactionmsgs.txt', 'rb').read())
+        reactionmsgs = pickle.loads(open(path+'reactionmsgs.txt', 'rb').read())
         fileId += 4
     if len(guildInfo) == 0:
         guildInfo = json.loads(open(path+"guildInfo.json","r").read())
