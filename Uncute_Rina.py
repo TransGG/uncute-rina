@@ -1,7 +1,7 @@
 # dumb code for cool version updates
 path = "./config/" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "0.2.8" .split(".")
-version = open("version.txt","r").read().split(".")
+fileVersion = "0.2.8".split(".")
+version = open("version.txt", "r").read().split(".")
 
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
@@ -22,8 +22,8 @@ from discord.ext import commands # required for client bot making
 # from discord_slash.utils.manage_commands import create_option, create_choice # set command argument limitations (string/int/bool)
 # from discord_slash.context import ComponentContext # button responses
 
-#from discord.utils import get #dunno what this is for tbh.
-import json #json used for settings file
+# from discord.utils import get #dunno what this is for tbh.
+import json # json used for settings files
 import pickle # pickle used for reactionmsgs file
 import signal # save files when receiving KeyboardInterrupt
 import sys # exit program after Keyboardinterrupt signal is noticed
@@ -32,20 +32,52 @@ import sys # exit program after Keyboardinterrupt signal is noticed
 import asyncio # used for asyncio.sleep() for debugging purposes (temporary, or at least, it should be- when i wrote this)
 
 from datetime import datetime, timedelta
-from time import mktime #for unix time code
-import random #for very uncute responses
+from time import mktime # for unix time code
+import random # for very uncute responses
 
-import pymongo
+import pymongo # for online database
 from pymongo import MongoClient
+
+# mongoURI = open("mongo.txt","r").read()
+# cluster = MongoClient(mongoURI)
+# db = cluster["Rina"]
+# collection = db["Rina"]
+#
+# post = {"text": 1, "score": 1}
+# collection.insert_one(post)
+
+post = {
+        "guild_id":"960962996828516382",
+        "joined": {},
+        "left": {},
+        "verified": {},
+        "totalMembers": {},
+        "totalVerified": {}
+    }
+# for y in data[str(itx.guild_id)]:
 
 mongoURI = open("mongo.txt","r").read()
 cluster = MongoClient(mongoURI)
-db = cluster["Rina"]
-collection = db["Rina"]
+RinaDB = cluster["Rina"]
+collection = RinaDB["any"]
 
-post = {"text": 1, "score": 1}
-collection.insert_one(post)
+# collection.insert_one(post)
 
+# query = {"guild_id": "960962996828516382"}
+# guild = collection.find(query)
+# print(guild[0])
+# collection.update_one(query, {"$set":{"userid232":"timeunix334"}}, upsert=True)
+# ['_Cursor__collection', '_Cursor__collname', '_Cursor__data', '_Cursor__dbname',
+# '_Cursor__id',]
+
+# for result in user:
+#     score = result["score"]
+# score = score + 1
+# collection.update_one({"guild":1}, {"$set":{"score":score}})
+
+#
+
+#
 
 # Dependencies:
 #   server members intent,
@@ -62,56 +94,25 @@ intents = discord.Intents.default()
 intents.members = True #apparently this needs to be additionally defined cause it's not included in Intents.default()?
 intents.message_content = True #apparently it turned off my default intent or something: otherwise i can't send 1984, ofc.
 #setup default discord bot client settings, permissions, slash commands, and file paths
-client =  commands.Bot(intents = intents
-, command_prefix=commands.when_mentioned_or("/"), case_insensitive=True
-, activity = discord.Game(name="with slash (/) commands!"),
-allowed_mentions = discord.AllowedMentions(everyone = False))
+client = commands.Bot(
+        intents = intents,
+        command_prefix = "/!\"@:\#", #unnecessary, but needs to be set so.. uh.. yeah. Unnecessary terminal warnings avoided.
+        case_insensitive=True,
+        activity = discord.Game(name="with slash (/) commands!"),
+        allowed_mentions = discord.AllowedMentions(everyone = False)
+    )
 
-# tree = app_commands.CommandTree(client)
-# stats = app_commands.Group(name='stats', description='Get tag statistics')
-
-# slash = SlashCommand(client, sync_commands=True)
-# guild_ids = [960962996828516382]
-
-#default defining before settings
-settings = {}
-data = {
-# see example of the current data format below
-# data = {
-#   959551566388547676:{    # TransPlace
-#     "joined":{
-#        262913789375021056: [1653495322, 1653496268]
-#        # MysticMia#7612   =  [joinTime1, joinTime2] #if they join twice
-#     },
-#     "left":{},
-#       etc.
-#   }
-# }
-}
 dataTemplate = {
     "joined"       :{    },
     "left"         :{    },
     "verified"     :{    },
     "totalMembers" :{    }, #todo
     "totalVerified":{    }}
-reactionmsgs = {}
 newVcs = {} # make your own vcs!
-tableInfo = { # join or create/host a table!
-    # "table1":{
-        # new: create new channel
-        # open: can be joined. If it's open, will show up as "join"
-        # locked: cannot be joined, has been locked by table owner
-    # },
-    # "message":""
-}
-guildInfo = {
-    # "guildId":{
-    #     "vcHub":"",
-    #     "vcCategory":"",
-    #     "vcLog":""
-    # }
-}
 last1984msg = 0
+
+print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Program started")
+
 
 def getTableStatus(table):
     status = {
@@ -134,29 +135,34 @@ def getTableStatus(table):
         disabled = False
     return disabled,msg,label
 
-print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Program started")
+def debug():
+    return f"{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
+
+# def isVerified(itx: discord.Interaction):
+#     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
+#     return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
+
+def isVerifier(itx: discord.Interaction):
+    roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
+    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
+
+def isStaff(itx: discord.Interaction):
+    roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles)]
+    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
+
+def isAdmin(itx: discord.Interaction):
+    roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
+    return len(set(roles).intersection(itx.user.roles)) > 0
+
+# Client events begin
 
 @client.event
 async def on_ready():
-    global data, tableInfo, reactionmsgs, guildInfo
-    #load the data file.
-    fileId = 0
-    if len(data) == 0:
-        data = json.loads(open(path+"data.json","r").read())
-        fileId += 1
-    if len(tableInfo) == 0:
-        tableInfo = json.loads(open(path+"tableInfo.json","r").read())
-        fileId += 2
-    if len(reactionmsgs) == 0:
-        reactionmsgs = pickle.loads(open(path+'reactionmsgs.txt', 'rb').read())
-        fileId += 4
-    if len(guildInfo) == 0:
-        guildInfo = json.loads(open(path+"guildInfo.json","r").read())
-        fileId += 8
-    print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Files loaded ({fileId}/15) and logged in as {client.user}, in version {version}")
-
-def debug():
-    return f"{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
+    print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Logged in as {client.user}, in version {version}")
 
 @client.event
 async def on_message(message):
@@ -230,39 +236,26 @@ https://www.planetebook.com/1984/")
 
     await client.process_commands(message)
 
+### Member data storing begins
 async def addToData(member, type):
-    global data
+    collection = RinaDB["data"]
+    query = {"guild_id": member.guild.id}
+    data = collection.find(query)
     try:
-        data[str(member.guild.id)]
-    except:
-        if len(data) == 0:
-            #await ctx.send("Won't continue the event because the file is too short! Something probably went wrong when loading the file.\nChanging a setting now will overwrite and clear it (try again in a few seconds)")
-            print("Did not set default settings because the dictionary is 0, so prevented overloading and loss of data")
-            return
-        data[str(member.guild.id)] = dataTemplate
+        data = data[0]
+    except IndexError:
+        collection.insert_one(query)
+        data = collection.find(query)[0]
     try:
         #see if this user already has data, if so, add a new joining time to the list
-        data[str(member.guild.id)][type][str(member.id)].append(mktime(datetime.now().timetuple()))
-    except:
-        data[str(member.guild.id)][type][str(member.id)] = [mktime(datetime.now().timetuple())] #todo: make unlocalized, rather UTC time
-    print("Successfully added new data to "+repr(type))
-
-def isVerified(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Verified'  , itx.guild.roles),
-        ]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
-
-def isStaff(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
-
-def isAdmin(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0
+        data[type][str(member.id)].append(mktime(datetime.utcnow().timetuple()))
+    except IndexError:
+        data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
+    except KeyError:
+        data[type] = {}
+        data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
+    collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
+    # print("Successfully added new data to "+repr(type))
 
 @client.event
 async def on_member_join(member):
@@ -277,33 +270,44 @@ async def on_member_update(before, after):
     role = discord.utils.find(lambda r: r.name == 'Verified', before.guild.roles)
     if role not in before.roles and role in after.roles:
         await addToData(after,"verified")
+### Member data storing ends
 
 @client.event
 async def on_raw_reaction_add(reaction):
-    global settings, reactionmsgs
+    # global reactionmsgs
+    pass
     #get the message id from reaction.message_id through the channel (with reaction.channel_id) (oof lengthy process)
-    message = client.get_channel(reaction.channel_id).fetch_message(reaction.message_id)
-    if message.author == client.user:
-        if reaction.emoji.name == '❌' and reaction.member != client.user:
-            await message.delete()
+    # message = await client.get_channel(reaction.channel_id).fetch_message(reaction.message_id)
+    # if message.author == client.user:
+    #     if reaction.emoji.name == '❌' and reaction.member != client.user:
+    #         await message.delete()
 
-    if message.author == client.user:
-        if reaction.member != client.user and str(message.id) in reactionmsgs:
-            voteMsg = reactionmsgs[str(message.id)]
-            try:
-                voteMsg.vote(reaction.member.id, reaction.emoji.name)
-                message.id = voteMsg.message_id
-                await message.edit(content=voteMsg.getMessage())
-            except:pass
-            await message.remove_reaction(reaction.emoji.name, reaction.member)
+    # if message.author == client.user:
+    #     if reaction.member != client.user and str(message.id) in reactionmsgs:
+    #         voteMsg = reactionmsgs[str(message.id)]
+    #         try:
+    #             voteMsg.vote(reaction.member.id, reaction.emoji.name)
+    #             message.id = voteMsg.message_id
+    #             await message.edit(content=voteMsg.getMessage())
+    #         except:
+    #             pass
+    #         await message.remove_reaction(reaction.emoji.name, reaction.member)
 
 @client.event
 async def on_voice_state_update(member, before, after):
     global newVcs
-    vcHub      = guildInfo[str(member.guild.id)]["vcHub"]
-    vcLog      = guildInfo[str(member.guild.id)]["vcLog"]
-    vcNoMic    = guildInfo[str(member.guild.id)]["vcNoMic"]
-    vcCategory = guildInfo[str(member.guild.id)]["vcCategory"]
+    collection = RinaDB["guildInfo"]
+    query = {"guild_id": itx.guild_id}
+    guild = collection.find(query)
+    try:
+        guild = guild[0]
+    except IndexError:
+        await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/editguildinfo`!",ephemeral=True)
+        return
+    vcHub      = guild["vcHub"]
+    vcLog      = guild["vcLog"]
+    vcNoMic    = guild["vcNoMic"]
+    vcCategory = guild["vcCategory"]
     if after.channel is not None:
         if after.channel.id == vcHub:
             after.channel.category.id = vcCategory
@@ -311,7 +315,7 @@ async def on_voice_state_update(member, before, after):
             vc = await after.channel.category.create_voice_channel(defaultName)
             await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
             nomicChannel = client.get_channel(vcNoMic)
-            await nomicChannel.send(f"Voice channel <@{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
+            await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
             logChannel = client.get_channel(vcLog)
             await logChannel.send(content=f"{member.nick or member.name} joined voice channel {vc.id} (default name obv...).", allowed_mentions=discord.AllowedMentions.none())
     if before.channel is None:
@@ -321,8 +325,6 @@ async def on_voice_state_update(member, before, after):
         if before.channel.category.id not in [vcCategory]:
             print(debug()+"some user left a voice channel that wasn't in the 'deleting vcs' category, u know")
             return
-        if after.channel in before.channel.guild.voice_channels:
-            print(debug()+f"{member} left vc / joined to another voice channel")
         if before.channel.id == vcHub: # avoid deleting the hub channel
             print(debug()+f"{member} left the vc hub thing")
             return
@@ -332,61 +334,13 @@ async def on_voice_state_update(member, before, after):
             await before.channel.delete()
             try:
                 del newVcs[before.channel.id]
-            except:
+            except IndexError:
                 pass #haven't edit the channel yet
             logChannel = client.get_channel(vcLog)
             await logChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})", allowed_mentions=discord.AllowedMentions.none())
-        else:
-            print(debug()+f"{member} left voice channel, but it wasn't empty yet, so it wasn't deleted.")
 
-# @slash.component_callback()
-# async def buttonEvent(ctx: ComponentContext):
-#     print("component_callback")
 
-class AnonymousVote:
-    def __init__(self, question):
-        self.question = question
-        self.upvotes = []
-        self.downvotes = []
-        self.message_id = 0
-
-    def vote(self, member_id, voteEmoji):
-        # if you voted for the other option already, move your vote to new option, else ignore
-        if voteEmoji == '🔺':
-            if member_id in self.upvotes:
-                return
-            if member_id in self.downvotes:
-                self.downvotes.remove(member_id)
-            self.upvotes.append(member_id)
-        elif voteEmoji == '🔻':
-            if member_id in self.downvotes:
-                return
-            if member_id in self.upvotes:
-                self.upvotes.remove(member_id)
-            self.downvotes.append(member_id)
-        else:
-            raise ValueError("This emoji can't be used to vote!")
-
-    def getMessage(self):
-        return self.question+f"\n`{len(self.upvotes)}` upvotes 🔺  and `{len(self.downvotes)}` downvotes 🔻"
-
-@client.tree.command(name="anonymousvote",description="Create a 2-choiced poll that people can react to, and will update msg to keep it anonymous")
-@app_commands.describe(question='Poll question to which people can upvote/downvote')
-async def anonymousVote(itx: discord.Interaction, question: str):
-    global reactionmsgs
-    await itx.response.send_message("This command is currently disabled",ephemeral=True)
-    return
-    # if len(reactionmsgs) == 0:
-    #     await ctx.send("Won't continue the event because the file is too short! Something probably went wrong when loading the file.\nChanging the tracking file now will overwrite and clear its contents (try again in a few seconds)")
-    #     print("Interrupted event because the dictionary is 0, so prevented overloading and loss of data")
-    #     return
-    voteMsg = AnonymousVote(question)
-    await itx.response.send_message(voteMsg.getMessage())
-    msg = await (await itx.original_message()).fetch()
-    voteMsg.message_id = msg.id
-    await msg.add_reaction("🔺")
-    await msg.add_reaction("🔻")
-    reactionmsgs[str(msg.id)] = voteMsg
+# Bot commands begin
 
 @client.tree.command(name="version",description="Get bot version")
 async def botVersion(itx: discord.Interaction):
@@ -395,16 +349,16 @@ async def botVersion(itx: discord.Interaction):
 @client.tree.command(name="update",description="Update slash-commands")
 async def updateCmds(itx: discord.Interaction):
     if not isStaff(itx):
-        await itx.response.send_message("Only Staff can update the slash commands")
+        await itx.response.send_message("Only Staff can update the slash commands", ephemeral=True)
         return
     await client.tree.sync()
     await itx.response.send_message(f"Updated slash-commands")
 
-@client.tree.command(name="getdata",description="See joined, left, and recently verified users in x days")
+@client.tree.command(name="getmemberdata",description="See joined, left, and recently verified users in x days")
 @app_commands.describe(period="Get data from [period] days ago",
                        doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
-async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
-    if not isStaff():
+async def getMemberData(itx: discord.Interaction, period: str, doubles: str = "false"):
+    if not isStaff(itx):
         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
         return
     try:
@@ -412,7 +366,7 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
         if period <= 0:
             await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",hidden=True)
             return
-    except:
+    except ValueError:
         await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",hidden=True)
         return
 
@@ -423,7 +377,7 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
     for val in values:
         if str(doubles).lower() in values[val]:
             doubles = val
-    if not doubles in [0,1]:
+    if doubles not in [0,1]:
         await itx.response.send_message("Your value for Doubles is not a boolean or binary (true/1 or false/0)!",ephemeral=True)
     accuracy = period*2400 #divide graph into 36 sections
     period *= 86400 # days to seconds
@@ -434,11 +388,22 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
     currentTime = mktime(datetime.utcnow().timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
     minTime = int((currentTime-period)/accuracy)*accuracy
     maxTime = int(currentTime/accuracy)*accuracy
-    for y in data[str(itx.guild_id)]:
+
+    collection = RinaDB["data"]
+    query = {"guild_id": itx.guild_id}
+    data = collection.find(query)
+    try:
+        data = data[0]
+    except IndexError:
+        await itx.response.send_message("Not enough data is configured to do this action! Please hope someone joins sometime soon lol",ephemeral=True)
+        return
+
+    for y in data:
+        if type(data[y]) is not dict: continue
         column = []
         results[y] = {}
-        for member in data[str(itx.guild_id)][y]:
-            for time in data[str(itx.guild_id)][y][member]:
+        for member in data[y]:
+            for time in data[y][member]:
                 #if the current time minus the amount of seconds in every day in the period since now, is still older than more recent joins, append it
                 if currentTime-period < time:
                     column.append(time)
@@ -448,9 +413,9 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
         for time in range(len(column)):
             column[time] = int(column[time]/accuracy)*accuracy
             if column[time] in results[y]:
-                results[y][column[time]]+=1
+                results[y][column[time]] += 1
             else:
-                results[y][column[time]]=1
+                results[y][column[time]] = 1
 
         #minTime = sorted(column)[0]
         # minTime = int((currentTime-period)/accuracy)*accuracy
@@ -464,7 +429,8 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
             if maxTime < timeList[-1]:
                 maxTime = timeList[-1]
     minTimeDB = minTime
-    for y in data[str(itx.guild.id)]:
+    for y in data:
+        if type(data[y]) is not dict: continue
         minTime = minTimeDB
         # print(y)
         # print(data[str(ctx.guild.id)][y])
@@ -480,32 +446,45 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
             result[i][j]=results[i][j]
         results[i] = result[i]
 
-    # for i in results:
-        # print(i)
-        # print(results[i])
-
     import matplotlib.pyplot as plt
     import pandas as pd
-    # print("\n"*5+str([i for i in results["joined"]]))
-    # print("\n"*5+str([results["joined"][i] for i in results["joined"]]))
-    d = {
-        "time": [i for i in results["joined"]],
-        "joined":[results["joined"][i] for i in results["joined"]],
-        "left":[results["left"][i] for i in results["left"]],
-        "verified":[results["verified"][i] for i in results["verified"]]
-    }
+    try:
+        d = {
+            "time": [i for i in results["joined"]],
+            "joined":[results["joined"][i] for i in results["joined"]],
+            "left":[results["left"][i] for i in results["left"]],
+            "verified":[results["verified"][i] for i in results["verified"]]
+        }
+    except KeyError as ex:
+        await itx.response.send_message(f"{ex} did not have data, thus could not make the graph.", ephemeral=True)
+        return
     df = pd.DataFrame(data=d)
     # print(df)
     fig, (ax1) = plt.subplots(1,1)
-    fig.suptitle(f"Joins (b), leaves (r), and verifications (g) in the past {period/86400} days ({period} seconds)")
+    fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
     fig.tight_layout(pad=1.0)
     ax1.plot(df['time'], df["joined"], 'b')
     ax1.plot(df['time'], df["left"], 'r')
     ax1.plot(df['time'], df["verified"], 'g')
-    ax1.set_ylabel("# of players joined")
+    ax1.set_ylabel("# of players")
+
+    tickLoc = [i for i in df['time'][::3]]
+    if period/86400 <= 1:
+        tickDisp = [datetime.fromtimestamp(i).strftime('%H:%M') for i in tickLoc]
+    else:
+        tickDisp = [datetime.fromtimestamp(i).strftime('%Y-%m-%dT%H:%M') for i in tickLoc]
+
+    # plt.xticks(tickLoc, tickDisp, rotation='vertical')
+    # plt.setp(tickDisp, rotation=45, horizontalalignment='right')
+    ax1.set_xticks(tickLoc,
+            labels=tickDisp,
+            horizontalalignment = 'right',
+            minor=False,
+            rotation=30)
+    ax1.grid(visible=True, which='major', axis='both')
     fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
-    plt.savefig('joined.png')
-    await itx.response.send_message(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",file=discord.File('joined.png') )
+    plt.savefig('userJoins.png')
+    await itx.response.send_message(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",file=discord.File('userJoins.png') )
 
     # print(results)
     # await ctx.send(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",hidden=True)
@@ -515,10 +494,20 @@ async def getData(itx: discord.Interaction, period: str, doubles: str ="false"):
                        limit="Give your voice channel a user limit!")
 async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
     global newVcs
-    # for convenience
-    vcHub      = guildInfo[str(itx.guild.id)]["vcHub"]
-    vcLog      = guildInfo[str(itx.guild.id)]["vcLog"]
-    vcCategory = guildInfo[str(itx.guild.id)]["vcCategory"]
+    collection = RinaDB["guildInfo"]
+    query = {"guild_id": itx.guild_id}
+    guild = collection.find(query)
+    try:
+        guild = guild[0]
+    except IndexError:
+        await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/editguildinfo`!",ephemeral=True)
+        return
+    vcHub = guild["vcHub"]
+    vcLog = guild["vcLog"]
+    vcCategory = guild["vcCategory"]
+    # vcHub      = guildInfo[str(itx.guild.id)]["vcHub"]
+    # vcLog      = guildInfo[str(itx.guild.id)]["vcLog"]
+    # vcCategory = guildInfo[str(itx.guild.id)]["vcCategory"]
     if not isVerified(itx):
         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",ephemeral=True) #todo
         return
@@ -580,28 +569,36 @@ async def editGuildInfo(itx: discord.Interaction, vc_hub: discord.VoiceChannel =
     if not isAdmin(itx):
         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
         return
-    global guildInfo
-    # if len(guildInfo) == 0:
-    #     await itx.response.send_message("Couldn't find guild info. Please wait 1 second.",ephemeral=True)
-    #     return
+
+    query = {"guild_id": itx.guild_id}
+    collection = RinaDB["guildInfo"]
+
     if str(itx.guild.id) not in guildInfo:
-        guildInfo[str(itx.guild.id)] = {}
+        guildInfo[str(itx.guild_id)] = {}
     if vc_hub is not None:
-        guildInfo[str(itx.guild.id)]["vcHub"] = vc_hub.id
+        collection.update_one(query, {"$set":{"vcHub":vc_hub.id}}, upsert=True)
+        guildInfo[str(itx.guild_id)]["vcHub"] = vc_hub.id
     if vc_log is not None:
-        guildInfo[str(itx.guild.id)]["vcLog"] = vc_log.id
+        collection.update_one(query, {"$set":{"vcLog":vc_log.id}}, upsert=True)
+        guildInfo[str(itx.guild_id)]["vcLog"] = vc_log.id
     if vc_category is not None:
-        guildInfo[str(itx.guild.id)]["vcCategory"] = vc_category.id
+        collection.update_one(query, {"$set":{"vcCategory":vc_category.id}}, upsert=True)
+        guildInfo[str(itx.guild_id)]["vcCategory"] = vc_category.id
     if vc_nomic is not None:
-        guildInfo[str(itx.guild.id)]["vcNoMic"] = vc_nomic.id
+        collection.update_one(query, {"$set":{"vcNoMic":vc_nomic.id}}, upsert=True)
+        guildInfo[str(itx.guild_id)]["vcNoMic"] = vc_nomic.id
     await itx.response.send_message("Edited the settings.",ephemeral=True)
 
 class Table(app_commands.Group):
     class TableButton(discord.ui.Button):
         async def callback(self, itx: discord.Interaction):
-            global tableInfo
-            if len(tableInfo) == 0:
-                await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+            query = {"guild_id": itx.guild_id}
+            collection = RinaDB["tableInfo"]
+            tableInfo = collection.find(query)
+            try:
+                tableInfo = tableInfo[0]
+            except IndexError:
+                await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
                 return
             print(debug()+f"Button {self.custom_id} pressed by {itx.user}")
             if itx.message.id == tableInfo["message"]:
@@ -613,7 +610,7 @@ class Table(app_commands.Group):
                 # if user has member role, remove their role
                 #   if table is locked, announce it too
                 for tableId in tableInfo:
-                    if type(tableInfo[tableId]) is int: continue
+                    if type(tableInfo[tableId]) is not dict: continue
                     table = tableInfo[tableId]
                     for role in itx.user.roles:
                         #if you have a role of this table
@@ -641,8 +638,9 @@ class Table(app_commands.Group):
                 table, tableId = [tableInfo[self.custom_id], self.custom_id]
                 if table["status"] == "new":
                     # give Member the table owner role; open table
-                    tableInfo[tableId]["status"] = "open"
-                    await Table.tablemsgupdate(Table)
+                    # tableInfo[tableId]["status"] = "open"
+                    collection.update_one(query, {"$set":{f"{tableId}.status":"open"}}, upsert=True)
+                    await Table.tablemsgupdate(Table, itx)
                     role = discord.utils.find(lambda r: r.id == table["owner"], itx.guild.roles)
                     await itx.user.add_roles(role)
                     # send message in table chat
@@ -673,13 +671,14 @@ class Table(app_commands.Group):
             print("It didn't make it through or something :(")
 
     async def tablemsg(self, itx: discord.Interaction,channel=None):
-        global tableInfo
-        if len(tableInfo) == 0:
-            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
-        # if channel is not None and type(channel) is not discord.TextChannel:
-        #     await ctx.send("You did not mention a (correct) text channel!",hidden=True)
-        #     return
         embed1 = discord.Embed(color=8481900, type='rich',description=" ")
         embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
             description="Click one of the buttons below to create or join a table!~")
@@ -689,7 +688,7 @@ class Table(app_commands.Group):
         components = [{  "type": 1,"components":[]  }]
         view = discord.ui.View()
         for x in tableInfo:
-            x = tableInfo[x]
+            x = tableInfo[x] #todo todo todo
             try:
                 disabled,status,label = getTableStatus(x)
             except TypeError:
@@ -703,33 +702,34 @@ class Table(app_commands.Group):
 
         if channel:
             itx.channel_id, itx.channel.id = [channel.id,channel.id]
+        warning = ""
         if "message" in tableInfo:
             print(f"I am looking for {tableInfo['message']}, most likely in {tableInfo['msgChannel']}")
-            await itx.response.defer(ephemeral=True)
+            # await itx.response.defer(ephemeral=True)
             try:
                 c = itx.guild.text_channels[0]
                 c.id = tableInfo["msgChannel"]
                 msg = await c.fetch_message(tableInfo["message"])
                 await msg.delete()
             except:
-                print("Couldn't find message through itx thing")
-                for c in itx.guild.text_channels:
-                    try:
-                        msg = await c.fetch_message(tableInfo["message"])
-                        print(f"Msg found in {c.name} / {c.id}!")
-                        await msg.delete()
-                        break
-                    except:
-                        print(f"{c.name} / {c.id} didn't have the message")
-                else:
-                    await itx.followup.send("Couldn't find a message to delete",ephemeral=True)
-        await itx.followup.send("Sent message successfully.",ephemeral=True)
+                warning = "Couldn't find a message to delete...\n"
+        await itx.response.send_message(warning+"Sent message successfully.",ephemeral=True)
         msg = await itx.channel.send(embeds=[embed1,embed2],view=view)#,components=components)
-        tableInfo["msgChannel"] = msg.channel.id
-        tableInfo["message"] = msg.id
 
-    async def tablemsgupdate(self):
-        global tableInfo
+        collection.update_one(query, {"$set":{
+            "msgChannel": msg.channel.id,
+            "message"   : msg.id}}, upsert=True)
+
+    async def tablemsgupdate(self, itx: discord.Interaction):
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            return
+
         embed1 = discord.Embed(color=8481900, type='rich',description=" ")
         embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
             description="Click one of the buttons below to create or join a table!~")
@@ -755,11 +755,13 @@ class Table(app_commands.Group):
         msg = await c.fetch_message(tableInfo["message"])
         await msg.edit(embeds=[embed1,embed2],view=view)
 
+
     admin = app_commands.Group(name='admin', description='Edit a table system')
+
     @admin.command(name="sendmsg",description="Send initial table object message. developmental purposes only")
     @app_commands.describe(channel="Which channel do you want to send the message in?")
     async def tablemsgsend(self,itx: discord.Interaction, channel: discord.TextChannel = None):
-        if not isStaff(itx):
+        if not isAdmin(itx):
             await itx.response.send_message("You do not have permission to send this message (staff-only)",ephemeral=True)
             return
         await self.tablemsg(itx,channel)
@@ -769,11 +771,19 @@ class Table(app_commands.Group):
         if not isAdmin(itx):
             await itx.response.send_message("You do not have permission to add a new table",ephemeral=True)
             return
-        global tableInfo
+
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            return
         tables = "List of tables:"
         for tableId in tableInfo:
             table = tableInfo[tableId]
-            if type(table) is int: continue
+            if type(table) is not dict:continue
             tables+=f"\nTable `{table['id']}`, Category:<#{table['category']}>, Owner: <@&{table['owner']}>, Member: <@&{table['member']}>, Emoji: {table['emoji']}, Status: {table['status']}"
         await itx.response.send_message(tables, allowed_mentions=discord.AllowedMentions.none())
 
@@ -787,16 +797,25 @@ class Table(app_commands.Group):
         if not isAdmin(itx):
             await itx.response.send_message("You do not have permission to add a new table",ephemeral=True)
             return
-        global tableInfo
+
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            collection.insert_one(query)
+            tableInfo = collection.find(query)[0]
+
         warning = ""
         for table in tableInfo:
-            if type(tableInfo[table]) is int: continue
+            if type(tableInfo[table]) is not dict: continue
             if id == tableInfo[table]["id"]:
-                await itx.response.send_message("There is already a table with this ID. You can't add two tables with the same id.\nThat would make it difficult to link buttons and remove the table in the future :/.",allowed_mentions=discord.AllowedMentions.none())
+                await itx.response.send_message("There is already a table with this ID. You can't add two tables with the same id.\nThat would make it difficult to link buttons and remove the table in the future :/.",ephemeral=True,allowed_mentions=discord.AllowedMentions.none())
                 return
         for tableId in tableInfo:
             table = tableInfo[tableId]
-            if type(table) is int: continue
+            if type(table) is not dict: continue
             if category.id == table["category"]:
                 warning += f"Warning: You already registered this category in table {table['id']}!\n"
             if owner.id == table["owner"]:
@@ -805,7 +824,8 @@ class Table(app_commands.Group):
                 warning += f"Warning: You already registered this member role in table {table['id']}!\n"
             if emoji == table["emoji"]:
                 warning += f"Warning: You already registered this emoji in table {table['id']}!\n"
-        tableInfo["table"+id] = {
+
+        tableData = {
             "id":id,
             "category":category.id,
             "owner":owner.id,
@@ -813,8 +833,9 @@ class Table(app_commands.Group):
             "emoji":emoji,
             "status":"new",
         }
+        collection.update_one(query, {"$set":{"table"+id : tableData}}, upsert=True)
         await itx.response.send_message(warning+f"┬─┬ ノ( ゜-゜ノ) Created `Table {id}` with category:<#{category.id}>, owner:<@&{owner.id}>, member:<@&{member.id}>, emoji:{emoji}",allowed_mentions=discord.AllowedMentions.none())
-        await self.tablemsgupdate()
+        await self.tablemsgupdate(itx)
 
     @admin.command(name="force_close",description="Force close a table, so a new group can start.")
     @app_commands.describe(id="Give the table number: \"1\" for \"Table 1\", eg.")
@@ -822,16 +843,21 @@ class Table(app_commands.Group):
         if not isAdmin(itx):
             await itx.response.send_message("You do not have permission to forcibly close a table",ephemeral=True)
             return
-        global tableInfo
-        if len(tableInfo) == 0:
-            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
+
         closable = ""
         if not "message" in tableInfo:
-            await itx.response.send_message("There is no table message to update, thus I'm afraid you can't close the table..",ephemeral=True)
+            await itx.response.send_message("There is no table message to update, thus I'm afraid you can't close the table.. Pleaes ask an admin to fix this with `/table admin sendmsg`",ephemeral=True)
             return
         for table in tableInfo:
-            if type(tableInfo[table]) is int: continue
+            if type(tableInfo[table]) is not dict: continue
             if tableInfo[table]["id"] == id:
                 closable = table
                 break
@@ -855,13 +881,14 @@ class Table(app_commands.Group):
         except TypeError:
             print(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?")
 
-        tableInfo[closable]["status"] = "new"
+        collection.update_one(query, {"$set":{f"{closable}.status":"new"}}, upsert=True)
+        # tableInfo[closable]["status"] = "new"
         # send update message in table chat
         category = discord.utils.find(lambda r: r.id == tableInfo[closable]["category"], itx.guild.categories)
         channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
         await channel.send(f"Removed users from table: {', '.join(removedPeople)}\nThis table was forcibly closed by a staff member. A new table can be created now.")
-        await self.tablemsgupdate()
-        #await itx.response.send_message(warning+"Closed successfully",ephemeral=True)
+        await self.tablemsgupdate(itx)
+        await itx.response.send_message(warning+"Closed successfully",ephemeral=True)
 
     @admin.command(name="destroy",description="Remove a table from the table system")
     @app_commands.describe(id="Give the table a number: \"1\" for \"Table 1\", eg.")
@@ -869,91 +896,111 @@ class Table(app_commands.Group):
         if not isStaff(itx):
             await itx.response.send_message("You do not have permission to delete a table",ephemeral=True)
             return
-        global tableInfo
-        for x in tableInfo:
+
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            return
+
+        for tableId in tableInfo:
             try:
-                if tableInfo[x]["id"] == id:
-                    del tableInfo[x]
+                if tableInfo[tableId]["id"] == id:
+                    collection.update_one(query, {"$unset":{f"{tableId}":""}}, upsert=True)
                     await itx.response.send_message(f"(╯°□°）╯︵ ┻━┻ Destroyed table {id} successfully. Happy now? ")
-                    await self.tablemsgupdate()
+                    await self.tablemsgupdate(itx)
                     return
             except TypeError: #probably the message/channel info
                 pass
         await itx.response.send_message(f"Finished command without any action, thus the id was likely incorrect",ephemeral=True)
 
+
     @app_commands.command(name="lock",description="Lock your table, so no new players can join.")
     async def tableLock(self, itx: discord.Interaction):
-        global tableInfo
-        if len(tableInfo) == 0:
-            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         lockable = ""
         if not "message" in tableInfo:
             await itx.response.send_message("There is no table message to update, thus I'm afraid you can't lock your table..",ephemeral=True)
             return
         for table in tableInfo:
-            try:
-                for role in itx.user.roles:
-                    if role.id == tableInfo[table]["owner"]:
-                        lockable = table
-                if lockable:
-                    break
-            except: #is message dictionary, probably
-                pass
+            if type(tableInfo[table]) is not dict: continue
+            for role in itx.user.roles:
+                if role.id == tableInfo[table]["owner"]:
+                    lockable = table
+            if lockable:
+                break
         if lockable == "":
             await itx.response.send_message("You aren't a table owner, thus can't lock this table!",ephemeral=True)
             return
-        tableInfo[lockable]["status"] = "locked"
+        collection.update_one(query, {"$set":{f"{lockable}.status":"locked"}}, upsert=True)
 
         # send update message in table chat
         category = discord.utils.find(lambda r: r.id == tableInfo[lockable]["category"], itx.guild.categories)
         channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
         await channel.send("This table was locked by the table owner. No new players can join the table anymore.\nUse `/table unlock` as table owner to open the table again.")
-        await self.tablemsgupdate()
+        await self.tablemsgupdate(itx)
         await itx.response.send_message("Locked successfully",ephemeral=True)
 
     @app_commands.command(name="unlock",description="Unlock your table, so new players can join again.")
     async def tableUnlock(self, itx: discord.Interaction):
-        global tableInfo
-        if len(tableInfo) == 0:
-            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         unlockable = ""
         if not "message" in tableInfo:
             await itx.response.send_message("There is no table message to update, thus I'm afraid you can't lock your table..",ephemeral=True)
             return
         for table in tableInfo:
-            if type(tableInfo[table]) is int: continue
+            if type(tableInfo[table]) is not dict: continue
             for role in itx.user.roles:
                 if role.id == tableInfo[table]["owner"]:
                     unlockable = table
             if unlockable:
                 break
         if unlockable == "":
-            await itx.reponse.send_message("You aren't a table owner, thus can't unlock this table!",ephemeral=True)
+            await itx.response.send_message("You aren't a table owner, thus can't unlock this table!",ephemeral=True)
             return
 
-        tableInfo[unlockable]["status"] = "open"
+        collection.update_one(query, {"$set":{f"{unlockable}.status":"open"}}, upsert=True)
 
         # send update message in table chat
         category = discord.utils.find(lambda r: r.id == tableInfo[unlockable]["category"], itx.guild.categories)
         channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
         await channel.send("This table was unlocked by the table owner. Players can join the table again.\nUse `/table lock` as table owner to lock the table.")
-        await self.tablemsgupdate()
+        await self.tablemsgupdate(itx)
         await itx.response.send_message("Unlocked successfully",ephemeral=True)
 
     @app_commands.command(name="close",description="Close your table, a new group can start.")
     async def tableClose(self, itx: discord.Interaction):
-        global tableInfo
-        if len(tableInfo) == 0:
-            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         closable = ""
         if not "message" in tableInfo:
             await itx.response.send_message("There is no table message to update, thus I'm afraid you can't close your table..",ephemeral=True)
             return
         for table in tableInfo:
-            if type(tableInfo[table]) is int: continue
+            if type(tableInfo[table]) is not dict: continue
             for role in itx.user.roles:
                 if role.id == tableInfo[table]["owner"]:
                     closable = table
@@ -976,24 +1023,28 @@ class Table(app_commands.Group):
         except TypeError:
             print(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?")
 
-        tableInfo[closable]["status"] = "new"
+        collection.update_one(query, {"$set":{f"{closable}.status":"new"}}, upsert=True)
         # send update message in table chat
         category = discord.utils.find(lambda r: r.id == tableInfo[closable]["category"], itx.guild.categories)
         channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
         await channel.send(f"Removed users from table: {', '.join(removedPeople)}\nThis table was closed by the table owner. A new table can be created now.")
-        await self.tablemsgupdate()
+        await self.tablemsgupdate(itx)
         await itx.response.send_message("Closed successfully",ephemeral=True)
 
     @app_commands.command(name="newowner",description="Transfer your ownership, in case you'd want someone else to have it instead.")
     @app_commands.describe(user="Mention the user who you want to become the new owner.")
     async def tableNewOwner(self, itx: discord.Interaction, user: discord.Member):
-        global tableInfo
-        if len(tableInfo) == 0:
-            await itx.response.send_message("Couldn't find table data. Please wait 1 second.",ephemeral=True)
+        query = {"guild_id": itx.guild_id}
+        collection = RinaDB["tableInfo"]
+        tableInfo = collection.find(query)
+        try:
+            tableInfo = tableInfo[0]
+        except IndexError:
+            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         transfer = ""
         for table in tableInfo:
-            if type(tableInfo[table]) is int: continue
+            if type(tableInfo[table]) is not dict: continue
             for role in itx.user.roles:
                 if role.id == tableInfo[table]["owner"]:
                     transfer = table
@@ -1032,44 +1083,18 @@ async def on_error(event, *args, **kwargs):
     print('\n                   '.join([repr(i) for i in kwargs]))
     print(repr(event))
 
-def signal_handler(signal, frame):
-    # try to save files. if they haven't been loaded in yet (discord hasn't started on_read() yet;
-    # and the files are empty, don't save the empty variables into them!) Then exit the program using sys.exit(0)
-    print("📉 Disconnecting...")
-    if len(data) > 0:
-        json.dump(data, open(path+"data.json","w"))
-        print("Saved data file!")
-    else:
-        print("Couldn't save data (unsafe)! Not loaded in correctly!")
-
-    if len(tableInfo) > 0:
-        json.dump(tableInfo, open(path+"tableInfo.json","w"))
-        print("Saved table file!")
-    else:
-        print("Couldn't save table file (unsafe)! Not loaded in correctly!")
-
-    if len(reactionmsgs) > 0:
-        pickle.dump(reactionmsgs, open(path+"reactionmsgs.txt","wb"))
-        print("Saved reactionmsgs data!")
-    else:
-        print("Couldn't save reactionmsgs data (unsafe)! Not loaded in correctly!")
-
-    if len(guildInfo) > 0:
-        json.dump(guildInfo, open(path+"guildInfo.json","w"))
-        print("Saved guild info!")
-    else:
-        print("Couldn't save guildInfo (unsafe)! Not loaded in correctly!")
-
-
-    print("-=--- Finishing ---=-")
-    try:
-        sys.exit(0)
-    except RuntimeError as ru:
-        print("Excepted the runtime error, please ignore everything lol")
-        try:
-            sys.exit(0)
-        except:
-            print("double runtime error?")
-
-signal.signal(signal.SIGINT, signal_handler) #notice KeyboardInterrupt, and run closing code (save files and exit)
+# def signal_handler(signal, frame):
+#     # try to save files. if they haven't been loaded in yet (discord hasn't started on_read() yet;
+#     # and the files are empty, don't save the empty variables into them!) Then exit the program using sys.exit(0)
+#     print("📉 Disconnecting...")
+#     try:
+#         sys.exit(0)
+#     except RuntimeError as ru:
+#         print("Excepted the runtime error, please ignore everything lol")
+#         try:
+#             sys.exit(0)
+#         except:
+#             print("double runtime error?")
+#
+# signal.signal(signal.SIGINT, signal_handler) #notice KeyboardInterrupt, and run closing code (save files and exit)
 client.run(open('token.txt',"r").read())
