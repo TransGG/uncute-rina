@@ -163,7 +163,7 @@ def isAdmin(itx: discord.Interaction):
 @client.event
 async def on_ready():
     print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Logged in as {client.user}, in version {version}")
-    await client.tree.sync(guild = await client.fetch_guild(959551566388547676)) 
+    await client.tree.sync(guild = await client.fetch_guild(959551566388547676))
 
 @client.event
 async def on_message(message):
@@ -1077,16 +1077,16 @@ class Table(app_commands.Group):
 client.tree.add_command(Table())
 
 @client.event
-    async def on_error(event, *args, **kwargs):
-        import traceback, logging
-        #message = args[0]
-        msg =  ""
-        msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
-        msg += traceback.format_exc()
-        msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
-        msg += '\n\n                   '.join([repr(i) for i in kwargs])
-        #channel = await client.get_channel(981623359043407932)
-        print(f"{msg}")
+async def on_error(event, *args, **kwargs):
+    import traceback, logging
+    #message = args[0]
+    msg =  ""
+    msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
+    msg += traceback.format_exc()
+    msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
+    msg += '\n\n                   '.join([repr(i) for i in kwargs])
+    #channel = await client.get_channel(981623359043407932)
+    print(f"{msg}")
 
 # def signal_handler(signal, frame):
 #     # try to save files. if they haven't been loaded in yet (discord hasn't started on_read() yet;
