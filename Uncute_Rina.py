@@ -1,7 +1,10 @@
 # dumb code for cool version updates
 path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "0.3.0".split(".")
-version = open("version.txt", "r").read().split(".")
+fileVersion = "0.3.0.1".split(".")
+try:
+    version = open("version.txt", "r").read().split(".")
+except:
+    version = 0
 
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
@@ -338,7 +341,7 @@ async def on_voice_state_update(member, before, after):
             except KeyError:
                 pass #haven't edit the channel yet
             logChannel = client.get_channel(vcLog)
-            await logChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})", allowed_mentions=discord.AllowedMentions.none())
+            await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.name}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
 
 
 # Bot commands begin
@@ -591,15 +594,15 @@ async def editGuildInfo(itx: discord.Interaction, vc_hub: discord.VoiceChannel =
         # guildInfo[str(itx.guild_id)]["vcNoMic"] = vc_nomic.id
     await itx.response.send_message("Edited the settings.",ephemeral=True)
 
-# @client.tree.command(name="mention_esti_ping",description="Mention the Estian Ping role (piano concert!) (Esti only)")
-# async def mention_esti_ping(itx: discord.Interaction):
-#     if itx.user.id in [301126967992909855] or isAdmin(itx):
-#         channel = await client.get_channel(974107296894418974)
-#         await channel.send("<@&974200453552287784> Esti mentioned you!")
-#         ##################################################################
-#                                     OR
-#         ##################################################################
-#         itx.response.send_message("<@&974200453552287784> Esti mentioned you!")
+@client.tree.command(name="mention_esti_ping",description="Mention the Estian Ping role (piano concert!) (Esti only)")
+async def mention_esti_ping(itx: discord.Interaction):
+    if itx.user.id in [301126967992909855] or isAdmin(itx):
+        channel = await client.get_channel(974107296894418974)
+        await channel.send("<@&974200453552287784> Esti mentioned you!")
+        ##################################################################
+                                    OR
+        ##################################################################
+        itx.response.send_message("<@&974200453552287784> Esti mentioned you!")
 
 class Table(app_commands.Group):
     class TableButton(discord.ui.Button):
