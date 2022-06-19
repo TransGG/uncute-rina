@@ -59,7 +59,7 @@ post = {
 mongoURI = open("mongo.txt","r").read()
 cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
-collection = RinaDB["any"]
+# collection = RinaDB["any"]
 
 # collection.insert_one(post)
 
