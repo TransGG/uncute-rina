@@ -1,5 +1,5 @@
 # dumb code for cool version updates
-path = "./config/" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
+path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
 fileVersion = "0.2.8".split(".")
 version = open("version.txt", "r").read().split(".")
 
@@ -85,7 +85,6 @@ RinaDB = cluster["Rina"]
 #   permissions:
 #       send messages
 #       read channel history (find previous Table messages from a specific channel afaik)
-#       manage reactions on a message (anonymous vote) (disabled last time i edited this)
 #       create and delete voice channels
 #       move users between voice channels
 #       manage roles (for adding/removing table roles)
