@@ -4,7 +4,7 @@ fileVersion = "0.3.0.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
-    version = 0
+    version = "0.0"
 
 # version =     "0.1.10.2"
 for v in range(len(fileVersion)):
