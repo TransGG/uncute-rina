@@ -84,6 +84,7 @@ RinaDB = cluster["Rina"]
 #   message content intent,
 #   permissions:
 #       send messages
+#       attach files (for image of the member joining graph thing)
 #       read channel history (find previous Table messages from a specific channel afaik)
 #       create and delete voice channels
 #       move users between voice channels
@@ -155,7 +156,7 @@ def isAdmin(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or itx.id == 262913789375021056
+    return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
 
 # Client events begin
 
