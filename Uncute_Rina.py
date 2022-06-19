@@ -1,6 +1,6 @@
 # dumb code for cool version updates
 path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "0.3.0.1".split(".")
+fileVersion = "1.0.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
