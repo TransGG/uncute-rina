@@ -572,6 +572,7 @@ async def editGuildInfo(itx: discord.Interaction, vc_hub: discord.VoiceChannel =
 
     query = {"guild_id": itx.guild_id}
     collection = RinaDB["guildInfo"]
+    guildInfo = collection.find(query)
 
     if str(itx.guild.id) not in guildInfo:
         guildInfo[str(itx.guild_id)] = {}
