@@ -163,7 +163,7 @@ def isAdmin(itx: discord.Interaction):
 @client.event
 async def on_ready():
     print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Logged in as {client.user}, in version {version}")
-    await client.tree.sync(guild = await client.fetch_guild(959551566388547676))
+    await client.tree.sync()
 
 @client.event
 async def on_message(message):
@@ -753,8 +753,7 @@ class Table(app_commands.Group):
         if "message" not in tableInfo:
             print("Couldn't find message in tableInfo")
             return False
-        c = await client.fetch_channel(985931648094834801)
-        c.id = tableInfo["msgChannel"]
+        c = await client.fetch_channel(tableInfo["msgChannel"])
         msg = await c.fetch_message(tableInfo["message"])
         await msg.edit(embeds=[embed1,embed2],view=view)
 
