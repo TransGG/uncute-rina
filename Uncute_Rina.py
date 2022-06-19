@@ -529,7 +529,7 @@ async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
     if limit < 2 and limit != 0:
         await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2; or 0)",ephemeral=True)
         return
-    if limit > 999:
+    if limit > 99:
         await itx.response.send_message("I don't think you need to prepare for that many people... (max 999, or 0 for infinite)\nIf you need to, message Mia to change the limit",ephemeral=True)
         return
     if name == "Untitled voice chat":
