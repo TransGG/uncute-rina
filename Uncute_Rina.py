@@ -574,20 +574,20 @@ async def editGuildInfo(itx: discord.Interaction, vc_hub: discord.VoiceChannel =
     collection = RinaDB["guildInfo"]
     guildInfo = collection.find(query)
 
-    if str(itx.guild.id) not in guildInfo:
-        guildInfo[str(itx.guild_id)] = {}
+    # if str(itx.guild.id) not in guildInfo:
+    #     guildInfo[str(itx.guild_id)] = {}
     if vc_hub is not None:
         collection.update_one(query, {"$set":{"vcHub":vc_hub.id}}, upsert=True)
-        guildInfo[str(itx.guild_id)]["vcHub"] = vc_hub.id
+        # guildInfo[str(itx.guild_id)]["vcHub"] = vc_hub.id
     if vc_log is not None:
         collection.update_one(query, {"$set":{"vcLog":vc_log.id}}, upsert=True)
-        guildInfo[str(itx.guild_id)]["vcLog"] = vc_log.id
+        # guildInfo[str(itx.guild_id)]["vcLog"] = vc_log.id
     if vc_category is not None:
         collection.update_one(query, {"$set":{"vcCategory":vc_category.id}}, upsert=True)
-        guildInfo[str(itx.guild_id)]["vcCategory"] = vc_category.id
+        # guildInfo[str(itx.guild_id)]["vcCategory"] = vc_category.id
     if vc_nomic is not None:
         collection.update_one(query, {"$set":{"vcNoMic":vc_nomic.id}}, upsert=True)
-        guildInfo[str(itx.guild_id)]["vcNoMic"] = vc_nomic.id
+        # guildInfo[str(itx.guild_id)]["vcNoMic"] = vc_nomic.id
     await itx.response.send_message("Edited the settings.",ephemeral=True)
 
 class Table(app_commands.Group):
