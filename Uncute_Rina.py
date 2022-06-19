@@ -109,7 +109,7 @@ dataTemplate = {
     "totalMembers" :{    }, #todo
     "totalVerified":{    }}
 newVcs = {} # make your own vcs!
-last1984msg = 0
+# last1984msg = 0
 
 print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Program started")
 
@@ -167,23 +167,23 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    global last1984msg
+    # global last1984msg
     if message.author.bot:
         return
     #random cool commands
     # if message.content.startswith(":say "):
     #     await message.channel.send(message.content.split(" ",1)[1].replace("[[del]]",""))
     #     return
-    if ("1984" in message.content or "nineteeneightyfour" in message.content.lower().replace(" ","").replace("-","")) and "@" not in message.content:
-        if last1984msg > mktime(datetime.utcnow().timetuple())-10*60:
-            return
-        await message.reply(content="1984 is about a dictatorship where you are not allowed \
-to think your own thoughts, and any time you even think differently, the police come for you. \
-Our server is not like this as we give you freedom to think and do as you like, however, this \
-does not mean anarchy. Rules are in place to protect the users and ourselves from certain \
-consequences. **If you would like to know more, please read the book**\n\
-https://www.planetebook.com/1984/")
-        last1984msg = mktime(datetime.utcnow().timetuple())
+#     if ("1984" in message.content or "nineteeneightyfour" in message.content.lower().replace(" ","").replace("-","")) and "@" not in message.content:
+#         if last1984msg > mktime(datetime.utcnow().timetuple())-10*60:
+#             return
+#         await message.reply(content="1984 is about a dictatorship where you are not allowed \
+# to think your own thoughts, and any time you even think differently, the police come for you. \
+# Our server is not like this as we give you freedom to think and do as you like, however, this \
+# does not mean anarchy. Rules are in place to protect the users and ourselves from certain \
+# consequences. **If you would like to know more, please read the book**\n\
+# https://www.planetebook.com/1984/")
+#         last1984msg = mktime(datetime.utcnow().timetuple())
     if client.user.mention in message.content.split():
         if ((("cute" or "cutie" in message.content) and "not" in message.content) or "uncute" in message.content) and "not uncute" not in message.content:
             await message.add_reaction("<:this:960916817801535528>")
@@ -530,7 +530,7 @@ async def editVc(itx: discord.Interaction, name: str, limit: int = 0):
         await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2; or 0)",ephemeral=True)
         return
     if limit > 99:
-        await itx.response.send_message("I don't think you need to prepare for that many people... (max 999, or 0 for infinite)\nIf you need to, message Mia to change the limit",ephemeral=True)
+        await itx.response.send_message("I don't think you need to prepare for that many people... (max 99, or 0 for infinite)\nIf you need to, message Mia to change the limit",ephemeral=True)
         return
     if name == "Untitled voice chat":
         await itx.response.send_message("Are you really going to change it to that..",ephemeral=True)
@@ -590,6 +590,16 @@ async def editGuildInfo(itx: discord.Interaction, vc_hub: discord.VoiceChannel =
         collection.update_one(query, {"$set":{"vcNoMic":vc_nomic.id}}, upsert=True)
         # guildInfo[str(itx.guild_id)]["vcNoMic"] = vc_nomic.id
     await itx.response.send_message("Edited the settings.",ephemeral=True)
+
+# @client.tree.command(name="mention_esti_ping",description="Mention the Estian Ping role (piano concert!) (Esti only)")
+# async def mention_esti_ping(itx: discord.Interaction):
+#     if itx.user.id in [301126967992909855] or isAdmin(itx):
+#         channel = await client.get_channel(974107296894418974)
+#         await channel.send("<@&974200453552287784> Esti mentioned you!")
+#         ##################################################################
+#                                     OR
+#         ##################################################################
+#         itx.response.send_message("<@&974200453552287784> Esti mentioned you!")
 
 class Table(app_commands.Group):
     class TableButton(discord.ui.Button):
