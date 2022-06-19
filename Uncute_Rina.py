@@ -163,6 +163,7 @@ def isAdmin(itx: discord.Interaction):
 @client.event
 async def on_ready():
     print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Logged in as {client.user}, in version {version}")
+    await client.tree.sync(guild = await client.fetch_guild(959551566388547676)) 
 
 @client.event
 async def on_message(message):
@@ -184,7 +185,7 @@ consequences. **If you would like to know more, please read the book**\n\
 https://www.planetebook.com/1984/")
         last1984msg = mktime(datetime.utcnow().timetuple())
     if client.user.mention in message.content.split():
-        if ("not" in message.content or "uncute" in message.content) and "not uncute" not in message.content:
+        if ((("cute" or "cutie" in message.content) and "not" in message.content) or "uncute" in message.content) and "not uncute" not in message.content:
             await message.add_reaction("<:this:960916817801535528>")
         elif "cutie" in message.content or "cute" in message.content:
             responses = [
@@ -714,12 +715,13 @@ class Table(app_commands.Group):
                 await msg.delete()
             except:
                 warning = "Couldn't find a message to delete...\n"
-        await itx.response.send_message(warning+"Sent message successfully.",ephemeral=True)
+
         msg = await itx.channel.send(embeds=[embed1,embed2],view=view)#,components=components)
 
         collection.update_one(query, {"$set":{
             "msgChannel": msg.channel.id,
             "message"   : msg.id}}, upsert=True)
+        await itx.response.send_message(warning+"Sent message successfully.",ephemeral=True)
 
     async def tablemsgupdate(self, itx: discord.Interaction):
         query = {"guild_id": itx.guild_id}
@@ -835,8 +837,8 @@ class Table(app_commands.Group):
             "status":"new",
         }
         collection.update_one(query, {"$set":{"table"+id : tableData}}, upsert=True)
-        await itx.response.send_message(warning+f"┬─┬ ノ( ゜-゜ノ) Created `Table {id}` with category:<#{category.id}>, owner:<@&{owner.id}>, member:<@&{member.id}>, emoji:{emoji}",allowed_mentions=discord.AllowedMentions.none())
         await self.tablemsgupdate(itx)
+        await itx.response.send_message(warning+f"┬─┬ ノ( ゜-゜ノ) Created `Table {id}` with category:<#{category.id}>, owner:<@&{owner.id}>, member:<@&{member.id}>, emoji:{emoji}",allowed_mentions=discord.AllowedMentions.none())
 
     @admin.command(name="force_close",description="Force close a table, so a new group can start.")
     @app_commands.describe(id="Give the table number: \"1\" for \"Table 1\", eg.")
@@ -917,7 +919,6 @@ class Table(app_commands.Group):
             except TypeError: #probably the message/channel info
                 pass
         await itx.response.send_message(f"Finished command without any action, thus the id was likely incorrect",ephemeral=True)
-
 
     @app_commands.command(name="lock",description="Lock your table, so no new players can join.")
     async def tableLock(self, itx: discord.Interaction):
@@ -1076,14 +1077,16 @@ class Table(app_commands.Group):
 client.tree.add_command(Table())
 
 @client.event
-async def on_error(event, *args, **kwargs):
-    import traceback, logging
-    #message = args[0]
-    print(f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}")
-    logging.warning(traceback.format_exc())
-    print('\n          '.join([repr(i) for i in args])+"\n\n")
-    print('\n                   '.join([repr(i) for i in kwargs]))
-    print(repr(event))
+    async def on_error(event, *args, **kwargs):
+        import traceback, logging
+        #message = args[0]
+        msg =  ""
+        msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
+        msg += traceback.format_exc()
+        msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
+        msg += '\n\n                   '.join([repr(i) for i in kwargs])
+        #channel = await client.get_channel(981623359043407932)
+        print(f"{msg}")
 
 # def signal_handler(signal, frame):
 #     # try to save files. if they haven't been loaded in yet (discord hasn't started on_read() yet;
