@@ -137,13 +137,13 @@ def getTableStatus(table):
 def debug():
     return f"{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
 
-# def isVerified(itx: discord.Interaction):
-#     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
-#     return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
+def isVerified(itx: discord.Interaction):
+    roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
+    return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
 
-def isVerifier(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
+# def isVerifier(itx: discord.Interaction):
+#     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
+#     return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
 
 def isStaff(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
