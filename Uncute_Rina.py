@@ -316,7 +316,7 @@ async def on_voice_state_update(member, before, after):
             nomicChannel = client.get_channel(vcNoMic)
             await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
             logChannel = client.get_channel(vcLog)
-            await logChannel.send(content=f"{member.nick or member.name} joined voice channel {vc.id} (default name obv...).", allowed_mentions=discord.AllowedMentions.none())
+            await logChannel.send(content=f"{member.nick or member.name} joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
     if before.channel is None:
         print(debug()+f"{member} joined a (new) voice channel but wasn't in one before")
         return
