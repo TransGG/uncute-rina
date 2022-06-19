@@ -23,10 +23,10 @@ from discord.ext import commands # required for client bot making
 # from discord_slash.context import ComponentContext # button responses
 
 # from discord.utils import get #dunno what this is for tbh.
-import json # json used for settings files
-import pickle # pickle used for reactionmsgs file
-import signal # save files when receiving KeyboardInterrupt
-import sys # exit program after Keyboardinterrupt signal is noticed
+# import json # json used for settings files
+# import pickle # pickle used for reactionmsgs file
+# import signal # save files when receiving KeyboardInterrupt
+# import sys # exit program after Keyboardinterrupt signal is noticed
 
 
 import asyncio # used for asyncio.sleep() for debugging purposes (temporary, or at least, it should be- when i wrote this)
@@ -156,7 +156,7 @@ def isAdmin(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0
+    return len(set(roles).intersection(itx.user.roles)) > 0 or itx.id == 262913789375021056
 
 # Client events begin
 
@@ -941,6 +941,7 @@ class Table(app_commands.Group):
                 break
         if lockable == "":
             await itx.response.send_message("You aren't a table owner, thus can't lock this table!",ephemeral=True)
+            await self.tablemsgupdate(itx)
             return
         collection.update_one(query, {"$set":{f"{lockable}.status":"locked"}}, upsert=True)
 
