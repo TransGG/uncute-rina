@@ -296,12 +296,12 @@ async def on_raw_reaction_add(reaction):
 async def on_voice_state_update(member, before, after):
     global newVcs
     collection = RinaDB["guildInfo"]
-    query = {"guild_id": itx.guild_id}
+    query = {"guild_id": member.guild.id}
     guild = collection.find(query)
     try:
         guild = guild[0]
     except IndexError:
-        await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/editguildinfo`!",ephemeral=True)
+        print("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!")
         return
     vcHub      = guild["vcHub"]
     vcLog      = guild["vcLog"]
@@ -333,7 +333,7 @@ async def on_voice_state_update(member, before, after):
             await before.channel.delete()
             try:
                 del newVcs[before.channel.id]
-            except IndexError:
+            except KeyError:
                 pass #haven't edit the channel yet
             logChannel = client.get_channel(vcLog)
             await logChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})", allowed_mentions=discord.AllowedMentions.none())
