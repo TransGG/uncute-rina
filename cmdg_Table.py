@@ -513,6 +513,16 @@ class Table(commands.GroupCog, name="table"):
         await channel.send(f"This table's ownership was transferred from {itx.user.nick or itx.user.name} ({itx.user.id}) to {user.nick or user.name} ({user.id}).",allowed_mentions=discord.AllowedMentions.none())
         await itx.response.send_message(f"Ownership transferred successfully", allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
 
+    @app_commands.command(name="help", description="Get a bit of info about Table commands")
+    async def help(self, itx: discord.Interaction):
+        await itx.response.send_message("""This is a list of commands you can use for your table, as table owner:
+/table lock -- Stops people from joining your table
+/table unlock -- Lets new people join the table again
+/table close -- Removes the table role from everyone and closes the table
+/table newowner -- Give the table owner role to another player (you can't share it)
+/table admin (admin only commands): list,build,force_close,destroy,sendmsg\
+""",ephemeral=True)
+
 async def setup(client):
     # client.add_command("toneindicator")
     await client.add_cog(Table(client))

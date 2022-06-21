@@ -15,7 +15,7 @@ class MemberData(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    async def addToData(member, type):
+    async def addToData(self, member, type):
         collection = RinaDB["data"]
         query = {"guild_id": member.guild.id}
         data = collection.find(query)
@@ -36,15 +36,15 @@ class MemberData(commands.Cog):
         # print("Successfully added new data to "+repr(type))
 
     @commands.Cog.listener()
-    async def on_member_join(member):
+    async def on_member_join(self, member):
         await addToData(member,"joined")
 
     @commands.Cog.listener()
-    async def on_member_remove(member):
+    async def on_member_remove(self, member):
         await addToData(member,"left")
 
     @commands.Cog.listener()
-    async def on_member_update(before, after):
+    async def on_member_update(self, before, after):
         role = discord.utils.find(lambda r: r.name == 'Verified', before.guild.roles)
         if role not in before.roles and role in after.roles:
             await addToData(after,"verified")
