@@ -4,6 +4,8 @@ from discord.ext import commands # required for client bot making
 from utils import *
 from datetime import datetime, timedelta
 from time import mktime # for unix time code
+import matplotlib.pyplot as plt
+import pandas as pd
 
 import pymongo # for online database
 from pymongo import MongoClient
@@ -142,8 +144,6 @@ class MemberData(commands.Cog):
                 result[i][j]=results[i][j]
             results[i] = result[i]
 
-        import matplotlib.pyplot as plt
-        import pandas as pd
         try:
             d = {
                 "time": [i for i in results["joined"]],
