@@ -159,6 +159,7 @@ class MemberData(commands.Cog):
         except ValueError:
             await itx.followup.send(f"Your search was too big, maybe. It gave a ValueError and usually only does this \
 if the three arrays are not the same length (joined/left/verified) after being filled with 0s.. idk what to do/help you now so uh")
+            return
         # print(df)
         fig, (ax1) = plt.subplots(1,1)
         fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
