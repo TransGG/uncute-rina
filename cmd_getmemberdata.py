@@ -39,17 +39,17 @@ class MemberData(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        await addToData(member,"joined")
+        await self.addToData(member,"joined")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        await addToData(member,"left")
+        await self.addToData(member,"left")
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         role = discord.utils.find(lambda r: r.name == 'Verified', before.guild.roles)
         if role not in before.roles and role in after.roles:
-            await addToData(after,"verified")
+            await self.addToData(after,"verified")
 
     @app_commands.command(name="getmemberdata",description="See joined, left, and recently verified users in x days")
     @app_commands.describe(period="Get data from [period] days ago",
@@ -143,7 +143,7 @@ class MemberData(commands.Cog):
             for j in sorted(results[i]):
                 result[i][j]=results[i][j]
             results[i] = result[i]
-
+        # print(len(results["joined"]), len(results["left"]), len(results["verified"]))
         try:
             d = {
                 "time": [i for i in results["joined"]],
