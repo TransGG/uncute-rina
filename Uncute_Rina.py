@@ -1,6 +1,6 @@
 # dumb code for cool version updates
 path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "1.0.1".split(".")
+fileVersion = "1.0.1.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -178,9 +178,10 @@ async def on_message(message):
     #     await message.channel.send(message.content.split(" ",1)[1].replace("[[del]]",""))
     #     return
     if client.user.mention in message.content.split():
-        if ((("cute" or "cutie" in message.content) and "not" in message.content) or "uncute" in message.content) and "not uncute" not in message.content:
+        msg = message.content.lower()
+        if ((("cute" or "cutie" in msg) and "not" in msg) or "uncute" in msg) and "not uncute" not in msg:
             await message.add_reaction("<:this:960916817801535528>")
-        elif "cutie" in message.content or "cute" in message.content:
+        elif "cutie" in msg or "cute" in msg:
             responses = [
                 "I'm not cute >_<",
                 "Nyaa~",
