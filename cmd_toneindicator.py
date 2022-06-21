@@ -4,6 +4,9 @@ from discord.ext import commands # required for client bot making
 from utils import *
 
 class ToneIndicator(commands.Cog):
+    def __init__(self, client):
+        self.client = client
+
     @app_commands.command(name="toneindicator",description="Look for the definition of a tone indicator")
     @app_commands.describe(mode="Choose a search method, eg. /p -> platonic; or vice versa",
                            string="This is your search query. What do you want to look for?",
@@ -210,7 +213,7 @@ class ToneIndicator(commands.Cog):
         if result == False:
             resultStr += f"No information found for '{string}'...\nIf you believe this to be a mistake, message a staff member (ask for Mia)"
 
-        if len(resultStr.split("\n")) > 6:
+        if len(resultStr.split("\n")) > 6 and public:
             public = False
             resultStr += "\nDidn't send your message as public cause it would be spammy, having this many results."
         if len(resultStr) > 1999    :

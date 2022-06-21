@@ -14,7 +14,6 @@ RinaDB = cluster["Rina"]
 class MemberData(commands.Cog):
     def __init__(self, client):
         self.client = client
-        # self._last_member = None
 
     async def addToData(member, type):
         collection = RinaDB["data"]
