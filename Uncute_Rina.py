@@ -137,11 +137,11 @@ async def on_message(message):
         else:
             await message.channel.send("Pinging me is fine, and has no consequences, but ```cs\n[ Please don't do it with other bots on this server. ]```You may unintentionally catch the attention of / anger the staff team with it.\nPs: I have slash commands, and no, i'm not cute",delete_after=16)
 
-    if message.content.endswith("🥺"):
-        for reaction in ["😳","🥺","<:shy:964724545946800218>","👉","👈","<:bwushy:966885955346763867>","<:animeblush:968335608118378586>"]:
-
-            await message.add_reaction(reaction)
-        await message.channel.send(message.content)
+    # if message.content.endswith("🥺"):
+    #     for reaction in ["😳","🥺","<:shy:964724545946800218>","👉","👈","<:bwushy:966885955346763867>","<:animeblush:968335608118378586>"]:
+    #
+    #         await message.add_reaction(reaction)
+    #     await message.channel.send(message.content, allowed_mentions=discord.AllowedMentions.none())
 
     await client.process_commands(message)
 
