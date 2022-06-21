@@ -24,4 +24,4 @@ def isAdmin(itx: discord.Interaction):
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
 
 def debug():
-    return f"{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
+    return f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"

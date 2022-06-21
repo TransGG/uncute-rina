@@ -42,7 +42,6 @@ class Table(commands.GroupCog, name="table"):
             except IndexError:
                 await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
                 return
-            print(debug()+f"Button {self.custom_id} pressed by {itx.user}")
             if itx.message.id == tableInfo["message"]:
                 # check if user has a table role
                 # if user has no roles:
@@ -58,8 +57,7 @@ class Table(commands.GroupCog, name="table"):
                         #if you have a role of this table
                         if self.custom_id == tableId:
                             if role.id == table["owner"]:
-                                await itx.response.send_message(f"You can't leave this table because you are the owner. As owner, close table {table['id']} (/table close), or transfer the ownership to someone else (/table newowner <User>).",ephemeral=True)
-                                print(f"{itx.user} clicked {self.custom_id} but was already owner of Table {table['id']}")
+                                await itx.response.send_message(f"You can't leave this table because you are the owner. As owner,\n - close table {table['id']} (/table close), or\n - transfer the ownership to someone else (/table newowner <User>).",ephemeral=True)
                                 return
                             elif role.id == table["member"]:
                                 await itx.user.remove_roles(role,reason="Removed from table role after clicking on button.")
@@ -69,18 +67,15 @@ class Table(commands.GroupCog, name="table"):
                                 await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) left the table!", allowed_mentions=discord.AllowedMentions.none())
                                 # send message to clicker
                                 await itx.response.send_message(f"Successfully removed you from table {table['id']}",ephemeral=True)
-                                print(f"{itx.user} clicked {self.custom_id} and left Table {table['id']} because they were a member")
                                 return
                         #if you already have another table's role
                         if role.id == table["owner"] or role.id == table["member"]:
                             await itx.response.send_message(f"You can currently only join one table at a time. Leave Table {table['id']} first before you can join another!",ephemeral=True)
-                            print(f"{itx.user} clicked {self.custom_id} but were already in Table {table['id']}, so weren't given a role")
                             return #todo; let them join multiple tables
                 # doesn't have the role yet
                 table, tableId = [tableInfo[self.custom_id], self.custom_id]
                 if table["status"] == "new":
                     # give Member the table owner role; open table
-                    # tableInfo[tableId]["status"] = "open"
                     collection.update_one(query, {"$set":{f"{tableId}.status":"open"}}, upsert=True)
                     await Table.tablemsgupdate(Table, itx)
                     role = discord.utils.find(lambda r: r.id == table["owner"], itx.guild.roles)
@@ -92,7 +87,6 @@ class Table(commands.GroupCog, name="table"):
                     await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) joined the table as Table Owner", allowed_mentions=discord.AllowedMentions.none())
                     # send message to clicker
                     await itx.response.send_message(f"Successfully created and joined table {table['id']}",ephemeral=True)
-                    print(f"{itx.user} clicked {self.custom_id} so Table {table['id']} was created and the clicker was given the owner role")
                     return
                 elif table["status"] == "open":
                     # give Member the table member role
@@ -104,13 +98,10 @@ class Table(commands.GroupCog, name="table"):
                     await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) joined the table!", allowed_mentions=discord.AllowedMentions.none())
                     # send message to clicker
                     await itx.response.send_message(f"Successfully joined table {table['id']}",ephemeral=True)
-                    print(f"{itx.user} clicked {self.custom_id} and were added as member to Table {table['id']}.")
                     return
                 else:
                     await itx.response.send_message("I don't know how you did it.. But you can't join a locked table!",ephemeral=True)
-                    print(f"{itx.user} tried to join a locked table (Table {table['id']}).. somehow?")
                     return
-            print("It didn't make it through or something :(")
 
     async def tablemsg(self, itx: discord.Interaction,channel=None):
         query = {"guild_id": itx.guild_id}
