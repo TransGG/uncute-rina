@@ -1,36 +1,12 @@
-# dumb code for cool version updates
-path = "" # dunno if i should delete this. Could be used if your files are not in the same folder as this program.
-fileVersion = "1.0.1.1".split(".")
-try:
-    version = open("version.txt", "r").read().split(".")
-except:
-    version = ["0"]*len(fileVersion)
-
-# version =     "0.1.10.2"
-for v in range(len(fileVersion)):
-    if int(fileVersion[v]) > int(version[v]):
-        version = fileVersion + ["0"]
-        break
-else:
-    version[-1] = str(  int( version[-1] )+1  )
-version = '.'.join(version)
-open("version.txt","w").write(f"{version}")
-
 import discord # It's dangerous to go alone! Take this. /ref
 from discord import app_commands # v2.0, use slash commands
 from discord.ext import commands # required for client bot making
-# from discord_slash import SlashCommand, SlashContext # required for making slash commands
-# #from discord_slash.utils.manage_commands import create_permission # limit commands to roles/users
-# #from discord_slash.model import SlashCommandPermissionType # limit commands to roles/users
-# from discord_slash.utils.manage_commands import create_option, create_choice # set command argument limitations (string/int/bool)
-# from discord_slash.context import ComponentContext # button responses
-
+from utils import *
 # from discord.utils import get #dunno what this is for tbh.
 # import json # json used for settings files
 # import pickle # pickle used for reactionmsgs file
 # import signal # save files when receiving KeyboardInterrupt
 # import sys # exit program after Keyboardinterrupt signal is noticed
-
 
 import asyncio # used for asyncio.sleep() for debugging purposes (temporary, or at least, it should be- when i wrote this)
 
@@ -41,46 +17,9 @@ import random # for very uncute responses
 import pymongo # for online database
 from pymongo import MongoClient
 
-# mongoURI = open("mongo.txt","r").read()
-# cluster = MongoClient(mongoURI)
-# db = cluster["Rina"]
-# collection = db["Rina"]
-#
-# post = {"text": 1, "score": 1}
-# collection.insert_one(post)
-
-post = {
-        "guild_id":"960962996828516382",
-        "joined": {},
-        "left": {},
-        "verified": {},
-        "totalMembers": {},
-        "totalVerified": {}
-    }
-# for y in data[str(itx.guild_id)]:
-
 mongoURI = open("mongo.txt","r").read()
 cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
-# collection = RinaDB["any"]
-
-# collection.insert_one(post)
-
-# query = {"guild_id": "960962996828516382"}
-# guild = collection.find(query)
-# print(guild[0])
-# collection.update_one(query, {"$set":{"userid232":"timeunix334"}}, upsert=True)
-# ['_Cursor__collection', '_Cursor__collname', '_Cursor__data', '_Cursor__dbname',
-# '_Cursor__id',]
-
-# for result in user:
-#     score = result["score"]
-# score = score + 1
-# collection.update_one({"guild":1}, {"$set":{"score":score}})
-
-#
-
-#
 
 # Dependencies:
 #   server members intent,
@@ -92,6 +31,23 @@ RinaDB = cluster["Rina"]
 #       create and delete voice channels
 #       move users between voice channels
 #       manage roles (for adding/removing table roles)
+
+# dumb code for cool version updates
+fileVersion = "1.0.2".split(".")
+try:
+    version = open("version.txt", "r").read().split(".")
+except:
+    version = ["0"]*len(fileVersion)
+
+for v in range(len(fileVersion)):
+    if int(fileVersion[v]) > int(version[v]):
+        version = fileVersion + ["0"]
+        break
+else:
+    version[-1] = str(  int( version[-1] )+1  )
+version = '.'.join(version)
+open("version.txt","w").write(f"{version}")
+
 
 intents = discord.Intents.default()
 intents.members = True #apparently this needs to be additionally defined cause it's not included in Intents.default()?
@@ -114,7 +70,7 @@ dataTemplate = {
 newVcs = {} # make your own vcs!
 # last1984msg = 0
 
-print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Program started")
+print("                            <<<\n"*6+f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Program started")
 
 
 def getTableStatus(table):
@@ -141,32 +97,19 @@ def getTableStatus(table):
 def debug():
     return f"{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
 
-def isVerified(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
-
-# def isVerifier(itx: discord.Interaction):
-#     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
-#     return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
-
-def isStaff(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
-
-def isAdmin(itx: discord.Interaction):
-    roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
-
 # Client events begin
 
 @client.event
 async def on_ready():
+    # await client.load_extension("cmd_getmemberdata")
     print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Logged in as {client.user}, in version {version}")
-    await client.tree.sync()
+    # await client.tree.sync()
+
+@client.event
+async def setup_hook():
+    await client.load_extension("cmd_getmemberdata")
+    await client.load_extension("cmd_toneindicator")
+    print("setup_hook complete")
 
 @client.event
 async def on_message(message):
@@ -229,43 +172,13 @@ async def on_message(message):
         else:
             await message.channel.send("Pinging me is fine, and has no consequences, but ```cs\n[ Please don't do it with other bots on this server. ]```You may unintentionally catch the attention of / anger the staff team with it.\nPs: I have slash commands, and no, i'm not cute",delete_after=16)
 
+    if message.content.endswith("🥺"):
+        for reaction in ["😳","🥺","<:shy:964724545946800218>","👉","👈","<:bwushy:966885955346763867>","<:animeblush:968335608118378586>"]:
+
+            await message.add_reaction(reaction)
+        await message.channel.send(message.content)
+
     await client.process_commands(message)
-
-### Member data storing begins
-async def addToData(member, type):
-    collection = RinaDB["data"]
-    query = {"guild_id": member.guild.id}
-    data = collection.find(query)
-    try:
-        data = data[0]
-    except IndexError:
-        collection.insert_one(query)
-        data = collection.find(query)[0]
-    try:
-        #see if this user already has data, if so, add a new joining time to the list
-        data[type][str(member.id)].append(mktime(datetime.utcnow().timetuple()))
-    except IndexError:
-        data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
-    except KeyError:
-        data[type] = {}
-        data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
-    collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
-    # print("Successfully added new data to "+repr(type))
-
-@client.event
-async def on_member_join(member):
-    await addToData(member,"joined")
-
-@client.event
-async def on_member_remove(member):
-    await addToData(member,"left")
-
-@client.event
-async def on_member_update(before, after):
-    role = discord.utils.find(lambda r: r.name == 'Verified', before.guild.roles)
-    if role not in before.roles and role in after.roles:
-        await addToData(after,"verified")
-### Member data storing ends
 
 @client.event
 async def on_raw_reaction_add(reaction):
@@ -334,7 +247,6 @@ async def on_voice_state_update(member, before, after):
             logChannel = client.get_channel(vcLog)
             await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.name}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
 
-
 # Bot commands begin
 
 @client.tree.command(name="version",description="Get bot version")
@@ -348,141 +260,6 @@ async def updateCmds(itx: discord.Interaction):
         return
     await client.tree.sync()
     await itx.response.send_message(f"Updated slash-commands")
-
-@client.tree.command(name="getmemberdata",description="See joined, left, and recently verified users in x days")
-@app_commands.describe(period="Get data from [period] days ago",
-                       doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
-async def getMemberData(itx: discord.Interaction, period: str, doubles: str = "false"):
-    if not isStaff(itx):
-        await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
-        return
-    try:
-        period = float(period)
-        if period <= 0:
-            await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",hidden=True)
-            return
-    except ValueError:
-        await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",hidden=True)
-        return
-
-    values = {
-        0:["false",'0','n','no','nah','nope','never','nein',"don't"],
-        1:['true','1','y','ye','yes','okay','definitely','please']
-    }
-    for val in values:
-        if str(doubles).lower() in values[val]:
-            doubles = val
-    if doubles not in [0,1]:
-        await itx.response.send_message("Your value for Doubles is not a boolean or binary (true/1 or false/0)!",ephemeral=True)
-    accuracy = period*2400 #divide graph into 36 sections
-    period *= 86400 # days to seconds
-    # Get a list of people (in this server) that joined at certain times. Maybe round these to a certain factor (don't overstress the x-axis)
-    # These certain times are in a period of "now" and "[period] seconds ago"
-    totals = []
-    results = {}
-    currentTime = mktime(datetime.utcnow().timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
-    minTime = int((currentTime-period)/accuracy)*accuracy
-    maxTime = int(currentTime/accuracy)*accuracy
-
-    collection = RinaDB["data"]
-    query = {"guild_id": itx.guild_id}
-    data = collection.find(query)
-    try:
-        data = data[0]
-    except IndexError:
-        await itx.response.send_message("Not enough data is configured to do this action! Please hope someone joins sometime soon lol",ephemeral=True)
-        return
-
-    for y in data:
-        if type(data[y]) is not dict: continue
-        column = []
-        results[y] = {}
-        for member in data[y]:
-            for time in data[y][member]:
-                #if the current time minus the amount of seconds in every day in the period since now, is still older than more recent joins, append it
-                if currentTime-period < time:
-                    column.append(time)
-                    if doubles == 0:
-                        break
-        totals.append(len(column))
-        for time in range(len(column)):
-            column[time] = int(column[time]/accuracy)*accuracy
-            if column[time] in results[y]:
-                results[y][column[time]] += 1
-            else:
-                results[y][column[time]] = 1
-
-        #minTime = sorted(column)[0]
-        # minTime = int((currentTime-period)/accuracy)*accuracy
-        # maxTime = int(currentTime/accuracy)*accuracy
-        if len(column) == 0:
-            print(f"There were no '{y}' users found for this time period.")
-        else:
-            timeList = sorted(column)
-            if minTime > timeList[0]:
-                minTime = timeList[0]
-            if maxTime < timeList[-1]:
-                maxTime = timeList[-1]
-    minTimeDB = minTime
-    for y in data:
-        if type(data[y]) is not dict: continue
-        minTime = minTimeDB
-        # print(y)
-        # print(data[str(ctx.guild.id)][y])
-        while minTime < maxTime:
-            if minTime not in results[y]:
-                results[y][minTime] = 0
-            minTime += accuracy
-
-    result = {}
-    for i in results:
-        result[i] = {}
-        for j in sorted(results[i]):
-            result[i][j]=results[i][j]
-        results[i] = result[i]
-
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    try:
-        d = {
-            "time": [i for i in results["joined"]],
-            "joined":[results["joined"][i] for i in results["joined"]],
-            "left":[results["left"][i] for i in results["left"]],
-            "verified":[results["verified"][i] for i in results["verified"]]
-        }
-    except KeyError as ex:
-        await itx.response.send_message(f"{ex} did not have data, thus could not make the graph.", ephemeral=True)
-        return
-    df = pd.DataFrame(data=d)
-    # print(df)
-    fig, (ax1) = plt.subplots(1,1)
-    fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
-    fig.tight_layout(pad=1.0)
-    ax1.plot(df['time'], df["joined"], 'b')
-    ax1.plot(df['time'], df["left"], 'r')
-    ax1.plot(df['time'], df["verified"], 'g')
-    ax1.set_ylabel("# of players")
-
-    tickLoc = [i for i in df['time'][::3]]
-    if period/86400 <= 1:
-        tickDisp = [datetime.fromtimestamp(i).strftime('%H:%M') for i in tickLoc]
-    else:
-        tickDisp = [datetime.fromtimestamp(i).strftime('%Y-%m-%dT%H:%M') for i in tickLoc]
-
-    # plt.xticks(tickLoc, tickDisp, rotation='vertical')
-    # plt.setp(tickDisp, rotation=45, horizontalalignment='right')
-    ax1.set_xticks(tickLoc,
-            labels=tickDisp,
-            horizontalalignment = 'right',
-            minor=False,
-            rotation=30)
-    ax1.grid(visible=True, which='major', axis='both')
-    fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
-    plt.savefig('userJoins.png')
-    await itx.response.send_message(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",file=discord.File('userJoins.png') )
-
-    # print(results)
-    # await ctx.send(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",hidden=True)
 
 @client.tree.command(name="editvc",description="Edit your voice channel name or user limit")
 @app_commands.describe(name="Give your voice channel a name!",
@@ -603,227 +380,6 @@ async def editGuildInfo(itx: discord.Interaction, vc_hub: discord.VoiceChannel =
 # your own thoughts, which is drastically different from any situation that can arise on Discord.\n\n\
 # **More information:** <https://planetebook.com/1984>")
 #     await itx.response.send_message("Sent.",ephemeral=True)
-
-@client.tree.command(name="toneindicator",description="Look for the definition of a tone indicator")
-@app_commands.describe(mode="Choose a search method, eg. /p -> platonic; or vice versa",
-                       string="This is your search query. What do you want to look for?",
-                       public="Do you want to share the search results with the rest of the channel, or keep it hidden")
-@app_commands.choices(mode=[
-    discord.app_commands.Choice(name='definition', value=1),
-    discord.app_commands.Choice(name='exact acronym', value=2),
-    discord.app_commands.Choice(name='rough acronym', value=3),
-])
-async def toneindicator(itx: discord.Interaction, mode: int, string: str, public: bool = False):
-    toneIndicators = {
-        #
-        "excited" : ["/!","/exc"],
-        "alterous" : ["/a","/ars"],
-        "affectionate" : ["/a","/aff"],
-        "an order" : ["/ao"],
-        "ask to tag" : ["/att"],
-        "a vent" : ["/av"],
-        "at you" : ["/ay"],
-        "bitter / bitterly" : ["/b"],
-        "bragging / flex" : ["/br","/fx"],
-        "copypasta" : ["/c","/copy"],
-        "calm / calmly" : ["/calm"],
-        "clickbait" : ["/cb"],
-        "celebratory" : ["/cel"],
-        "coping joke" : ["/cj"],
-        "comforting" : ["/co","/cf"],
-        "concerned" : ["/co"],
-        "curious/curiously" : ["/curi"],
-        "content warning" : ["/cw"],
-        "direct" : ["/dir"],
-        "do not comment" : ["/dnc"],
-        "do not interract" : ["/dni"],
-        "educational" : ["/edu"],
-        "exageration" : ["/ex"],
-        "fake" : ["/f"],
-        "familial (affectionate)" : ["/fam"],
-        "fiction / fictional" : ["/fic"],
-        "flirting" : ["/fl"],
-        "gentle / gently" : ["/gentle"],
-        "genuine" : ["/gen","/genq","/g","/gq"],
-        "genuine suggestion" : ["/gs","/gens"],
-        "half-joking" : ["/hj"],
-        "half jokingly overreacting" : ["/hjov"],
-        "half serious" : ["/hsrs"],
-        "hyperbole" : ["/hyp","/hyb","/hy"],
-        "inside joke" : ["/ij"],
-        "irrelevant" : ["/irre"],
-        "information or informing" : ["/in","/info"],
-        "indirect" : ["/ind"],
-        "joke / joking" : ["/j"],
-        "just kidding" : ["/jk"],
-        "jokingly prideful" : ["/jpr"],
-        "half jokingly prideful" : ["/hjpr"],
-        "joke question" : ["/jq"],
-        "jokingly overreacting" : ["/jov"],
-        "just wondering" : ["/jw"],
-        "keysmash semhsakakeysmamshma" : ["/key"],
-        "lyrics" : ["/l","/ly","/lyr"],
-        "lying / not (telling) the truth" : ["/lying"],
-        "literally" : ["/li"],
-        "light-hearted" : ["/lh"],
-        "light-hearted sarcasm" : ["/lhs"],
-        "a little upset" : ["/lu"],
-        "lovingly" : ["/lv"],
-        "metaphorically / metaphor" : ["/m"],
-        "mad" : ["/m","/mad"],
-        "messing around" : ["/ma"],
-        "major joke" : ["/mj"],
-        "not a brag / flex" : ["/nabr","/nafx"],
-        "not an order" : ["/nao"],
-        "not a question / statement" : ["/naq","/st","/state"],
-        "not a vent" : ["/nav"],
-        "not at you" : ["/nay"],
-        "for when you're vagueposting or venting, but it's directed at nobody here (none of your followers)" : ["/nbh"],
-        "not being rude" : ["/nbr"],
-        "nobody specific" : ["/nbs"],
-        "nobody you know" : ["/nbyk"],
-        "not flirting" : ["/nfl"],
-        "negative connotation" : ["/neg","/nc"],
-        "neutral connotation" : ["/neu"],
-        "not fake" : ["/nf"],
-        "not forced to answer" : ["/nfta","/nf"],
-        "not flirting" : ["/nfl"],
-        "not mad" : ["/nm"],
-        "not mad at you, to specify that someone isnt mad at someone else" : ["/nmay"],
-        "not passive aggressive" : ["/npa"],
-        "not prideful" : ["/npr"],
-        "not subtweeting" : ["/nsb", "/nst"],
-        "non-sexual intent" : ["/nsx","/nx","/nsxs"],
-        "not mad" : ["/nm"],
-        "non-serious / not serious" : ["/nsrs"],
-        "not a serious question" : ["/nsrsq"],
-        "not yelling" : ["/ny"],
-        "observation" : ["/ob"],
-        "off topic" : ["/ot"],
-        "it's okay to ask for reassurance" : ["/otr"],
-        "it's okay to laugh" : ["/otl"],
-        "it's okay to interract" : ["/oti"],
-        "outraged" : ["/outr"],
-        "platonic" : ["/p"],
-        "passive aggressive" : ["/pa"],
-        "playful" : ["/pf"],
-        "playfully mad" : ["/pm"],
-        "prideful" : ["/pr"],
-        "half prideful" : ["/hpr"],
-        "passive agressive" : ["/pa"],
-        "please interract" : ["/pi"],
-        "please laugh" : ["/pl"],
-        "paraphrase" : ["/para"],
-        "positive connotation" : ["/pos","/pc"],
-        "quote" : ["/q"],
-        "queerplatonic" : ["/qp"],
-        "romantic" : ["/r"],
-        "random" : ["/ra"],
-        "reference" : ["/ref"],
-        "rhetorical question" : ["/rh","/rt","/rtq"],
-        "sarcastic / sarcasm / sarcastically" : ["/s","/sarc"],
-        "safe" : ["/safe"],
-        "for when you're vagueposting or venting, but it's directed at somebody here (x of your followers)" : ["/sbh"],
-        "subtweeting" : ["/sbtw"],
-        "serious" : ["/srs"],
-        "sexual intent" : ["/sx","/x","/xxx"],
-        "teasing" : ["/t"],
-        "tangent" : ["/tan"],
-        "threat" : ["/th"],
-        "tic, for when something typed out was unintentional due to being a tic" : ["/tic"],
-        "to self" : ["/ts"],
-        "trigger warning" : ["/tw"],
-        "upset" : ["/u"],
-        "unintentional" : ["/unin"],
-        "unrelated" : ["/unre"],
-        "vague" : ["/v","/vague"],
-        "very upset" : ["/vu"],
-        "warm / warmth" : ["/w"],
-    }
-
-    result = False
-    results = []
-    resultStr = ""
-    if mode == 1:
-        for key in toneIndicators:
-            if string.replace("-"," ") in key.replace("-"," "):
-                overlaps = []
-                overlapper = ""
-                for key1 in toneIndicators:
-                    if key == key1:
-                        continue
-                    for indicator1 in toneIndicators[key1]:
-                        if indicator1 in toneIndicators[key]:
-                            overlapper = indicator1
-                            overlaps.append(key1)
-                            break
-                results.append([key,toneIndicators[key],overlapper,overlaps])
-                result = True
-        if result == True:
-            resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} with '{string}' in:\n"
-        for x in results:
-            y=""
-            if len(x[3]) > 0:
-                y = f"\n   + {len(x[3])} overlapper{'s'*(len(x[3])>1)}:\n    [ {x[2]}: {', '.join(x[3])} ]"
-            resultStr += f"> \"{x[0]}\": {', '.join(x[1])}"+y+"\n"
-        # print(" > "+', '.join(toneIndicators[key]))
-    elif mode == 2:
-        for key in toneIndicators:
-            for indicator in toneIndicators[key]:
-                if string.replace("/","") == indicator.replace("/",""):
-                    results.append([indicator,key])
-                    result = True
-        if result == True:
-            resultStr += f"I found {len(results)} result{'s'*(len(results)>1)}:\n"
-        maxLen = 0
-        for x in results:
-            if len(x[0]) > maxLen:
-                maxLen = len(x[0])
-        for x in results:
-            resultStr += f"> '{x[0]}',{' '*(maxLen-len(x[0]))} meaning {x[1]}\n"
-    elif mode == 3:
-        for key in toneIndicators: # "lyrics" : ["/l","/ly","/lyr"]
-            for indicator in toneIndicators[key]: # ["/l","/ly","/lyr"]
-                if len(string.replace("/","")) > len(indicator.replace("/","")):
-                    continue
-                lastInd = 0
-                for strIndex in range(len(string.replace("/",""))): # "/lr" -> "lr" -> "l" "r"
-                    res = False
-                    for indIndex in range(lastInd,len(indicator)): # "/lyr", "/" "l" "y" "r"
-                        if string.replace("/","")[strIndex] == indicator[indIndex]:
-                            res = True
-                            lastInd = indIndex
-                            break
-                    if res == False:
-                        break
-                else:
-                    results.append([indicator,key])
-                    result = True
-        if result == True:
-            resultStr += f"I found {len(results)} result{'s'*(len(results)>1)}:\n"
-        maxLen = 0
-        for x in results:
-            if len(x[0]) > maxLen:
-                maxLen = len(x[0])
-        for x in results:
-            resultStr += f"> '{x[0]}',{' '*(maxLen-len(x[0]))} meaning {x[1]}\n"
-    if result == False:
-        resultStr += f"No information found for '{string}'...\nIf you believe this to be a mistake, message a staff member (ask for Mia)"
-
-    if len(resultStr.split("\n")) > 6:
-        public = False
-        resultStr += "\nDidn't send your message as public cause it would be spammy, having this many results."
-    await itx.response.send_message(resultStr,ephemeral=(public==False))
-
-
-#
-#     1984 is about a dictatorship where you are not allowed \
-# to think your own thoughts, and any time you even think differently, the police come for you. \
-# Our server is not like this as we give you freedom to think and do as you like, however, this \
-# does not mean anarchy. Rules are in place to protect the users and ourselves from certain \
-# consequences. **If you would like to know more, please read the book**\n\
-# https://www.planetebook.com/1984/")
-
 
 class Table(app_commands.Group):
     class TableButton(discord.ui.Button):
