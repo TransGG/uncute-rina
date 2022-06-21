@@ -230,6 +230,7 @@ async def on_error(event, *args, **kwargs):
     msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
     msg += traceback.format_exc()
     msg = msg.replace("Floris","Mia").replace("floris","mia")
+    msg = msg.replace("*","\*").replace("`","\`").replace("_","\_").replace("~~","\~\~")
     # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
     # msg += '\n\n                   '.join([repr(i) for i in kwargs])
     channel = await logGuild.fetch_channel(vcLog)
