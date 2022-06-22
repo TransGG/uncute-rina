@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.2.5".split(".")
+fileVersion = "1.0.2.6".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -73,7 +73,7 @@ async def setup_hook():
     await client.load_extension("cmd_getmemberdata")
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
-    # await client.tree.sync()
+    await client.tree.sync()
     print("command-loading (of files) complete")
 
 @client.event
