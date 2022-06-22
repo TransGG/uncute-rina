@@ -35,7 +35,7 @@ class MemberData(commands.Cog):
             data[type] = {}
             data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
         collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
-        # print(f"Successfully added new data for {member.name} to {repr(type)}")
+        debug(f"Successfully added new data for {member.name} to {repr(type)}",color="blue")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -117,7 +117,7 @@ class MemberData(commands.Cog):
                     results[y][column[time]] = 1
             if len(column) == 0:
                 warning += f"\nThere were no '{y}' users found for this time period."
-                print(warning)
+                debug(warning,color="light purple")
             else:
                 timeList = sorted(column)
                 if minTime > timeList[0]:
@@ -155,7 +155,6 @@ class MemberData(commands.Cog):
             await itx.followup.send(f"Your search was too big, maybe. It gave a ValueError and usually only does this if the three \
 arrays are not the same length (joined/left/verified) after being filled with 0s.. idk what to do/help you now so uh",ephemeral=True)
             return
-        # print(df)
         fig, (ax1) = plt.subplots(1,1)
         fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
         fig.tight_layout(pad=1.0)

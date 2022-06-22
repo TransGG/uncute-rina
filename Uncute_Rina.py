@@ -64,7 +64,7 @@ print("                            <<<\n"*6+f"[{datetime.now().strftime('%H:%M:%
 @client.event
 async def on_ready():
     # await client.load_extension("cmd_getmemberdata")
-    print(f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Logged in as {client.user}, in version {version}")
+    debug(f"Logged in as {client.user}, in version {version}",color="green")
     # await client.tree.sync()
 
 @client.event
@@ -74,7 +74,7 @@ async def setup_hook():
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
     await client.tree.sync()
-    print("command-loading (of files) complete")
+    debug("Loaded commands successfully",color="green")
 
 @client.event
 async def on_message(message):
@@ -223,7 +223,7 @@ async def on_error(event, *args, **kwargs):
     try:
         guild = guild[0]
     except IndexError:
-        print("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!")
+        debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
         return
     vcLog      = guild["vcLog"]
     #message = args[0]
@@ -235,7 +235,7 @@ async def on_error(event, *args, **kwargs):
     # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
     # msg += '\n\n                   '.join([repr(i) for i in kwargs])
     channel = await logGuild.fetch_channel(vcLog)
-    print(f"{msg}")
+    debug(f"{msg}",addTime=False)
     embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
     await channel.send("<@262913789375021056>", embed=embed, delete_after=60)
 
@@ -245,7 +245,7 @@ async def on_error(event, *args, **kwargs):
 #     print("📉 Disconnecting...")
 #     try:
 #         sys.exit(0)
-#     except RuntimeError as ru:
+#     except RuntimeError:
 #         print("Excepted the runtime error, please ignore everything lol")
 #         try:
 #             sys.exit(0)

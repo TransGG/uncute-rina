@@ -169,7 +169,6 @@ class ToneIndicator(commands.Cog):
                 if len(x[3]) > 0:
                     y = f"\n   + {len(x[3])} overlapper{'s'*(len(x[3])>1)}:\n    [ {x[2]}: {', '.join(x[3])} ]"
                 resultStr += f"> \"{x[0]}\": {', '.join(x[1])}"+y+"\n"
-            # print(" > "+', '.join(toneIndicators[key]))
         elif mode == 2:
             for key in toneIndicators:
                 for indicator in toneIndicators[key]:

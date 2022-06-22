@@ -137,7 +137,7 @@ class Table(commands.GroupCog, name="table"):
             itx.channel_id, itx.channel.id = [channel.id,channel.id]
         warning = ""
         if "message" in tableInfo:
-            print(f"I am looking for {tableInfo['message']}, most likely in {tableInfo['msgChannel']}")
+            debug(f"I am looking for {tableInfo['message']}, most likely in {tableInfo['msgChannel']}",color="blue")
             # await itx.response.defer(ephemeral=True)
             try:
                 c = itx.guild.text_channels[0]
@@ -182,7 +182,7 @@ class Table(commands.GroupCog, name="table"):
                         custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"])))
 
         if "message" not in tableInfo:
-            print("Couldn't find message in tableInfo")
+            debug("Couldn't find message in tableInfo (update)",color="yellow")
             return False
         c = await itx.guild.fetch_channel(tableInfo["msgChannel"])
         msg = await c.fetch_message(tableInfo["message"])
@@ -312,7 +312,7 @@ class Table(commands.GroupCog, name="table"):
                 await member.remove_roles(memberRole)
                 removedPeople.append(f"{member.name or member.nick} ({member.id})")
         except TypeError:
-            print(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?")
+            debug(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?",color="yellow")
 
         collection.update_one(query, {"$set":{f"{closable}.status":"new"}}, upsert=True)
         # tableInfo[closable]["status"] = "new"
@@ -454,7 +454,7 @@ class Table(commands.GroupCog, name="table"):
                 await member.remove_roles(memberRole)
                 removedPeople.append(f"{member.name or member.nick} ({member.id})")
         except TypeError:
-            print(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?")
+            debug(f"Tried to remove all members from table {tableInfo[closable]['id']}, but there were none maybe?",color="yellow")
 
         collection.update_one(query, {"$set":{f"{closable}.status":"new"}}, upsert=True)
         # send update message in table chat

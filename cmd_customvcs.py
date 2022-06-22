@@ -26,7 +26,7 @@ class CustomVcs(commands.Cog):
         try:
             guild = guild[0]
         except IndexError:
-            print("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!")
+            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
             return
         vcHub      = guild["vcHub"]
         vcLog      = guild["vcLog"]
@@ -84,7 +84,7 @@ class CustomVcs(commands.Cog):
             await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)\n  (This project is still in early stages, if you think this is an error, please message MysticMia#7612)",ephemeral=True) #todo
             return
         if itx.user.voice is None:
-            print(debug()+f"{itx.user} tried to make a new vc channel but isn't connected to a voice channel")
+            debug(f"{itx.user} tried to make a new vc channel but isn't connected to a voice channel",color="yellow")
             await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
             return
         channel = itx.user.voice.channel
