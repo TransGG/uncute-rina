@@ -35,7 +35,7 @@ class MemberData(commands.Cog):
             data[type] = {}
             data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
         collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
-        # print("Successfully added new data to "+repr(type))
+        # print(f"Successfully added new data for {member.name} to {repr(type)}")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -82,6 +82,7 @@ class MemberData(commands.Cog):
         # These certain times are in a period of "now" and "[period] seconds ago"
         totals = []
         results = {}
+        warning = ""
         currentTime = mktime(datetime.utcnow().timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
         minTime = int((currentTime-period)/accuracy)*accuracy
         maxTime = int(currentTime/accuracy)*accuracy
@@ -114,12 +115,9 @@ class MemberData(commands.Cog):
                     results[y][column[time]] += 1
                 else:
                     results[y][column[time]] = 1
-
-            #minTime = sorted(column)[0]
-            # minTime = int((currentTime-period)/accuracy)*accuracy
-            # maxTime = int(currentTime/accuracy)*accuracy
             if len(column) == 0:
-                print(f"There were no '{y}' users found for this time period.")
+                warning += f"\nThere were no '{y}' users found for this time period."
+                print(warning)
             else:
                 timeList = sorted(column)
                 if minTime > timeList[0]:
@@ -130,20 +128,17 @@ class MemberData(commands.Cog):
         for y in data:
             if type(data[y]) is not dict: continue
             minTime = minTimeDB
-            # print(y)
-            # print(data[str(ctx.guild.id)][y])
-            while minTime < maxTime:
+            while minTime <= maxTime:
                 if minTime not in results[y]:
                     results[y][minTime] = 0
                 minTime += accuracy
-
         result = {}
         for i in results:
             result[i] = {}
             for j in sorted(results[i]):
                 result[i][j]=results[i][j]
             results[i] = result[i]
-        # print(len(results["joined"]), len(results["left"]), len(results["verified"]))
+
         try:
             d = {
                 "time": [i for i in results["joined"]],
@@ -157,8 +152,8 @@ class MemberData(commands.Cog):
         try:
             df = pd.DataFrame(data=d)
         except ValueError:
-            await itx.followup.send(f"Your search was too big, maybe. It gave a ValueError and usually only does this \
-if the three arrays are not the same length (joined/left/verified) after being filled with 0s.. idk what to do/help you now so uh")
+            await itx.followup.send(f"Your search was too big, maybe. It gave a ValueError and usually only does this if the three \
+arrays are not the same length (joined/left/verified) after being filled with 0s.. idk what to do/help you now so uh",ephemeral=True)
             return
         # print(df)
         fig, (ax1) = plt.subplots(1,1)
@@ -185,7 +180,7 @@ if the three arrays are not the same length (joined/left/verified) after being f
         ax1.grid(visible=True, which='major', axis='both')
         fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
         plt.savefig('userJoins.png')
-        await itx.followup.send(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)",file=discord.File('userJoins.png') )
+        await itx.followup.send(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png') )
 
 
 async def setup(client):

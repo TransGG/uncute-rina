@@ -73,7 +73,7 @@ async def setup_hook():
     await client.load_extension("cmd_getmemberdata")
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
-    await client.tree.sync()
+    # await client.tree.sync()
     print("command-loading (of files) complete")
 
 @client.event
@@ -186,6 +186,7 @@ async def updateCmds(itx: discord.Interaction, reload: bool = False):
         await client.reload_extension("cmd_getmemberdata")
         await client.reload_extension("cmd_toneindicator")
         await client.reload_extension("cmdg_Table")
+        await client.reload_extension("cmd_customvcs")
         await itx.response.send_message("Reloaded successfully")
         return
 
