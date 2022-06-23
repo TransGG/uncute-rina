@@ -54,28 +54,18 @@ class MemberData(commands.Cog):
     @app_commands.command(name="getmemberdata",description="See joined, left, and recently verified users in x days")
     @app_commands.describe(period="Get data from [period] days ago",
                            doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
-    async def getMemberData(self, itx: discord.Interaction, period: str, doubles: str = "false"):
+    async def getMemberData(self, itx: discord.Interaction, period: str, doubles: bool = False, hidden: bool = True):
         if not isStaff(itx):
             await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
             return
         try:
             period = float(period)
             if period <= 0:
-                await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",hidden=True)
+                await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",ephemeral=True)
                 return
         except ValueError:
-            await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",hidden=True)
+            await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",ephemeral=True)
             return
-
-        values = {
-            0:["false",'0','n','no','nah','nope','never','nein',"don't"],
-            1:['true','1','y','ye','yes','okay','definitely','please']
-        }
-        for val in values:
-            if str(doubles).lower() in values[val]:
-                doubles = val
-        if doubles not in [0,1]:
-            await itx.response.send_message("Your value for Doubles is not a boolean or binary (true/1 or false/0)!",ephemeral=True)
         accuracy = period*2400 #divide graph into 36 sections
         period *= 86400 # days to seconds
         # Get a list of people (in this server) that joined at certain times. Maybe round these to a certain factor (don't overstress the x-axis)
@@ -96,7 +86,7 @@ class MemberData(commands.Cog):
             await itx.response.send_message("Not enough data is configured to do this action! Please hope someone joins sometime soon lol",ephemeral=True)
             return
 
-        await itx.response.defer()
+        await itx.response.defer(ephemeral=hidden)
         for y in data:
             if type(data[y]) is not dict: continue
             column = []
@@ -106,7 +96,7 @@ class MemberData(commands.Cog):
                     #if the current time minus the amount of seconds in every day in the period since now, is still older than more recent joins, append it
                     if currentTime-period < time:
                         column.append(time)
-                        if doubles == 0:
+                        if not doubles:
                             break
             totals.append(len(column))
             for time in range(len(column)):
@@ -117,7 +107,7 @@ class MemberData(commands.Cog):
                     results[y][column[time]] = 1
             if len(column) == 0:
                 warning += f"\nThere were no '{y}' users found for this time period."
-                debug(warning,color="light purple")
+                debug(warning[1:],color="light purple")
             else:
                 timeList = sorted(column)
                 if minTime > timeList[0]:
@@ -147,21 +137,20 @@ class MemberData(commands.Cog):
                 "verified":[results["verified"][i] for i in results["verified"]]
             }
         except KeyError as ex:
-            await itx.followup.send(f"{ex} did not have data, thus could not make the graph.", ephemeral=True)
+            await itx.followup.send(f"{ex} did not have data, thus could not make the graph.")
             return
-        try:
-            df = pd.DataFrame(data=d)
-        except ValueError:
-            await itx.followup.send(f"Your search was too big, maybe. It gave a ValueError and usually only does this if the three \
-arrays are not the same length (joined/left/verified) after being filled with 0s.. idk what to do/help you now so uh",ephemeral=True)
-            return
+        df = pd.DataFrame(data=d)
         fig, (ax1) = plt.subplots(1,1)
         fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
         fig.tight_layout(pad=1.0)
         ax1.plot(df['time'], df["joined"], 'b')
         ax1.plot(df['time'], df["left"], 'r')
         ax1.plot(df['time'], df["verified"], 'g')
-        ax1.set_ylabel("# of players")
+        if doubles:
+            reText = "exc"
+        else:
+            reText = "inc"
+        ax1.set_ylabel(f"# of members ({reText}. rejoins/-leaves/etc)")
 
         tickLoc = [i for i in df['time'][::3]]
         if period/86400 <= 1:
