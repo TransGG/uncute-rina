@@ -58,7 +58,7 @@ class CustomVcs(commands.Cog):
                 except KeyError:
                     pass #haven't edit the channel yet
                 logChannel = member.guild.get_channel(vcLog)
-                await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.name}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
+                await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
 
 
     @app_commands.command(name="editvc",description="Edit your voice channel name or user limit")
