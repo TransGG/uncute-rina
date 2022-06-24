@@ -10,7 +10,7 @@ class ToneIndicator(commands.Cog):
     @app_commands.command(name="toneindicator",description="Look for the definition of a tone indicator")
     @app_commands.describe(mode="Choose a search method, eg. /p -> platonic; or vice versa",
                            string="This is your search query. What do you want to look for?",
-                           public="Do you want to share the search results with the rest of the channel, or keep it hidden")
+                           public="Do you want to share the search results with the rest of the channel? (True=yes)")
     @app_commands.choices(mode=[
         discord.app_commands.Choice(name='definition', value=1),
         discord.app_commands.Choice(name='exact acronym', value=2),
@@ -162,7 +162,7 @@ class ToneIndicator(commands.Cog):
                                 break
                     results.append([key,toneIndicators[key],overlapper,overlaps])
                     result = True
-            if result == True:
+            if result:
                 resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} with '{string}' in:\n"
             for x in results:
                 y=""
@@ -175,7 +175,7 @@ class ToneIndicator(commands.Cog):
                     if string.replace("/","") == indicator.replace("/",""):
                         results.append([indicator,key])
                         result = True
-            if result == True:
+            if result:
                 resultStr += f"I found {len(results)} result{'s'*(len(results)>1)}:\n"
             maxLen = 0
             for x in results:
@@ -201,7 +201,7 @@ class ToneIndicator(commands.Cog):
                     else:
                         results.append([indicator,key])
                         result = True
-            if result == True:
+            if result:
                 resultStr += f"I found {len(results)} result{'s'*(len(results)>1)}:\n"
             maxLen = 0
             for x in results:
@@ -209,7 +209,7 @@ class ToneIndicator(commands.Cog):
                     maxLen = len(x[0])
             for x in results:
                 resultStr += f"> '{x[0]}',{' '*(maxLen-len(x[0]))} meaning {x[1]}\n"
-        if result == False:
+        if not result:
             resultStr += f"No information found for '{string}'...\nIf you believe this to be a mistake, message a staff member (ask for Mia)"
 
         if len(resultStr.split("\n")) > 6 and public:

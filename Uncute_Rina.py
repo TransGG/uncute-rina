@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.2.7".split(".")
+fileVersion = "1.0.3.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -71,6 +71,7 @@ async def on_ready():
 async def setup_hook():
     await client.load_extension("cmd_customvcs")
     await client.load_extension("cmd_getmemberdata")
+    await client.load_extension("cmd_termdictionary")
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
     await client.tree.sync()
@@ -132,8 +133,7 @@ async def on_message(message):
             respond = random.choice(responses)
             if respond == "BAD!":
                 await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
-            #fix mention permissions # todo
-            await message.channel.send(respond)
+            await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
         else:
             await message.channel.send("Pinging me is fine, and has no consequences, but ```cs\n[ Please don't do it with other bots on this server. ]```You may unintentionally catch the attention of / anger the staff team with it.\nPs: I have slash commands, and no, i'm not cute",delete_after=16)
 
@@ -183,17 +183,18 @@ async def updateCmds(itx: discord.Interaction, reload: bool = False):
         await itx.response.send_message("Updated slash-commands")
         return
     else:
+        await client.reload_extension("cmd_customvcs")
         await client.reload_extension("cmd_getmemberdata")
+        await client.reload_extension("cmd_termdictionary")
         await client.reload_extension("cmd_toneindicator")
         await client.reload_extension("cmdg_Table")
-        await client.reload_extension("cmd_customvcs")
         await itx.response.send_message("Reloaded successfully")
         return
 
 # @client.tree.command(name="send1984",description="Send annoying message")
 # async def send1984(itx: discord.Interaction):
 #     if not isStaff(itx):
-#         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy) (it would be too spammy otherwise)",ephemeral=True) #todo
+#         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy) (it would be too spammy otherwise)",ephemeral=True)
 #         return
 # #     if ("1984" in message.content or "nineteeneightyfour" in message.content.lower().replace(" ","").replace("-","")) and "@" not in message.content:
 # #         if last1984msg > mktime(datetime.utcnow().timetuple())-10*60:
