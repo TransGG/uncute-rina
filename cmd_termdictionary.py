@@ -15,20 +15,21 @@ class TermDictionary(commands.Cog):
 
     @app_commands.command(name="dictionary",description="Look for the definition of a trans-related term!")
     @app_commands.describe(term="This is your search query. What do you want to look for?",
-                           mode="Where do you want to search",
+                           # mode="Where do you want to search",
                            public="Do you want to share the search results with the rest of the channel? (True=yes)")
     @app_commands.choices(mode=[
-            discord.app_commands.Choice(name='Search from custom dictionary', value=1),
+            discord.app_commands.Choice(name='Search from custom dictionary', value=3),
             discord.app_commands.Choice(name='Search from en.pronouns.page', value=2),
         ])
-    async def dictionary(self, itx: discord.Interaction, term: str, mode: int, public: bool = False):
+    async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, mode: int = 1):
         def simplify(q):
             if type(q) is str:
                 return q.lower().replace(" ","").replace("-","").replace("_","")
             if type(q) is list:
                 return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
 
-        if mode == 1:
+        # test if mode has been left unset or if mode has been selected: decides whether or not to move to the online API search or not.
+        if mode == 1 or mode == 3:
             collection = RinaDB["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
@@ -52,17 +53,22 @@ class TermDictionary(commands.Cog):
                     results.append([item["term"],item["definition"],overlapper,overlaps])
                     result = True
             if result == True:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} with '{term}' in:\n"
+                resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} for '{term}' in our dictionary:\n"
                 for x in results:
                     # y=""
                     # if len(x[3]) > 0:
                     #     y = f"\n   + {len(x[3])} overlapper{'s'*(len(x[3])>1)}:\n    [ {x[2]}: {', '.join(x[3])} ]"
                     resultStr += f"> {x[0]}: {x[1]}\n"
             else:
+                # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
+                #Otherwise, it will return the 'not found' result of the term, and end the function.
+                if mode == 3:
+                    mode = 2
                 #public = False
-                resultStr += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (ask for Mia)"
-                debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary, but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
-                await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary, but it yielded no results. Maybe we should add this term to the /dictionary command")
+                else:
+                    resultStr += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use /define)"
+                    debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
+                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command")
             if len(resultStr.split("\n")) > 3 and public:
                 public = False
                 resultStr += "\nDidn't send your message as public cause it would be spammy, having this many results."
@@ -87,7 +93,7 @@ class TermDictionary(commands.Cog):
                 if simplify(term) in simplify(item['term'].split('|')):
                     results.append(item)
             if len(results) > 0:
-                resultStr = f"{len(results)} exact results found on en.pronouns.page for '{term}'! \n"
+                resultStr = f"I found {len(results)} exact result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! \n"
                 for item in results:
                     resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
                 resultStr += f"{len(search)-len(results)} other results found."*((len(search)-len(results))>0)

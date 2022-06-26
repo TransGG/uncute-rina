@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.3.0".split(".")
+fileVersion = "1.0.4.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -173,17 +173,17 @@ async def botVersion(itx: discord.Interaction):
     await itx.response.send_message(f"Bot is currently running on v{version}")
 
 @client.tree.command(name="update",description="Update slash-commands")
-@app_commands.describe(reload="Reload commands or update all?", MiaBot="Is this for mia's testing bot or the main server")
-async def updateCmds(itx: discord.Interaction, reload: bool = False, MiaBot: bool = False):
+@app_commands.describe(reload="Reload commands or update all?", miabot="Is this for mia's testing bot or the main server")
+async def updateCmds(itx: discord.Interaction, reload: bool = False, miabot: bool = False):
     if not isStaff(itx):
         await itx.response.send_message("Only Staff can update the slash commands", ephemeral=True)
         return
     if not reload:
-        if MiaBot:
+        if miabot:
             await client.tree.sync(guild=itx.guild)
         else:
             await client.tree.sync()
-        await itx.response.send_message(f"Updated slash-commands {'guild-only'*MiaBot}")
+        await itx.response.send_message(f"Updated slash-commands {'guild-only'*miabot}")
         return
     else:
         await client.reload_extension("cmd_customvcs")

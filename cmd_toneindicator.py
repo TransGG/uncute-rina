@@ -163,11 +163,11 @@ class ToneIndicator(commands.Cog):
                     results.append([key,toneIndicators[key],overlapper,overlaps])
                     result = True
             if result:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} with '{string}' in:\n"
+                resultStr += f"I found {len(results)} result{'s'*(len(results)!=1)} with '{string}' in:\n"
             for x in results:
                 y=""
                 if len(x[3]) > 0:
-                    y = f"\n   + {len(x[3])} overlapper{'s'*(len(x[3])>1)}:\n    [ {x[2]}: {', '.join(x[3])} ]"
+                    y = f"\n   + {len(x[3])} overlapper{'s'*(len(x[3])!=1)}:\n    [ {x[2]}: {', '.join(x[3])} ]"
                 resultStr += f"> \"{x[0]}\": {', '.join(x[1])}"+y+"\n"
         elif mode == 2:
             for key in toneIndicators:
@@ -176,7 +176,7 @@ class ToneIndicator(commands.Cog):
                         results.append([indicator,key])
                         result = True
             if result:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)>1)}:\n"
+                resultStr += f"I found {len(results)} result{'s'*(len(results)!=1)}:\n"
             maxLen = 0
             for x in results:
                 if len(x[0]) > maxLen:
@@ -202,7 +202,7 @@ class ToneIndicator(commands.Cog):
                         results.append([indicator,key])
                         result = True
             if result:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)>1)}:\n"
+                resultStr += f"I found {len(results)} result{'s'*(len(results)!=1)}:\n"
             maxLen = 0
             for x in results:
                 if len(x[0]) > maxLen:
