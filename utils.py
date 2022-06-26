@@ -4,6 +4,9 @@ from discord.ext import commands # required for client bot making
 from datetime import datetime, timedelta
 import warnings #used to warn for invalid color thingy in the debug function
 
+import pymongo # for online database
+from pymongo import MongoClient
+
 def isVerified(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
     return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
@@ -62,3 +65,19 @@ def debug(text="", color="default", addTime=True):
     else:
         time = colors[color]
     print(f"{time}{text}{colors['default']}")
+
+async def logMsg(_guild, msg: str):
+    mongoURI = open("mongo.txt","r").read()
+    cluster = MongoClient(mongoURI)
+    RinaDB = cluster["Rina"]
+    collection = RinaDB["guildInfo"]
+    query = {"guild_id": _guild.id}
+    guild = collection.find(query)
+    try:
+        guild = guild[0]
+    except IndexError:
+        debug("Not enough data is configured to log a message in the logging channel! Please fix this with `/editguildinfo`!",color="red")
+        return
+    vcLog = guild["vcLog"]
+    logChannel = _guild.get_channel(vcLog)
+    await logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())

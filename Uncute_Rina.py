@@ -74,7 +74,7 @@ async def setup_hook():
     await client.load_extension("cmd_termdictionary")
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
-    await client.tree.sync()
+    # await client.tree.sync()
     debug("Loaded commands successfully",color="green")
 
 @client.event
@@ -129,7 +129,7 @@ async def on_message(message):
                 "You're also part of the cuties set",
                 "https://cdn.discordapp.com/emojis/920918513969950750.webp?size=4096&quality=lossless",
                 "[Checks machine]; Huh? Is my lie detector broken? I should fix that..",
-                "Hey, you should be talking about yourself first! After all, how do you keep up with being such a cute girl all the time?"]
+                "Hey, you should be talking about yourself first! After all, how do you keep up with being such a cutie all the time?"]
             respond = random.choice(responses)
             if respond == "BAD!":
                 await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
@@ -173,14 +173,17 @@ async def botVersion(itx: discord.Interaction):
     await itx.response.send_message(f"Bot is currently running on v{version}")
 
 @client.tree.command(name="update",description="Update slash-commands")
-@app_commands.describe(reload="Reload commands or update all?")
-async def updateCmds(itx: discord.Interaction, reload: bool = False):
+@app_commands.describe(reload="Reload commands or update all?", MiaBot="Is this for mia's testing bot or the main server")
+async def updateCmds(itx: discord.Interaction, reload: bool = False, MiaBot: bool = False):
     if not isStaff(itx):
         await itx.response.send_message("Only Staff can update the slash commands", ephemeral=True)
         return
     if not reload:
-        await client.tree.sync()
-        await itx.response.send_message("Updated slash-commands")
+        if MiaBot:
+            await client.tree.sync(guild=itx.guild)
+        else:
+            await client.tree.sync()
+        await itx.response.send_message(f"Updated slash-commands {'guild-only'*MiaBot}")
         return
     else:
         await client.reload_extension("cmd_customvcs")

@@ -163,5 +163,4 @@ class CustomVcs(commands.Cog):
         await itx.response.send_message("Edited the settings.",ephemeral=True)
 
 async def setup(client):
-    # client.add_command("toneindicator")
     await client.add_cog(CustomVcs(client))
