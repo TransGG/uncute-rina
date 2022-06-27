@@ -121,8 +121,14 @@ class TermDictionary(commands.Cog):
             # if search doesn't exactly match with a result / synonym
             resultStr = f"{len(search)} results found on en.pronouns.page for '{term}'! "
             if len(search) > 2:
-                resultStr += "Here is a list to make your search more specific:\n> "
-                resultStr += ', '.join([ item["term"] for item in search ])
+                resultStr += "Here is a list to make your search more specific. Square brackets means they are synonyms:\n> "
+                results = []
+                for item in search:
+                    temp =  item['term']
+                    if "|" in temp:
+                        temp = "["  +  ', '.join(temp.split("|"))  +  "]"
+                    results.append(temp)
+                resultStr += ', '.join([i for i in results])
                 public = False
             elif len(search) > 0:
                 resultStr += "\n"
@@ -135,7 +141,9 @@ class TermDictionary(commands.Cog):
                     debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
                     await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)")
             if len(resultStr) > 1999:
-                resultStr = f"Your search ('{term}') returned too many results (discord has a 2000-character message length D:). Please search more specifically."
+                public = False
+                resultStr = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length D:). Please search more specifically.\n\
+Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
             #print(response_API.status_code)
         await itx.response.send_message(resultStr,ephemeral=(public==False))
 
