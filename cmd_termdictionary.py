@@ -83,22 +83,21 @@ class TermDictionary(commands.Cog):
             # edit definitions to hide links to other pages:
             search = []
             for item in data:
-                itemDB = item
-                while True:
+                itemDB = item['definition']
+                while item['definition'] == itemDB:
                     replacement = re.search("(?<==).+?(?=})",item['definition'])
                     if replacement is not None:
                         item['definition'] = re.sub("{(#.+?=).+?}", replacement.group(), item['definition'],1)
-                    if item == itemDB: #if nothing changed:
+                    if item['definition'] == itemDB: #if nothing changed:
                         break
-                    search.append(item)
-            for item in data:
-                itemDB = item
-                while True:
+                    itemDB = item['definition']
+                while item['definition'] == itemDB:
+                    replacement = re.search("(?<={).+?(?=})",item['definition'])
                     if replacement is not None:
                         item['definition'] = re.sub("{.+?}", replacement.group(), item['definition'],1)
-                    replacement = re.search("(?<={).+?(?=})",item['definition'])
-                    if item == itemDB: #if nothing changed:
+                    if item['definition'] == itemDB: #if nothing changed:
                         break
+                    itemDB = item['definition']
                 search.append(item)
 
 
@@ -118,25 +117,23 @@ class TermDictionary(commands.Cog):
                         resultStr += f"> {', '.join(item['term'].split('|'))}\n"
                 await itx.response.send_message(resultStr,ephemeral=(public==False))
                 return
+
+            # if search doesn't exactly match with a result / synonym
+            resultStr = f"{len(search)} results found on en.pronouns.page for '{term}'! "
+            if len(search) > 2:
+                resultStr += "Here is a list to make your search more specific:\n> "
+                resultStr += ', '.join([ item["term"] for item in search ])
+                public = False
+            elif len(search) > 0:
+                resultStr += "\n"
+                for item in search:
+                    resultStr += item["definition"]+"\n"
+                    resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
             else:
                 resultStr = f"No results were found for '{term}' on en.pronouns.page!"
                 if source == 4:
                     debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
                     await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)")
-                await itx.response.send_message(resultStr,ephemeral=(public==False))
-                return
-
-            # if search doesn't exactly match with a result / synonym
-            resultStr = f"{len(search)} results found on en.pronouns.page for '{term}'! "
-            if len(resultStr) > 2:
-                resultStr += "Here is a list to make your search more specific:\n> "
-                resultStr += ', '.join([ item["term"] for item in search ])
-                public = False
-            else:
-                resultStr += "\n"
-                for item in search:
-                    resultStr += item["definition"]+"\n"
-                    resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
             if len(resultStr) > 1999:
                 resultStr = f"Your search ('{term}') returned too many results (discord has a 2000-character message length D:). Please search more specifically."
             #print(response_API.status_code)
