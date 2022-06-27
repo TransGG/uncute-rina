@@ -111,7 +111,7 @@ class TermDictionary(commands.Cog):
                 resultStr = f"I found {len(results)} exact result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! \n"
                 for item in results:
                     resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-                resultStr += f"{len(search)-len(results)} other results found."*((len(search)-len(results))>0)
+                resultStr += f"{len(search)-len(results)} other non-exact results found."*((len(search)-len(results))>0)
                 if len(resultStr) > 1999:
                     resultStr = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the term so you might be able to look for a more specific one:"
                     for item in results:
@@ -119,7 +119,7 @@ class TermDictionary(commands.Cog):
                 await itx.response.send_message(resultStr,ephemeral=(public==False))
                 return
             else:
-                resultStr = f"No results were found for {term} on en.pronouns.page!"
+                resultStr = f"No results were found for '{term}' on en.pronouns.page!"
                 if source == 4:
                     debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
                     await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)")
