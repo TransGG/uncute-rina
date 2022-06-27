@@ -60,7 +60,7 @@ class TermDictionary(commands.Cog):
                 # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
                 # Otherwise, it will return the 'not found' result of the term, and end the function.
                 if source == 1:
-                    source = 2
+                    source = 4
                 #public = False
                 else:
                     resultStr += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use /define)"
@@ -73,7 +73,7 @@ class TermDictionary(commands.Cog):
                 resultStr = f"Your search ({term}) returned too many results (discord has a 2000-character message length D:). (Please ask staff to fix this (synonyms and stuff).)"
                 debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
                 await logMmsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
-        if source == 2:
+        if source == 2 or source == 4:
             response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
             data = json.loads(response_API)
             if len(data) == 0:
@@ -88,9 +88,15 @@ class TermDictionary(commands.Cog):
                     replacement = re.search("(?<==).+?(?=})",item['definition'])
                     if replacement is not None:
                         item['definition'] = re.sub("{(#.+?=).+?}", replacement.group(), item['definition'],1)
-                    replacement = re.search("(?<={).+?(?=})",item['definition'])
+                    if item == itemDB: #if nothing changed:
+                        break
+                    search.append(item)
+            for item in data:
+                itemDB = item
+                while True:
                     if replacement is not None:
                         item['definition'] = re.sub("{.+?}", replacement.group(), item['definition'],1)
+                    replacement = re.search("(?<={).+?(?=})",item['definition'])
                     if item == itemDB: #if nothing changed:
                         break
                 search.append(item)
@@ -110,6 +116,13 @@ class TermDictionary(commands.Cog):
                     resultStr = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the term so you might be able to look for a more specific one:"
                     for item in results:
                         resultStr += f"> {', '.join(item['term'].split('|'))}\n"
+                await itx.response.send_message(resultStr,ephemeral=(public==False))
+                return
+            else:
+                resultStr = f"No results were found for {term} on en.pronouns.page!"
+                if source == 4:
+                    debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
+                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)")
                 await itx.response.send_message(resultStr,ephemeral=(public==False))
                 return
 
