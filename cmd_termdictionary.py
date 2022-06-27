@@ -15,13 +15,14 @@ class TermDictionary(commands.Cog):
 
     @app_commands.command(name="dictionary",description="Look for the definition of a trans-related term!")
     @app_commands.describe(term="This is your search query. What do you want to look for?",
-                           # mode="Where do you want to search",
+                           source="Where do you want to search? Online? Custom Dictionary? Or just leave it default..",
                            public="Do you want to share the search results with the rest of the channel? (True=yes)")
-    @app_commands.choices(mode=[
+    @app_commands.choices(source=[
+            discord.app_commands.Choice(name='Search from whichever has an answer', value=1),
             discord.app_commands.Choice(name='Search from custom dictionary', value=3),
             discord.app_commands.Choice(name='Search from en.pronouns.page', value=2),
         ])
-    async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, mode: int = 1):
+    async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
         def simplify(q):
             if type(q) is str:
                 return q.lower().replace(" ","").replace("-","").replace("_","")
@@ -29,7 +30,7 @@ class TermDictionary(commands.Cog):
                 return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
 
         # test if mode has been left unset or if mode has been selected: decides whether or not to move to the online API search or not.
-        if mode == 1 or mode == 3:
+        if source == 1 or source == 3:
             collection = RinaDB["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
@@ -37,7 +38,6 @@ class TermDictionary(commands.Cog):
             result = False
             results = []
             resultStr = ""
-            mode = 1
             for item in search:
                 if simplify(term) in simplify(item["synonyms"]):
                     overlaps = []
@@ -55,15 +55,12 @@ class TermDictionary(commands.Cog):
             if result == True:
                 resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} for '{term}' in our dictionary:\n"
                 for x in results:
-                    # y=""
-                    # if len(x[3]) > 0:
-                    #     y = f"\n   + {len(x[3])} overlapper{'s'*(len(x[3])>1)}:\n    [ {x[2]}: {', '.join(x[3])} ]"
                     resultStr += f"> {x[0]}: {x[1]}\n"
             else:
                 # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
                 #Otherwise, it will return the 'not found' result of the term, and end the function.
-                if mode == 3:
-                    mode = 2
+                if source == 3:
+                    source = 2
                 #public = False
                 else:
                     resultStr += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use /define)"
@@ -76,7 +73,7 @@ class TermDictionary(commands.Cog):
                 resultStr = f"Your search ({term}) returned too many results (discord has a 2000-character message length D:). (Please ask staff to fix this (synonyms and stuff).)"
                 debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
                 await logMmsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
-        if mode == 2:
+        if source == 2:
             response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
             search = json.loads(response_API)
             if len(search) == 0:
