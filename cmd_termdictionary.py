@@ -4,6 +4,7 @@ from discord.ext import commands # required for client bot making
 from utils import *
 import requests #grab from en.pronouns.page api (search)
 import json # turn api request into dictionary
+import re #use regex to remove API hyperlink definitions: {#Ace=asexual}
 
 mongoURI = open("mongo.txt","r").read()
 cluster = MongoClient(mongoURI)
@@ -28,7 +29,6 @@ class TermDictionary(commands.Cog):
                 return q.lower().replace(" ","").replace("-","").replace("_","")
             if type(q) is list:
                 return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
-
         # test if mode has been left unset or if mode has been selected: decides whether or not to move to the online API search or not.
         if source == 1 or source == 3:
             collection = RinaDB["termDictionary"]
@@ -58,8 +58,8 @@ class TermDictionary(commands.Cog):
                     resultStr += f"> {x[0]}: {x[1]}\n"
             else:
                 # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
-                #Otherwise, it will return the 'not found' result of the term, and end the function.
-                if source == 3:
+                # Otherwise, it will return the 'not found' result of the term, and end the function.
+                if source == 1:
                     source = 2
                 #public = False
                 else:
@@ -75,13 +75,25 @@ class TermDictionary(commands.Cog):
                 await logMmsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 2:
             response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
-            search = json.loads(response_API)
-            if len(search) == 0:
+            data = json.loads(response_API)
+            if len(data) == 0:
                 await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(")
                 return
 
             # edit definitions to hide links to other pages:
-
+            search = []
+            for item in data:
+                itemDB = item
+                while True:
+                    replacement = re.search("(?<==).+?(?=})",item['definition'])
+                    if replacement is not None:
+                        item['definition'] = re.sub("{(#.+?=).+?}", replacement.group(), item['definition'],1)
+                    replacement = re.search("(?<={).+?(?=})",item['definition'])
+                    if replacement is not None:
+                        item['definition'] = re.sub("{.+?}", replacement.group(), item['definition'],1)
+                    if item == itemDB: #if nothing changed:
+                        break
+                search.append(item)
 
 
             # if one of the search results matches exactly with the search, give that definition
