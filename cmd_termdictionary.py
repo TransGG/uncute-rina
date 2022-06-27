@@ -112,10 +112,10 @@ class TermDictionary(commands.Cog):
                     resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
                 resultStr += f"{len(search)-len(results)} other non-exact results found."*((len(search)-len(results))>0)
                 if len(resultStr) > 1999:
-                    resultStr = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the term so you might be able to look for a more specific one:"
+                    resultStr = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the terms so you might be able to look for a more specific one:"
                     for item in results:
                         resultStr += f"> {', '.join(item['term'].split('|'))}\n"
-                await itx.response.send_message(resultStr,ephemeral=(public==False))
+                message = await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
                 return
 
             # if search doesn't exactly match with a result / synonym
@@ -145,7 +145,7 @@ class TermDictionary(commands.Cog):
                 resultStr = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length D:). Please search more specifically.\n\
 Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
             #print(response_API.status_code)
-        await itx.response.send_message(resultStr,ephemeral=(public==False))
+        await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
 
     @app_commands.command(name="define",description="Add a dictionary entry for a word!")                                            #
     @app_commands.describe(term="This is the main word for the dictionary entry: Egg, Hormone Replacement Therapy (HRT), (case sens.)",
