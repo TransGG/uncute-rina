@@ -31,9 +31,11 @@ class TermDictionary(commands.Cog):
         # find exact results
         for item in data:
             if simplify(current) in simplify(item['term'].split('|')):
-                terms.append(current)
+                terms.append(item['term'].split('|')[0])
         # then, find whichever other terms are there (append / last)
         for item in data:
+            if item['term'].split("|")[0] in terms:
+                continue
             terms.append(item['term'].split("|")[0])
         # limit choices to the first 7
         terms = terms[:7]
