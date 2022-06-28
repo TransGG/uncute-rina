@@ -202,6 +202,11 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         if not isStaff(itx):
             await itx.response.send_message("You can't add words to the dictionary without staff roles!", ephemeral=True)
             return
+        def simplify(q):
+            if type(q) is str:
+                return q.lower().replace(" ","").replace("-","").replace("_","")
+            if type(q) is list:
+                return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
         # Test if this term is already defined in this dictionary.
         collection = RinaDB["termDictionary"]
         query = {"term": term}
