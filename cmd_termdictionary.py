@@ -14,6 +14,35 @@ class TermDictionary(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    # @dictionary.autocomplete('term')
+    async def dictionary_autocomplete(self, itx: discord.Interaction, current: str):
+        def simplify(q):
+            if type(q) is str:
+                return q.lower().replace(" ","").replace("-","").replace("_","")
+            if type(q) is list:
+                return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
+        terms = []
+        if current == '':
+            return []
+        #get list of choices from online
+        response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
+        data = json.loads(response_API)
+
+        # find exact results
+        for item in data:
+            if simplify(current) in simplify(item['term'].split('|')):
+                terms.append(current)
+        # then, find whichever other terms are there (append / last)
+        for item in data:
+            terms.append(item['term'].split("|")[0])
+        # limit choices to the first 7
+        terms = terms[:7]
+
+        return [
+            app_commands.Choice(name=term, value=term)
+            for term in terms
+        ]
+
     @app_commands.command(name="dictionary",description="Look for the definition of a trans-related term!")
     @app_commands.describe(term="This is your search query. What do you want to look for?",
                            source="Where do you want to search? Online? Custom Dictionary? Or just leave it default..",
@@ -23,6 +52,7 @@ class TermDictionary(commands.Cog):
             discord.app_commands.Choice(name='Search from custom dictionary', value=3),
             discord.app_commands.Choice(name='Search from en.pronouns.page', value=2),
         ])
+    @app_commands.autocomplete(term=dictionary_autocomplete)
     async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
         def simplify(q):
             if type(q) is str:
@@ -76,9 +106,9 @@ class TermDictionary(commands.Cog):
         if source == 2 or source == 4:
             response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
             data = json.loads(response_API)
-            if len(data) == 0:
-                await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=(public==False))
-                return
+            # if len(data) == 0:
+            #     await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=(public==False))
+            #     return
 
             # edit definitions to hide links to other pages:
             search = []
@@ -99,7 +129,6 @@ class TermDictionary(commands.Cog):
                         break
                     itemDB = item['definition']
                 search.append(item)
-
 
             # if one of the search results matches exactly with the search, give that definition
             results = []
