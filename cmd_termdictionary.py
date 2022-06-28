@@ -77,7 +77,7 @@ class TermDictionary(commands.Cog):
             response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
             data = json.loads(response_API)
             if len(data) == 0:
-                await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(")
+                await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=(public==False))
                 return
 
             # edit definitions to hide links to other pages:
@@ -115,20 +115,33 @@ class TermDictionary(commands.Cog):
                     resultStr = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the terms so you might be able to look for a more specific one:"
                     for item in results:
                         resultStr += f"> {', '.join(item['term'].split('|'))}\n"
-                message = await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
+                await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
                 return
 
             # if search doesn't exactly match with a result / synonym
-            resultStr = f"{len(search)} results found on en.pronouns.page for '{term}'! "
-            if len(search) > 2:
-                resultStr += "Here is a list to make your search more specific. Square brackets means they are synonyms:\n> "
+            resultStr = f"I found {len(search)} result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! "
+            if len(search) > 25:
+                resultStr += "Here is a list to make your search more specific:\n"
                 results = []
                 for item in search:
                     temp =  item['term']
                     if "|" in temp:
-                        temp = "["  +  ', '.join(temp.split("|"))  +  "]"
+                        temp = temp.split("|")[0]
                     results.append(temp)
-                resultStr += ', '.join([i for i in results])
+                resultStr += ', '.join(results)
+                public = False
+            elif len(search) > 2:
+                resultStr += "Here is a list to make your search more specific:\n"
+                results = []
+                for item in search:
+                    temp = ""
+                    if "|" in item['term']:
+                        temp = "- __"  +   item['term'].split("|")[0]   +  "__"
+                        temp += " ("  +  ', '.join(item['term'].split("|")[1:])  +  ")"
+                    else:
+                        temp = "- __" + item['term'] + "__"
+                    results.append(temp)
+                resultStr += '\n'.join(results)
                 public = False
             elif len(search) > 0:
                 resultStr += "\n"
@@ -136,13 +149,14 @@ class TermDictionary(commands.Cog):
                     resultStr += item["definition"]+"\n"
                     resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
             else:
-                resultStr = f"No results were found for '{term}' on en.pronouns.page!"
+                resultStr = f"I didn't find any results for '{term}' on en.pronouns.page!"
                 if source == 4:
                     debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
                     await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)")
-            if len(resultStr) > 1999:
+            msgLength = len(resultStr)
+            if msgLength > 1999:
                 public = False
-                resultStr = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length D:). Please search more specifically.\n\
+                resultStr = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length, and this message was {msgLength} characters D:). Please search more specifically.\n\
 Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
             #print(response_API.status_code)
         await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
