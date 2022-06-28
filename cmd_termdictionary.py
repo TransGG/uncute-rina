@@ -24,15 +24,26 @@ class TermDictionary(commands.Cog):
         terms = []
         if current == '':
             return []
-        #get list of choices from online
+
+        # find results in custom dictionary
+        collection = RinaDB["termDictionary"]
+        query = {"synonyms": simplify(current)}
+        search = collection.find(query)
+        for item in search:
+            if simplify(current) in simplify(item["synonyms"]):
+                terms.append(item["term"])
+
+        # get list of choices from online
         response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
         data = json.loads(response_API)
-
-        # find exact results
+        # find exact results online
         for item in data:
+            if item['term'].split("|")[0] in terms:
+                continue
             if simplify(current) in simplify(item['term'].split('|')):
                 terms.append(item['term'].split('|')[0])
-        # then, find whichever other terms are there (append / last)
+
+        # then, find whichever other terms are there (append / last) online
         for item in data:
             if item['term'].split("|")[0] in terms:
                 continue
@@ -72,22 +83,12 @@ class TermDictionary(commands.Cog):
             resultStr = ""
             for item in search:
                 if simplify(term) in simplify(item["synonyms"]):
-                    overlaps = []
-                    overlapper = ""
-                    # for term1 in toneIndicators:
-                    #     if term == term1:
-                    #         continue
-                    #     for def in toneIndicators[term1]:
-                    #         if def in toneIndicators[term]:
-                    #             overlapper = def
-                    #             overlaps.append(term1)
-                    #             break
-                    results.append([item["term"],item["definition"],overlapper,overlaps])
+                    results.append([item["term"],item["definition"]])
                     result = True
             if result == True:
                 resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} for '{term}' in our dictionary:\n"
                 for x in results:
-                    resultStr += f"> {x[0]}: {x[1]}\n"
+                    resultStr += f"> **{x[0]}**: {x[1]}\n"
             else:
                 # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
                 # Otherwise, it will return the 'not found' result of the term, and end the function.
@@ -182,6 +183,7 @@ class TermDictionary(commands.Cog):
             else:
                 resultStr = f"I didn't find any results for '{term}' on en.pronouns.page!"
                 if source == 4:
+                    resultStr = f"I didn't find any results for '{term}' online or in our fancy dictionary"
                     debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
                     await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)")
             msgLength = len(resultStr)
@@ -214,11 +216,11 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         # Test if a synonym is already used before
         if synonyms != "":
             synonyms = synonyms.split(", ")
-            synonyms = [i.lower() for i in synonyms]
+            synonyms = [simplify(i) for i in synonyms]
         else:
             synonyms = []
-        if term.lower() not in synonyms:
-            synonyms.append(term.lower())
+        if simplify(term) not in synonyms:
+            synonyms.append(simplify(term))
 
         query = {"synonyms": {"$in": synonyms }}
         synonymOverlap = collection.find(query)
