@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.4.9".split(".")
+fileVersion = "1.0.4.11".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -71,6 +71,7 @@ async def on_ready():
 async def setup_hook():
     await client.load_extension("cmd_customvcs")
     await client.load_extension("cmd_getmemberdata")
+    await client.load_extension("cmd_todolist")
     await client.load_extension("cmd_termdictionary")
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
@@ -191,7 +192,8 @@ async def updateCmds(itx: discord.Interaction, reload: bool = False, miabot: boo
         await client.reload_extension("cmd_termdictionary")
         await client.reload_extension("cmd_toneindicator")
         await client.reload_extension("cmdg_Table")
-        await itx.response.send_message("Reloaded successfully")
+        await client.reload_extension("cmd_todolist")
+        await itx.response.send_message("Reloaded successfully; i don't think it did anything though")
         return
 
 # @client.tree.command(name="send1984",description="Send annoying message")

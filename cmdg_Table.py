@@ -340,14 +340,13 @@ class Table(commands.GroupCog, name="table"):
             return
 
         for tableId in tableInfo:
-            try:
-                if tableInfo[tableId]["id"] == id:
-                    collection.update_one(query, {"$unset":{f"{tableId}":""}}, upsert=True)
-                    await itx.response.send_message(f"(╯°□°）╯︵ ┻━┻ Destroyed table {id} successfully. Happy now? ")
-                    await self.tablemsgupdate(itx)
-                    return
-            except TypeError: #probably the message/channel info
-                pass
+            if type(tableInfo[tableId]) is not dict: continue
+            if tableInfo[tableId]["id"] == id:
+                collection.update_one(query, {"$unset":{f"{tableId}":""}}, upsert=True)
+                await itx.response.send_message(f"(╯°□°）╯︵ ┻━┻ Destroyed table {id} successfully. Happy now? ")
+                await self.tablemsgupdate(itx)
+                return
+
         await itx.response.send_message(f"Finished command without any action, thus the id was likely incorrect",ephemeral=True)
 
     @app_commands.command(name="lock",description="Lock your table, so no new players can join.")
