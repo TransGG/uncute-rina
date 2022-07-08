@@ -63,12 +63,11 @@ print("                            <<<\n"*0+f"[{datetime.now().strftime('%H:%M:%
 # Client events begin
 @client.event
 async def on_ready():
-    # await client.load_extension("cmd_getmemberdata")
     debug(f"Logged in as {client.user}, in version {version}",color="green")
-    # await client.tree.sync()
 
 @client.event
 async def setup_hook():
+    await client.tree.sync()
     await client.load_extension("cmd_customvcs")
     await client.load_extension("cmd_getmemberdata")
     await client.load_extension("cmd_todolist")
@@ -174,27 +173,11 @@ async def botVersion(itx: discord.Interaction):
     await itx.response.send_message(f"Bot is currently running on v{version}")
 
 @client.tree.command(name="update",description="Update slash-commands")
-@app_commands.describe(reload="Reload commands or update all?", miabot="Is this for mia's testing bot or the main server")
-async def updateCmds(itx: discord.Interaction, reload: bool = False, miabot: bool = False):
+async def updateCmds(itx: discord.Interaction):
     if not isStaff(itx):
         await itx.response.send_message("Only Staff can update the slash commands", ephemeral=True)
         return
-    if not reload:
-        if miabot:
-            await client.tree.sync(guild=itx.guild)
-        else:
-            await client.tree.sync()
-        await itx.response.send_message(f"Updated slash-commands {'guild-only'*miabot}")
-        return
-    else:
-        await client.reload_extension("cmd_customvcs")
-        await client.reload_extension("cmd_getmemberdata")
-        await client.reload_extension("cmd_termdictionary")
-        await client.reload_extension("cmd_toneindicator")
-        await client.reload_extension("cmdg_Table")
-        await client.reload_extension("cmd_todolist")
-        await itx.response.send_message("Reloaded successfully; i don't think it did anything though")
-        return
+    await client.tree.sync()
 
 # @client.tree.command(name="send1984",description="Send annoying message")
 # async def send1984(itx: discord.Interaction):
