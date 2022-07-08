@@ -136,7 +136,7 @@ async def on_message(message):
                 await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
             await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
         else:
-            await message.channel.send("Pinging me is fine, and has no consequences, but ```cs\n[ Please don't do it with other bots on this server. ]```You may unintentionally catch the attention of / anger the staff team with it.\nPs: I have slash commands, and no, i'm not cute",delete_after=16)
+            await message.channel.send("I use slash commands! Use /command  and see what cool things might pop up! or something\nPS: If you're trying to call me cute: no, i'm not", delete_after=8)
 
     # if message.content.endswith("🥺"):
     #     for reaction in ["😳","🥺","<:shy:964724545946800218>","👉","👈","<:bwushy:966885955346763867>","<:animeblush:968335608118378586>"]:
