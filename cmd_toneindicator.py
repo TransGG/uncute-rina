@@ -65,6 +65,7 @@ class ToneIndicator(commands.Cog):
             "half jokingly prideful" : ["/hjpr"],
             "joke question" : ["/jq"],
             "jokingly overreacting" : ["/jov"],
+            "just so you know":["jsyk"],
             "just wondering" : ["/jw"],
             "keysmash semhsakakeysmamshma" : ["/key"],
             "lyrics" : ["/l","/ly","/lyr"],
