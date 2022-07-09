@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.5.1".split(".")
+fileVersion = "1.0.5.2".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -67,13 +67,29 @@ async def on_ready():
 
 @client.event
 async def setup_hook():
+
     await client.tree.sync()
+    ## activate the code for slash commands
     await client.load_extension("cmd_customvcs")
     await client.load_extension("cmd_getmemberdata")
     await client.load_extension("cmd_todolist")
     await client.load_extension("cmd_termdictionary")
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
+    ## activate the buttons in the table message
+    from cmdg_Table import Table
+    class Itx:
+        async def set(self):
+            try:
+                guild = await client.fetch_guild(959551566388547676)
+            except discord.errors.Forbidden:
+                guild = await client.fetch_guild(985931648094834798)
+            self.guild = guild
+            self.guild_id = guild.id
+    itx = Itx()
+    await itx.set()
+    await Table.tablemsgupdate(Table, itx)
+
     debug("Loaded commands successfully",color="green")
 
 @client.event
@@ -169,14 +185,6 @@ async def on_raw_reaction_add(reaction):
 
 @client.tree.command(name="version",description="Get bot version")
 async def botVersion(itx: discord.Interaction):
-    from cmdg_Table import Table
-    # class itx():
-    #     def __init__(self):
-    #         guild = 
-    #         self.guild
-    #         self.guild_id =
-    await Table.tablemsgupdate(Table, itx)
-
     await itx.response.send_message(f"Bot is currently running on v{version}")
 
 @client.tree.command(name="update",description="Update slash-commands")
@@ -185,6 +193,7 @@ async def updateCmds(itx: discord.Interaction):
         await itx.response.send_message("Only Staff can update the slash commands", ephemeral=True)
         return
     await client.tree.sync()
+    await itx.response.send_message("Updated commands",delete_after=32)
 
 # @client.tree.command(name="send1984",description="Send annoying message")
 # async def send1984(itx: discord.Interaction):
