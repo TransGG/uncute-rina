@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.5.0".split(".")
+fileVersion = "1.0.5.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -74,7 +74,6 @@ async def setup_hook():
     await client.load_extension("cmd_termdictionary")
     await client.load_extension("cmd_toneindicator")
     await client.load_extension("cmdg_Table")
-    # await client.tree.sync()
     debug("Loaded commands successfully",color="green")
 
 @client.event
@@ -170,6 +169,14 @@ async def on_raw_reaction_add(reaction):
 
 @client.tree.command(name="version",description="Get bot version")
 async def botVersion(itx: discord.Interaction):
+    from cmdg_Table import Table
+    # class itx():
+    #     def __init__(self):
+    #         guild = 
+    #         self.guild
+    #         self.guild_id =
+    await Table.tablemsgupdate(Table, itx)
+
     await itx.response.send_message(f"Bot is currently running on v{version}")
 
 @client.tree.command(name="update",description="Update slash-commands")
