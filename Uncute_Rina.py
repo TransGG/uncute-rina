@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.5.2".split(".")
+fileVersion = "1.0.6.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -67,11 +67,11 @@ async def on_ready():
 
 @client.event
 async def setup_hook():
-
     await client.tree.sync()
     ## activate the code for slash commands
     await client.load_extension("cmd_customvcs")
     await client.load_extension("cmd_getmemberdata")
+    await client.load_extension("cmd_pronouns")
     await client.load_extension("cmd_todolist")
     await client.load_extension("cmd_termdictionary")
     await client.load_extension("cmd_toneindicator")
@@ -193,7 +193,7 @@ async def updateCmds(itx: discord.Interaction):
         await itx.response.send_message("Only Staff can update the slash commands", ephemeral=True)
         return
     await client.tree.sync()
-    await itx.response.send_message("Updated commands",delete_after=32)
+    await itx.response.send_message("Updated commands")
 
 # @client.tree.command(name="send1984",description="Send annoying message")
 # async def send1984(itx: discord.Interaction):
