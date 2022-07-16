@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.6.1".split(".")
+fileVersion = "1.0.6.2".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -67,7 +67,7 @@ async def on_ready():
 
 @client.event
 async def setup_hook():
-    await client.tree.sync()
+    # await client.tree.sync()
     ## activate the code for slash commands
     await client.load_extension("cmd_customvcs")
     await client.load_extension("cmd_getmemberdata")

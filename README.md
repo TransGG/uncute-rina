@@ -12,18 +12,10 @@ You will need a mongo database to use this bot. For more info, look at mongodb.c
 pip install -U git+https://github.com/Rapptz/discord.py
 pip install pymongo
 
-## Add your files
+## Usage
 
 Add a token.txt file in the same folder as the program, and put the raw token in it.
 Also add a mongo.txt file in this folder, and copy paste the MongoDB connection string from your database to this file.
-
-## Name
-
-## Description
-
-## Installation
-
-## Usage
 
 ## Support
 
