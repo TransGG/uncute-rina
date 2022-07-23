@@ -10,6 +10,18 @@ cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
 
 class Pronouns(commands.Cog):
+    def __init__(self, client):
+        self.client = client
+        self.ctx_menu_user = app_commands.ContextMenu(
+            name='Pronouns',
+            callback=self.pronounsCtxUser,
+        )
+        self.ctx_menu_message = app_commands.ContextMenu(
+            name='Pronouns',
+            callback=self.pronounsCtxMessage,
+        )
+        self.client.tree.add_command(self.ctx_menu_user)
+        self.client.tree.add_command(self.ctx_menu_message)
 
     @app_commands.command(name="addpronoun",description="Let others know what pronouns you like to use!")
     @app_commands.describe(pronoun="What pronoun do you want to use (example: she/her, or :a)")
@@ -30,7 +42,8 @@ class Pronouns(commands.Cog):
             return
         pronouns.append(pronoun)
         collection.update_one(query, {"$set":{f"pronouns":pronouns}}, upsert=True)
-        await itx.response.send_message(warning+f"Successfully added `{pronoun}`. Use `/pronouns <user>` to see this person's pronouns",ephemeral=True)
+
+        await itx.response.send_message(warning+f"Successfully added `{pronoun}`. Use `/pronouns <user:yourself>` to see your custom pronouns, and use `/removepronoun <pronoun>` to remove one",ephemeral=True)
 
     @app_commands.command(name="removepronoun",description="Remove one of your prevously added pronouns!")
     @app_commands.describe(pronoun="What pronoun do you want to remove (example: she/her, or :a)")
@@ -51,21 +64,23 @@ class Pronouns(commands.Cog):
         collection.update_one(query, {"$set":{f"pronouns":pronouns}}, upsert=True)
         await itx.response.send_message(f"Removed `{pronoun}` successfully!", ephemeral=True)
 
-    @app_commands.command(name="pronouns",description="Get someone's pronouns!")
-    @app_commands.describe(user="Whose pronouns do you want to know?")
-    async def pronouns(self, itx: discord.Interaction, user: discord.Member):
+    async def getPronouns(self, itx, user):
         collection = RinaDB["members"]
         query = {"member_id": user.id}
         data = collection.find(query)
+        noPronouns = False
+        warning = ""
         try:
             pronouns = data[0]['pronouns']
         except IndexError:
             #see if this user already has data, if not, add empty
-            await itx.response.send_message("This person hasn't added pronouns yet! (They need to use `/addpronoun <pronoun>` to add one)",ephemeral=True)
-            return
-        if len(pronouns) == 0:
-            await itx.response.send_message("This person hasn't added pronouns yet. (They need to use `/addpronoun <pronoun>` to add one)",ephemeral=True)
-            return
+            pronouns = []
+            noPronouns = True
+            warning = "This person hasn't added custom pronouns yet! (They need to use `/addpronoun <pronoun>` to add one)"
+        else:
+            if len(pronouns) == 0:
+                noPronouns = True
+                warning = "This person hasn't added custom pronouns. (They need to use `/addpronoun <pronoun>` to add one)"
 
         list = []
         for pronoun in pronouns:
@@ -83,7 +98,22 @@ class Pronouns(commands.Cog):
             if role.name.lower() in pronounRoles and role.name.lower() not in loweredList:
                 roles.append("=> " + role.name+" (from role)")
         list += roles
-        await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n"+ '\n'.join(list), ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+
+        if len(list) == 0:
+            await itx.response.send_message("This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use `/addpronoun <pronoun>`", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+        else:
+            await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n"+ '\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+
+    @app_commands.command(name="pronouns",description="Get someone's pronouns!")
+    @app_commands.describe(user="Whose pronouns do you want to know?")
+    async def pronounsCommand(self, itx: discord.Interaction, user: discord.Member):
+        await self.getPronouns(itx, user)
+
+    async def pronounsCtxUser(self, itx: discord.Interaction, user: discord.User):
+        await self.getPronouns(itx, user)
+
+    async def pronounsCtxMessage(self, itx: discord.Interaction, message: discord.Message):
+        await self.getPronouns(itx, message.author)
 
 async def setup(client):
     # client.add_command(getMemberData)
