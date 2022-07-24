@@ -27,7 +27,7 @@ def isAdmin(itx: discord.Interaction):
              discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
 
-def debug(text="", color="default", addTime=True):
+def debug(text="", color="default", addTime=True, end=None):
     colors = {
         "default":"\033[0m",
         "black":"\033[30m",
@@ -64,7 +64,10 @@ def debug(text="", color="default", addTime=True):
         time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
     else:
         time = colors[color]
-    print(f"{time}{text}{colors['default']}")
+    if end is None:
+        print(f"{time}{text}{colors['default']}")
+    else:
+        print(f"{time}{text}{colors['default']}",end=end)
 
 async def logMsg(_guild, msg: str):
     mongoURI = open("mongo.txt","r").read()

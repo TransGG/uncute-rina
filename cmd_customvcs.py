@@ -32,24 +32,14 @@ class CustomVcs(commands.Cog):
         vcLog      = guild["vcLog"]
         vcNoMic    = guild["vcNoMic"]
         vcCategory = guild["vcCategory"]
-        if after.channel is not None:
-            if after.channel.id == vcHub:
-                after.channel.category.id = vcCategory
-                defaultName = "Untitled voice chat"
-                vc = await after.channel.category.create_voice_channel(defaultName)
-                await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
-                nomicChannel = member.guild.get_channel(vcNoMic)
-                await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
-                logChannel = member.guild.get_channel(vcLog)
-                await logChannel.send(content=f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
         if before.channel is None:
-            return
-        if before.channel in before.channel.guild.voice_channels:
+            pass
+        elif before.channel in before.channel.guild.voice_channels:
             if before.channel.category.id not in [vcCategory]:
                 return
-            if before.channel.id == vcHub: # avoid deleting the hub channel
+            elif before.channel.id == vcHub: # avoid deleting the hub channel
                 return
-            if len(before.channel.members) == 0:
+            elif len(before.channel.members) == 0:
                 # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
                 # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
                 await before.channel.delete()
@@ -59,12 +49,27 @@ class CustomVcs(commands.Cog):
                     pass #haven't edit the channel yet
                 logChannel = member.guild.get_channel(vcLog)
                 await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
+        if after.channel is not None:
+            if after.channel.id == vcHub:
+                after.channel.category.id = vcCategory
+                defaultName = "Untitled voice chat"
+                warning = ""
+                vc = await after.channel.category.create_voice_channel(defaultName)
+                try:
+                    await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
+                except:
+                    warning = "User clicked the vcHub too fast, and it couldn't move them to their new channel"
+                    await vc.delete()
+                nomicChannel = member.guild.get_channel(vcNoMic)
+                await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
+                logChannel = member.guild.get_channel(vcLog)
+                await logChannel.send(content=f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
 
 
     @app_commands.command(name="editvc",description="Edit your voice channel name or user limit")
     @app_commands.describe(name="Give your voice channel a name!",
                            limit="Give your voice channel a user limit!")
-    async def editVc(self, itx: discord.Interaction, name: str, limit: int = 0):
+    async def editVc(self, itx: discord.Interaction, name: str = None, limit: int = None):
         global newVcs
         collection = RinaDB["guildInfo"]
         query = {"guild_id": itx.guild_id}
@@ -87,24 +92,27 @@ class CustomVcs(commands.Cog):
             debug(f"{itx.user} tried to make a new vc channel but isn't connected to a voice channel",color="yellow")
             await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
             return
+        warning = ""
         channel = itx.user.voice.channel
         if channel.category.id not in [vcCategory] or channel.id == vcHub:
             await itx.response.send_message("You can't change that voice channel's name!",ephemeral=True)
             return
-        if len(name) < 4:
-            await itx.response.send_message("Your voice channel name needs to be at least 4 letters long!",ephemeral=True)
-            return
-        if len(name) > 35:
-            await itx.response.send_message("Please don't make your voice channel name more than 35 letters long! (gets cut off/unreadable)",ephemeral=True)
-            return
-        if limit < 2 and limit != 0:
-            await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2; or 0)",ephemeral=True)
-            return
-        if limit > 99:
-            await itx.response.send_message("I don't think you need to prepare for that many people... (max 99, or 0 for infinite)\nIf you need to, message Mia to change the limit",ephemeral=True)
-            return
-        if name == "Untitled voice chat":
-            await itx.response.send_message("Are you really going to change it to that..",ephemeral=True)
+        if name is not None:
+            if len(name) < 4:
+                await itx.response.send_message("Your voice channel name needs to be at least 4 letters long!",ephemeral=True)
+                return
+            if len(name) > 35:
+                await itx.response.send_message("Please don't make your voice channel name more than 35 letters long! (gets cut off/unreadable)",ephemeral=True)
+                return
+            if name == "Untitled voice chat":
+                warning = "Are you really going to change it to that..\n"
+        if limit is not None:
+            if limit < 2 and limit != 0:
+                await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2; or 0)",ephemeral=True)
+                return
+            if limit > 99:
+                await itx.response.send_message("I don't think you need to prepare for that many people... (max 99, or 0 for infinite)\nIf you need to, message Mia to change the limit",ephemeral=True)
+                return
 
         if channel.id in newVcs:
             # if you have made 2 renames in the past 10 minutes already
@@ -113,7 +121,7 @@ class CustomVcs(commands.Cog):
                 pass
             elif newVcs[channel.id][0]+600 > mktime(datetime.now().timetuple()):
                 await itx.response.send_message("You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n"+
-                f"You can rename it again <t:{newVcs[channel.id][0]+600}:R> (<t:{newVcs[channel.id][0]+600}:t>).")
+                f"You can rename it again <t:{newVcs[channel.id][0]+600}:R> (<t:{newVcs[channel.id][0]+600}:t>).", ephemeral = True)
                 # ignore entirely, don't continue command
                 return
             else:
@@ -123,14 +131,30 @@ class CustomVcs(commands.Cog):
             # create and continue command
             newVcs[channel.id] = []
         newVcs[channel.id].append(int(mktime(datetime.now().timetuple())))
-        category = discord.utils.find(lambda r: r.name == 'VC'      , itx.guild.categories)
-        verified = discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)
-        limitInfo = [" with a user limit of "+str(limit) if limit > 0 else ""][0]
+        limitInfo = ""
         logChannel = itx.guild.get_channel(vcLog)
         oldName = channel.name
-        await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", user_limit=limit,name=name)
-        await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
-        await itx.response.send_message(f"Voice channel successfully renamed from \"{oldName}\" to \"{name}\""+limitInfo, ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
+        oldLimit = channel.user_limit
+        if limit is None:
+            if name is None:
+                await itx.response.send_message("You can edit your channel with this command. Set a value for the name or the maximum user limit.", ephemeral=True)
+            else:
+                await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", name=name)
+                await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})", allowed_mentions=discord.AllowedMentions.none())
+                await itx.response.send_message(warning+f"Voice channel successfully renamed to \"{name}\"", ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
+        else:
+            if name is None:
+                await channel.edit(reason=f"Voice channel limit edited from \"{oldLimit}\" to \"{limit}\"", user_limit=limit)
+                await logChannel.send(f"Voice channel \"{oldName}\" ({channel.id}) edited the user limit from  \"{oldLimit}\" to \"{limit}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
+                await itx.response.send_message(warning+f"Voice channel user limit for \"{oldName}\" successfully edited from \"{oldLimit}\" to \"{limit}\"", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            else:
+                await channel.edit(reason=f"Voice channel edited from name: \"{channel.name}\" to \"{name}\" and user limit from: \"{limit}\" to \"{oldLimit}\"", user_limit=limit,name=name)
+                await logChannel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{oldName}\" to \"{name}\" and user limit from \"{oldLimit}\" to \"{limit}\"{limitInfo}", allowed_mentions=discord.AllowedMentions.none())
+                await itx.response.send_message(warning+f"Voice channel edited name and user limit successfully edited.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+
+        # await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", user_limit=limit,name=name) #todo
+        # await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
+        # await itx.response.send_message(warning+f"Voice channel successfully renamed from \"{oldName}\" to \"{name}\""+limitInfo, ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
 
     @app_commands.command(name="editguildinfo",description="Edit guild settings (staff only)")
     @app_commands.describe(vc_hub="Mention the voice channel that should make a new voice channel when you join it",
@@ -163,4 +187,6 @@ class CustomVcs(commands.Cog):
         await itx.response.send_message("Edited the settings.",ephemeral=True)
 
 async def setup(client):
+    debug("Loading cmd_customvcs... ",color="aqua",end="")
     await client.add_cog(CustomVcs(client))
+    debug("Loaded.",color="aqua")
