@@ -33,7 +33,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.6.4".split(".")
+fileVersion = "1.0.6.5".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -204,25 +204,6 @@ async def updateCmds(itx: discord.Interaction):
     await client.tree.sync()
     await itx.response.send_message("Updated commands")
 
-# @client.tree.command(name="send1984",description="Send annoying message")
-# async def send1984(itx: discord.Interaction):
-#     if not isStaff(itx):
-#         await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy) (it would be too spammy otherwise)",ephemeral=True)
-#         return
-# #     if ("1984" in message.content or "nineteeneightyfour" in message.content.lower().replace(" ","").replace("-","")) and "@" not in message.content:
-# #         if last1984msg > mktime(datetime.utcnow().timetuple())-10*60:
-# #             return
-# #         await message.reply(content="1984 is about a dictatorship where you are not allowed \
-# # to think your own thoughts, and any time you even think differently, the police come for you. \
-# # Our server is not like this as we give you freedom to think and do as you like, however, this \
-# # does not mean anarchy. Rules are in place to protect the users and ourselves from certain \
-# # consequences. **If you would like to know more, please read the book**\n\
-# # https://www.planetebook.com/1984/")
-#     await itx.channel.send("1984 is a book by George Orwell about a dictatorship where you are not allowed to think \
-# your own thoughts, which is drastically different from any situation that can arise on Discord.\n\n\
-# **More information:** <https://planetebook.com/1984>")
-#     await itx.response.send_message("Sent.",ephemeral=True)
-
 @client.event
 async def on_error(event, *args, **kwargs):
     import traceback, logging
@@ -245,26 +226,12 @@ async def on_error(event, *args, **kwargs):
     msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
     msg += traceback.format_exc()
     msg = msg.replace("Floris","Mia").replace("floris","mia")
-    msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
+    debug(f"{msg}",addTime=False)
+
     # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
     # msg += '\n\n                   '.join([repr(i) for i in kwargs])
+    msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
     channel = await logGuild.fetch_channel(vcLog)
-    debug(f"{msg}",addTime=False)
     embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
     await channel.send("<@262913789375021056>", embed=embed)
-
-# def signal_handler(signal, frame):
-#     # try to save files. if they haven't been loaded in yet (discord hasn't started on_read() yet;
-#     # and the files are empty, don't save the empty variables into them!) Then exit the program using sys.exit(0)
-#     print("📉 Disconnecting...")
-#     try:
-#         sys.exit(0)
-#     except RuntimeError:
-#         print("Excepted the runtime error, please ignore everything lol")
-#         try:
-#             sys.exit(0)
-#         except:
-#             print("double runtime error?")
-#
-# signal.signal(signal.SIGINT, signal_handler) #notice KeyboardInterrupt, and run closing code (save files and exit)
 client.run(open('token.txt',"r").read())

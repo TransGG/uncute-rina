@@ -51,7 +51,15 @@ class CustomVcs(commands.Cog):
                 after.channel.category.id = vcCategory
                 defaultName = "Untitled voice chat"
                 warning = ""
-                vc = await after.channel.category.create_voice_channel(defaultName)
+                try:
+                    vc = await after.channel.category.create_voice_channel(defaultName)
+                except discord.errors.HTTPException:
+                    nomicChannel = member.guild.get_channel(vcNoMic)
+                    await nomicChannel.send(f"COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY", allowed_mentions=discord.AllowedMentions.none())
+                    logChannel = member.guild.get_channel(vcLog)
+                    await logChannel.send(f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)", allowed_mentions=discord.AllowedMentions.none())
+                    raise
+                    
                 try:
                     await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
                 except:
