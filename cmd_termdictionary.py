@@ -11,9 +11,6 @@ cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
 
 class TermDictionary(commands.Cog):
-    def __init__(self, client):
-        self.client = client
-
     # @dictionary.autocomplete('term')
     async def dictionary_autocomplete(self, itx: discord.Interaction, current: str):
         def simplify(q):

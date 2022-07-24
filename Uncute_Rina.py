@@ -15,6 +15,8 @@ import random # for very uncute responses
 import pymongo # for online database
 from pymongo import MongoClient
 
+import asyncio # for threading the extension imports
+
 mongoURI = open("mongo.txt","r").read()
 cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
@@ -67,15 +69,22 @@ async def on_ready():
 
 @client.event
 async def setup_hook():
+    start = datetime.now()
     # await client.tree.sync()
     ## activate the code for slash commands
-    await client.load_extension("cmd_customvcs")
-    await client.load_extension("cmd_getmemberdata")
-    await client.load_extension("cmd_pronouns")
-    await client.load_extension("cmd_todolist")
-    await client.load_extension("cmd_termdictionary")
-    await client.load_extension("cmd_toneindicator")
-    await client.load_extension("cmdg_Table")
+    extensions = [
+        "cmd_customvcs",
+        "cmd_getmemberdata",
+        "cmd_pronouns",
+        "cmd_todolist",
+        "cmd_termdictionary",
+        "cmd_toneindicator",
+        "cmdg_Table"
+    ]
+    for extID in range(len(extensions)):
+        eta = (start + timedelta(seconds = 3.8*len(extensions))) - datetime.now()
+        debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]} (ETA: {eta.seconds}s)"+ " "*15,color="light_blue",end='\r')
+        await client.load_extension(extensions[extID])
     ## activate the buttons in the table message
     from cmdg_Table import Table
     class Itx:
@@ -90,7 +99,7 @@ async def setup_hook():
     await itx.set()
     await Table.tablemsgupdate(Table, itx)
 
-    debug("Loaded commands successfully",color="green")
+    debug(f"[{'#'*(len(extensions))}]: Loaded commands successfully (in {datetime.now()-start})",color="green")
 
 @client.event
 async def on_message(message):

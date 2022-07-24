@@ -14,9 +14,6 @@ cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
 
 class MemberData(commands.Cog):
-    def __init__(self, client):
-        self.client = client
-
     async def addToData(self, member, type):
         collection = RinaDB["data"]
         query = {"guild_id": member.guild.id}

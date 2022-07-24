@@ -14,9 +14,6 @@ RinaDB = cluster["Rina"]
 newVcs = {} # make your own vcs!
 
 class CustomVcs(commands.Cog):
-    def __init__(self, client):
-        self.client = client
-
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         global newVcs
@@ -119,18 +116,17 @@ class CustomVcs(commands.Cog):
             if len(newVcs[channel.id]) < 2:
                 #ignore but still continue the command
                 pass
-            elif newVcs[channel.id][0]+600 > mktime(datetime.now().timetuple()):
-                await itx.response.send_message("You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n"+
-                f"You can rename it again <t:{newVcs[channel.id][0]+600}:R> (<t:{newVcs[channel.id][0]+600}:t>).", ephemeral = True)
-                # ignore entirely, don't continue command
-                return
+            # elif newVcs[channel.id][0]+600 > mktime(datetime.now().timetuple()):
+            #     await itx.response.send_message("You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n"+
+            #     f"You can rename it again <t:{newVcs[channel.id][0]+600}:R> (<t:{newVcs[channel.id][0]+600}:t>).", ephemeral = True)
+            #     # ignore entirely, don't continue command
+            #     return
             else:
                 # clear and continue command
                 newVcs[channel.id] = []
         else:
             # create and continue command
             newVcs[channel.id] = []
-        newVcs[channel.id].append(int(mktime(datetime.now().timetuple())))
         limitInfo = ""
         logChannel = itx.guild.get_channel(vcLog)
         oldName = channel.name
@@ -142,6 +138,7 @@ class CustomVcs(commands.Cog):
                 await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", name=name)
                 await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})", allowed_mentions=discord.AllowedMentions.none())
                 await itx.response.send_message(warning+f"Voice channel successfully renamed to \"{name}\"", ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
+            newVcs[channel.id].append(int(mktime(datetime.now().timetuple())))
         else:
             if name is None:
                 await channel.edit(reason=f"Voice channel limit edited from \"{oldLimit}\" to \"{limit}\"", user_limit=limit)
@@ -151,7 +148,7 @@ class CustomVcs(commands.Cog):
                 await channel.edit(reason=f"Voice channel edited from name: \"{channel.name}\" to \"{name}\" and user limit from: \"{limit}\" to \"{oldLimit}\"", user_limit=limit,name=name)
                 await logChannel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{oldName}\" to \"{name}\" and user limit from \"{oldLimit}\" to \"{limit}\"{limitInfo}", allowed_mentions=discord.AllowedMentions.none())
                 await itx.response.send_message(warning+f"Voice channel edited name and user limit successfully edited.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
-
+            newVcs[channel.id].append(int(mktime(datetime.now().timetuple())))
         # await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", user_limit=limit,name=name) #todo
         # await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
         # await itx.response.send_message(warning+f"Voice channel successfully renamed from \"{oldName}\" to \"{name}\""+limitInfo, ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
@@ -187,6 +184,4 @@ class CustomVcs(commands.Cog):
         await itx.response.send_message("Edited the settings.",ephemeral=True)
 
 async def setup(client):
-    debug("Loading cmd_customvcs... ",color="aqua",end="")
     await client.add_cog(CustomVcs(client))
-    debug("Loaded.",color="aqua")

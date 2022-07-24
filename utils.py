@@ -61,7 +61,7 @@ def debug(text="", color="default", addTime=True, end=None):
         warnings.warn("Invalid color given for debug function: "+color, SyntaxWarning)
         color="default"
     if addTime:
-        time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]:"
+        time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: "
     else:
         time = colors[color]
     if end is None:

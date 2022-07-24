@@ -10,9 +10,6 @@ cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
 
 class TodoList(commands.Cog):
-    def __init__(self, client):
-        self.client = client
-
     @app_commands.command(name="get_todo",description="Get your list of to-do's!")
     async def get_todo(self, itx: discord.Interaction):
         collection = RinaDB["todoList"]
@@ -52,14 +49,13 @@ class TodoList(commands.Cog):
                 list = []
             list.append(todo)
             collection.update_one(query, {"$set":{f"list":list}}, upsert=True)
-            await itx.response.send_message(f"Successfully added an item to your to-do list! ({len(list)} item{'s'*(len(results)!=1)} in your to-do list now)",ephemeral=True)
+            await itx.response.send_message(f"Successfully added an item to your to-do list! ({len(list)} item{'s'*(len(list)!=1)} in your to-do list now)",ephemeral=True)
 
         elif mode == 2: # Remove item from to-do list
             try:
                 todo = int(todo)
-            except:
+            except ValueError:
                 await itx.response.send_message("To remove an item from your to-do list, you must give the id of the item you want to remove. This should be a number... You didn't give a number...", ephemeral=True)
-                raise
                 return
             collection = RinaDB["todoList"]
             query = {"user": itx.user.id}
@@ -72,11 +68,11 @@ class TodoList(commands.Cog):
                 return
             try:
                 del list[todo]
-            except:
-                await itx.response.send_message("Couldn't delete that ID, because there isn't any item with that ID..",ephemeral=True)
-                raise
+            except IndexError:
+                await itx.response.send_message("Couldn't delete that ID, because there isn't any item on your list with that ID.. Use `/get_todo` to see the IDs assigned to each item on your list",ephemeral=True)
+                return
             collection.update_one(query, {"$set":{f"list":list}}, upsert=True)
-            await itx.response.send_message(f"Successfully removed '{todo}' from your to-do list. Your list now contains '{len(list)}' item{'s'*(len(results)!=1)}.", ephemeral=True)
+            await itx.response.send_message(f"Successfully removed '{todo}' from your to-do list. Your list now contains {len(list)} item{'s'*(len(list)!=1)}.", ephemeral=True)
 
 
 async def setup(client):
