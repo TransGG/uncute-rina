@@ -76,11 +76,11 @@ class Pronouns(commands.Cog):
             #see if this user already has data, if not, add empty
             pronouns = []
             noPronouns = True
-            warning = "This person hasn't added custom pronouns yet! (They need to use `/addpronoun <pronoun>` to add one)"
+            warning = "\nThis person hasn't added custom pronouns yet! (They need to use `/addpronoun <pronoun>` to add one)"
         else:
             if len(pronouns) == 0:
                 noPronouns = True
-                warning = "This person hasn't added custom pronouns. (They need to use `/addpronoun <pronoun>` to add one)"
+                warning = "\nThis person hasn't added custom pronouns. (They need to use `/addpronoun <pronoun>` to add one)"
 
         list = []
         for pronoun in pronouns:
@@ -100,7 +100,7 @@ class Pronouns(commands.Cog):
         list += roles
 
         if len(list) == 0:
-            await itx.response.send_message("This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use `/addpronoun <pronoun>`", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            await itx.response.send_message("This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use `/addpronoun <pronoun>`\nThey might also have pronouns mentioned in their About Me.. I can't see that sadly, so you'd have to check yourself.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         else:
             await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n"+ '\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
