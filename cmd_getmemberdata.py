@@ -32,7 +32,7 @@ class MemberData(commands.Cog):
             data[type] = {}
             data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
         collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
-        debug(f"Successfully added new data for {member.name} to {repr(type)}",color="blue")
+        #debug(f"Successfully added new data for {member.name} to {repr(type)}",color="blue")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
