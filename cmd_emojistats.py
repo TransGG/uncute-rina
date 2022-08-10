@@ -68,20 +68,24 @@ class EmojiStats(commands.Cog):
             await self.addToData(str(reaction.emoji.id), reaction.emoji.name, "reaction", reaction.emoji.animated)
 
     @app_commands.command(name="getemojidata",description="Get emoji usage data from an ID!")
-    @app_commands.describe(emoji_id="Emoji id of the emoji you want to get data of")
-    async def getEmojiData(self, itx: discord.Interaction, emoji_id: str):
+    @app_commands.describe(emoji= "Emoji you want to get data of")
+    async def getEmojiData(self, itx: discord.Interaction, emoji: str):
         # for testing purposes, for now.
         if not isStaff(itx):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
 
-        collection = RinaDB["emojistats"]
+        if ":" in emoji:
+            emoji = emoji.split(":")[2].replace(">","")
+        emoji_id = emoji
         for x in emoji_id:
             try:
                 int(x)
             except:
                 await itx.response.send_message("You need to fill in the ID of the emoji. This ID can't contain other characters. Only numbers.",ephemeral=True)
                 return
+
+        collection = RinaDB["emojistats"]
         query = {"id": emoji_id}
         search = collection.find(query)
         try:
@@ -117,7 +121,36 @@ class EmojiStats(commands.Cog):
         f"Last used: {datetime.utcfromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
         print(emote)
 
+    @app_commands.command(name="getemojitop10",description="Get top 10 most used emojis")
+    async def getEmojiTop10(self, itx: discord.Interaction):
+        # for testing purposes, for now.
+        if not isStaff(itx):
+            await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
+            return
 
+        collection = RinaDB["emojistats"]
+        output = ""
+        for type in ["messageUsedCount","reactionUsedCount"]:
+            results = []
+            search = collection.find({},limit=10,sort=[(type,pymongo.DESCENDING)])
+            for emoji in search:
+                animated = 0
+                try:
+                    animated = emoji['animated']
+                    if animated:
+                        animated = 1
+                except KeyError:
+                    pass
+
+                emojiFull = "<"+("a"*animated)+":"+emoji["name"]+":"+emoji["id"]+">"
+                try:
+                    results.append(f"> **{emoji[type]}**: {emojiFull}")
+                except KeyError:
+                    # leftover emoji doesn't have a value for messageUsedCount or reactionUsedCount yet
+                    pass
+            output += "\nTop 10 for "+type.replace("UsedCount","")+"s:\n"
+            output += '\n'.join(results)
+        await itx.response.send_message(output,ephemeral=True)
 
 async def setup(client):
     # client.add_command(getMemberData)

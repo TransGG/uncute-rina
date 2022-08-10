@@ -33,7 +33,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.7.2".split(".")
+fileVersion = "1.0.7.3".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
