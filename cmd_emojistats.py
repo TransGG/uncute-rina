@@ -12,7 +12,7 @@ cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
 
 class EmojiStats(commands.Cog):
-    async def addToData(self, emojiID, location):
+    async def addToData(self, emojiID, emojiName, location):
         collection = RinaDB["emojistats"]
         query = {"id": emojiID}
         data = collection.find(query)
@@ -31,7 +31,8 @@ class EmojiStats(commands.Cog):
 
         #increment the usage of the emoji in the dictionary, depending on where it was used (see $location above)
         collection.update_one(  query, {"$inc" : {location:1} } , upsert=True  )
-        collection.update_one(  query, {"$set":{f"lastUsed": mktime(datetime.utcnow().timetuple()) }}, upsert=True  )
+        collection.update_one(  query, {"$set":{"lastUsed": mktime(datetime.utcnow().timetuple()) , "name":emojiName}}, upsert=True  )
+        # collection.update_one( query, {"$set":{"name":emojiName}})
         #debug(f"Successfully added new data for {emojiID} as {location.replace('UsedCount','')}",color="blue")
 
     @commands.Cog.listener()
@@ -47,8 +48,9 @@ class EmojiStats(commands.Cog):
                 break
             sections = emoji.group().split(":")
             id = sections[2][:-1]
-            if id not in emojis:
-                emojis.append(id)
+            name = sections[1]
+            if not any(id in emojiList for emojiList in emojis):
+                emojis.append([id,name])
             startIndex += emoji.span()[1] # (11,29) for example
             loopCatcher += 1
             if loopCatcher > 50:
@@ -56,12 +58,12 @@ class EmojiStats(commands.Cog):
                 f"\nLook at https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}")
                 return
         for emoji in emojis:
-            await self.addToData(emoji, "message")
+            await self.addToData(emoji[0], emoji[1], "message")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction):
         if reaction.emoji.id is not None:
-            await self.addToData(str(reaction.emoji.id), "reaction")
+            await self.addToData(str(reaction.emoji.id), reaction.emoji.name, "reaction")
 
 async def setup(client):
     # client.add_command(getMemberData)
