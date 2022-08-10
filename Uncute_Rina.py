@@ -33,7 +33,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.7.1".split(".")
+fileVersion = "1.0.7.2".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -60,7 +60,7 @@ client = commands.Bot(
         activity = discord.Game(name="with slash (/) commands!"),
         allowed_mentions = discord.AllowedMentions(everyone = False)
     )
-print("                            <<<\n"*0+f"[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: Program started")
+debug("Program started")
 
 # Client events begin
 @client.event

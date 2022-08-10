@@ -4,6 +4,7 @@ from discord.ext import commands # required for client bot making
 from utils import *
 import re #use regex to identify custom emojis in a text message
 from time import mktime # for unix time code
+from datetime import datetime # for turning unix time into datetime
 
 import pymongo # for online database
 from pymongo import MongoClient
@@ -12,7 +13,7 @@ cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
 
 class EmojiStats(commands.Cog):
-    async def addToData(self, emojiID, emojiName, location):
+    async def addToData(self, emojiID, emojiName, location, animated):
         collection = RinaDB["emojistats"]
         query = {"id": emojiID}
         data = collection.find(query)
@@ -31,7 +32,7 @@ class EmojiStats(commands.Cog):
 
         #increment the usage of the emoji in the dictionary, depending on where it was used (see $location above)
         collection.update_one(  query, {"$inc" : {location:1} } , upsert=True  )
-        collection.update_one(  query, {"$set":{"lastUsed": mktime(datetime.utcnow().timetuple()) , "name":emojiName}}, upsert=True  )
+        collection.update_one(  query, {"$set":{"lastUsed": mktime(datetime.utcnow().timetuple()) , "name":emojiName, "animated":animated}}, upsert=True  )
         # collection.update_one( query, {"$set":{"name":emojiName}})
         #debug(f"Successfully added new data for {emojiID} as {location.replace('UsedCount','')}",color="blue")
 
@@ -49,6 +50,7 @@ class EmojiStats(commands.Cog):
             sections = emoji.group().split(":")
             id = sections[2][:-1]
             name = sections[1]
+            animated = (sections[0] == "<a")
             if not any(id in emojiList for emojiList in emojis):
                 emojis.append([id,name])
             startIndex += emoji.span()[1] # (11,29) for example
@@ -58,12 +60,64 @@ class EmojiStats(commands.Cog):
                 f"\nLook at https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}")
                 return
         for emoji in emojis:
-            await self.addToData(emoji[0], emoji[1], "message")
+            await self.addToData(emoji[0], emoji[1], "message", animated)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction):
         if reaction.emoji.id is not None:
-            await self.addToData(str(reaction.emoji.id), reaction.emoji.name, "reaction")
+            await self.addToData(str(reaction.emoji.id), reaction.emoji.name, "reaction", reaction.emoji.animated)
+
+    @app_commands.command(name="getemojidata",description="Get emoji usage data from an ID!")
+    @app_commands.describe(emoji_id="Emoji id of the emoji you want to get data of")
+    async def getEmojiData(self, itx: discord.Interaction, emoji_id: str):
+        # for testing purposes, for now.
+        if not isStaff(itx):
+            await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
+            return
+
+        collection = RinaDB["emojistats"]
+        for x in emoji_id:
+            try:
+                int(x)
+            except:
+                await itx.response.send_message("You need to fill in the ID of the emoji. This ID can't contain other characters. Only numbers.",ephemeral=True)
+                return
+        query = {"id": emoji_id}
+        search = collection.find(query)
+        try:
+            emoji = search[0]
+        except:
+            await itx.response.send_message("That emoji doesn't have data yet. It hasn't been used since we started tracking the data yet.", ephemeral=True)
+            return
+
+        try:
+            msgUsed = emoji['messageUsedCount']
+        except KeyError:
+            msgUsed = 0
+        try:
+            reactionUsed = emoji['reactionUsedCount']
+        except KeyError:
+            reactionUsed = 0
+        try:
+            animated = emoji['animated']
+            if animated:
+                animated = 1
+            else:
+                animated = 0
+        except KeyError:
+            animated = 0
+
+        emojiSearch = ('a'*animated)+":"+emoji["name"]+":"+emoji["id"]
+        emote = discord.PartialEmoji.from_str(emojiSearch)
+
+        await itx.response.send_message(f"Data for {emote}"+f"  ({emote})\n".replace(':','\\:')+\
+        f"messageUsedCount: {msgUsed}\n"+\
+        f"reactionUsedCount: {reactionUsed}\n"+\
+        f"Animated: {(animated == 1)}\n"+\
+        f"Last used: {datetime.utcfromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
+        print(emote)
+
+
 
 async def setup(client):
     # client.add_command(getMemberData)
