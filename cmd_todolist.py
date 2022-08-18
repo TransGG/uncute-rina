@@ -26,7 +26,7 @@ class TodoList(commands.Cog):
         for id in range(length):
             ans.append(f"`{id}`: {list[id]}")
         ans = '\n'.join(ans)
-        await itx.response.send_message(f"Found {length} to-do items:\n{ans}",ephemeral=True)
+        await itx.response.send_message(f"Found {length} to-do item{'s'*(length!=1)}:\n{ans}",ephemeral=True)
 
     @app_commands.command(name="todo",description="Add or remove a to-do!")
     @app_commands.describe(mode="Do you want to add or remove a to-do thingy?",

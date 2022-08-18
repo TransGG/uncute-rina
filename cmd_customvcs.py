@@ -33,9 +33,9 @@ class CustomVcs(commands.Cog):
             pass
         elif before.channel in before.channel.guild.voice_channels:
             if before.channel.category.id not in [vcCategory]:
-                return
+                pass
             elif before.channel.id == vcHub: # avoid deleting the hub channel
-                return
+                pass
             elif len(before.channel.members) == 0:
                 # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
                 # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
@@ -59,16 +59,19 @@ class CustomVcs(commands.Cog):
                     logChannel = member.guild.get_channel(vcLog)
                     await logChannel.send(f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)", allowed_mentions=discord.AllowedMentions.none())
                     raise
-
                 try:
                     await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
-                except:
-                    warning = "User clicked the vcHub too fast, and it couldn't move them to their new channel"
+                except Exception as ex:
+                    warning = str(ex)+": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
                     await vc.delete()
+                    try:
+                        member.move_to(None, reason=f"Couldn't create a new Custom voice channel so kicked them from their current vc to prevent them staying in the main customvc hub")
+                    except:
+                        pass
                 nomicChannel = member.guild.get_channel(vcNoMic)
                 await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
                 logChannel = member.guild.get_channel(vcLog)
-                await logChannel.send(content=f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
+                await logChannel.send(content=warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
 
 
     @app_commands.command(name="editvc",description="Edit your voice channel name or user limit")

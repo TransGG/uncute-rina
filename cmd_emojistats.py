@@ -104,12 +104,8 @@ class EmojiStats(commands.Cog):
             reactionUsed = 0
         try:
             animated = emoji['animated']
-            if animated:
-                animated = 1
-            else:
-                animated = 0
         except KeyError:
-            animated = 0
+            animated = False
 
         emojiSearch = ('a'*animated)+":"+emoji["name"]+":"+emoji["id"]
         emote = discord.PartialEmoji.from_str(emojiSearch)
@@ -117,9 +113,8 @@ class EmojiStats(commands.Cog):
         await itx.response.send_message(f"Data for {emote}"+f"  ({emote})\n".replace(':','\\:')+\
         f"messageUsedCount: {msgUsed}\n"+\
         f"reactionUsedCount: {reactionUsed}\n"+\
-        f"Animated: {(animated == 1)}\n"+\
+        f"Animated: {(animated)}\n"+\
         f"Last used: {datetime.utcfromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
-        print(emote)
 
     @app_commands.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def getEmojiTop10(self, itx: discord.Interaction):
