@@ -27,7 +27,7 @@ def isAdmin(itx: discord.Interaction):
              discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
 
-def debug(text="", color="default", addTime=True, end=None):
+def debug(text="", color="default", addTime=True, end=None, advanced=False):
     colors = {
         "default":"\033[0m",
         "black":"\033[30m",
@@ -54,13 +54,56 @@ def debug(text="", color="default", addTime=True, end=None):
         "lightgray":"\033[97m",
         "white":"\033[97m",
     }
+    detailColor = {
+        "&0" : "40",
+        "&8" : "40",
+        "&1" : "44",
+        "&b" : "46",
+        "&2" : "42",
+        "&a" : "42",
+        "&4" : "41",
+        "&c" : "41",
+        "&5" : "45",
+        "&d" : "45",
+        "&6" : "43",
+        "&e" : "43",
+        "&f" : "47",
+        "9" : "34",
+        "6" : "33",
+        "5" : "35",
+        "4" : "31",
+        "3" : "36",
+        "2" : "32",
+        "1" : "34",
+        "0" : "30",
+        "f" : "37",
+        "e" : "33",
+        "d" : "35",
+        "c" : "31",
+        "b" : "34",
+        "a" : "32",
+        "l" : "1",
+        "o" : "3",
+        "n" : "4",
+        "u" : "4",
+        "r" : "0",
+    }
     color = color.replace(" ","").replace("-","").replace("_","")
-    try:
-        #todo
-        colors[color]
-    except:
-        warnings.warn("Invalid color given for debug function: "+color, SyntaxWarning)
-        color="default"
+    if advanced:
+        for _detColor in detailColor:
+            while "&"+_detColor in text:
+                _text = text
+                text = text.replace("m&"+_detColor,";"+detailColor[_detColor]+"m",1)
+                if text == text:
+                    text = text.replace("&"+_detColor,"["+detailColor[_detColor]+"m",1)
+        color = "default"
+    else:
+        try:
+            # is given color a valid option?
+            colors[color]
+        except:
+            warnings.warn("Invalid color given for debug function: "+color, SyntaxWarning)
+            color="default"
     if addTime:
         time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: "
     else:
