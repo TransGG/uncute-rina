@@ -33,7 +33,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.0.7.4".split(".")
+fileVersion = "1.1.0.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -83,7 +83,7 @@ async def setup_hook():
         "cmdg_Table"
     ]
     for extID in range(len(extensions)):
-        eta = (start + timedelta(seconds = (3/7)*len(extensions))) - datetime.now()
+        eta = (start + timedelta(seconds = int((30/8+0.5)*len(extensions)))) - datetime.now()
         debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]} (ETA: {eta.seconds}s)"+ " "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])
     ## activate the buttons in the table message

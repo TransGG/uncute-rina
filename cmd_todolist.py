@@ -10,30 +10,13 @@ cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
 
 class TodoList(commands.Cog):
-    @app_commands.command(name="get_todo",description="Get your list of to-do's!")
-    async def get_todo(self, itx: discord.Interaction):
-        collection = RinaDB["todoList"]
-        query = {"user": itx.user.id}
-        search = collection.find(query)
-        try:
-            list = search[0]["list"]
-            length = len(list)
-        except IndexError:
-            await itx.response.send_message("There are no items on your to-do list, so.. Good job! nothing to list here....",ephemeral=True)
-            return
-
-        ans = []
-        for id in range(length):
-            ans.append(f"`{id}`: {list[id]}")
-        ans = '\n'.join(ans)
-        await itx.response.send_message(f"Found {length} to-do item{'s'*(length!=1)}:\n{ans}",ephemeral=True)
-
     @app_commands.command(name="todo",description="Add or remove a to-do!")
-    @app_commands.describe(mode="Do you want to add or remove a to-do thingy?",
-                           todo="Add text to your todo, or remove a to-do using the ID (use /get_todo)")
+    @app_commands.describe(mode="Do you want to add, remove a to-do item, or check your current items?",
+                           todo="Add/remove a todo-list item. Does nothing if u wanna check it")
     @app_commands.choices(mode=[
         discord.app_commands.Choice(name='Add something to your to-do list', value=1),
-        discord.app_commands.Choice(name='Remove to-do', value=2)
+        discord.app_commands.Choice(name='Remove to-do', value=2),
+        discord.app_commands.Choice(name='Check', value=3)
     ])
     async def todo(self, itx: discord.Interaction, mode: int, todo: str):
         if mode == 1: # Add item to to-do list
@@ -73,6 +56,23 @@ class TodoList(commands.Cog):
                 return
             collection.update_one(query, {"$set":{f"list":list}}, upsert=True)
             await itx.response.send_message(f"Successfully removed '{todo}' from your to-do list. Your list now contains {len(list)} item{'s'*(len(list)!=1)}.", ephemeral=True)
+        elif mode == 3:
+            collection = RinaDB["todoList"]
+            query = {"user": itx.user.id}
+            search = collection.find(query)
+            try:
+                list = search[0]["list"]
+                length = len(list)
+            except IndexError:
+                await itx.response.send_message("There are no items on your to-do list, so.. Good job! nothing to list here....",ephemeral=True)
+                return
+
+            ans = []
+            for id in range(length):
+                ans.append(f"`{id}`: {list[id]}")
+            ans = '\n'.join(ans)
+            await itx.response.send_message(f"Found {length} to-do item{'s'*(length!=1)}:\n{ans}",ephemeral=True)
+
 
 
 async def setup(client):

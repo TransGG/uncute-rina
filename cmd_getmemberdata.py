@@ -140,9 +140,9 @@ class MemberData(commands.Cog):
         fig, (ax1) = plt.subplots(1,1)
         fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
         fig.tight_layout(pad=1.0)
-        ax1.plot(df['time'], df["joined"], 'b')
-        ax1.plot(df['time'], df["left"], 'r')
-        ax1.plot(df['time'], df["verified"], 'g')
+        ax1.plot(df['time'], df["joined"], 'r')
+        ax1.plot(df['time'], df["left"], 'g')
+        ax1.plot(df['time'], df["verified"], 'b')
         if doubles:
             reText = "exc"
         else:

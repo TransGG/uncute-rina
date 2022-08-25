@@ -56,6 +56,7 @@ def debug(text="", color="default", addTime=True, end=None):
     }
     color = color.replace(" ","").replace("-","").replace("_","")
     try:
+        #todo
         colors[color]
     except:
         warnings.warn("Invalid color given for debug function: "+color, SyntaxWarning)
