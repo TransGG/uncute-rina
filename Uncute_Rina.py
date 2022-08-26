@@ -69,7 +69,6 @@ async def on_ready():
 
 @client.event
 async def setup_hook():
-    raise Exception("Program not completed error")
     start = datetime.now()
     # await client.tree.sync()
     ## activate the code for slash commands

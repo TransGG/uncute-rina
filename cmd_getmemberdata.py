@@ -67,7 +67,7 @@ class MemberData(commands.Cog):
         period *= 86400 # days to seconds
         # Get a list of people (in this server) that joined at certain times. Maybe round these to a certain factor (don't overstress the x-axis)
         # These certain times are in a period of "now" and "[period] seconds ago"
-        totals = []
+        totals = {}
         results = {}
         warning = ""
         currentTime = mktime(datetime.utcnow().timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
@@ -82,8 +82,8 @@ class MemberData(commands.Cog):
         except IndexError:
             await itx.response.send_message("Not enough data is configured to do this action! Please hope someone joins sometime soon lol",ephemeral=True)
             return
-
         await itx.response.defer(ephemeral=hidden)
+
         for y in data:
             if type(data[y]) is not dict: continue
             column = []
@@ -95,7 +95,7 @@ class MemberData(commands.Cog):
                         column.append(time)
                         if not doubles:
                             break
-            totals.append(len(column))
+            totals[y] = len(column)
             for time in range(len(column)):
                 column[time] = int(column[time]/accuracy)*accuracy
                 if column[time] in results[y]:
@@ -165,7 +165,7 @@ class MemberData(commands.Cog):
         ax1.grid(visible=True, which='major', axis='both')
         fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
         plt.savefig('userJoins.png')
-        await itx.followup.send(f"In the past {period/86400} days, `{totals[0]}` members joined, `{totals[1]}` left, and `{totals[2]}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png') )
+        await itx.followup.send(f"In the past {period/86400} days, `{totals['joined']}` members joined, `{totals['left']}` left, and `{totals['verified']}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png') )
 
 
 async def setup(client):
