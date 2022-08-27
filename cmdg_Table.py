@@ -119,7 +119,7 @@ class Table(commands.GroupCog, name="table"):
         embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
 
         components = [{  "type": 1,"components":[]  }]
-        view = discord.ui.View()
+        view = discord.ui.View(timeout=None)
         for x in tableInfo:
             x = tableInfo[x] #todo todo todo
             try:
@@ -169,7 +169,7 @@ class Table(commands.GroupCog, name="table"):
             description="Click one of the buttons below to create or join a table!~")
         embed1.set_image(url="https://i.imgur.com/SBy90SG.png")
         embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
-        view = discord.ui.View()
+        view = discord.ui.View(timeout=None)
         components = [{  "type": 1,"components":[]  }]
         for x in tableInfo:
             x = tableInfo[x]
@@ -187,7 +187,6 @@ class Table(commands.GroupCog, name="table"):
         c = await itx.guild.fetch_channel(tableInfo["msgChannel"])
         msg = await c.fetch_message(tableInfo["message"])
         await msg.edit(embeds=[embed1,embed2],view=view)
-
 
     admin = app_commands.Group(name='admin', description='Edit a table system')
 
