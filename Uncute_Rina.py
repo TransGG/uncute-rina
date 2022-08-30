@@ -33,7 +33,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.0.0".split(".")
+fileVersion = "1.1.0.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -80,7 +80,8 @@ async def setup_hook():
         "cmd_todolist",
         "cmd_termdictionary",
         "cmd_toneindicator",
-        "cmdg_Table"
+        "cmdg_Table",
+        "cmd_addons"
     ]
     for extID in range(len(extensions)):
         eta = (start + timedelta(seconds = int((30/8+0.5)*len(extensions)))) - datetime.now()

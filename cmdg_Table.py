@@ -34,6 +34,7 @@ def getTableStatus(table):
 class Table(commands.GroupCog, name="table"):
     class TableButton(discord.ui.Button):
         async def callback(self, itx: discord.Interaction):
+            await itx.response.defer(ephemeral=True)
             query = {"guild_id": itx.guild_id}
             collection = RinaDB["tableInfo"]
             tableInfo = collection.find(query)
@@ -100,7 +101,7 @@ class Table(commands.GroupCog, name="table"):
                     await itx.response.send_message(f"Successfully joined table {table['id']}",ephemeral=True)
                     return
                 else:
-                    await itx.response.send_message("I don't know how you did it.. But you can't join a locked table!",ephemeral=True)
+                    await itx.response.send_message("I don't know how you did it.. But you can't join a locked table!\nPerhaps the table doesn't have a status? That's odd...\n    Please give staff (Mia) a heads-up about this",ephemeral=True)
                     return
 
     async def tablemsg(self, itx: discord.Interaction,channel=None):
