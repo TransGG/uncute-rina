@@ -175,7 +175,6 @@ class TermDictionary(commands.Cog):
             elif len(search) > 0:
                 resultStr += "\n"
                 for item in search:
-                    resultStr += item["definition"]+"\n"
                     resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
             else:
                 resultStr = f"I didn't find any results for '{term}' on en.pronouns.page!"

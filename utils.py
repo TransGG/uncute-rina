@@ -24,7 +24,9 @@ def isStaff(itx: discord.Interaction):
 def isAdmin(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles)]
+             discord.utils.find(lambda r: r.name == 'Admins'    , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Owner'     , itx.guild.roles)]
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
 
 def debug(text="", color="default", addTime=True, end=None, advanced=False):
