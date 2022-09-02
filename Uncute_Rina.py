@@ -33,7 +33,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.0.2".split(".")
+fileVersion = "1.1.1.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -73,6 +73,7 @@ async def setup_hook():
     # await client.tree.sync()
     ## activate the code for slash commands
     extensions = [
+        "cmd_addons",
         "cmd_customvcs",
         "cmd_emojistats",
         "cmd_getmemberdata",
@@ -81,11 +82,12 @@ async def setup_hook():
         "cmd_termdictionary",
         "cmd_toneindicator",
         "cmdg_Table",
-        "cmd_addons"
+        # "cmdg_Starboard",
     ]
     for extID in range(len(extensions)):
-        eta = (start + timedelta(seconds = int((30/8+0.5)*len(extensions)))) - datetime.now()
-        debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]} (ETA: {eta.seconds}s)"+ " "*15,color="light_blue",end='\r')
+        eta = ((start + timedelta(seconds = int((17.7/3)*len(extensions)))) - datetime.now()).seconds
+        if eta > 86000: eta -= 86400 #todo, it looped around apparently
+        debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]} (ETA: {eta}s)"+ " "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])
     ## activate the buttons in the table message
     from cmdg_Table import Table

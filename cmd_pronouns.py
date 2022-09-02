@@ -91,7 +91,7 @@ class Pronouns(commands.Cog):
 
         roles = []
         loweredList = [i.lower() for i in list]
-        pronounRoles = ["he/him", "she/her", "they/them"]
+        pronounRoles = ["he/him", "she/her", "they/them", "it/its"]
         for role in user.roles:
             if role.name.lower() == "other" and len(list) == 0:
                 roles.append("This person has the 'Other' role, so ask them if they have different pronouns.")

@@ -276,30 +276,30 @@ class CustomVcs(commands.Cog):
     @app_commands.describe(vc_hub="Mention the voice channel that should make a new voice channel when you join it",
                            vc_log="Mention the channel in which logs should be posted",
                            vc_category="Mention the category in which new voice channels should be created",
-                           vc_nomic="Mention the channel in which guide messages are sent ([x] joined, use /editvc to rename ur vc)")
-    async def editGuildInfo(self, itx: discord.Interaction, vc_hub: discord.VoiceChannel = None, vc_log: discord.TextChannel = None, vc_category: discord.CategoryChannel = None, vc_nomic: discord.TextChannel = None):
+                           vc_nomic="Mention the channel in which guide messages are sent ([x] joined, use /editvc to rename ur vc)",
+                           star_channel="Mention the channel in which you want starboard messages to be sent",
+                           star_minimum="How many star reactions must a message get before it is added to the starboard?")
+    async def editGuildInfo(self, itx: discord.Interaction, vc_hub: discord.VoiceChannel = None, vc_log: discord.TextChannel = None, vc_category: discord.CategoryChannel = None, vc_nomic: discord.TextChannel = None, star_channel: discord.TextChannel = None, star_minimum: int = None):
         if not isAdmin(itx):
             await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
             return
 
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["guildInfo"]
-        guildInfo = collection.find(query)
 
-        # if str(itx.guild.id) not in guildInfo:
-        #     guildInfo[str(itx.guild_id)] = {}
         if vc_hub is not None:
             collection.update_one(query, {"$set":{"vcHub":vc_hub.id}}, upsert=True)
-            # guildInfo[str(itx.guild_id)]["vcHub"] = vc_hub.id
         if vc_log is not None:
             collection.update_one(query, {"$set":{"vcLog":vc_log.id}}, upsert=True)
-            # guildInfo[str(itx.guild_id)]["vcLog"] = vc_log.id
         if vc_category is not None:
             collection.update_one(query, {"$set":{"vcCategory":vc_category.id}}, upsert=True)
-            # guildInfo[str(itx.guild_id)]["vcCategory"] = vc_category.id
         if vc_nomic is not None:
             collection.update_one(query, {"$set":{"vcNoMic":vc_nomic.id}}, upsert=True)
-            # guildInfo[str(itx.guild_id)]["vcNoMic"] = vc_nomic.id
+        if star_channel is not None:
+            collection.update_one(query, {"$set":{"starboardChannel":star_channel.id}}, upsert=True)
+        if star_minimum is not None:
+            collection.update_one(query, {"$set":{"starboardCountMinimum":star_minimum}}, upsert=True)
+
         await itx.response.send_message("Edited the settings.",ephemeral=True)
 
 async def setup(client):
