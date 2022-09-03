@@ -5,11 +5,13 @@ from utils import *
 
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
+
 
 class Addons(commands.Cog):
+    def __init__(self, client):
+        global RinaDB
+        RinaDB = client.RinaDB
+    
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?")
     async def say(self, itx: discord.Interaction, text: str):

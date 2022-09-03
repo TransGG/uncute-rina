@@ -5,12 +5,12 @@ from utils import *
 
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
+
 
 class Pronouns(commands.Cog):
     def __init__(self, client):
+        global RinaDB
+        RinaDB = client.RinaDB
         self.client = client
         self.ctx_menu_user = app_commands.ContextMenu(
             name='Pronouns',

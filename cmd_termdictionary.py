@@ -6,11 +6,14 @@ import requests #grab from en.pronouns.page api (search)
 import json # turn api request into dictionary
 import re #use regex to remove API hyperlink definitions: {#Ace=asexual}
 
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
+import pymongo # for online database
+from pymongo import MongoClient
 
 class TermDictionary(commands.Cog):
+    def __init__(self, client):
+        global RinaDB
+        RinaDB = client.RinaDB
+
     # @dictionary.autocomplete('term')
     async def dictionary_autocomplete(self, itx: discord.Interaction, current: str):
         def simplify(q):

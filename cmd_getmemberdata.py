@@ -6,14 +6,12 @@ from datetime import datetime, timedelta
 from time import mktime # for unix time code
 import matplotlib.pyplot as plt
 import pandas as pd
-
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
-
 class MemberData(commands.Cog):
+    def __init__(self, client):
+        global RinaDB
+        RinaDB = client.RinaDB
     async def addToData(self, member, type):
         collection = RinaDB["data"]
         query = {"guild_id": member.guild.id}
@@ -41,7 +39,6 @@ class MemberData(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         await self.addToData(member,"left")
-
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         role = discord.utils.find(lambda r: r.name == 'Verified', before.guild.roles)
@@ -166,7 +163,6 @@ class MemberData(commands.Cog):
         fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
         plt.savefig('userJoins.png')
         await itx.followup.send(f"In the past {period/86400} days, `{totals['joined']}` members joined, `{totals['left']}` left, and `{totals['verified']}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png') )
-
 
 async def setup(client):
     # client.add_command(getMemberData)

@@ -16,6 +16,7 @@ import pymongo # for online database
 from pymongo import MongoClient
 
 import asyncio # for threading the extension imports
+import sys # kill switch for rina (search for :kill)
 
 mongoURI = open("mongo.txt","r").read()
 cluster = MongoClient(mongoURI)
@@ -33,7 +34,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.1.0".split(".")
+fileVersion = "1.1.1.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -65,13 +66,17 @@ debug("Program started")
 # Client events begin
 @client.event
 async def on_ready():
-    debug(f"Logged in as {client.user}, in version {version}",color="green")
+    debug(f"[####] Logged in as {client.user}, in version {version}",color="green")
 
 @client.event
 async def setup_hook():
     start = datetime.now()
-    # await client.tree.sync()
-    ## activate the code for slash commands
+
+    ## cache server settings into client, to prevent having to load settings for every extension
+    debug(f"[+   ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
+    client.RinaDB = RinaDB
+    debug(f"[#   ]: Loaded server settings"+ " "*30,color="green")
+    ## activate the extensions/programs/code for slash commands
     extensions = [
         "cmd_addons",
         "cmd_customvcs",
@@ -82,14 +87,15 @@ async def setup_hook():
         "cmd_termdictionary",
         "cmd_toneindicator",
         "cmdg_Table",
-        # "cmdg_Starboard",
+        "cmdg_Starboard",
     ]
     for extID in range(len(extensions)):
-        eta = ((start + timedelta(seconds = int((17.7/3)*len(extensions)))) - datetime.now()).seconds
-        if eta > 86000: eta -= 86400 #todo, it looped around apparently
-        debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]} (ETA: {eta}s)"+ " "*15,color="light_blue",end='\r')
+        debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+ " "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])
+    debug(f"[##  ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
+
     ## activate the buttons in the table message
+    debug(f"[##+ ]: Updating table message"+ " "*30,color="light_blue",end='\r')
     from cmdg_Table import Table
     class Itx:
         async def set(self):
@@ -102,8 +108,11 @@ async def setup_hook():
     itx = Itx()
     await itx.set()
     await Table.tablemsgupdate(Table, itx)
+    debug(f"[### ]: Updated table message"+ " "*30,color="green")
+    debug(f"[###+]: Starting..."+ " "*30,color="light_blue")
 
-    debug(f"[{'#'*(len(extensions))}]: Loaded commands successfully (in {datetime.now()-start})",color="green")
+    # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
+    # await client.tree.sync()
 
 @client.event
 async def on_message(message):
@@ -170,7 +179,9 @@ async def on_message(message):
     #
     #         await message.add_reaction(reaction)
     #     await message.channel.send(message.content, allowed_mentions=discord.AllowedMentions.none())
-
+    if message.author.id == 262913789375021056:
+        if message.content == ":kill now please okay u need to stop.":
+            sys.exit(0)
     await client.process_commands(message)
 
 @client.event
@@ -235,7 +246,11 @@ async def on_error(event, *args, **kwargs):
     # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
     # msg += '\n\n                   '.join([repr(i) for i in kwargs])
     msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
-    channel = await logGuild.fetch_channel(vcLog)
+    channel = logGuild.get_channel(int(vcLog))
     embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
     await channel.send("<@262913789375021056>", embed=embed)
-client.run(open('token.txt',"r").read())
+
+try:
+    client.run(open('token.txt',"r").read())
+except SystemExit:
+    print("Exited the program forcefully using the kill switch")

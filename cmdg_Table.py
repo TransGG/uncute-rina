@@ -6,9 +6,6 @@ from utils import *
 
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
 
 def getTableStatus(table):
     status = {
@@ -32,6 +29,10 @@ def getTableStatus(table):
     return disabled,msg,label
 
 class Table(commands.GroupCog, name="table"):
+    def __init__(self, client):
+        global RinaDB
+        RinaDB = client.RinaDB
+
     class TableButton(discord.ui.Button):
         async def callback(self, itx: discord.Interaction):
             await itx.response.defer(ephemeral=True)

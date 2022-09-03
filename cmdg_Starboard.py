@@ -6,15 +6,12 @@ from datetime import datetime # for embed timestamp
 
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
 
 class Starboard(commands.Cog):
     def __init__(self, client):
-        self.client = client
         global RinaDB
-
+        self.client = client
+        RinaDB = client.RinaDB
 
     async def updateStat(self, star_message):
         # find original message
@@ -31,6 +28,7 @@ class Starboard(commands.Cog):
             return
 
         star_stat = 0
+        reactionTotal = 0
         # get message stars excluding Rina's
         for reaction in original_message.reactions:
             if reaction.emoji == '⭐':
@@ -44,9 +42,15 @@ class Starboard(commands.Cog):
                 if reaction.me:
                     star_stat -= 1
             if reaction.emoji == '❌':
+                reactionTotal = star_stat + reaction.count - 1 # stars (exc. rina) + x'es - rina's x
                 star_stat -= reaction.count
                 if reaction.me:
                     star_stat += 1
+
+        #todo
+        #if more x'es than stars, and more than 15 reactions, remove message
+        if star_stat < 0 and reactionTotal > 10:
+           await star_message.delete()
 
         # update message to new star value
         parts = star_message.content.split("**")
@@ -111,7 +115,7 @@ class Starboard(commands.Cog):
                             # can only set one image per embed.. :/
                     embed.set_author(
                             name = f"{message.author.nick or message.author.name}",
-                            url = "https://google.com",
+                            url = "https://amitrans.org/", #todo
                             icon_url = message.author.display_avatar.url
                     )
 
@@ -120,9 +124,12 @@ class Starboard(commands.Cog):
                             embed = embed,
                             allowed_mentions = discord.AllowedMentions.none(),
                         )
-                    await msg.add_reaction("⭐")
-                    # add initial star reaction to starboarded message
+
+                    # add initial star reaction to starboarded message, and new starboard msg
                     await message.add_reaction("⭐")
+                    await msg.add_reaction("⭐")
+                    await msg.add_reaction("❌")
+                    # todo downvotes
                     # add star reaction to original message to prevent message from being re-added to the starboard
 
     @commands.Cog.listener()

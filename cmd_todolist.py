@@ -5,11 +5,12 @@ from utils import *
 
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
 
 class TodoList(commands.Cog):
+    def __init__(self, client):
+        global RinaDB
+        RinaDB = client.RinaDB
+
     @app_commands.command(name="todo",description="Add or remove a to-do!")
     @app_commands.describe(mode="Do you want to add, remove a to-do item, or check your current items?",
                            todo="Add/remove a todo-list item. Does nothing if u wanna check it")

@@ -8,11 +8,12 @@ from datetime import datetime # for turning unix time into datetime
 
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
 
 class EmojiStats(commands.Cog):
+    def __init__(self, client):
+        global RinaDB
+        RinaDB = client.RinaDB
+
     async def addToData(self, emojiID, emojiName, location, animated):
         collection = RinaDB["emojistats"]
         query = {"id": emojiID}

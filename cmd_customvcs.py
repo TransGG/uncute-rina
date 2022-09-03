@@ -7,13 +7,15 @@ from time import mktime # for unix time code
 
 import pymongo # for online database
 from pymongo import MongoClient
-mongoURI = open("mongo.txt","r").read()
-cluster = MongoClient(mongoURI)
-RinaDB = cluster["Rina"]
 
 newVcs = {} # make your own vcs!
 
 class CustomVcs(commands.Cog):
+    def __init__(self, client):
+        global RinaDB
+        self.client = client
+        RinaDB = client.RinaDB
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         global newVcs
