@@ -34,7 +34,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.1.1".split(".")
+fileVersion = "1.1.1.2".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -246,7 +246,7 @@ async def on_error(event, *args, **kwargs):
     # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
     # msg += '\n\n                   '.join([repr(i) for i in kwargs])
     msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
-    channel = logGuild.get_channel(int(vcLog))
+    channel = await logGuild.fetch_channel(vcLog)
     embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
     await channel.send("<@262913789375021056>", embed=embed)
 

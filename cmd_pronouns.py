@@ -40,6 +40,12 @@ class Pronouns(commands.Cog):
         if pronoun in pronouns:
             await itx.response.send_message("You have already added this pronoun! You can't really put multiple of the same pronouns, that's be unnecessary..",ephemeral=True)
             return
+        if len(pronouns) > 20:
+            await itx.response.send_message("Having this many pronouns will make it difficult for others to pick one! Remove a few before adding a new one!",ephemeral=True)
+            return
+        if len(pronoun) > 90:
+            await itx.response.send_message("Please make your pronouns shorter in length, or use this command multiple times / split up the text",ephemeral=True)
+            return
         pronouns.append(pronoun)
         collection.update_one(query, {"$set":{f"pronouns":pronouns}}, upsert=True)
 
@@ -58,9 +64,27 @@ class Pronouns(commands.Cog):
             await itx.response.send_message("You haven't added pronouns yet! Use `/addpronoun <pronoun>` to add one!",ephemeral=True)
             return
         if pronoun not in pronouns:
-            await itx.response.send_message("You haven't added this pronoun yet, so I can't really remove it either! Use `/addpronoun <pronoun>` to add one, or `/pronouns <user:yourself>` to see what pronouns you have added", ephemeral=True)
-            return
-        pronouns.remove(pronoun)
+            if isStaff(itx):
+                # made possible with the annoying user '27', alt of Error, trying to break the bot :\
+                try:
+                    member_id, pronoun = pronoun.split(" | ",1)
+                    query = {"member_id": int(member_id)}
+                    data = collection.find(query)
+                    try:
+                        pronouns = data[0]['pronouns']
+                    except IndexError:
+                        #see if this user already has data, if not, add empty
+                        await itx.response.send_message("This person hasn't added pronouns yet! Tell them to use `/addpronoun <pronoun>` to add one!",ephemeral=True)
+                        return
+                    del pronouns[int(pronoun)-1]
+                except:
+                    await itx.response.send_message("If you are staff, and wanna remove a pronoun, then type \"pronoun:USERID | PronounYouWannaRemove\" like /removepronoun pronoun:4491185284728472 | 1\nThe pronoun/item you wanna remove will be in order of the pronouns, starting at 1 at the top. So if someone has 3 pronouns and you wanna remove the second one, type '2'.",ephemeral=True)
+                    return
+            else:
+                await itx.response.send_message("You haven't added this pronoun yet, so I can't really remove it either! Use `/addpronoun <pronoun>` to add one, or `/pronouns <user:yourself>` to see what pronouns you have added", ephemeral=True)
+                return
+        else:
+            pronouns.remove(pronoun)
         collection.update_one(query, {"$set":{f"pronouns":pronouns}}, upsert=True)
         await itx.response.send_message(f"Removed `{pronoun}` successfully!", ephemeral=True)
 
@@ -87,6 +111,8 @@ class Pronouns(commands.Cog):
             if pronoun.startswith(":"):
                 p = pronoun[:-1]
                 pronoun = pronoun +" = "+', '.join([p, p, p+"'s", p+"'s", p+"self"])
+            elif len(pronoun) > 500:
+                pronoun = pronoun[:500]
             list.append("-> " + pronoun)
 
         roles = []
