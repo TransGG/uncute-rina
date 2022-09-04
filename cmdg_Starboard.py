@@ -151,7 +151,7 @@ class Starboard(commands.Cog):
             debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
             return
         except KeyError:
-            raise KeyError("Not enough data is configured to .. remove a star from an item on the starboard because idk what channel i need to look in! Please fix this with `/editguildinfo`!",color="red")
+            raise KeyError("Not enough data is configured to .. remove a star from an item on the starboard because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
         star_channel = self.client.get_channel(_star_channel)
 
         if message.channel.id == star_channel.id:
