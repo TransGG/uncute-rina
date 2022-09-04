@@ -72,13 +72,15 @@ class Starboard(commands.Cog):
         guild = collection.find(query)
         try:
             guild = guild[0]
+            _star_channel = guild["starboardChannel"]
+            star_minimum = guild["starboardCountMinimum"]
         except IndexError:
             # can't send logging message, because we have no clue what channel that's supposed to be Xd
-            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
+            debug("Not enough data is configured to work with the starboard. Please fix this with `/editguildinfo`!",color="red")
             return
-        _star_channel = guild["starboardChannel"]
+        except KeyError:
+            raise KeyError("Not enough data is configured to do add an item to the starboard, because idk what channel i need to look in, and what minimum stars a message needs before it can be added to the starboard! Please fix this with `/editguildinfo`!")
         star_channel = self.client.get_channel(_star_channel)
-        star_minimum = guild["starboardCountMinimum"]
 
         if message.channel.id == star_channel.id:
             await self.updateStat(message)
@@ -143,11 +145,13 @@ class Starboard(commands.Cog):
         guild = collection.find(query)
         try:
             guild = guild[0]
+            _star_channel = guild["starboardChannel"]
         except IndexError:
             # can't send logging message, because we have no clue what channel that's supposed to be Xd
-            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
+            debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
             return
-        _star_channel = guild["starboardChannel"]
+        except KeyError:
+            raise KeyError("Not enough data is configured to .. remove a star from an item on the starboard because idk what channel i need to look in! Please fix this with `/editguildinfo`!",color="red")
         star_channel = self.client.get_channel(_star_channel)
 
         if message.channel.id == star_channel.id:
