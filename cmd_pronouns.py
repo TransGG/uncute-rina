@@ -117,7 +117,8 @@ class Pronouns(commands.Cog):
 
         if type(user) == discord.User:
             await itx.response.send_message("This person isn't in the server (anymore), so I can't see their pronouns from their roles!\n"+\
-            "So if they had pronouns, here's their list of custom ones:\n"+'\n'.join(list)+warning)
+            "So if they had custom pronouns, here's their list:\n"+'\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            return
 
         roles = []
         loweredList = [i.lower() for i in list]
