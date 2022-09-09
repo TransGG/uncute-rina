@@ -115,6 +115,10 @@ class Pronouns(commands.Cog):
                 pronoun = pronoun[:500]
             list.append("-> " + pronoun)
 
+        if type(user) == discord.User:
+            await itx.response.send_message("This person isn't in the server (anymore), so I can't see their pronouns from their roles!\n"+\
+            "So if they had pronouns, here's their list of custom ones:\n"+'\n'.join(list)+warning)
+
         roles = []
         loweredList = [i.lower() for i in list]
         pronounRoles = ["he/him", "she/her", "they/them", "it/its"]

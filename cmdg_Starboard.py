@@ -168,5 +168,28 @@ class Starboard(commands.Cog):
                                 await self.updateStat(star_message)
                                 return
 
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, message_payload):
+        collection = RinaDB["guildInfo"]
+        query = {"guild_id": message_payload.guild_id}
+        guild = collection.find(query)
+        try:
+            guild = guild[0]
+            _star_channel = guild["starboardChannel"]
+        except IndexError:
+            # can't send logging message, because we have no clue what channel that's supposed to be Xd
+            debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
+            return
+        except KeyError:
+            raise KeyError("Not enough data is configured to .. check starboard for a message matching the deleted message's ID, because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
+        star_channel = self.client.get_channel(_star_channel)
+
+        # check if this message's is in the starboard. If so, delete it
+        async for star_message in star_channel.history(limit=200):
+            for embed in star_message.embeds:
+                if embed.footer.text == str(message_payload.message_id):
+                    await star_message.delete()
+                    return
+
 async def setup(client):
     await client.add_cog(Starboard(client))
