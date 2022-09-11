@@ -45,7 +45,6 @@ class Addons(commands.Cog):
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
-
         async def call(itx, user, type):
             debug(type,color="blue")
             quotes = {
@@ -143,7 +142,7 @@ class Addons(commands.Cog):
 
         roles = ["he/him","she/her","they/them","it/its"]
         for role in user.roles:
-            if role.name.lower() in roles:
+            if role.name.lower() in random.shuffle(roles): # pick a random order for which pronoun role to pick
                 debug("successfully located role "+role.name.lower(),color="red")
                 await call(itx, user, role.name.lower())
                 return
