@@ -113,7 +113,6 @@ class ToneIndicator(commands.Cog):
             "playfully mad" : ["/pm"],
             "prideful" : ["/pr"],
             "half prideful" : ["/hpr"],
-            "passive agressive" : ["/pa"],
             "please interract" : ["/pi"],
             "please laugh" : ["/pl"],
             "paraphrase" : ["/para"],

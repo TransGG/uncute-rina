@@ -34,7 +34,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.1.3".split(".")
+fileVersion = "1.1.2.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -116,73 +116,10 @@ async def setup_hook():
 
 @client.event
 async def on_message(message):
-    # global last1984msg
-    if message.author.bot:
-        return
-    #random cool commands
-    # if message.content.startswith(":say "):
-    #     await message.channel.send(message.content.split(" ",1)[1].replace("[[del]]",""))
-    #     return
-    if client.user.mention in message.content.split():
-        msg = message.content.lower()
-        if ((("cute" or "cutie" in msg) and "not" in msg) or "uncute" in msg) and "not uncute" not in msg:
-            await message.add_reaction("<:this:960916817801535528>")
-        elif "cutie" in msg or "cute" in msg:
-            responses = [
-                "I'm not cute >_<",
-                "Nyaa~",
-                "Who? Me? No you're mistaken.",
-                "I very much deny the cuteness of someone like myself",
-                "If you think I'm cute, then you must be uber-cute!!",
-                "I don't think so.",
-                "Haha. Good joke. Tell me another tomorrow",
-                "Ehe, cutie what do u need help with?",
-                "No, I'm !cute.",
-                "You too!",
-                "No, you are <3",
-                "[shocked] Wha- w. .. w what?? .. NOo? no im nott?\nwhstre you tslking about?",
-                "Oh you were talking to me? I thought you were talking about everyone else here,",
-                "Nope. I doubt it. There's no way I can be as cute as you",
-                "Maybe.. Maybe I am cute.",
-                "If the sun was dying, would you still think I was cute?",
-                "Awww. Thanks sweety, but you've got the wrong number",
-                ":joy: You *reaaally* think so? You've gotta be kidding me.",
-                "If you're gonna be spamming this, .. maybe #general isn't the best channel for that.",
-                "You gotta praise those around you as well. "+(message.author.nick or message.author.name)+", for example, is very cute.",
-                "Oh by the way, did I say "+(message.author.nick or message.author.name)+" was cute yet? I probably didn't. "+(message.author.nick or message.author.name)+"? You're very cute",
-                "Such nice weather outside, isn't it? What- you asked me a question?\nNo you didn't, you're just talking to youself.",
-                "".join(random.choice("acefgilrsuwnopacefgilrsuwnopacefgilrsuwnop;;  ") for i in range(random.randint(10,25))), # 3:2 letters to symbols
-                "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
-                "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
-                "...",
-                "Hey that's not how it works!",
-                "Hey my lie detector said you are lying.",
-                "You know i'm not a mirror, right?",
-                "*And the oscar for cutest responses goes to..  YOU!!*",
-                "No I am not cute",
-                "k",
-                (message.author.nick or message.author.name)+", stop lying >:C",
-                "BAD!",
-                "You're also part of the cuties set",
-                "https://cdn.discordapp.com/emojis/920918513969950750.webp?size=4096&quality=lossless",
-                "[Checks machine]; Huh? Is my lie detector broken? I should fix that..",
-                "Hey, you should be talking about yourself first! After all, how do you keep up with being such a cutie all the time?"]
-            respond = random.choice(responses)
-            if respond == "BAD!":
-                await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
-            await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
-        else:
-            await message.channel.send("I use slash commands! Use /command  and see what cool things might pop up! or something\nPS: If you're trying to call me cute: no, i'm not", delete_after=8)
-
-    # if message.content.endswith("🥺"):
-    #     for reaction in ["😳","🥺","<:shy:964724545946800218>","👉","👈","<:bwushy:966885955346763867>","<:animeblush:968335608118378586>"]:
-    #
-    #         await message.add_reaction(reaction)
-    #     await message.channel.send(message.content, allowed_mentions=discord.AllowedMentions.none())
+    # kill switch, see cmd_addons for other on_message events.
     if message.author.id == 262913789375021056:
         if message.content == ":kill now please okay u need to stop.":
             sys.exit(0)
-    await client.process_commands(message)
 
 @client.event
 async def on_raw_reaction_add(reaction):
