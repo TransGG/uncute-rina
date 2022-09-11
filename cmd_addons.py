@@ -45,26 +45,49 @@ class Addons(commands.Cog):
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
+        try:
+            user.roles
+        except AttributeError:
+            itx.response.send_message("Aw man, it seems this person isn't in the server. I wish I could compliment them but they won't be able to see it!",ephemeral=True)
+            return
         async def call(itx, user, type):
             quotes = {
                 "fem_quotes" : [
                     "Was the sun always this hot? or is it because of you?",
                     "Ooh you look like a good candidate for my pet blahaj!",
+                    "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
+                    "I bet you sweat glitter.",
+                    "Your hair looks stunning!",
+                    "Being around you is like being on a happy little vacation.",
                 ],
                 "masc_quotes" : [
-                    "",
+                    "You are the best man out there.",
+                    "You are the strongest guy I know.",
+                    "You have an amazing energy!",
+                    "You seem to know how to fix everything!",
+                    "Waw, you seem like a very attractive guy!",
+
                 ],
                 "they_quotes" : [
                     "",
                 ],
                 "it_quotes" : [
-                    "",
+                    "I bet you do the crossword puzzle in ink!",
                 ],
                 "unisex_quotes" : [ #unisex quotes are added to each of the other quotes later on.
                     "_Let me just hide this here-_ hey wait, are you looking?!",
                     "Would you like a hug?",
+                    "Hey I have some leftover cookies.. \\*wink wink\\*"
                     "Would you like to walk in the park with me? I gotta walk my catgirls",
-                    "morb"
+                    "morb",
+                    "You look great today!",
+                    "You light up the room.",
+                    "On a scale from 1 to 10, you’re an 11!",
+                    'When you say, “I meant to do that,” I totally believe you.',
+                    "You should be thanked more often. So thank you!",
+                    "You are so easy to have a conversation with.",
+
+
 
                 ]
             }
