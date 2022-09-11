@@ -7,6 +7,9 @@ from datetime import datetime # for embed timestamp
 import pymongo # for online database
 from pymongo import MongoClient
 
+starboard_emoji_id = 992493515714068480
+starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"
+
 class Starboard(commands.Cog):
     def __init__(self, client):
         global RinaDB
@@ -31,16 +34,22 @@ class Starboard(commands.Cog):
         reactionTotal = 0
         # get message stars excluding Rina's
         for reaction in original_message.reactions:
-            if reaction.emoji == '⭐':
-                star_stat += reaction.count
-                if reaction.me:
-                    star_stat -= 1
+            try:
+                if reaction.emoji.id == starboard_emoji_id:
+                    star_stat += reaction.count
+                    if reaction.me:
+                        star_stat -= 1
+            except AttributeError: #is not a custom emoji
+                pass
         # get starboard stars excluding Rina's
         for reaction in star_message.reactions:
-            if reaction.emoji == '⭐':
-                star_stat += reaction.count
-                if reaction.me:
-                    star_stat -= 1
+            try:
+                if reaction.emoji.id == starboard_emoji_id:
+                    star_stat += reaction.count
+                    if reaction.me:
+                        star_stat -= 1
+            except AttributeError: #is not a custom emoji
+                pass
             if reaction.emoji == '❌':
                 reactionTotal = star_stat + reaction.count - 1 # stars (exc. rina) + x'es - rina's x
                 star_stat -= reaction.count
@@ -88,7 +97,11 @@ class Starboard(commands.Cog):
 
 
         for reaction in message.reactions:
-            if reaction.emoji == '⭐':
+            try:
+                reaction.emoji.id
+            except AttributeError:
+                return
+            if reaction.emoji.id == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
                     async for star_message in star_channel.history(limit=200):
@@ -128,8 +141,8 @@ class Starboard(commands.Cog):
                         )
 
                     # add initial star reaction to starboarded message, and new starboard msg
-                    await message.add_reaction("⭐")
-                    await msg.add_reaction("⭐")
+                    await message.add_reaction(starboard_emoji)
+                    await msg.add_reaction(starboard_emoji)
                     await msg.add_reaction("❌")
                     # todo downvotes
                     # add star reaction to original message to prevent message from being re-added to the starboard

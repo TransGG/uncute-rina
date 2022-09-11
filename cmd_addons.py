@@ -46,27 +46,26 @@ class Addons(commands.Cog):
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
         async def call(itx, user, type):
-            debug(type,color="blue")
             quotes = {
                 "fem_quotes" : [
-                    "This is a fem quote (for people with she/her pronouns)",
-                    "This is a second quote for feminine",
+                    "Was the sun always this hot? or is it because of you?",
+                    "Ooh you look like a good candidate for my pet blahaj!",
                 ],
                 "masc_quotes" : [
-                    "This is a masc quote (for people with he/him pronouns)",
-                    "This is a second quote for masculine",
+                    "",
                 ],
                 "they_quotes" : [
-                    "This is an enby quote for people with they/them pronouns",
-                    "This is a second quote for they/them enby",
+                    "",
                 ],
                 "it_quotes" : [
-                    "This is an enby quote for people with it/its pronouns",
-                    "This is a second quote for it/its enby",
+                    "",
                 ],
-                "unisex_quotes" : [
-                    "This is an unisex quote for people for whom you don't know their pronouns",
-                    "This is a second quote for unisex / unknown pronouns",
+                "unisex_quotes" : [ #unisex quotes are added to each of the other quotes later on.
+                    "_Let me just hide this here-_ hey wait, are you looking?!",
+                    "Would you like a hug?",
+                    "Would you like to walk in the park with me? I gotta walk my catgirls",
+                    "morb"
+
                 ]
             }
             type = {
@@ -76,7 +75,13 @@ class Addons(commands.Cog):
                 "it/its"    : "enby_quotes",
                 "unisex"    : "unisex_quotes", #todo
             }[type]
-            debug(type,color="green")
+
+            for x in quotes:
+                if x == "unisex_quotes":
+                    continue
+                else:
+                    quotes[x] += quotes["unisex_quotes"]
+
             if itx.response.is_done():
                 await itx.edit_original_response(content=random.choice(quotes[type]), view=None)
             else:
@@ -97,53 +102,45 @@ class Addons(commands.Cog):
                 async def feminine(self, interaction: discord.Interaction, button: discord.ui.Button):
                     self.value = "she/her"
                     await interaction.response.send_message('Selected She/Her pronouns for compliment', ephemeral=True)
-                    debug(self.value,color="purple")
                     self.stop()
 
                 @discord.ui.button(label='He/Him', style=discord.ButtonStyle.green)
                 async def masculine(self, interaction: discord.Interaction, button: discord.ui.Button):
                     self.value = "he/him"
                     await interaction.response.send_message('Selected He/Him pronouns for the compliment', ephemeral=True)
-                    debug(self.value,color="purple")
                     self.stop()
 
                 @discord.ui.button(label='They/Them', style=discord.ButtonStyle.green)
                 async def enby_them(self, interaction: discord.Interaction, button: discord.ui.Button):
                     self.value = "they/them"
                     await interaction.response.send_message('Selected They/Them pronouns for the compliment', ephemeral=True)
-                    debug(self.value,color="purple")
                     self.stop()
 
                 @discord.ui.button(label='It/Its', style=discord.ButtonStyle.green)
                 async def enby_its(self, interaction: discord.Interaction, button: discord.ui.Button):
                     self.value = "it/its"
                     await interaction.response.send_message('Selected It/Its pronouns for the compliment', ephemeral=True)
-                    debug(self.value,color="purple")
                     self.stop()
 
                 @discord.ui.button(label='Unisex/Unknown', style=discord.ButtonStyle.grey)
                 async def unisex(self, interaction: discord.Interaction, button: discord.ui.Button):
                     self.value = "unisex"
                     await interaction.response.send_message('Selected Unisex/Unknown gender for the compliment', ephemeral=True)
-                    debug(self.value,color="purple")
                     self.stop()
 
             view = Confirm(timeout=30)
             await itx.response.send_message("This person doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view)
             await view.wait()
-            debug(view.value,color="purple")
             if view.value is None:
                 await itx.edit_original_response(content=':x: Timed out...', view=None)
                 await asyncio.sleep(3)
                 await itx.delete_original_response()
             else:
-                debug(view.value,color="blue")
                 await call(itx, user, view.value)
 
         roles = ["he/him","she/her","they/them","it/its"]
         for role in user.roles:
             if role.name.lower() in random.shuffle(roles): # pick a random order for which pronoun role to pick
-                debug("successfully located role "+role.name.lower(),color="red")
                 await call(itx, user, role.name.lower())
                 return
         await confirm_gender()
