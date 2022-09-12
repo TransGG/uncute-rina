@@ -45,6 +45,11 @@ class Addons(commands.Cog):
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
+        await itx.response.send_message("This command is currently disabled for now, since we're missing compliments. Feel free to suggest some, and ping @MysticMia#7612",ephemeral=True)
+        return
+
+
+
         try:
             user.roles
         except AttributeError:
@@ -59,6 +64,8 @@ class Addons(commands.Cog):
                     "I bet you sweat glitter.",
                     "Your hair looks stunning!",
                     "Being around you is like being on a happy little vacation.",
+                    "Good girll",
+                    "Who's a good girl?? You are!!",
                 ],
                 "masc_quotes" : [
                     "You are the best man out there.",
@@ -66,6 +73,8 @@ class Addons(commands.Cog):
                     "You have an amazing energy!",
                     "You seem to know how to fix everything!",
                     "Waw, you seem like a very attractive guy!",
+                    "Good boyy!",
+                    "Who's a cool guy? You are!!",
 
                 ],
                 "they_quotes" : [
