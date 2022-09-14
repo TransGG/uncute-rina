@@ -21,7 +21,7 @@ class QOTW(commands.Cog):
             await itx.response.send_message("Please make your question shorter! If you have a special request, please make a ticket (in #contact-staff)",ephemeral=True)
         # get channel id of where this message has to be sent
         confirmChannel = itx.channel
-        confirmChannel.id = 985931648094834801
+        confirmChannel.id = 1019706498609319969
         # make cool embed
         embed = discord.Embed(
                 color = discord.Colour.from_rgb(r=33, g=33, b=33),
