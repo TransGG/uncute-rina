@@ -34,7 +34,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.2.0".split(".")
+fileVersion = "1.1.2.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -83,8 +83,9 @@ async def setup_hook():
         "cmd_emojistats",
         "cmd_getmemberdata",
         "cmd_pronouns",
-        "cmd_todolist",
+        "cmd_qotw",
         "cmd_termdictionary",
+        "cmd_todolist",
         "cmd_toneindicator",
         "cmdg_Table",
         "cmdg_Starboard",
