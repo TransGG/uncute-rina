@@ -19,26 +19,25 @@ class QOTW(commands.Cog):
     async def qotw(self, itx: discord.Interaction, question: str):
         if len(question) > 250:
             await itx.response.send_message("Please make your question shorter! If you have a special request, please make a ticket (in #contact-staff)",ephemeral=True)
-        # get channel id of where this message has to be sent
-        confirmChannel = itx.channel
-        confirmChannel.id = 1019706498609319969
-        # make cool embed
+        # get channel of where this message has to be sent
+        confirmChannel = self.client.get_channel(1019706498609319969)
+        # make uncool embed for the loading period while it sends the copyable version
         embed = discord.Embed(
                 color = discord.Colour.from_rgb(r=33, g=33, b=33),
                 description = f"Loading question...", #{message.content}
             )
-        # yeah. Now send the embed here
+        # send the uncool embed
         msg = await confirmChannel.send(
                 "",
                 embed = embed,
                 allowed_mentions = discord.AllowedMentions.none(),
             )
-        await msg.add_reaction("⬆️")
-        await msg.add_reaction("⬇️")
+        #make and join a thread under the question
         thread = await msg.create_thread(name=f"QOTW-{question[:50]}")
         await thread.join()
+        #send a plaintext version of the question, and copy a link to it
         copyableVersion = await thread.send(f"{question}",allowed_mentions=discord.AllowedMentions.none())
-
+        # edit the uncool embed to make it cool: Show question, link to plaintext, and upvotes/downvotes
         embed = discord.Embed(
                 color = discord.Colour.from_rgb(r=255, g=255, b=172),
                 title = f'',
@@ -53,6 +52,8 @@ class QOTW(commands.Cog):
         embed.set_footer(text = f"")
 
         await msg.edit(embed=embed)
+        await msg.add_reaction("⬆️")
+        await msg.add_reaction("⬇️")
         await itx.response.send_message("Successfully added your question to the queue! (must first be accepted by the staff team)",ephemeral=True)
 
 async def setup(client):
