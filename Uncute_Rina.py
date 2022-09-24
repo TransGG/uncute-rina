@@ -34,7 +34,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.2.2".split(".")
+fileVersion = "1.1.2.3".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -110,7 +110,7 @@ async def setup_hook():
     await itx.set()
     await Table.tablemsgupdate(Table, itx)
     debug(f"[### ]: Updated table message"+ " "*30,color="green")
-    debug(f"[###+]: Starting..."+ " "*30,color="light_blue")
+    debug(f"[###+]: Starting..."+ " "*30,color="light_blue",end='\r')
 
     # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
     # await client.tree.sync()
