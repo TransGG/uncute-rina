@@ -112,7 +112,7 @@ class Starboard(commands.Cog):
                                 await self.updateStat(star_message)
                                 return
                     return
-                elif reaction.count = star_minimum:
+                elif reaction.count == star_minimum:
                     if message.author == self.client.user:
                         #can't starboard Rina's message
                         return
