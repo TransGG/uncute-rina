@@ -31,26 +31,35 @@ class Starboard(commands.Cog):
             await star_message.delete()
             return
 
-        star_stat = 0
+        star_stat_message = 0
         reactionTotal = 0
         # get message stars excluding Rina's
         for reaction in original_message.reactions:
             try:
                 if reaction.emoji.id == starboard_emoji_id:
-                    star_stat += reaction.count
+                    star_stat_message += reaction.count
                     if reaction.me:
-                        star_stat -= 1
+                        star_stat_message -= 1
             except AttributeError: #is not a custom emoji
                 pass
+
+        star_stat_starboard = 0
         # get starboard stars excluding Rina's
         for reaction in star_message.reactions:
             try:
                 if reaction.emoji.id == starboard_emoji_id:
-                    star_stat += reaction.count
+                    star_stat_starboard += reaction.count
                     if reaction.me:
-                        star_stat -= 1
+                        star_stat_starboard -= 1
             except AttributeError: #is not a custom emoji
                 pass
+
+        if star_stat_starboard > star_stat_message:
+            star_stat = star_stat_starboard
+        else:
+            star_stat = star_stat_message
+
+        for reaction in star_message.reactions:
             if reaction.emoji == '❌':
                 reactionTotal = star_stat + reaction.count - 1 # stars (exc. rina) + x'es - rina's x
                 star_stat -= reaction.count
@@ -201,7 +210,7 @@ class Starboard(commands.Cog):
 
         if message_payload.channel_id == star_channel.id:
             # check if the deleted message is a starboard message; if so, log it at starboard message deletion
-            await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_payload.message_id}) (Starboard message was deleted manually)")
+            await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message was removed (from {message_payload.message_id}) (Starboard message was deleted manually)")
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it

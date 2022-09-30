@@ -66,6 +66,8 @@ class Addons(commands.Cog):
                     "Being around you is like being on a happy little vacation.",
                     "Good girll",
                     "Who's a good girl?? You are!!",
+                    "Amazing! Perfect! Beautiful! How **does** she do it?!",
+                    "I can tell that you are a very special and talented girl!",
                 ],
                 "masc_quotes" : [
                     "You are the best man out there.",
@@ -75,10 +77,11 @@ class Addons(commands.Cog):
                     "Waw, you seem like a very attractive guy!",
                     "Good boyy!",
                     "Who's a cool guy? You are!!",
+                    "I can tell that you are a very special and talented guy!",
 
                 ],
                 "they_quotes" : [
-                    "",
+                    "I can tell that you are a very special and talented person!",
                 ],
                 "it_quotes" : [
                     "I bet you do the crossword puzzle in ink!",
@@ -189,6 +192,7 @@ class Addons(commands.Cog):
             elif "cutie" in msg or "cute" in msg:
                 responses = [
                     "I'm not cute >_<",
+                    "I'm not cute! I'm... Tough! Badass!",
                     "Nyaa~",
                     "Who? Me? No you're mistaken.",
                     "I very much deny the cuteness of someone like myself",

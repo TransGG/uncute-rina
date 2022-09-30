@@ -92,7 +92,7 @@ class EmojiStats(commands.Cog):
         try:
             emoji = search[0]
         except:
-            await itx.response.send_message("That emoji doesn't have data yet. It hasn't been used since we started tracking the data yet.", ephemeral=True)
+            await itx.response.send_message("That emoji doesn't have data yet. It hasn't been used since we started tracking the data yet. (<t:1660156260:R>, <t:1660156260:F>)", ephemeral=True)
             return
 
         try:

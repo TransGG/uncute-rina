@@ -41,11 +41,16 @@ class CustomVcs(commands.Cog):
             elif len(before.channel.members) == 0:
                 # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
                 # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
-                await before.channel.delete()
                 try:
                     del newVcs[before.channel.id]
                 except KeyError:
                     pass #haven't edit the channel yet
+                try:
+                    await before.channel.delete()
+                except discord.errors.NotFound:
+                    logChannel = member.guild.get_channel(vcLog)
+                    await logChannel.send(f"**WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, but it **could not be deleted!.**", allowed_mentions=discord.AllowedMentions.none())
+                    raise
                 logChannel = member.guild.get_channel(vcLog)
                 await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
         if after.channel is not None:
