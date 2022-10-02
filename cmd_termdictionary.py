@@ -262,10 +262,8 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
             return
         collection = RinaDB["termDictionary"]
         query = {"term": term}
-        search = collection.find(query)
-        try:
-            search = search[0]
-        except IndexError:
+        search = collection.find_one(query)
+        if search is None:
             await itx.response.send_message("This term hasn't been added to the dictionary yet, and thus cannot be undefined!",ephemeral=True)
             return
         await logMsg(itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) undefined the dictionary definition of '{term}' from '{search['definition']}' with synonyms: {search['synonyms']}")
