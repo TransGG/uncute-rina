@@ -194,7 +194,7 @@ class Starboard(commands.Cog):
     async def on_raw_message_delete(self, message_payload):
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message_payload.guild_id}
-        guild = collection.find(query)
+        guild = collection.find_one(query)
         if guild is None:
             debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
             return
