@@ -113,8 +113,14 @@ class EmojiStats(commands.Cog):
                            max_results = "How many emojis do you want to retrieve at most? (may return fewer)",
                            min_used = "Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 1)",
                            min_msg = "Up to how many times may the emoji have been used in a message? (default: 1)",
-                           min_react = "Up to how many times may the emoj have been used as a reaction? (default: 1)")
-    async def getUnusedEmojis(self,itx: discord.Interaction, hidden: bool =True, max_results:int = 10, min_used:int = 1, min_msg:int = 1, min_react:int = 1):
+                           min_react = "Up to how many times may the emoj have been used as a reaction? (default: 1)",
+                           animated = "Are you looking for animated emojis or static emojis")
+    @app_commands.choices(animated=[
+        discord.app_commands.Choice(name='Animated emojis', value=1),
+        discord.app_commands.Choice(name='Static/Image emojis', value=2),
+        discord.app_commands.Choice(name='Both', value=3)
+    ])
+    async def getUnusedEmojis(self,itx: discord.Interaction, hidden: bool =True, max_results:int = 10, min_used:int = 1, min_msg:int = 1, min_react:int = 1, animated:int = 3):
         if not isStaff(itx):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
@@ -131,6 +137,11 @@ class EmojiStats(commands.Cog):
 
         unused_emojis = []
         for emoji in itx.guild.emojis:
+            if emoji.animated and (animated == 2):
+                continue
+            if (not emoji.animated) and animated == 1:
+                continue
+
             collection = RinaDB["emojistats"]
             query = {"id": str(emoji.id)}
             emojidata = collection.find_one(query)
