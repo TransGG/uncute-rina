@@ -27,7 +27,7 @@ class Starboard(commands.Cog):
             original_message = await ch.fetch_message(message_id)
         except discord.NotFound:
             # if original message removed, remove starboard message
-            await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
+            await logMsg(star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
             await star_message.delete()
             return
 
@@ -68,7 +68,7 @@ class Starboard(commands.Cog):
 
         #if more x'es than stars, and more than 15 reactions, remove message
         if star_stat < 0 and reactionTotal > 10:
-            await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
+            await logMsg(star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
             await star_message.delete()
             return
 

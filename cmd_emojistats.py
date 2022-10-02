@@ -77,7 +77,7 @@ class EmojiStats(commands.Cog):
             return
 
         if ":" in emoji:
-            emoji = emoji.split(":")[2].replace(">","")
+            emoji = emoji.split(":")[2][:-1]
         emoji_id = emoji
         for x in emoji_id:
             try:
@@ -95,18 +95,13 @@ class EmojiStats(commands.Cog):
             await itx.response.send_message("That emoji doesn't have data yet. It hasn't been used since we started tracking the data yet. (<t:1660156260:R>, <t:1660156260:F>)", ephemeral=True)
             return
 
-        try:
-            msgUsed = emoji['messageUsedCount']
-        except KeyError:
-            msgUsed = 0
-        try:
-            reactionUsed = emoji['reactionUsedCount']
-        except KeyError:
-            reactionUsed = 0
-        try:
-            animated = emoji['animated']
-        except KeyError:
-            animated = False
+        msgUsed = emoji.get('messageUsedCount',0)
+        reactionUsed = emoji.get('reactionUsedCount',0)
+        animated = emoji.get('animated',False)
+        # try:
+        #     animated = emoji['animated']
+        # except KeyError:
+        #     animated = False
 
         emojiSearch = ('a'*animated)+":"+emoji["name"]+":"+emoji["id"]
         emote = discord.PartialEmoji.from_str(emojiSearch)
@@ -116,6 +111,46 @@ class EmojiStats(commands.Cog):
         f"reactionUsedCount: {reactionUsed}\n"+\
         f"Animated: {(animated)}\n"+\
         f"Last used: {datetime.utcfromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
+
+    @app_commands.command(name="getunusedemojis",description="Get the least-used emojis")
+    @app_commands.describe(hidden= "Do you want everyone in this channel to be able to see this result?",
+                           max_results = "How many emojis do you want to retrieve at most? (may return fewer)",
+                           min_used = "Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 1)",
+                           min_msg = "Up to how many times may the emoji have been used in a message? (default: 1)",
+                           min_react = "Up to how many times may the emoj have been used as a reaction? (default: 1)")
+    async def getUnusedEmojis(self,itx: discord.Interaction, hidden: bool =True, max_results:int = 10, min_used:int = 1, min_msg:int = 1, min_react:int = 1):
+        if not isStaff(itx):
+            await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
+            return
+        await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)",ephemeral=hidden)
+
+        if max_results > 20:
+            max_results = 20
+        if min_used < 0:
+            min_used = 0
+        if min_msg < 0:
+            min_msg = 0
+        if min_react < 0:
+            min_react = 0
+
+        unused_emojis = []
+        for emoji in itx.guild.emojis:
+            collection = RinaDB["emojistats"]
+            query = {"id": str(emoji.id)}
+            # search = collection.find(query)
+            # try:
+            #     emojidata = search[0]
+            # except:
+            emojidata = collection.find_one(query)
+            if emojidata is None:
+                unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> (0,0)")
+                continue
+
+            msgUsed = emojidata.get('messageUsedCount',0)
+            reactionUsed = emojidata.get('reactionUsedCount',0)
+            if (msgUsed + reactionUsed <= min_used) and (msgUsed <= min_msg) and (reactionUsed <= min_react):
+                unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> ({msgUsed},{reactionUsed})")
+        await itx.edit_original_response(content="These emojis have been used very little (x used in msg, x used as reaction):\n"+', '.join(unused_emojis))
 
     @app_commands.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def getEmojiTop10(self, itx: discord.Interaction):
