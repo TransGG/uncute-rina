@@ -10,6 +10,8 @@ from pymongo import MongoClient
 starboard_emoji_id = 992493515714068480
 starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"
 
+messageIdMarkedForDeletion = []
+
 class Starboard(commands.Cog):
     def __init__(self, client):
         global RinaDB
@@ -28,6 +30,7 @@ class Starboard(commands.Cog):
         except discord.NotFound:
             # if original message removed, remove starboard message
             await logMsg(star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
+            messageIdMarkedForDeletion.append(star_message.id)
             await star_message.delete()
             return
 
@@ -149,7 +152,7 @@ class Starboard(commands.Cog):
                             embed = embed,
                             allowed_mentions = discord.AllowedMentions.none(),
                         )
-                    await logMsg(star_channel.guild, f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}")
+                    await logMsg(star_channel.guild, f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}. Content: \"\"\"{message.content}\"\"\" and attachments: {[x.url for x in message.attachments]}")
                     # add initial star reaction to starboarded message, and new starboard msg
                     await message.add_reaction(starboard_emoji)
                     await msg.add_reaction(starboard_emoji)
@@ -204,16 +207,27 @@ class Starboard(commands.Cog):
             raise KeyError("Not enough data is configured to .. check starboard for a message matching the deleted message's ID, because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
         star_channel = self.client.get_channel(_star_channel)
 
+        if message_payload.message_id in messageIdMarkedForDeletion: #global variable
+            messageIdMarkedForDeletion.remove(message_id)
+            return
         if message_payload.channel_id == star_channel.id:
             # check if the deleted message is a starboard message; if so, log it at starboard message deletion
-            await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message was removed (from {message_payload.message_id}) (Starboard message was deleted manually)")
+            await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message was removed (from {message_payload.message_id}) (Starboard message was deleted manually).")
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
             async for star_message in star_channel.history(limit=300):
                 for embed in star_message.embeds:
                     if embed.footer.text == str(message_payload.message_id):
-                        await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_payload.message_id}) (original message was removed (this starboard message's linked id matched the removed message's))")
+                        try:
+                            image = star_message.embeds[0].image.url
+                        except AttributeError:
+                            image = ""
+                        try:
+                            msg_link = str(message_payload.message_id)+"  |  "+ ((await self.client.get_channel(message_payload.channel_id).fetch_message(message_payload.message_id)).jump_url)
+                        except discord.NotFound:
+                            msg_link = str(message_payload.message_id)+" (couldn't get jump link)"
+                        await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) (original message was removed (this starboard message's linked id matched the removed message's)). Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
                         await star_message.delete()
                         return
 
