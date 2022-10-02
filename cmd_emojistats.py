@@ -131,8 +131,6 @@ class EmojiStats(commands.Cog):
 
         unused_emojis = []
         for emoji in itx.guild.emojis:
-            if len(unused_emojis) > max_results:
-                break
             collection = RinaDB["emojistats"]
             query = {"id": str(emoji.id)}
             emojidata = collection.find_one(query)
@@ -144,7 +142,14 @@ class EmojiStats(commands.Cog):
             reactionUsed = emojidata.get('reactionUsedCount',0)
             if (msgUsed + reactionUsed <= min_used) and (msgUsed <= min_msg) and (reactionUsed <= min_react):
                 unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> ({msgUsed},{reactionUsed})")
-        await itx.edit_original_response(content="These emojis have been used very little (x used in msg, x used as reaction):\n"+', '.join(unused_emojis))
+
+            if len(unused_emojis) > max_results:
+                break
+
+        output = ', '.join(unused_emojis)
+        if len(output) > 1850:
+            output = output[:1850] + "\nShortened to be able to be sent."
+        await itx.edit_original_response(content="These emojis have been used very little (x used in msg, x used as reaction):\n"+output)
 
     @app_commands.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def getEmojiTop10(self, itx: discord.Interaction):
