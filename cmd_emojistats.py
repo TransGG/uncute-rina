@@ -120,8 +120,8 @@ class EmojiStats(commands.Cog):
             return
         await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)",ephemeral=hidden)
 
-        if max_results > 20:
-            max_results = 20
+        if max_results > 50:
+            max_results = 50
         if min_used < 0:
             min_used = 0
         if min_msg < 0:
