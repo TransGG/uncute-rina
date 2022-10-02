@@ -131,6 +131,8 @@ class EmojiStats(commands.Cog):
 
         unused_emojis = []
         for emoji in itx.guild.emojis:
+            if len(unused_emojis) > max_results:
+                break
             collection = RinaDB["emojistats"]
             query = {"id": str(emoji.id)}
             emojidata = collection.find_one(query)
