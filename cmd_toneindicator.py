@@ -133,7 +133,7 @@ class ToneIndicator(commands.Cog):
             "tangent" : ["/tan"],
             "threat" : ["/th"],
             "tic, for when something typed out was unintentional due to being a tic" : ["/tic"],
-            "today I F'ed up" : ["tifu"],
+            "today I F'ed up" : ["/tifu"],
             "to self" : ["/ts"],
             "trigger warning" : ["/tw"],
             "upset" : ["/u"],

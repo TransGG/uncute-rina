@@ -17,12 +17,10 @@ class EmojiStats(commands.Cog):
     async def addToData(self, emojiID, emojiName, location, animated):
         collection = RinaDB["emojistats"]
         query = {"id": emojiID}
-        data = collection.find(query)
-        try:
-            data = data[0]
-        except IndexError:
+        data = collection.find_one(query)
+        if data is None:
             collection.insert_one(query)
-            data = collection.find(query)[0]
+            data = collection.find_one(query)
 
         if location == "message":
             location = "messageUsedCount"
@@ -88,10 +86,8 @@ class EmojiStats(commands.Cog):
 
         collection = RinaDB["emojistats"]
         query = {"id": emoji_id}
-        search = collection.find(query)
-        try:
-            emoji = search[0]
-        except:
+        emoji = collection.find_one(query)
+        if emoji is None:
             await itx.response.send_message("That emoji doesn't have data yet. It hasn't been used since we started tracking the data yet. (<t:1660156260:R>, <t:1660156260:F>)", ephemeral=True)
             return
 
@@ -137,10 +133,6 @@ class EmojiStats(commands.Cog):
         for emoji in itx.guild.emojis:
             collection = RinaDB["emojistats"]
             query = {"id": str(emoji.id)}
-            # search = collection.find(query)
-            # try:
-            #     emojidata = search[0]
-            # except:
             emojidata = collection.find_one(query)
             if emojidata is None:
                 unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> (0,0)")

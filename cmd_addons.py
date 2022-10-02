@@ -24,10 +24,8 @@ class Addons(commands.Cog):
             return
         collection = RinaDB["guildInfo"]
         query = {"guild_id": itx.guild.id}
-        guild = collection.find(query)
-        try:
-            guild = guild[0]
-        except IndexError:
+        guild = collection.find_one(query)
+        if guild is None:
             debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
             return
         try:

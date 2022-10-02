@@ -21,10 +21,8 @@ class CustomVcs(commands.Cog):
         global newVcs
         collection = RinaDB["guildInfo"]
         query = {"guild_id": member.guild.id}
-        guild = collection.find(query)
-        try:
-            guild = guild[0]
-        except IndexError:
+        guild = collection.find_one(query)
+        if guild is None:
             debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
             return
         vcHub      = guild["vcHub"]
@@ -91,10 +89,8 @@ class CustomVcs(commands.Cog):
             return
         collection = RinaDB["guildInfo"]
         query = {"guild_id": itx.guild_id}
-        guild = collection.find(query)
-        try:
-            guild = guild[0]
-        except IndexError:
+        guild = collection.find_one(query)
+        if guild is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/editguildinfo`!",ephemeral=True)
             return
         vcHub = guild["vcHub"]
@@ -236,7 +232,10 @@ class CustomVcs(commands.Cog):
 
         if channel.id in newVcs:
             # if you have made 2 renames in the past 10 minutes already
-            if len(newVcs[channel.id]) < 2:
+            if name is None:
+                # don't add cooldown if you only change the limit, not the name
+                pass
+            elif len(newVcs[channel.id]) < 2:
                 #ignore but still continue the command
                 pass
             elif newVcs[channel.id][0]+600 > mktime(datetime.now().timetuple()):

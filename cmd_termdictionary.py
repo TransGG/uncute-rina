@@ -209,13 +209,10 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         # Test if this term is already defined in this dictionary.
         collection = RinaDB["termDictionary"]
         query = {"term": term}
-        search = collection.find(query)
-        try:
-            search = search[0]
+        search = collection.find_one(query)
+        if search is not None:
             await itx.response.send_message("You have already previously defined this term (try to find it with /dictionary).", ephemeral=True)
             return
-        except:
-            pass
 
         # Test if a synonym is already used before
         if synonyms != "":
@@ -248,10 +245,8 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
             return
         collection = RinaDB["termDictionary"]
         query = {"term": term}
-        search = collection.find(query)
-        try:
-            search = search[0]
-        except IndexError:
+        search = collection.find_one(query)
+        if search is None:
             await itx.response.send_message("This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use /define.",ephemeral=True)
             return
         collection.update_one(query, {"$set":{"definition":definition}})
@@ -293,10 +288,8 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
             return
         collection = RinaDB["termDictionary"]
         query = {"term": term}
-        search = collection.find(query)
-        try:
-            search = search[0]
-        except IndexError:
+        search = collection.find_one(query)
+        if search is None:
             await itx.response.send_message("This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use /define.",ephemeral=True)
             return
 

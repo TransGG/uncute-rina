@@ -31,12 +31,12 @@ class Pronouns(commands.Cog):
             warning = "Warning: Others may not be able to know what you mean with these pronouns (it doesn't use an `x/y` or `:x` format)\n"
         collection = RinaDB["members"]
         query = {"member_id": itx.user.id}
-        data = collection.find(query)
-        try:
-            pronouns = data[0]['pronouns']
-        except IndexError:
+        data = collection.find_one(query)
+        if data is None:
             #see if this user already has data, if not, add empty
             pronouns = []
+        else:
+            pronouns = data['pronouns']
         if pronoun in pronouns:
             await itx.response.send_message("You have already added this pronoun! You can't really put multiple of the same pronouns, that's be unnecessary..",ephemeral=True)
             return
@@ -56,26 +56,24 @@ class Pronouns(commands.Cog):
     async def removePronoun(self, itx: discord.Interaction, pronoun: str):
         collection = RinaDB["members"]
         query = {"member_id": itx.user.id}
-        data = collection.find(query)
-        try:
-            pronouns = data[0]['pronouns']
-        except IndexError:
+        data = collection.find_one(query)
+        if data is None:
             #see if this user already has data, if not, add empty
             await itx.response.send_message("You haven't added pronouns yet! Use `/addpronoun <pronoun>` to add one!",ephemeral=True)
             return
+        pronouns = data['pronouns']
         if pronoun not in pronouns:
             if isStaff(itx):
                 # made possible with the annoying user '27', alt of Error, trying to break the bot :\
                 try:
                     member_id, pronoun = pronoun.split(" | ",1)
                     query = {"member_id": int(member_id)}
-                    data = collection.find(query)
-                    try:
-                        pronouns = data[0]['pronouns']
-                    except IndexError:
+                    data = collection.find_one(query)
+                    if data is None:
                         #see if this user already has data, if not, add empty
                         await itx.response.send_message("This person hasn't added pronouns yet! Tell them to use `/addpronoun <pronoun>` to add one!",ephemeral=True)
                         return
+                    pronouns = data['pronouns']
                     del pronouns[int(pronoun)-1]
                 except:
                     await itx.response.send_message("If you are staff, and wanna remove a pronoun, then type \"pronoun:USERID | PronounYouWannaRemove\" like /removepronoun pronoun:4491185284728472 | 1\nThe pronoun/item you wanna remove will be in order of the pronouns, starting at 1 at the top. So if someone has 3 pronouns and you wanna remove the second one, type '2'.",ephemeral=True)
@@ -91,20 +89,16 @@ class Pronouns(commands.Cog):
     async def getPronouns(self, itx, user):
         collection = RinaDB["members"]
         query = {"member_id": user.id}
-        data = collection.find(query)
+        data = collection.find_one(query)
         noPronouns = False
         warning = ""
-        try:
-            pronouns = data[0]['pronouns']
-        except IndexError:
-            #see if this user already has data, if not, add empty
+        if data is None:
             pronouns = []
+        else:
+            pronouns = data['pronouns']
+        if len(pronouns) == 0:
             noPronouns = True
             warning = "\nThis person hasn't added custom pronouns yet! (They need to use `/addpronoun <pronoun>` to add one)"
-        else:
-            if len(pronouns) == 0:
-                noPronouns = True
-                warning = "\nThis person hasn't added custom pronouns. (They need to use `/addpronoun <pronoun>` to add one)"
 
         list = []
         for pronoun in pronouns:

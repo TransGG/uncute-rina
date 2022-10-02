@@ -38,11 +38,9 @@ class Table(commands.GroupCog, name="table"):
             await itx.response.defer(ephemeral=True)
             query = {"guild_id": itx.guild_id}
             collection = RinaDB["tableInfo"]
-            tableInfo = collection.find(query)
-            try:
-                tableInfo = tableInfo[0]
-            except IndexError:
-                await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            tableInfo = collection.find_one(query)
+            if tableInfo is None:
+                await itx.followup.send("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
                 return
             if itx.message.id == tableInfo["message"]:
                 # check if user has a table role
@@ -59,7 +57,7 @@ class Table(commands.GroupCog, name="table"):
                         #if you have a role of this table
                         if self.custom_id == tableId:
                             if role.id == table["owner"]:
-                                await itx.response.send_message(f"You can't leave this table because you are the owner. As owner,\n - close table {table['id']} (/table close), or\n - transfer the ownership to someone else (/table newowner <User>).",ephemeral=True)
+                                await itx.followup.send(f"You can't leave this table because you are the owner. As owner,\n - close table {table['id']} (/table close), or\n - transfer the ownership to someone else (/table newowner <User>).",ephemeral=True)
                                 return
                             elif role.id == table["member"]:
                                 await itx.user.remove_roles(role,reason="Removed from table role after clicking on button.")
@@ -68,11 +66,11 @@ class Table(commands.GroupCog, name="table"):
                                 channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
                                 await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) left the table!", allowed_mentions=discord.AllowedMentions.none())
                                 # send message to clicker
-                                await itx.response.send_message(f"Successfully removed you from table {table['id']}",ephemeral=True)
+                                await itx.followup.send(f"Successfully removed you from table {table['id']}",ephemeral=True)
                                 return
                         #if you already have another table's role
                         if role.id == table["owner"] or role.id == table["member"]:
-                            await itx.response.send_message(f"You can currently only join one table at a time. Leave Table {table['id']} first before you can join another!",ephemeral=True)
+                            await itx.followup.send(f"You can currently only join one table at a time. Leave Table {table['id']} first before you can join another!",ephemeral=True)
                             return #todo; let them join multiple tables
                 # doesn't have the role yet
                 table, tableId = [tableInfo[self.custom_id], self.custom_id]
@@ -88,7 +86,7 @@ class Table(commands.GroupCog, name="table"):
                     await channel.send(f"This table was opened by {itx.user.nick or itx.user.name} ({itx.user.id}).", allowed_mentions=discord.AllowedMentions.none())
                     await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) joined the table as Table Owner", allowed_mentions=discord.AllowedMentions.none())
                     # send message to clicker
-                    await itx.response.send_message(f"Successfully created and joined table {table['id']}",ephemeral=True)
+                    await itx.followup.send(f"Successfully created and joined table {table['id']}",ephemeral=True)
                     return
                 elif table["status"] == "open":
                     # give Member the table member role
@@ -99,19 +97,17 @@ class Table(commands.GroupCog, name="table"):
                     channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
                     await channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) joined the table!", allowed_mentions=discord.AllowedMentions.none())
                     # send message to clicker
-                    await itx.response.send_message(f"Successfully joined table {table['id']}",ephemeral=True)
+                    await itx.followup.send(f"Successfully joined table {table['id']}",ephemeral=True)
                     return
                 else:
-                    await itx.response.send_message("I don't know how you did it.. But you can't join a locked table!\nPerhaps the table doesn't have a status? That's odd...\n    Please give staff (Mia) a heads-up about this",ephemeral=True)
+                    await itx.followup.send("I don't know how you did it.. But you can't join a locked table!\nPerhaps the table doesn't have a status? That's odd...\n    Please give staff (Mia) a heads-up about this",ephemeral=True)
                     return
 
     async def tablemsg(self, itx: discord.Interaction,channel=None):
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         embed1 = discord.Embed(color=8481900, type='rich',description=" ")
@@ -159,10 +155,8 @@ class Table(commands.GroupCog, name="table"):
     async def tablemsgupdate(self, itx: discord.Interaction):
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
 
@@ -208,10 +202,8 @@ class Table(commands.GroupCog, name="table"):
 
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         tables = "List of tables:"
@@ -234,12 +226,10 @@ class Table(commands.GroupCog, name="table"):
 
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             collection.insert_one(query)
-            tableInfo = collection.find(query)[0]
+            tableInfo = collection.find_one(query)
 
         warning = ""
         for table in tableInfo:
@@ -279,10 +269,8 @@ class Table(commands.GroupCog, name="table"):
             return
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
 
@@ -333,10 +321,8 @@ class Table(commands.GroupCog, name="table"):
 
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
 
@@ -354,10 +340,8 @@ class Table(commands.GroupCog, name="table"):
     async def tableLock(self, itx: discord.Interaction):
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         lockable = ""
@@ -388,10 +372,8 @@ class Table(commands.GroupCog, name="table"):
     async def tableUnlock(self, itx: discord.Interaction):
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         unlockable = ""
@@ -422,10 +404,8 @@ class Table(commands.GroupCog, name="table"):
     async def tableClose(self, itx: discord.Interaction):
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         closable = ""
@@ -469,10 +449,8 @@ class Table(commands.GroupCog, name="table"):
     async def tableNewOwner(self, itx: discord.Interaction, user: discord.Member):
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["tableInfo"]
-        tableInfo = collection.find(query)
-        try:
-            tableInfo = tableInfo[0]
-        except IndexError:
+        tableInfo = collection.find_one(query)
+        if tableInfo is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
             return
         transfer = ""

@@ -26,11 +26,11 @@ class TodoList(commands.Cog):
                 return
             collection = RinaDB["todoList"]
             query = {"user": itx.user.id}
-            search = collection.find(query)
-            try:
-                list = search[0]["list"]
-            except IndexError:
+            search = collection.find_one(query)
+            if search is None:
                 list = []
+            else:
+                list = search["list"]
             list.append(todo)
             collection.update_one(query, {"$set":{f"list":list}}, upsert=True)
             await itx.response.send_message(f"Successfully added an item to your to-do list! ({len(list)} item{'s'*(len(list)!=1)} in your to-do list now)",ephemeral=True)
@@ -43,13 +43,13 @@ class TodoList(commands.Cog):
                 return
             collection = RinaDB["todoList"]
             query = {"user": itx.user.id}
-            search = collection.find(query)
-            try:
-                list = search[0]["list"]
-                length = len(list)
-            except IndexError:
+            search = collection.find_one(query)
+            if search is None:
                 await itx.response.send_message("There are no items on your to-do list, so you can't reomve any either...",ephemeral=True)
                 return
+            list = search["list"]
+            length = len(list)
+
             try:
                 del list[todo]
             except IndexError:
@@ -60,13 +60,12 @@ class TodoList(commands.Cog):
         elif mode == 3:
             collection = RinaDB["todoList"]
             query = {"user": itx.user.id}
-            search = collection.find(query)
-            try:
-                list = search[0]["list"]
-                length = len(list)
-            except IndexError:
+            search = collection.find_one(query)
+            if search is None:
                 await itx.response.send_message("There are no items on your to-do list, so.. Good job! nothing to list here....",ephemeral=True)
                 return
+            list = search["list"]
+            length = len(list)
 
             ans = []
             for id in range(length):

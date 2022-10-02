@@ -15,12 +15,11 @@ class MemberData(commands.Cog):
     async def addToData(self, member, type):
         collection = RinaDB["data"]
         query = {"guild_id": member.guild.id}
-        data = collection.find(query)
-        try:
-            data = data[0]
-        except IndexError:
+        data = collection.find_one(query)
+        if data is None:
             collection.insert_one(query)
-            data = collection.find(query)[0]
+            data = collection.find_one(query)
+
         try:
             #see if this user already has data, if so, add a new joining time to the list
             data[type][str(member.id)].append(mktime(datetime.utcnow().timetuple()))
@@ -73,10 +72,8 @@ class MemberData(commands.Cog):
 
         collection = RinaDB["data"]
         query = {"guild_id": itx.guild_id}
-        data = collection.find(query)
-        try:
-            data = data[0]
-        except IndexError:
+        data = collection.find_one(query)
+        if data is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please hope someone joins sometime soon lol",ephemeral=True)
             return
         await itx.response.defer(ephemeral=hidden)

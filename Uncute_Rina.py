@@ -34,7 +34,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.2.5".split(".")
+fileVersion = "1.1.2.6".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -167,10 +167,8 @@ async def on_error(event, *args, **kwargs):
         logGuild = await client.fetch_guild(985931648094834798)
 
     query = {"guild_id": logGuild.id}
-    guild = collection.find(query)
-    try:
-        guild = guild[0]
-    except IndexError:
+    guild = collection.find_one(query)
+    if guild is None:
         debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
         return
     vcLog      = guild["vcLog"]

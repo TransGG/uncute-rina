@@ -89,15 +89,14 @@ class Starboard(commands.Cog):
 
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message.guild.id}
-        guild = collection.find(query)
-        try:
-            guild = guild[0]
-            _star_channel = guild["starboardChannel"]
-            star_minimum = guild["starboardCountMinimum"]
-        except IndexError:
+        guild = collection.find_one(query)
+        if guild is None:
             # can't send logging message, because we have no clue what channel that's supposed to be Xd
             debug("Not enough data is configured to work with the starboard. Please fix this with `/editguildinfo`!",color="red")
             return
+        try:
+            _star_channel = guild["starboardChannel"]
+            star_minimum = guild["starboardCountMinimum"]
         except KeyError:
             raise KeyError("Not enough data is configured to do add an item to the starboard, because idk what channel i need to look in, and what minimum stars a message needs before it can be added to the starboard! Please fix this with `/editguildinfo`!")
         star_channel = self.client.get_channel(_star_channel)
@@ -166,14 +165,13 @@ class Starboard(commands.Cog):
 
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message.guild.id}
-        guild = collection.find(query)
-        try:
-            guild = guild[0]
-            _star_channel = guild["starboardChannel"]
-        except IndexError:
+        guild = collection.find_one(query)
+        if guild is None:
             # can't send logging message, because we have no clue what channel that's supposed to be Xd
             debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
             return
+        try:
+            _star_channel = guild["starboardChannel"]
         except KeyError:
             raise KeyError("Not enough data is configured to .. remove a star from an item on the starboard because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
         star_channel = self.client.get_channel(_star_channel)
@@ -197,13 +195,11 @@ class Starboard(commands.Cog):
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message_payload.guild_id}
         guild = collection.find(query)
-        try:
-            guild = guild[0]
-            _star_channel = guild["starboardChannel"]
-        except IndexError:
-            # can't send logging message, because we have no clue what channel that's supposed to be Xd
+        if guild is None:
             debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
             return
+        try:
+            _star_channel = guild["starboardChannel"]
         except KeyError:
             raise KeyError("Not enough data is configured to .. check starboard for a message matching the deleted message's ID, because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
         star_channel = self.client.get_channel(_star_channel)
