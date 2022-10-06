@@ -8,7 +8,7 @@ from utils import *
 # import signal # save files when receiving KeyboardInterrupt
 # import sys # exit program after Keyboardinterrupt signal is noticed
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import mktime # for unix time code
 import random # for very uncute responses
 
@@ -34,7 +34,7 @@ RinaDB = cluster["Rina"]
 #       manage roles (for adding/removing table roles)
 
 # dumb code for cool version updates
-fileVersion = "1.1.2.7".split(".")
+fileVersion = "1.1.3.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -66,16 +66,17 @@ debug("Program started")
 # Client events begin
 @client.event
 async def on_ready():
-    debug(f"[####] Logged in as {client.user}, in version {version}",color="green")
+    debug(f"[#####] Logged in as {client.user}, in version {version}",color="green")
+    await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
 
 @client.event
 async def setup_hook():
     start = datetime.now()
 
     ## cache server settings into client, to prevent having to load settings for every extension
-    debug(f"[+   ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
+    debug(f"[+    ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
     client.RinaDB = RinaDB
-    debug(f"[#   ]: Loaded server settings"+ " "*30,color="green")
+    debug(f"[#    ]: Loaded server settings"+ " "*30,color="green")
     ## activate the extensions/programs/code for slash commands
     extensions = [
         "cmd_addons",
@@ -87,30 +88,47 @@ async def setup_hook():
         "cmd_termdictionary",
         "cmd_todolist",
         "cmd_toneindicator",
-        "cmdg_Table",
+        "cmdg_Reminders",
         "cmdg_Starboard",
+        "cmdg_Table",
     ]
     for extID in range(len(extensions)):
         debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+ " "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])
-    debug(f"[##  ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
+    debug(f"[##   ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
 
     ## activate the buttons in the table message
-    debug(f"[##+ ]: Updating table message"+ " "*30,color="light_blue",end='\r')
+    debug(f"[##+  ]: Updating table message"+ " "*30,color="light_blue",end='\r')
+    try:
+        client.logChannel = await client.fetch_channel(988118678962860032)
+    except:
+        client.logChannel = await client.fetch_channel(986304081234624554)
+
     from cmdg_Table import Table
     class Itx:
         async def set(self):
-            try:
-                guild = await client.fetch_guild(959551566388547676)
-            except discord.errors.Forbidden:
-                guild = await client.fetch_guild(985931648094834798)
+            guild = client.logChannel.guild
             self.guild = guild
             self.guild_id = guild.id
     itx = Itx()
     await itx.set()
     await Table.tablemsgupdate(Table, itx)
-    debug(f"[### ]: Updated table message"+ " "*30,color="green")
-    debug(f"[###+]: Starting..."+ " "*30,color="light_blue",end='\r')
+    debug(f"[###  ]: Updated table message"+ " "*30,color="green")
+    debug(f"[###+ ]: Restarting ongoing reminders" +" "*30,color="light_blue",end="\r")
+    from cmdg_Reminders import Reminders
+    collection = RinaDB["reminders"]
+    query = {}
+    db_data = collection.find(query)
+    for user in db_data:
+        try:
+            for reminder in user['reminders']:
+                creationtime = datetime.fromtimestamp(reminder['creationtime'], timezone.utc)
+                remindertime = datetime.fromtimestamp(reminder['remindertime'], timezone.utc)
+                Reminders.Reminder(client, creationtime, remindertime, user['userID'], reminder['reminder'], user, continued=True)
+        except KeyError:
+            pass
+    debug(f"[#### ]: Finished setting up reminders" +" "*30,color="green")
+    debug(f"[####+]: Starting..."+ " "*30,color="light_blue",end='\r')
 
     # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
     # await client.tree.sync()
@@ -121,27 +139,6 @@ async def on_message(message):
     if message.author.id == 262913789375021056:
         if message.content == ":kill now please okay u need to stop.":
             sys.exit(0)
-
-@client.event
-async def on_raw_reaction_add(reaction):
-    # global reactionmsgs
-    pass
-    #get the message id from reaction.message_id through the channel (with reaction.channel_id) (oof lengthy process)
-    # message = await client.get_channel(reaction.channel_id).fetch_message(reaction.message_id)
-    # if message.author == client.user:
-    #     if reaction.emoji.name == '❌' and reaction.member != client.user:
-    #         await message.delete()
-
-    # if message.author == client.user:
-    #     if reaction.member != client.user and str(message.id) in reactionmsgs:
-    #         voteMsg = reactionmsgs[str(message.id)]
-    #         try:
-    #             voteMsg.vote(reaction.member.id, reaction.emoji.name)
-    #             message.id = voteMsg.message_id
-    #             await message.edit(content=voteMsg.getMessage())
-    #         except:
-    #             pass
-    #         await message.remove_reaction(reaction.emoji.name, reaction.member)
 
 # Bot commands begin
 

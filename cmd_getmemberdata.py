@@ -2,7 +2,7 @@ import discord # It's dangerous to go alone! Take this. /ref
 from discord import app_commands # v2.0, use slash commands
 from discord.ext import commands # required for client bot making
 from utils import *
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import mktime # for unix time code
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -22,12 +22,12 @@ class MemberData(commands.Cog):
 
         try:
             #see if this user already has data, if so, add a new joining time to the list
-            data[type][str(member.id)].append(mktime(datetime.utcnow().timetuple()))
+            data[type][str(member.id)].append(mktime(datetime.now(timezone.utc).timetuple()))
         except IndexError:
-            data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
+            data[type][str(member.id)] = [mktime(datetime.now(timezone.utc).timetuple())]
         except KeyError:
             data[type] = {}
-            data[type][str(member.id)] = [mktime(datetime.utcnow().timetuple())]
+            data[type][str(member.id)] = [mktime(datetime.now(timezone.utc).timetuple())]
         collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
         #debug(f"Successfully added new data for {member.name} to {repr(type)}",color="blue")
 
@@ -66,7 +66,7 @@ class MemberData(commands.Cog):
         totals = {}
         results = {}
         warning = ""
-        currentTime = mktime(datetime.utcnow().timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
+        currentTime = mktime(datetime.now(timezone.utc).timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
         minTime = int((currentTime-period)/accuracy)*accuracy
         maxTime = int(currentTime/accuracy)*accuracy
 

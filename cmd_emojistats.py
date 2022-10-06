@@ -4,7 +4,7 @@ from discord.ext import commands # required for client bot making
 from utils import *
 import re #use regex to identify custom emojis in a text message
 from time import mktime # for unix time code
-from datetime import datetime # for turning unix time into datetime
+from datetime import datetime, timezone # for turning unix time into datetime
 
 import pymongo # for online database
 from pymongo import MongoClient
@@ -31,7 +31,7 @@ class EmojiStats(commands.Cog):
 
         #increment the usage of the emoji in the dictionary, depending on where it was used (see $location above)
         collection.update_one(  query, {"$inc" : {location:1} } , upsert=True  )
-        collection.update_one(  query, {"$set":{"lastUsed": mktime(datetime.utcnow().timetuple()) , "name":emojiName, "animated":animated}}, upsert=True  )
+        collection.update_one(  query, {"$set":{"lastUsed": mktime(datetime.now(timezone.utc).timetuple()) , "name":emojiName, "animated":animated}}, upsert=True  )
         # collection.update_one( query, {"$set":{"name":emojiName}})
         #debug(f"Successfully added new data for {emojiID} as {location.replace('UsedCount','')}",color="blue")
 

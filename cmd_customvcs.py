@@ -53,11 +53,14 @@ class CustomVcs(commands.Cog):
                 await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
         if after.channel is not None:
             if after.channel.id == vcHub:
-                after.channel.category.id = vcCategory
+                position = 0
+                if after.channel.category.id == vcCategory:
+                    position = 1
                 defaultName = "Untitled voice chat"
                 warning = ""
+                after.channel.category.id = vcCategory
                 try:
-                    vc = await after.channel.category.create_voice_channel(defaultName)
+                    vc = await after.channel.category.create_voice_channel(defaultName,position=position)
                 except discord.errors.HTTPException:
                     nomicChannel = member.guild.get_channel(vcNoMic)
                     await nomicChannel.send(f"COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY", allowed_mentions=discord.AllowedMentions.none())
