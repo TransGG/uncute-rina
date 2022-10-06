@@ -177,7 +177,7 @@ class Reminders(commands.GroupCog,name="reminder"):
             collection.insert_one(query)
             db_data = collection.find_one(query)
         if len(db_data) > 50:
-            await itx.response.send_message("please don't make more than 50 reminders. # todo, there is no way to erase reminders or see your current reminders")
+            await itx.response.send_message("please don't make more than 50 reminders. # todo, there is no way to erase reminders or see your current reminders",ephemeral=True)
             return
 
 
@@ -195,7 +195,7 @@ class Reminders(commands.GroupCog,name="reminder"):
 
         self.Reminder(self.client, now, distance, itx.user.id, reminder, db_data)
         # await itx.user.send(f"On <t:{now}:f> (in <t:{int(mktime(distance.timetuple()))}:R>), you asked to be reminded of \"{reminder}.\"")
-        _distance = int(mktime(distance.timetuple()))+7200
+        _distance = int(mktime(distance.timetuple()))
         await itx.response.send_message(f"Sucessfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!",ephemeral=True)
 
 

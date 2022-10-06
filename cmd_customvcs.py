@@ -58,9 +58,10 @@ class CustomVcs(commands.Cog):
                     position = 1
                 defaultName = "Untitled voice chat"
                 warning = ""
-                after.channel.category.id = vcCategory
+                vcCategory_for_vc = after.channel.category
+                vcCategory_for_vc.id = vcCategory
                 try:
-                    vc = await after.channel.category.create_voice_channel(defaultName,position=position)
+                    vc = await vcCategory_for_vc.create_voice_channel(defaultName,position=1)
                 except discord.errors.HTTPException:
                     nomicChannel = member.guild.get_channel(vcNoMic)
                     await nomicChannel.send(f"COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY", allowed_mentions=discord.AllowedMentions.none())
@@ -69,6 +70,11 @@ class CustomVcs(commands.Cog):
                     raise
                 try:
                     await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
+                    for customVC in vcCategory_for_vc.voice_channels:
+                        if customVC.id == vcHub or customVC.id == vc.id:
+                            continue
+                        await customVC.edit(position = customVC.position+1)
+                        customVC.position += 1
                 except Exception as ex:
                     warning = str(ex)+": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
                     await vc.delete()
