@@ -70,18 +70,22 @@ class CustomVcs(commands.Cog):
                     raise
                 try:
                     await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
+                    debug("I could pass step 1")
                     for customVC in vcCategory_for_vc.voice_channels:
+                        debug("I could pass step 2")
                         if customVC.id == vcHub or customVC.id == vc.id:
                             continue
                         await customVC.edit(position = customVC.position+1)
-                        customVC.position += 1
+                        debug("I could pass step 3")
                 except Exception as ex:
                     warning = str(ex)+": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
-                    await vc.delete()
                     try:
                         member.move_to(None, reason=f"Couldn't create a new Custom voice channel so kicked them from their current vc to prevent them staying in the main customvc hub")
+                        # no need to delete vc if they are kicked out of the channel, cause then the next event will notice that they left the channel.
                     except:
-                        pass
+                        await vc.delete()
+                    raise
+                        # pass
                 nomicChannel = member.guild.get_channel(vcNoMic)
                 await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
                 logChannel = member.guild.get_channel(vcLog)
