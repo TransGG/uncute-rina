@@ -201,9 +201,42 @@ class Reminders(commands.GroupCog,name="reminder"):
         _distance = int(mktime(distance.timetuple()))
         await itx.response.send_message(f"Sucessfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!",ephemeral=True)
 
+    @app_commands.command(name="reminders",description="Check your list of reminders!")
+    @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
+    async def reminders(self, itx: discord.Interaction, item: int = None):
+        collection = RinaDB["reminders"]
+        query = {"userID": itx.user.id}
+        db_data = collection.find_one(query)
+        if db_data is None:
+            itx.response.send_message("You don't have any reminders running at the moment!", ephemeral=True)
 
-    async def reminders(self, itx: discord.Interaction):
-        pass
+        try:
+            out = []
+            index = 0
+            if item is None:
+                for reminder in db_data['reminders']:
+                    out.append(f"ID: `{index}` | Created at: <t:{reminder['remindertime']}:F> | Remind you about: {discord.utils.escape_markdown(reminder['reminder'])}")
+                    index += 1
+                outMsg = "Your reminders:\n"+'\n'.join(out)
+                if len(outMsg) >= 1995:
+                    out = []; index = 0
+                    for reminder in db_data['reminders']:
+                        out.append(f"`{index}` | <t:{reminder['remindertime']}:F>")
+                        index += 1
+                    outMsg = f"You have {len(db_data['reminders'])} reminders (use /reminder reminders item:[] to get more info about a reminder):\n"+'\n'.join(out)[:1996]
+                await itx.response.send_message(outMsg,ephemeral=True)
+            else:
+                db_data['reminders']
+                reminder = db_data['reminders'][item]
+                await itx.response.send_message(f"Showing reminder `{index}` out of `{len(db_data['reminders'])}`:\n"+\
+                        f"  ID: `{index}`\n"+\
+                        f"  Created at:       <t:{reminder['creationtime']}:F> (<t:{reminder['creationtime']}>)\n"+\
+                        f"  Reminding you at: <t:{reminder['remindertime']}:F> (<t:{reminder['remindertime']}:R>)\n"+\
+                        f"  Remind you about: {discord.utils.escape_markdown(reminder['reminder'])}",ephemeral=True)
+        except IndexError:
+            await itx.response.send_message("I couldn't find any reminder with that ID!\nLook for the \"ID: `0`\" at the beginning of your reminder on the reminder list (/reminder reminders)",ephemeral=True)
+        except KeyError:
+            await itx.response.send_message("You don't have any reminders running at the moment.",ephemeral=True)
 
 
 async def setup(client):

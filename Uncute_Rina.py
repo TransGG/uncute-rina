@@ -32,7 +32,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.3.2".split(".")
+fileVersion = "1.1.3.3".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
