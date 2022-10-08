@@ -11,7 +11,7 @@ from time import mktime # for unix time code
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling reminders
 
-sched = AsyncIOScheduler(timezone=datetime.now().tzinfo)
+sched = AsyncIOScheduler()
 sched.start()
 
 class Reminders(commands.GroupCog,name="reminder"):
@@ -170,15 +170,19 @@ class Reminders(commands.GroupCog,name="reminder"):
     async def remindme(self, itx: discord.Interaction, time: str, reminder: str):
         if len(reminder) > 1500:
             await itx.response.send_message("Please keep reminder text below 1500 characters... Otherwise I can't send you a message about it!",ephemeral=True)
+            return
         collection = RinaDB["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
             collection.insert_one(query)
             db_data = collection.find_one(query)
-        if len(db_data) > 50:
-            await itx.response.send_message("please don't make more than 50 reminders. # todo, there is no way to erase reminders or see your current reminders",ephemeral=True)
-            return
+        try:
+            if len(db_data['reminders']) > 50:
+                await itx.response.send_message("please don't make more than 50 reminders. # todo, there is no way to erase reminders or see your current reminders",ephemeral=True)
+                return
+        except KeyError:
+            pass
 
         now = datetime.now()
         try:
