@@ -158,7 +158,7 @@ class EmojiStats(commands.Cog):
 
             if len(unused_emojis) > max_results:
                 break
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0)
 
         output = ', '.join(unused_emojis)
         if len(output) > 1850:
