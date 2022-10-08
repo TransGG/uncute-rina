@@ -34,6 +34,8 @@ class Addons(commands.Cog):
             await logChannel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}", allowed_mentions=discord.AllowedMentions.none())
             text = text.replace("[[\\n]]","\n").replace("[[del]]","")
             await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions.none())
+        except discord.Forbidden:
+            await itx.response.send_message("Forbidden! I can't send a message in this channel/thread because I can't see it or because I'm not added to it yet!\n(Add me to the thread by mentioning me, or let Rina see this channel)",ephemeral=True)
         except:
             await itx.response.send_message("Oops. Something went wrong!",ephemeral=True)
             raise

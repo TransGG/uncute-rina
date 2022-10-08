@@ -9,6 +9,8 @@ from datetime import datetime, timezone # for turning unix time into datetime
 import pymongo # for online database
 from pymongo import MongoClient
 
+import asyncio # lets rina take small pauses while getting emojis from MongoDB to allow room for other commands
+
 class EmojiStats(commands.Cog):
     def __init__(self, client):
         global RinaDB
@@ -136,7 +138,7 @@ class EmojiStats(commands.Cog):
             min_react = 0
 
         unused_emojis = []
-        async for emoji in itx.guild.emojis:
+        for emoji in itx.guild.emojis:
             if emoji.animated and (animated == 2):
                 continue
             if (not emoji.animated) and animated == 1:
@@ -156,6 +158,7 @@ class EmojiStats(commands.Cog):
 
             if len(unused_emojis) > max_results:
                 break
+            await asyncio.sleep(0.05)
 
         output = ', '.join(unused_emojis)
         if len(output) > 1850:
