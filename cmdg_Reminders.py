@@ -11,7 +11,7 @@ from time import mktime # for unix time code
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling reminders
 
-sched = AsyncIOScheduler(timezone=datetime.now(timezone.utc).tzinfo)
+sched = AsyncIOScheduler(timezone=datetime.now().tzinfo)
 sched.start()
 
 class Reminders(commands.GroupCog,name="reminder"):
@@ -107,7 +107,7 @@ class Reminders(commands.GroupCog,name="reminder"):
             _timedict["y"] += 1
         if _timedict["y"] >= 3999 or _timedict["d"] >= 1500000:
             raise ValueError("I don't think I can remind you in that long!")
-        distance = datetime(_timedict["y"],_timedict["M"],1,_timedict["h"],_timedict["m"],_timedict["s"], tzinfo=timezone.utc)
+        distance = datetime(_timedict["y"],_timedict["M"],1,_timedict["h"],_timedict["m"],_timedict["s"], tzinfo=datetime.now().tzinfo)
         # cause you cant have >31 days in a month, but if overflow is given, then let this timedelta calculate the new months/years
         distance += timedelta(days=_timedict["d"])
 
@@ -122,11 +122,11 @@ class Reminders(commands.GroupCog,name="reminder"):
             self.reminder = reminder
             self.alert = ""
             if continued:
-                self.remindertime = self.remindertime+(datetime.now()-datetime.utcnow())
-                self.creationtime = self.creationtime+(datetime.now()-datetime.utcnow())
-                if self.remindertime < datetime.now(timezone.utc):
+                # self.remindertime = self.remindertime+(datetime.now()-datetime.utcnow())
+                # self.creationtime = self.creationtime+(datetime.now()-datetime.utcnow())
+                if self.remindertime < datetime.now():
                     self.alert = "Your reminder was delayed. Probably because the bot was offline for a while. I hope it didn't cause much of an issue!\n"
-                    sched.add_job(self.send_reminder, "date", run_date=datetime.now(timezone.utc))
+                    sched.add_job(self.send_reminder, "date", run_date=datetime.now())
                     return
                 sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
             else:
@@ -155,7 +155,7 @@ class Reminders(commands.GroupCog,name="reminder"):
             db_data = collection.find_one(query)
             indexSubtraction = 0
             for reminderIndex in range(len(db_data['reminders'])):
-                if db_data['reminders'][reminderIndex-indexSubtraction]["remindertime"] <= int(mktime(datetime.now(timezone.utc).timetuple())):
+                if db_data['reminders'][reminderIndex-indexSubtraction]["remindertime"] <= int(mktime(datetime.now().timetuple())):
                     del db_data['reminders'][reminderIndex-indexSubtraction]
                     indexSubtraction += 1
             if len(db_data['reminders']) > 0:
@@ -180,9 +180,7 @@ class Reminders(commands.GroupCog,name="reminder"):
             await itx.response.send_message("please don't make more than 50 reminders. # todo, there is no way to erase reminders or see your current reminders",ephemeral=True)
             return
 
-
-
-        now = datetime.now(timezone.utc)#int(mktime(datetime.now(timezone.utc).timetuple()))
+        now = datetime.now()
         try:
             time = time.replace(",","").replace(" ","").replace("and","").lower()
             distance = self.parseDate(time, now)
@@ -195,6 +193,7 @@ class Reminders(commands.GroupCog,name="reminder"):
 
         self.Reminder(self.client, now, distance, itx.user.id, reminder, db_data)
         # await itx.user.send(f"On <t:{now}:f> (in <t:{int(mktime(distance.timetuple()))}:R>), you asked to be reminded of \"{reminder}.\"")
+        # distance = distance+(datetime.now()-datetime.utcnow())
         _distance = int(mktime(distance.timetuple()))
         await itx.response.send_message(f"Sucessfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!",ephemeral=True)
 

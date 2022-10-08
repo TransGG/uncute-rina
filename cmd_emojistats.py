@@ -8,8 +8,13 @@ from datetime import datetime, timezone # for turning unix time into datetime
 
 import pymongo # for online database
 from pymongo import MongoClient
+import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
 
 import asyncio # lets rina take small pauses while getting emojis from MongoDB to allow room for other commands
+
+mongoURI = open("mongo.txt","r").read()
+cluster = motor.AsyncIOMotorClient(mongoURI)
+asyncRinaDB = cluster["Rina"]
 
 class EmojiStats(commands.Cog):
     def __init__(self, client):
@@ -144,9 +149,9 @@ class EmojiStats(commands.Cog):
             if (not emoji.animated) and animated == 1:
                 continue
 
-            collection = RinaDB["emojistats"]
+            collection = asyncRinaDB["emojistats"]
             query = {"id": str(emoji.id)}
-            emojidata = collection.find_one(query)
+            emojidata = await collection.find_one(query)
             if emojidata is None:
                 unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> (0,0)")
                 continue
