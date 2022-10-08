@@ -32,9 +32,10 @@ RinaDB = cluster["Rina"]
 #       create and delete voice channels
 #       move users between voice channels
 #       manage roles (for adding/removing table roles)
+#       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.3.0".split(".")
+fileVersion = "1.1.3.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:

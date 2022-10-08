@@ -136,7 +136,7 @@ class EmojiStats(commands.Cog):
             min_react = 0
 
         unused_emojis = []
-        for emoji in itx.guild.emojis:
+        async for emoji in itx.guild.emojis:
             if emoji.animated and (animated == 2):
                 continue
             if (not emoji.animated) and animated == 1:
