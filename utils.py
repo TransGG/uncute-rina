@@ -115,6 +115,21 @@ def debug(text="", color="default", addTime=True, end=None, advanced=False):
     else:
         print(f"{time}{text}{colors['default']}",end=end)
 
+def thousandSpace(number, interval = 3, separator = " "):
+    decimals = []
+    if type(number) is int or type(number) is float:
+        number = str(number)
+    if "." in number:
+        "100.0.0"
+        number, *decimals = number.split(".")
+    for x in range(len(number)-interval,0,0-interval):
+        number = number[:x]+separator+number[x:]
+    decimals = ''.join(['.'+x for x in decimals])
+    return number+decimals
+
+
+
+
 async def logMsg(_guild, msg: str):
     mongoURI = open("mongo.txt","r").read()
     cluster = MongoClient(mongoURI)

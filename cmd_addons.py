@@ -59,7 +59,6 @@ class Addons(commands.Cog):
             quotes = {
                 "fem_quotes" : [
                     "Was the sun always this hot? or is it because of you?",
-                    "Ooh you look like a good candidate for my pet blahaj!",
                     "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
                     "I bet you sweat glitter.",
                     "Your hair looks stunning!",
@@ -82,6 +81,7 @@ class Addons(commands.Cog):
                 ],
                 "they_quotes" : [
                     "I can tell that you are a very special and talented person!",
+                    "Their, their... ",
                 ],
                 "it_quotes" : [
                     "I bet you do the crossword puzzle in ink!",
@@ -98,6 +98,7 @@ class Addons(commands.Cog):
                     'When you say, “I meant to do that,” I totally believe you.',
                     "You should be thanked more often. So thank you!",
                     "You are so easy to have a conversation with.",
+                    "Ooh you look like a good candidate for my pet blahaj!",
 
 
 
@@ -236,6 +237,61 @@ class Addons(commands.Cog):
                 await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
             else:
                 await message.channel.send("I use slash commands! Use /command  and see what cool things might pop up! or something\nPS: If you're trying to call me cute: no, i'm not", delete_after=8)
+
+    @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
+    @app_commands.describe(dice="How many dice do you want to roll?",
+                           faces="How many sides does every die have?",
+                           mod="Do you want to add a modifier? (add 2 after rolling the dice)",
+                           advanced="Roll more advanced! example: 1d20+3cs>10. Overwrites dice/faces given; 'help' for more")
+
+    async def roll(self, itx: discord.Interaction, dice: int, faces: int, public: bool=False, mod: int = None, advanced: str = None):
+        if advanced is None:
+            if dice < 1 or faces < 1:
+                await itx.response.send_message("You can't have negative dice/faces! Please give a number above 0",ephemeral=True)
+                return
+            if dice > 1000000:
+                await itx.response.send_message(f"Sorry, if I let you roll `{thousandSpace(dice,separator=',')}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
+                return
+            rolls = []
+            for die in range(dice):
+                rolls.append(random.randint(1,faces))
+            out = ""
+            if mod is None:
+                if dice == 1:
+                    out = f"I rolled {dice} di{'c'*(dice>1)}e with {faces} face{'s'*(faces>1)}: "+\
+                    f"{str(sum(rolls))}"
+                else:
+                    out = f"I rolled {dice} di{'c'*(dice>1)}e with {faces} face{'s'*(faces>1)}:\n"+\
+                    f"{' + '.join([str(roll) for roll in rolls])}  =  {str(sum(rolls))}"
+            else:
+                out = f"I rolled {dice} {'die' if dice == 0 else 'dice'} with {faces} face{'s'*(faces>1)} and a modifier of {mod}:\n"+\
+                f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls))}"
+            if len(out) > 1995:
+                out = f"I rolled {thousandSpace(dice,separator=',')} {'die' if dice == 0 else 'dice'} with {thousandSpace(faces,separator=',')} face{'s'*(faces>1)}"+f" and a modifier of {thousandSpace(mod,separator=',')}"*(mod is not None)+":\n"+\
+                f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)),separator=',')}`."
+                rollDb = {}
+                for roll in rolls:
+                    try:
+                        rollDb[roll] += 1
+                    except KeyError:
+                        rollDb[roll] = 1
+                rollDb = dict(sorted(rollDb.items()))
+                details = "You rolled "
+                for roll in rollDb:
+                    details += f"'{roll}'x{rollDb[roll]}, "
+                if len(details) > 1500:
+                    details = ""
+                elif len(details) > 300:
+                    public = False
+                out = out + "\n" + details
+            elif len(out) > 300:
+                public = False
+            await itx.response.send_message(out,ephemeral=not public)
+        else:
+            await itx.response.send_message("```\n"+\
+            "I rolled nothing. This feature is in development!, sorryyy"+\
+            "```",ephemeral=True)
+
 
 async def setup(client):
     await client.add_cog(Addons(client))

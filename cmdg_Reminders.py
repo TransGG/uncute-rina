@@ -164,7 +164,7 @@ class Reminders(commands.GroupCog,name="reminder"):
                 collection.delete_one(query)
 
 
-    @app_commands.command(name="remindme",description="Add or remove a to-do!")
+    @app_commands.command(name="remindme",description="Add a reminder for yourself!")
     @app_commands.describe(time="When would you like me to remind you? (1d2h, 5 weeks, 1mo10d)",
                            reminder="What would you like me to remind you of")
     async def remindme(self, itx: discord.Interaction, time: str, reminder: str):
