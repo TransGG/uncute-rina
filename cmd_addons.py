@@ -266,10 +266,10 @@ class Addons(commands.Cog):
                     f"{' + '.join([str(roll) for roll in rolls])}  =  {str(sum(rolls))}"
             else:
                 out = f"I rolled {dice} {'die' if dice == 0 else 'dice'} with {faces} face{'s'*(faces>1)} and a modifier of {mod}:\n"+\
-                f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls))}"
+                f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls)+mod)}"
             if len(out) > 1995:
                 out = f"I rolled {thousandSpace(dice,separator=',')} {'die' if dice == 0 else 'dice'} with {thousandSpace(faces,separator=',')} face{'s'*(faces>1)}"+f" and a modifier of {thousandSpace(mod,separator=',')}"*(mod is not None)+":\n"+\
-                f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)),separator=',')}`."
+                f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)+mod),separator=',')}`."
                 rollDb = {}
                 for roll in rolls:
                     try:
