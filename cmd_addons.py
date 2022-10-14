@@ -269,7 +269,7 @@ class Addons(commands.Cog):
                 f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls)+mod)}"
             if len(out) > 1995:
                 out = f"I rolled {thousandSpace(dice,separator=',')} {'die' if dice == 0 else 'dice'} with {thousandSpace(faces,separator=',')} face{'s'*(faces>1)}"+f" and a modifier of {thousandSpace(mod or 0,separator=',')}"*(mod is not None)+":\n"+\
-                f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)+mod),separator=',')}`."
+                f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)+(mod or 0)),separator=',')}`."
                 rollDb = {}
                 for roll in rolls:
                     try:
