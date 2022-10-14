@@ -243,7 +243,6 @@ class Addons(commands.Cog):
                            faces="How many sides does every die have?",
                            mod="Do you want to add a modifier? (add 2 after rolling the dice)",
                            advanced="Roll more advanced! example: 1d20+3cs>10. Overwrites dice/faces given; 'help' for more")
-
     async def roll(self, itx: discord.Interaction, dice: int, faces: int, public: bool=False, mod: int = None, advanced: str = None):
         if advanced is None:
             if dice < 1 or faces < 1:
@@ -252,6 +251,8 @@ class Addons(commands.Cog):
             if dice > 1000000:
                 await itx.response.send_message(f"Sorry, if I let you roll `{thousandSpace(dice,separator=',')}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
                 return
+            if faces > 1000000:
+                await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{thousandSpace(faces,separator=',')}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
             rolls = []
             for die in range(dice):
                 rolls.append(random.randint(1,faces))
