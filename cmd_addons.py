@@ -176,8 +176,10 @@ class Addons(commands.Cog):
                 await call(itx, user, view.value)
 
         roles = ["he/him","she/her","they/them","it/its"]
-        for role in user.roles:
-            if role.name.lower() in roles: # ~pick a random order for which pronoun role to pick~ outdated
+        userroles = user.roles
+        random.shuffle(userroles) # pick a random order for which pronoun role to pick
+        for role in userroles:
+            if role.name.lower() in roles:
                 await call(itx, user, role.name.lower())
                 return
         await confirm_gender()
