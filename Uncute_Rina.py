@@ -32,7 +32,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.3.7".split(".")
+fileVersion = "1.1.4.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -52,7 +52,34 @@ intents = discord.Intents.default()
 intents.members = True #apparently this needs to be additionally defined cause it's not included in Intents.default()?
 intents.message_content = True #apparently it turned off my default intent or something: otherwise i can't send 1984, ofc.
 #setup default discord bot client settings, permissions, slash commands, and file paths
-client = commands.Bot(
+
+class Bot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def getCommandMention(self, _command):
+        args = _command.split(" ")+[None, None]
+        command_name, subcommand, subcommand_group = args[0:3]
+        # returns one of the following:
+        # </COMMAND:COMMAND_ID>
+        # </COMMAND SUBCOMMAND:ID>
+        #              \/- is posed as 'subcommand', to make searching easier
+        # </COMMAND SUBCOMMAND_GROUP SUBCOMMAND:ID>
+        for command in self.commandList:
+            if command.name == command_name:
+                if subcommand is None:
+                    return command.mention
+                for subgroup in command.options:
+                    if subgroup.name == subcommand:
+                        if subcommand_group is None:
+                            return subgroup.mention
+                        for subcmdgroup in subgroup.options:
+                            if subcmdgroup.name == subcommand_group:
+                                return subcmdgroup.mention
+                                # return f"</{command.name} {subgroup.name} {subcmdgroup.name}:{command.id}>"
+        return "/"+_command
+
+client = Bot(
         intents = intents,
         command_prefix = "/!\"@:\#", #unnecessary, but needs to be set so.. uh.. yeah. Unnecessary terminal warnings avoided.
         case_insensitive=True,
@@ -64,7 +91,7 @@ debug("Program started")
 # Client events begin
 @client.event
 async def on_ready():
-    debug(f"[#####] Logged in as {client.user}, in version {version}",color="green")
+    debug(f"[######] Logged in as {client.user}, in version {version}",color="green")
     await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
 
 @client.event
@@ -72,9 +99,9 @@ async def setup_hook():
     start = datetime.now()
 
     ## cache server settings into client, to prevent having to load settings for every extension
-    debug(f"[+    ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
+    debug(f"[+     ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
     client.RinaDB = RinaDB
-    debug(f"[#    ]: Loaded server settings"+ " "*30,color="green")
+    debug(f"[#     ]: Loaded server settings"+ " "*30,color="green")
     ## activate the extensions/programs/code for slash commands
     extensions = [
         "cmd_addons",
@@ -93,10 +120,10 @@ async def setup_hook():
     for extID in range(len(extensions)):
         debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+ " "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])
-    debug(f"[##   ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
+    debug(f"[##    ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
 
     ## activate the buttons in the table message
-    debug(f"[##+  ]: Updating table message"+ " "*30,color="light_blue",end='\r')
+    debug(f"[##+   ]: Updating table message"+ " "*30,color="light_blue",end='\r')
     try:
         client.logChannel = await client.fetch_channel(988118678962860032)
     except:
@@ -111,8 +138,8 @@ async def setup_hook():
     itx = Itx()
     await itx.set()
     await Table.tablemsgupdate(Table, itx)
-    debug(f"[###  ]: Updated table message"+ " "*30,color="green")
-    debug(f"[###+ ]: Restarting ongoing reminders" +" "*30,color="light_blue",end="\r")
+    debug(f"[###   ]: Updated table message"+ " "*30,color="green")
+    debug(f"[###+  ]: Restarting ongoing reminders" +" "*30,color="light_blue",end="\r")
     from cmdg_Reminders import Reminders
     collection = RinaDB["reminders"]
     query = {}
@@ -125,8 +152,12 @@ async def setup_hook():
                 Reminders.Reminder(client, creationtime, remindertime, user['userID'], reminder['reminder'], user, continued=True)
         except KeyError:
             pass
-    debug(f"[#### ]: Finished setting up reminders" +" "*30,color="green")
-    debug(f"[####+]: Starting..."+ " "*30,color="light_blue",end='\r')
+    debug(f"[####  ]: Finished setting up reminders" +" "*30,color="green")
+    debug(f"[####+ ]: Caching bot's command names and their ids",color="light_blue",end='\r')
+    commandList = await client.tree.fetch_commands()
+    client.commandList = commandList
+    debug(f"[##### ]: Cached bot's command names and their ids" +" "*30,color="green")
+    debug(f"[#####+]: Starting..."+ " "*30,color="light_blue",end='\r')
 
     # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
     # await client.tree.sync()
@@ -147,9 +178,11 @@ async def botVersion(itx: discord.Interaction):
 @client.tree.command(name="update",description="Update slash-commands")
 async def updateCmds(itx: discord.Interaction):
     if not isStaff(itx):
-        await itx.response.send_message("Only Staff can update the slash commands", ephemeral=True)
+        await itx.response.send_message("Only Staff can update the slash commands (to prevent ratelimiting)", ephemeral=True)
         return
     await client.tree.sync()
+    commandList = await client.tree.fetch_commands()
+    client.commandList = commandList
     await itx.response.send_message("Updated commands")
 
 @client.event

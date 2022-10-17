@@ -128,8 +128,6 @@ def thousandSpace(number, interval = 3, separator = " "):
     return number+decimals
 
 
-
-
 async def logMsg(_guild, msg: str):
     mongoURI = open("mongo.txt","r").read()
     cluster = MongoClient(mongoURI)

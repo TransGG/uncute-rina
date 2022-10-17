@@ -296,6 +296,32 @@ class Addons(commands.Cog):
             "I rolled nothing. This feature is in development!, sorryyy"+\
             "```",ephemeral=True)
 
+    @app_commands.command(name="help", description="A help command to learn more about me!")
+    async def help(self, itx: discord.Interaction):
+        out = f"""\
+Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
+{self.client.getCommandMention('compliment')}: Rina can compliment others (matching their pronoun role)
+{self.client.getCommandMention('roll')}: roll some dice with a random result!
+{self.client.getCommandMention('help')}: see this help page
+{self.client.getCommandMention('dictionary')}: search for an lgbtq+-related term!
+{self.client.getCommandMention('reminder')}: make or see your reminders!
+{self.client.getCommandMention('todo')}: make, add, or remove items from your to-do list!
+
+Make a custom voice channel by joining "Join to create VC"
+{self.client.getCommandMention('editvc')}: edit the name or user limit of the custom voice channel!
+
+{self.client.getCommandMention('pronouns')}: see someone's pronouns (from their role, or if they've added a custom one)
+{self.client.getCommandMention('addpronoun')}: add one of your own pronouns
+{self.client.getCommandMention('removepronoun')}: remove a pronoun
+
+{self.client.getCommandMention('qotw')}: Suggest a question of the week to staff
+
+Check out the #join-a-table channel: In this channel, you can claim a channel for roleplaying or tabletop games for you and your group!
+The first person that joins/creates a table gets a Table Owner role, and can lock, unlock, or close their table.
+{self.client.getCommandMention('table lock')}, {self.client.getCommandMention('table unlock')}, {self.client.getCommandMention('table close')}
+You can also transfer your table ownership to another table member, after they joined your table: {self.client.getCommandMention('table newowner')}\
+"""
+        await itx.response.send_message(out, ephemeral=True)
 
 async def setup(client):
     await client.add_cog(Addons(client))

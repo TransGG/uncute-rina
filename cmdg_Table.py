@@ -32,6 +32,7 @@ class Table(commands.GroupCog, name="table"):
     def __init__(self, client):
         global RinaDB
         RinaDB = client.RinaDB
+        self.client = client
 
     class TableButton(discord.ui.Button):
         async def callback(self, itx: discord.Interaction):
@@ -40,7 +41,8 @@ class Table(commands.GroupCog, name="table"):
             collection = RinaDB["tableInfo"]
             tableInfo = collection.find_one(query)
             if tableInfo is None:
-                await itx.followup.send("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+                cmd_mention = self.client.getCommandMention("table admin built")
+                await itx.followup.send(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
                 return
             if itx.message.id == tableInfo["message"]:
                 # check if user has a table role
@@ -57,7 +59,9 @@ class Table(commands.GroupCog, name="table"):
                         #if you have a role of this table
                         if self.custom_id == tableId:
                             if role.id == table["owner"]:
-                                await itx.followup.send(f"You can't leave this table because you are the owner. As owner,\n - close table {table['id']} (/table close), or\n - transfer the ownership to someone else (/table newowner <User>).",ephemeral=True)
+                                cmd_mentionClose = self.client.getCommandMention("table close")
+                                cmd_mentionNewOwner = self.client.getCommandMention("table newowner")
+                                await itx.followup.send(f"You can't leave this table because you are the owner. As owner,\n - close table {table['id']} ({cmd_mentionClose}), or\n - transfer the ownership to someone else ({cmd_mentionNewOwner}).",ephemeral=True)
                                 return
                             elif role.id == table["member"]:
                                 await itx.user.remove_roles(role,reason="Removed from table role after clicking on button.")
@@ -108,7 +112,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         embed1 = discord.Embed(color=8481900, type='rich',description=" ")
         embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
@@ -157,7 +162,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
 
         embed1 = discord.Embed(color=8481900, type='rich',description=" ")
@@ -204,7 +210,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         tables = "List of tables:"
         for tableId in tableInfo:
@@ -271,12 +278,14 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
 
         closable = ""
         if not "message" in tableInfo:
-            await itx.response.send_message("There is no table message to update, thus I'm afraid you can't close the table.. Pleaes ask an admin to fix this with `/table admin sendmsg`",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin sendmsg")
+            await itx.response.send_message(f"There is no table message to update, thus I'm afraid you can't close the table.. Please ask an admin to fix this with {cmd_mention}",ephemeral=True)
             return
         for table in tableInfo:
             if type(tableInfo[table]) is not dict: continue
@@ -284,7 +293,8 @@ class Table(commands.GroupCog, name="table"):
                 closable = table
                 break
         if closable == "":
-            await itx.response.send_message("This id wasn't valid, thus couldn't close this table (for a list of tables, use /table admin list)!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin list")
+            await itx.response.send_message(f"This id wasn't valid, thus couldn't close this table (for a list of tables, use {cmd_mention})!",ephemeral=True)
             return
         warning = ""
         if tableInfo[closable]["status"] == "new":
@@ -323,7 +333,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
 
         for tableId in tableInfo:
@@ -342,7 +353,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         lockable = ""
         if not "message" in tableInfo:
@@ -364,7 +376,8 @@ class Table(commands.GroupCog, name="table"):
         # send update message in table chat
         category = discord.utils.find(lambda r: r.id == tableInfo[lockable]["category"], itx.guild.categories)
         channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-        await channel.send("This table was locked by the table owner. No new players can join the table anymore.\nUse `/table unlock` as table owner to open the table again.")
+        cmd_mention = self.client.getCommandMention("table unlock")
+        await channel.send(f"This table was locked by the table owner. No new players can join the table anymore.\nUse {cmd_mention} as table owner to open the table again.")
         await self.tablemsgupdate(itx)
         await itx.response.send_message("Locked successfully",ephemeral=True)
 
@@ -374,7 +387,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         unlockable = ""
         if not "message" in tableInfo:
@@ -396,7 +410,8 @@ class Table(commands.GroupCog, name="table"):
         # send update message in table chat
         category = discord.utils.find(lambda r: r.id == tableInfo[unlockable]["category"], itx.guild.categories)
         channel = discord.utils.find(lambda r: r.name == "chat", category.channels)
-        await channel.send("This table was unlocked by the table owner. Players can join the table again.\nUse `/table lock` as table owner to lock the table.")
+        cmd_mention = self.client.getCommandMention("table lock")
+        await channel.send(f"This table was unlocked by the table owner. Players can join the table again.\nUse {cmd_mention} as table owner to lock the table.")
         await self.tablemsgupdate(itx)
         await itx.response.send_message("Unlocked successfully",ephemeral=True)
 
@@ -406,7 +421,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         closable = ""
         if not "message" in tableInfo:
@@ -451,7 +467,8 @@ class Table(commands.GroupCog, name="table"):
         collection = RinaDB["tableInfo"]
         tableInfo = collection.find_one(query)
         if tableInfo is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/table admin build`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("table admin build")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         transfer = ""
         for table in tableInfo:
@@ -484,12 +501,12 @@ class Table(commands.GroupCog, name="table"):
 
     @app_commands.command(name="help", description="Get a bit of info about Table commands")
     async def help(self, itx: discord.Interaction):
-        await itx.response.send_message("""This is a list of commands you can use for your table, as table owner:
-/table lock -- Stops people from joining your table
-/table unlock -- Lets new people join the table again
-/table close -- Removes the table role from everyone and closes the table
-/table newowner -- Give the table owner role to another player (you can't share it)
-/table admin (admin only commands): list,build,force_close,destroy,sendmsg\
+        await itx.response.send_message(f"""This is a list of commands you can use for your table, as table owner:
+{self.client.getCommandMention('table lock')} -- Stops people from joining your table
+{self.client.getCommandMention('table unlock')} -- Lets new people join the table again
+{self.client.getCommandMention('table close')} -- Removes the table role from everyone and closes the table
+{self.client.getCommandMention('table newowner')} -- Give the table owner role to another player (you can't share it)
+{self.client.getCommandMention('table admin')} (admin only commands): list,build,force_close,destroy,sendmsg\
 """,ephemeral=True)
 
 async def setup(client):

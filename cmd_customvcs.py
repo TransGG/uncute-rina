@@ -84,7 +84,8 @@ class CustomVcs(commands.Cog):
                     raise
                         # pass
                 nomicChannel = member.guild.get_channel(vcNoMic)
-                await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use `/editvc` to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
+                cmd_mention = self.client.getCommandMention("editvc")
+                await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
                 logChannel = member.guild.get_channel(vcLog)
                 await logChannel.send(content=warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
 
@@ -101,7 +102,8 @@ class CustomVcs(commands.Cog):
         query = {"guild_id": itx.guild_id}
         guild = collection.find_one(query)
         if guild is None:
-            await itx.response.send_message("Not enough data is configured to do this action! Please ask an admin to fix this with `/editguildinfo`!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("editguildinfo")
+            await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         vcHub = guild["vcHub"]
         vcLog = guild["vcLog"]

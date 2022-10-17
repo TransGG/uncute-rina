@@ -13,6 +13,7 @@ class TermDictionary(commands.Cog):
     def __init__(self, client):
         global RinaDB
         RinaDB = client.RinaDB
+        self.client = client
 
     # @dictionary.autocomplete('term')
     async def dictionary_autocomplete(self, itx: discord.Interaction, current: str):
@@ -96,15 +97,17 @@ class TermDictionary(commands.Cog):
                     source = 4
                 #public = False
                 else:
-                    resultStr += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use /define)"
-                    debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
-                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command")
+                    cmd_mention = self.client.getCommandMention("dictionary_staff define")
+                    resultStr += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use {cmd_mention})"
+                    # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
+                    cmd_mention = self.client.getCommandMention("dictionary")
+                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the {cmd_mention} command")
             if len(resultStr.split("\n")) > 3 and public:
                 public = False
                 resultStr += "\nDidn't send your message as public cause it would be spammy, having this many results."
             if len(resultStr) > 1999:
                 resultStr = f"Your search ({term}) returned too many results (discord has a 2000-character message length D:). (Please ask staff to fix this (synonyms and stuff).)"
-                debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
+                # debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
                 await logMmsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 2 or source == 4:
             response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
@@ -183,8 +186,10 @@ class TermDictionary(commands.Cog):
                 resultStr = f"I didn't find any results for '{term}' on en.pronouns.page!"
                 if source == 4:
                     resultStr = f"I didn't find any results for '{term}' online or in our fancy dictionary"
-                    debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
-                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)")
+                    # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
+                    cmd_mentionDict = self.client.getCommandMention("dictionary")
+                    cmd_mentionDef = self.client.getCommandMention("dictionary_staff define")
+                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mentionDict} command ({cmd_mentionDef})")
             msgLength = len(resultStr)
             if msgLength > 1999:
                 public = False
@@ -193,7 +198,9 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
             #print(response_API.status_code)
         await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
 
-    @app_commands.command(name="define",description="Add a dictionary entry for a word!")                                            #
+    admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
+
+    @admin.command(name="define",description="Add a dictionary entry for a word!")                                            #
     @app_commands.describe(term="This is the main word for the dictionary entry: Egg, Hormone Replacement Therapy (HRT), (case sens.)",
                            definition="Give this term a definition",
                            synonyms="Add synonyms (SEPARATE WITH \", \")")
@@ -211,7 +218,8 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         query = {"term": term}
         search = collection.find_one(query)
         if search is not None:
-            await itx.response.send_message("You have already previously defined this term (try to find it with /dictionary).", ephemeral=True)
+            cmd_mention = self.client.getCommandMention("dictionary")
+            await itx.response.send_message(f"You have already previously defined this term (try to find it with {cmd_mention}).", ephemeral=True)
             return
 
         # Test if a synonym is already used before
@@ -236,7 +244,7 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         await logMsg(itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) added the dictionary definition of '{term}' and set it to '{definition}', with synonyms: {synonyms}")
         await itx.response.send_message(warnings+f"Successfully added '{term}' to the dictionary (with synonyms: {synonyms}): {definition}", ephemeral=True)
 
-    @app_commands.command(name="redefine",description="Edit a dictionary entry for a word!")
+    @admin.command(name="redefine",description="Edit a dictionary entry for a word!")
     @app_commands.describe(term="This is the main word for the dictionary entry (case sens.) Example: Egg, Hormone Replacement Therapy (HRT), etc.",
                            definition="Redefine this definition")
     async def redefine(self, itx: discord.Interaction, term: str, definition: str):
@@ -247,14 +255,15 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            await itx.response.send_message("This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use /define.",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("dictionary_staff define")
+            await itx.response.send_message(f"This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use {cmd_mention}.",ephemeral=True)
             return
         collection.update_one(query, {"$set":{"definition":definition}})
 
         await logMsg(itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed the dictionary definition of '{term}' to '{definition}'")
         await itx.response.send_message(f"Successfully redefined '{term}'", ephemeral=True)
 
-    @app_commands.command(name="undefine",description="Add a dictionary entry for a word!")
+    @admin.command(name="undefine",description="Add a dictionary entry for a word!")
     @app_commands.describe(term="What word do you need to undefine (case sensitive). Example: Egg, Hormone Replacement Therapy (HRT), etc")
     async def undefine(self, itx: discord.Interaction, term: str):
         if not isStaff(itx):
@@ -272,7 +281,7 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
 
         await itx.response.send_message(f"Successfully undefined '{term}'", ephemeral=True)
 
-    @app_commands.command(name="editsynonym",description="Add a synonym to a previously defined word")
+    @admin.command(name="editsynonym",description="Add a synonym to a previously defined word")
     @app_commands.describe(term="This is the main word for the dictionary entry (case sens.): Egg, Hormone Transfer Therapy, etc",
                            mode="Add or remove a synonym?",
                            synonym="Which synonym to remove?")
@@ -288,7 +297,8 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            await itx.response.send_message("This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use /define.",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("dictionary_staff define")
+            await itx.response.send_message(f"This term hasn't been added to the dictionary yet, and thus cannot get new synonyms! Use {cmd_mention}.",ephemeral=True)
             return
 
         if mode == 1:

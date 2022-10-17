@@ -48,8 +48,9 @@ class Pronouns(commands.Cog):
             return
         pronouns.append(pronoun)
         collection.update_one(query, {"$set":{f"pronouns":pronouns}}, upsert=True)
-
-        await itx.response.send_message(warning+f"Successfully added `{pronoun}`. Use `/pronouns <user:yourself>` to see your custom pronouns, and use `/removepronoun <pronoun>` to remove one",ephemeral=True)
+        cmd_mention = self.client.getCommandMention("pronouns")
+        cmd_mentionDel = self.client.getCommandMention("removepronoun")
+        await itx.response.send_message(warning+f"Successfully added `{pronoun}`. Use {cmd_mention}` <user:yourself>` to see your custom pronouns, and use {cmd_mentionDel}` <pronoun>` to remove one",ephemeral=True)
 
     @app_commands.command(name="removepronoun",description="Remove one of your prevously added pronouns!")
     @app_commands.describe(pronoun="What pronoun do you want to remove (example: she/her, or :a)")
@@ -59,7 +60,8 @@ class Pronouns(commands.Cog):
         data = collection.find_one(query)
         if data is None:
             #see if this user already has data, if not, add empty
-            await itx.response.send_message("You haven't added pronouns yet! Use `/addpronoun <pronoun>` to add one!",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("addpronoun")
+            await itx.response.send_message(f"You haven't added pronouns yet! Use {cmd_mention}` <pronoun>` to add one!",ephemeral=True)
             return
         pronouns = data['pronouns']
         if pronoun not in pronouns:
@@ -71,7 +73,8 @@ class Pronouns(commands.Cog):
                     data = collection.find_one(query)
                     if data is None:
                         #see if this user already has data, if not, add empty
-                        await itx.response.send_message("This person hasn't added pronouns yet! Tell them to use `/addpronoun <pronoun>` to add one!",ephemeral=True)
+                        cmd_mention = self.client.getCommandMention("addpronoun")
+                        await itx.response.send_message(f"This person hasn't added pronouns yet! Tell them to use {addpronoun}` <pronoun>` to add one!",ephemeral=True)
                         return
                     pronouns = data['pronouns']
                     del pronouns[int(pronoun)-1]
@@ -98,7 +101,8 @@ class Pronouns(commands.Cog):
             pronouns = data['pronouns']
         if len(pronouns) == 0:
             noPronouns = True
-            warning = "\nThis person hasn't added custom pronouns yet! (They need to use `/addpronoun <pronoun>` to add one)"
+            cmd_mention = self.client.getCommandMention("addpronoun")
+            warning = f"\nThis person hasn't added custom pronouns yet! (They need to use {cmd_mention}` <pronoun>` to add one)"
 
         list = []
         for pronoun in pronouns:
@@ -125,7 +129,8 @@ class Pronouns(commands.Cog):
         list += roles
 
         if len(list) == 0:
-            await itx.response.send_message("This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use `/addpronoun <pronoun>`\nThey might also have pronouns mentioned in their About Me.. I can't see that sadly, so you'd have to check yourself.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            cmd_mention = self.client.getCommandMention("addpronoun")
+            await itx.response.send_message(f"This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use {cmd_mention}` <pronoun>`\nThey might also have pronouns mentioned in their About Me.. I can't see that sadly, so you'd have to check yourself.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         else:
             await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n"+ '\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 

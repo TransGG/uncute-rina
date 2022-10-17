@@ -199,7 +199,8 @@ class Reminders(commands.GroupCog,name="reminder"):
         # await itx.user.send(f"On <t:{now}:f> (in <t:{int(mktime(distance.timetuple()))}:R>), you asked to be reminded of \"{reminder}.\"")
         # distance = distance+(datetime.now()-datetime.utcnow())
         _distance = int(mktime(distance.timetuple()))
-        await itx.response.send_message(f"Sucessfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!",ephemeral=True)
+        cmd_mention = self.client.getCommandMention("reminder reminders")
+        await itx.response.send_message(f"Sucessfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!\nUse {cmd_mention} to see your list of reminders",ephemeral=True)
 
     @app_commands.command(name="reminders",description="Check your list of reminders!")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
@@ -208,7 +209,9 @@ class Reminders(commands.GroupCog,name="reminder"):
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
-            itx.response.send_message("You don't have any reminders running at the moment!", ephemeral=True)
+            cmd_mention = self.client.getCommandMention("reminder remindme")
+            await itx.response.send_message(f"You don't have any reminders running at the moment!\nUse {cmd_mention} to make a reminder!", ephemeral=True)
+            return
 
         try:
             out = []
@@ -234,9 +237,41 @@ class Reminders(commands.GroupCog,name="reminder"):
                         f"  Reminding you at: <t:{reminder['remindertime']}:F> (<t:{reminder['remindertime']}:R>)\n"+\
                         f"  Remind you about: {discord.utils.escape_markdown(reminder['reminder'])}",ephemeral=True)
         except IndexError:
-            await itx.response.send_message("I couldn't find any reminder with that ID!\nLook for the \"ID: `0`\" at the beginning of your reminder on the reminder list (/reminder reminders)",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("reminder reminders")
+            await itx.response.send_message(f"I couldn't find any reminder with that ID!\nLook for the \"ID: `0`\" at the beginning of your reminder on the reminder list ({cmd_mention})",ephemeral=True)
+            return
         except KeyError:
-            await itx.response.send_message("You don't have any reminders running at the moment.",ephemeral=True)
+            cmd_mention = self.client.getCommandMention("reminder remindme")
+            await itx.response.send_message(f"You don't have any reminders running at the moment.\nUse {cmd_mention} to make a reminder!",ephemeral=True)
+            return
+
+    @app_commands.command(name="remove",description="Remove of your reminders")
+    @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
+    async def remove(self, itx: discord.Interaction, item: int):
+        collection = RinaDB["reminders"]
+        query = {"userID": itx.user.id}
+        db_data = collection.find_one(query)
+        if db_data is None:
+            cmd_mention = self.client.getCommandMention("reminder remindme")
+            await itx.response.send_message(f"You don't have any reminders running at the moment! (so I can't remove any either..)\nUse {cmd_mention} to make a reminder!", ephemeral=True)
+            return
+
+        try:
+            del db_data['reminders'][item]
+        except IndexError:
+            cmd_mention = self.client.getCommandMention("reminder reminders")
+            await itx.response.send_message(f"I couldn't find any reminder with that ID!\nLook for the \"ID: `0`\" at the beginning of your reminder on the reminder list ({cmd_mention})",ephemeral=True)
+            return
+        except KeyError:
+            cmd_mention = self.client.getCommandMention("reminder remindme")
+            await itx.response.send_message(f"You don't have any reminders running at the moment. (so I can't remove any either..)\nUse {cmd_mention} to make a reminder!",ephemeral=True)
+            return
+        query = {"userID": itx.user.id}
+        if len(db_data['reminders']) > 0:
+            collection.update_one(query, {"$set":{"reminders":db_data['reminders']}}, upsert=True)
+        else:
+            collection.delete_one(query)
+        await itx.response.send_message("Successfully removed this reminder!",ephemeral=True)
 
 
 async def setup(client):

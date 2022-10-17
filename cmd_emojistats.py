@@ -42,6 +42,8 @@ class EmojiStats(commands.Cog):
         # collection.update_one( query, {"$set":{"name":emojiName}})
         #debug(f"Successfully added new data for {emojiID} as {location.replace('UsedCount','')}",color="blue")
 
+    emojistats = app_commands.Group(name='emojistats', description='Get information about emoji usage in messages and reactions')
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot:
@@ -73,7 +75,7 @@ class EmojiStats(commands.Cog):
         if reaction.emoji.id is not None:
             await self.addToData(str(reaction.emoji.id), reaction.emoji.name, "reaction", reaction.emoji.animated)
 
-    @app_commands.command(name="getemojidata",description="Get emoji usage data from an ID!")
+    @emojistats.command(name="getemojidata",description="Get emoji usage data from an ID!")
     @app_commands.describe(emoji= "Emoji you want to get data of")
     async def getEmojiData(self, itx: discord.Interaction, emoji: str):
         # for testing purposes, for now.
@@ -115,7 +117,7 @@ class EmojiStats(commands.Cog):
         f"Animated: {(animated)}\n"+\
         f"Last used: {datetime.utcfromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
 
-    @app_commands.command(name="getunusedemojis",description="Get the least-used emojis")
+    @emojistats.command(name="getunusedemojis",description="Get the least-used emojis")
     @app_commands.describe(hidden= "Do you want everyone in this channel to be able to see this result?",
                            max_results = "How many emojis do you want to retrieve at most? (may return fewer)",
                            min_used = "Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 1)",
@@ -170,7 +172,7 @@ class EmojiStats(commands.Cog):
             output = output[:1850] + "\nShortened to be able to be sent."
         await itx.edit_original_response(content="These emojis have been used very little (x used in msg, x used as reaction):\n"+output)
 
-    @app_commands.command(name="getemojitop10",description="Get top 10 most used emojis")
+    @emojistats.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def getEmojiTop10(self, itx: discord.Interaction):
         # for testing purposes, for now.
         if not isStaff(itx):

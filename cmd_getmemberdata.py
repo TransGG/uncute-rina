@@ -12,6 +12,7 @@ class MemberData(commands.Cog):
     def __init__(self, client):
         global RinaDB
         RinaDB = client.RinaDB
+        
     async def addToData(self, member, type):
         collection = RinaDB["data"]
         query = {"guild_id": member.guild.id}
