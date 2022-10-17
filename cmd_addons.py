@@ -36,6 +36,7 @@ class Addons(commands.Cog):
             await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions.none())
         except discord.Forbidden:
             await itx.response.send_message("Forbidden! I can't send a message in this channel/thread because I can't see it or because I'm not added to it yet!\n(Add me to the thread by mentioning me, or let Rina see this channel)",ephemeral=True)
+            return
         except:
             await itx.response.send_message("Oops. Something went wrong!",ephemeral=True)
             raise
@@ -45,10 +46,8 @@ class Addons(commands.Cog):
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
-        await itx.response.send_message("This command is currently disabled for now, since we're missing compliments. Feel free to suggest some, and ping @MysticMia#7612",ephemeral=True)
-        return
-
-
+        # await itx.response.send_message("This command is currently disabled for now, since we're missing compliments. Feel free to suggest some, and ping @MysticMia#7612",ephemeral=True)
+        # return
 
         try:
             user.roles
@@ -93,11 +92,11 @@ class Addons(commands.Cog):
                     "Would you like to walk in the park with me? I gotta walk my catgirls",
                     "morb",
                     "You look great today!",
-                    "You light up the room.",
+                    "You light up the room!",
                     "On a scale from 1 to 10, you’re an 11!",
                     'When you say, “I meant to do that,” I totally believe you.',
                     "You should be thanked more often. So thank you!",
-                    "You are so easy to have a conversation with.",
+                    "You are so easy to have a conversation with!",
                     "Ooh you look like a good candidate for my pet blahaj!",
 
 
@@ -107,8 +106,8 @@ class Addons(commands.Cog):
             type = {
                 "she/her"   : "fem_quotes",
                 "he/him"    : "masc_quotes",
-                "they/them" : "enby_quotes",
-                "it/its"    : "enby_quotes",
+                "they/them" : "they_quotes",
+                "it/its"    : "it_quotes",
                 "unisex"    : "unisex_quotes", #todo
             }[type]
 
@@ -118,11 +117,13 @@ class Addons(commands.Cog):
                 else:
                     quotes[x] += quotes["unisex_quotes"]
 
+            base = f"{itx.user.mention} complimented {user.mention}!\n"
             if itx.response.is_done():
-                await itx.edit_original_response(content=random.choice(quotes[type]), view=None)
+                # await itx.edit_original_response(content=base+random.choice(quotes[type]), view=None)
+                await itx.followup.send(content=base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
             else:
-                await itx.response.send_message(random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions.none())
-
+                await itx.response.send_message(base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
+                #todo check if pings work
         async def confirm_gender():
             # Define a simple View that gives us a confirmation menu
             class Confirm(discord.ui.View):
@@ -135,48 +136,48 @@ class Addons(commands.Cog):
                 # stop the View from listening to more input.
                 # We also send the user an ephemeral message that we're confirming their choice.
                 @discord.ui.button(label='She/Her', style=discord.ButtonStyle.green)
-                async def feminine(self, interaction: discord.Interaction, button: discord.ui.Button):
+                async def feminine(self, itx: discord.Interaction, button: discord.ui.Button):
                     self.value = "she/her"
-                    await interaction.response.send_message('Selected She/Her pronouns for compliment', ephemeral=True)
+                    await itx.response.edit_message(content='Selected She/Her pronouns for compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='He/Him', style=discord.ButtonStyle.green)
-                async def masculine(self, interaction: discord.Interaction, button: discord.ui.Button):
+                async def masculine(self, itx: discord.Interaction, button: discord.ui.Button):
                     self.value = "he/him"
-                    await interaction.response.send_message('Selected He/Him pronouns for the compliment', ephemeral=True)
+                    await itx.response.edit_message(content='Selected He/Him pronouns for the compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='They/Them', style=discord.ButtonStyle.green)
-                async def enby_them(self, interaction: discord.Interaction, button: discord.ui.Button):
+                async def enby_them(self, itx: discord.Interaction, button: discord.ui.Button):
                     self.value = "they/them"
-                    await interaction.response.send_message('Selected They/Them pronouns for the compliment', ephemeral=True)
+                    await itx.response.edit_message(content='Selected They/Them pronouns for the compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='It/Its', style=discord.ButtonStyle.green)
-                async def enby_its(self, interaction: discord.Interaction, button: discord.ui.Button):
+                async def enby_its(self, itx: discord.Interaction, button: discord.ui.Button):
                     self.value = "it/its"
-                    await interaction.response.send_message('Selected It/Its pronouns for the compliment', ephemeral=True)
+                    await itx.response.edit_message(content='Selected It/Its pronouns for the compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='Unisex/Unknown', style=discord.ButtonStyle.grey)
-                async def unisex(self, interaction: discord.Interaction, button: discord.ui.Button):
+                async def unisex(self, itx: discord.Interaction, button: discord.ui.Button):
                     self.value = "unisex"
-                    await interaction.response.send_message('Selected Unisex/Unknown gender for the compliment', ephemeral=True)
+                    await itx.response.edit_message(content='Selected Unisex/Unknown gender for the compliment', view=None)
                     self.stop()
 
             view = Confirm(timeout=30)
-            await itx.response.send_message("This person doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view)
+            await itx.response.send_message(f"{user.mention} doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view,ephemeral=True)
             await view.wait()
             if view.value is None:
                 await itx.edit_original_response(content=':x: Timed out...', view=None)
-                await asyncio.sleep(3)
-                await itx.delete_original_response()
+                # await asyncio.sleep(3)
+                # await itx.delete_original_response()
             else:
                 await call(itx, user, view.value)
 
         roles = ["he/him","she/her","they/them","it/its"]
         for role in user.roles:
-            if role.name.lower() in random.shuffle(roles): # pick a random order for which pronoun role to pick
+            if role.name.lower() in roles: # ~pick a random order for which pronoun role to pick~ outdated
                 await call(itx, user, role.name.lower())
                 return
         await confirm_gender()
