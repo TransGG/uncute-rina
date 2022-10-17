@@ -176,7 +176,7 @@ class Addons(commands.Cog):
                 await call(itx, user, view.value)
 
         roles = ["he/him","she/her","they/them","it/its"]
-        userroles = user.roles
+        userroles = user.roles[:]
         random.shuffle(userroles) # pick a random order for which pronoun role to pick
         for role in userroles:
             if role.name.lower() in roles:
