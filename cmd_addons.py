@@ -88,7 +88,7 @@ class Addons(commands.Cog):
                 "unisex_quotes" : [ #unisex quotes are added to each of the other quotes later on.
                     "_Let me just hide this here-_ hey wait, are you looking?!",
                     "Would you like a hug?",
-                    "Hey I have some leftover cookies.. \\*wink wink\\*"
+                    "Hey I have some leftover cookies.. \\*wink wink\\*",
                     "Would you like to walk in the park with me? I gotta walk my catgirls",
                     "morb",
                     "You look great today!",
