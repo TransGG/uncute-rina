@@ -15,6 +15,74 @@ class Addons(commands.Cog):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
+        self.headpatWait = 0
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        #random cool commands
+        self.headpatWait += 1
+        if self.headpatWait >= 500:
+            self.headpatWait = 0
+            try:
+                await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
+            except discord.errors.HTTPException:
+                await message.add_reaction("☺️") # relaxed
+
+        if self.client.user.mention in message.content.split():
+            msg = message.content.lower()
+            if ((("cute" or "cutie" or "adorable" in msg) and "not" in msg) or "uncute" in msg) and "not uncute" not in msg:
+                await message.add_reaction("<:this:960916817801535528>")
+            elif "cutie" in msg or "cute" in msg:
+                responses = [
+                    "I'm not cute >_<",
+                    "I'm not cute! I'm... Tough! Badass!",
+                    "Nyaa~",
+                    "Who? Me? No you're mistaken.",
+                    "I very much deny the cuteness of someone like myself",
+                    "If you think I'm cute, then you must be uber-cute!!",
+                    "I don't think so.",
+                    "Haha. Good joke. Tell me another tomorrow",
+                    "Ehe, cutie what do u need help with?",
+                    "No, I'm !cute.",
+                    "You too!",
+                    "No, you are <3",
+                    "[shocked] Wha- w. .. w what?? .. NOo? no im nott?\nwhstre you tslking about?",
+                    "Oh you were talking to me? I thought you were talking about everyone else here,",
+                    "Nope. I doubt it. There's no way I can be as cute as you",
+                    "Maybe.. Maybe I am cute.",
+                    "If the sun was dying, would you still think I was cute?",
+                    "Awww. Thanks sweety, but you've got the wrong number",
+                    ":joy: You *reaaally* think so? You've gotta be kidding me.",
+                    "If you're gonna be spamming this, .. maybe #general isn't the best channel for that.",
+                    "You gotta praise those around you as well. "+(message.author.nick or message.author.name)+", for example, is very cute.",
+                    "Oh by the way, did I say "+(message.author.nick or message.author.name)+" was cute yet? I probably didn't. "+(message.author.nick or message.author.name)+"? You're very cute",
+                    "Such nice weather outside, isn't it? What- you asked me a question?\nNo you didn't, you're just talking to youself.",
+                    "".join(random.choice("acefgilrsuwnopacefgilrsuwnopacefgilrsuwnop;;  ") for i in range(random.randint(10,25))), # 3:2 letters to symbols
+                    "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
+                    "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
+                    "...",
+                    "Hey that's not how it works!",
+                    "Hey my lie detector said you are lying.",
+                    "You know i'm not a mirror, right?",
+                    "*And the oscar for cutest responses goes to..  YOU!!*",
+                    "No I am not cute",
+                    "k",
+                    (message.author.nick or message.author.name)+", stop lying >:C",
+                    "BAD!",
+                    "You're also part of the cuties set",
+                    "https://cdn.discordapp.com/emojis/920918513969950750.webp?size=4096&quality=lossless",
+                    "[Checks machine]; Huh? Is my lie detector broken? I should fix that..",
+                    "Hey, you should be talking about yourself first! After all, how do you keep up with being such a cutie all the time?"]
+                respond = random.choice(responses)
+                if respond == "BAD!":
+                    await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
+                await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
+            else:
+                await message.channel.send("I use slash commands! Use /command  and see what cool things might pop up! or something\nPS: If you're trying to call me cute: no, i'm not", delete_after=8)
+
+
 
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?")
@@ -42,7 +110,6 @@ class Addons(commands.Cog):
             raise
         await itx.response.send_message("Successfully sent!", ephemeral=True)
 
-
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
@@ -66,6 +133,7 @@ class Addons(commands.Cog):
                     "Who's a good girl?? You are!!",
                     "Amazing! Perfect! Beautiful! How **does** she do it?!",
                     "I can tell that you are a very special and talented girl!",
+                    "Here, have this cute sticker!"
                 ],
                 "masc_quotes" : [
                     "You are the best man out there.",
@@ -86,9 +154,9 @@ class Addons(commands.Cog):
                     "I bet you do the crossword puzzle in ink!",
                 ],
                 "unisex_quotes" : [ #unisex quotes are added to each of the other quotes later on.
-                    "_Let me just hide this here-_ hey wait, are you looking?!",
-                    "Would you like a hug?",
                     "Hey I have some leftover cookies.. \\*wink wink\\*",
+                    # "_Let me just hide this here-_ hey wait, are you looking?!", #it were meant to be cookies TwT
+                    "Would you like a hug?",
                     "Would you like to walk in the park with me? I gotta walk my catgirls",
                     "morb",
                     "You look great today!",
@@ -97,7 +165,8 @@ class Addons(commands.Cog):
                     'When you say, “I meant to do that,” I totally believe you.',
                     "You should be thanked more often. So thank you!",
                     "You are so easy to have a conversation with!",
-                    "Ooh you look like a good candidate for my pet blahaj!",
+                    "Ooh you look like a good candidate to give my pet blahaj to!",
+                    "Here, have a sticker!"
 
 
 
@@ -184,63 +253,6 @@ class Addons(commands.Cog):
                 return
         await confirm_gender()
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.bot:
-            return
-        #random cool commands
-        if self.client.user.mention in message.content.split():
-            msg = message.content.lower()
-            if ((("cute" or "cutie" in msg) and "not" in msg) or "uncute" in msg) and "not uncute" not in msg:
-                await message.add_reaction("<:this:960916817801535528>")
-            elif "cutie" in msg or "cute" in msg:
-                responses = [
-                    "I'm not cute >_<",
-                    "I'm not cute! I'm... Tough! Badass!",
-                    "Nyaa~",
-                    "Who? Me? No you're mistaken.",
-                    "I very much deny the cuteness of someone like myself",
-                    "If you think I'm cute, then you must be uber-cute!!",
-                    "I don't think so.",
-                    "Haha. Good joke. Tell me another tomorrow",
-                    "Ehe, cutie what do u need help with?",
-                    "No, I'm !cute.",
-                    "You too!",
-                    "No, you are <3",
-                    "[shocked] Wha- w. .. w what?? .. NOo? no im nott?\nwhstre you tslking about?",
-                    "Oh you were talking to me? I thought you were talking about everyone else here,",
-                    "Nope. I doubt it. There's no way I can be as cute as you",
-                    "Maybe.. Maybe I am cute.",
-                    "If the sun was dying, would you still think I was cute?",
-                    "Awww. Thanks sweety, but you've got the wrong number",
-                    ":joy: You *reaaally* think so? You've gotta be kidding me.",
-                    "If you're gonna be spamming this, .. maybe #general isn't the best channel for that.",
-                    "You gotta praise those around you as well. "+(message.author.nick or message.author.name)+", for example, is very cute.",
-                    "Oh by the way, did I say "+(message.author.nick or message.author.name)+" was cute yet? I probably didn't. "+(message.author.nick or message.author.name)+"? You're very cute",
-                    "Such nice weather outside, isn't it? What- you asked me a question?\nNo you didn't, you're just talking to youself.",
-                    "".join(random.choice("acefgilrsuwnopacefgilrsuwnopacefgilrsuwnop;;  ") for i in range(random.randint(10,25))), # 3:2 letters to symbols
-                    "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
-                    "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
-                    "...",
-                    "Hey that's not how it works!",
-                    "Hey my lie detector said you are lying.",
-                    "You know i'm not a mirror, right?",
-                    "*And the oscar for cutest responses goes to..  YOU!!*",
-                    "No I am not cute",
-                    "k",
-                    (message.author.nick or message.author.name)+", stop lying >:C",
-                    "BAD!",
-                    "You're also part of the cuties set",
-                    "https://cdn.discordapp.com/emojis/920918513969950750.webp?size=4096&quality=lossless",
-                    "[Checks machine]; Huh? Is my lie detector broken? I should fix that..",
-                    "Hey, you should be talking about yourself first! After all, how do you keep up with being such a cutie all the time?"]
-                respond = random.choice(responses)
-                if respond == "BAD!":
-                    await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
-                await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
-            else:
-                await message.channel.send("I use slash commands! Use /command  and see what cool things might pop up! or something\nPS: If you're trying to call me cute: no, i'm not", delete_after=8)
-
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
                            faces="How many sides does every die have?",
@@ -322,6 +334,190 @@ The first person that joins/creates a table gets a Table Owner role, and can loc
 You can also transfer your table ownership to another table member, after they joined your table: {self.client.getCommandMention('table newowner')}\
 """
         await itx.response.send_message(out, ephemeral=True)
+
+
+    @app_commands.command(name="genanswer", description="Make verification question guesses")
+    @app_commands.describe(messageid="Which message should I check? (id)")
+    async def genAnswer(self, itx: discord.Interaction, messageid: int):
+        try:
+            # messageid = int(messageid)
+            message = await itx.channel.fetch_message(messageid)
+        except:
+            raise
+        if message is None:
+            raise Exception()
+        lines = message.content.split("\n")
+
+        verification = []
+        copyPasta = [
+            "1. Do you agree to the server rules and to respect the Discord Community Guidelines & Discord ToS?",
+            "2. Do you identify as transgender; and/or any other part of the LGBTQ+ community? (Please be specific in your answer)",
+            "3. Do you have any friends who are already a part of our Discord? (If yes, please send their username)",
+            "4. What’s your main goal/motivation in joining the TransPlace Discord?",
+            "5. If you could change one thing about the dynamic of the LGBTQ+ community, what would it be? ",
+            "6. What is gatekeeping in relation to the trans community?",
+            "# If you have any social media that contains relevant post  history related to the LGBTQ+ community, please link it to your discord account or send the account name or URL.",
+        ]
+        newlineCount = 0
+        q_string = ""
+        for line in lines:
+            if line == "":
+                pass
+            elif line in copyPasta:
+                q_string = line[0] # copy Question number
+            else:
+                verification.append(q_string+line)
+                newlineCount = 0
+                q_string = ""
+        verification = '\n'.join(verification).lower()
+
+        questions = ["1","2","3","4","5","6"]
+        question = []
+        warning = ""
+        for number in range(len(questions)):
+            try:
+                start = verification.index(questions[number])
+                try:
+                    end = verification.index(questions[number+1])
+                except:
+                    end = len(verification)
+                question.append(verification[start:end])
+            except ValueError:
+                if warning == "":
+                    warning += f"Couldn't find question number for question '{number}'"
+                else:
+                    warning += f", '{number}'"
+                if len(verification.split("\n")) == 6:
+                    question.append(verification.split("\n")[number])
+        if len(question) < 3:
+            await itx.response.send_message("I couldn't determine/separate the question answers in this message.",ephemeral=True)
+            return
+
+        isLgbtq = 0 # -1 = uncertain; 0 = cishet; 1 = trans
+        isTrans = -1 # -1 = unconfirmed; 0 = cis; 1 = trans
+        lgbtqTerms = [
+            "trans",
+            "m2f","f2m","mtf","ftm",
+            "demi",
+            "intersex",
+            "nonbinary",
+            "non-binary",
+            "non binary",
+            "questioning",
+            "asexual",
+            "lesbian",
+            "hrt",
+            "ace",
+            "aro",
+            "gay",
+            "homosexual",
+            "bi",
+            "pan",
+            "fluid",
+            "nb",
+        ]
+        hasAlibi = False
+
+        out = "\n"
+        if "yes" not in question[0] and " agree" not in question[0]:
+            out += "User might not have accepted the rules\n"
+
+        if "no" in question[1] and "pronoun" not in question[1]:
+            out += "They might be cis\n"
+            isTrans = 0
+
+        for term in lgbtqTerms:
+            if term in question[1]:
+                if isLgbtq == 0:
+                    out += f"Is in LGBTQ+: {term}"
+                else:
+                    out += f", {term}"
+                if term == "trans":
+                    isTrans = 1
+                isLgbtq = 1
+        if isLgbtq == 1:
+            out += "\n"
+        if "yes" in question[1] and isLgbtq < 1:
+            out += "Might not have fully answered what they identify as\n"
+            isLgbtq = -1
+        if not ("yes" in question[1] or "no" in question[1]) and isLgbtq == 0:
+            out += "Indeterminate answer for question 2, cis maybe?\n"
+            isLgbtq = -1
+        if (("no" not in question[2]) or (len(question[2]) > 7) and "not" not in question[2]):
+            hasAlibi = True
+
+        responses = []
+        if not hasAlibi:
+            responses.append("How did you find out about this server?")
+        if isTrans == 1:
+            responses.append("Since you're transgender, what makes you the happiest as your gender? What gives you the most gender euphoria?")
+        elif isLgbtq == 1:
+            responses.append("Why did you decide to join a trans server instead of any general LGTBQ+ server?")
+        elif isTrans != 0 or isLgbtq == -1:
+            responses.append("If you don't mind answering, what do you identify as?")
+
+        suggestedOutput = ""
+        if len(responses) > 0:
+            out += "\n__**Suggested output:**__\n"
+            suggestedOutput += f"""Hey there {message.author.mention},
+Thank you for taking the time to answer our questions
+If you don't mind, could you answer some more for us?
+
+First of all,
+{responses[0]}"""
+
+        if len(responses) > 1:
+            suggestedOutput += f"""
+
+Next,
+{responses[1]}"""
+
+        if len(suggestedOutput) > 0:
+            suggestedOutput+= """
+
+Once again, if you dislike answering any of these or following questions, feel free to tell me. I can give others.
+Thank you in advance :)"""
+        else:
+            suggestedOutput += "\n:warning: Couldn't think of any responses."
+
+
+        class ConfirmSend(discord.ui.View):
+            def __init__(self, timeout=None):
+                super().__init__()
+                self.value = None
+                self.timeout = timeout
+
+            # When the confirm button is pressed, set the inner value to `True` and
+            # stop the View from listening to more input.
+            # We also send the user an ephemeral message that we're confirming their choice.
+            @discord.ui.button(label='Send as suggested', style=discord.ButtonStyle.green)
+            async def confirm(self, itx: discord.Interaction, button: discord.ui.Button):
+                self.value = 1
+                await itx.response.edit_message(view=None)
+                self.stop()
+
+            @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red)
+            async def cancel(self, itx: discord.Interaction, button: discord.ui.Button):
+                self.value = 0
+                await itx.response.edit_message(view=None)
+                self.stop()
+
+        view = ConfirmSend(timeout=30)
+        await itx.response.send_message(warning+out+suggestedOutput, view=view, ephemeral=True)
+        await view.wait()
+        if view.value is None:
+            await itx.edit_original_response(view=None)
+            # await asyncio.sleep(3)
+            # await itx.delete_original_response()
+        elif view.value == 1:
+            await itx.channel.send(suggestedOutput)
+
+
+
+
+
+
+
 
 async def setup(client):
     await client.add_cog(Addons(client))

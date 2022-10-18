@@ -32,7 +32,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.4.0".split(".")
+fileVersion = "1.1.4.1".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -73,6 +73,9 @@ class Bot(commands.Bot):
                     if subgroup.name == subcommand:
                         if subcommand_group is None:
                             return subgroup.mention
+                        #now it techinically searches subcommand in subcmdgroup.options
+                        #but to remove additional renaming of variables, it stays as is.
+                        # subcmdgroup = subgroup # hm
                         for subcmdgroup in subgroup.options:
                             if subcmdgroup.name == subcommand_group:
                                 return subcmdgroup.mention
