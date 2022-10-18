@@ -338,14 +338,20 @@ You can also transfer your table ownership to another table member, after they j
 
     @app_commands.command(name="genanswer", description="Make verification question guesses")
     @app_commands.describe(messageid="Which message should I check? (id)")
-    async def genAnswer(self, itx: discord.Interaction, messageid: int):
+    async def genAnswer(self, itx: discord.Interaction, messageid: str):
         try:
-            # messageid = int(messageid)
+            messageid = int(messageid)
             message = await itx.channel.fetch_message(messageid)
-        except:
-            raise
+        except discord.errors.NotFound:
+            await itx.response.send_message("I couldn't find that message!",ephemeral=True)
+            return
+        except ValueError:
+            await itx.response.send_message(f"That ('{messageid}') is not a valid message ID!",ephemeral=True)
+            return
+
         if message is None:
-            raise Exception()
+            await itx.response.send_message("That message has no content?",ephemeral=True)
+            return
         lines = message.content.split("\n")
 
         verification = []
