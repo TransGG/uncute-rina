@@ -45,7 +45,7 @@ class TodoList(commands.Cog):
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
-                await itx.response.send_message("There are no items on your to-do list, so you can't reomve any either...",ephemeral=True)
+                await itx.response.send_message("There are no items on your to-do list, so you can't remove any either...",ephemeral=True)
                 return
             list = search["list"]
             length = len(list)
@@ -53,7 +53,8 @@ class TodoList(commands.Cog):
             try:
                 del list[todo]
             except IndexError:
-                await itx.response.send_message("Couldn't delete that ID, because there isn't any item on your list with that ID.. Use `/todo mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
+                cmd_mention = self.client.getCommandMention("todo")
+                await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention}` mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
                 return
             collection.update_one(query, {"$set":{f"list":list}}, upsert=True)
             await itx.response.send_message(f"Successfully removed '{todo}' from your to-do list. Your list now contains {len(list)} item{'s'*(len(list)!=1)}.", ephemeral=True)

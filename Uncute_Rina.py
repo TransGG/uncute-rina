@@ -32,7 +32,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.4.1".split(".")
+fileVersion = "1.1.4.2".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -94,7 +94,7 @@ debug("Program started")
 # Client events begin
 @client.event
 async def on_ready():
-    debug(f"[######] Logged in as {client.user}, in version {version}",color="green")
+    debug(f"[#####] Logged in as {client.user}, in version {version}",color="green")
     await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
 
 @client.event
@@ -102,9 +102,9 @@ async def setup_hook():
     start = datetime.now()
 
     ## cache server settings into client, to prevent having to load settings for every extension
-    debug(f"[+     ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
+    debug(f"[+    ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
     client.RinaDB = RinaDB
-    debug(f"[#     ]: Loaded server settings"+ " "*30,color="green")
+    debug(f"[#    ]: Loaded server settings"+ " "*30,color="green")
     ## activate the extensions/programs/code for slash commands
     extensions = [
         "cmd_addons",
@@ -118,31 +118,32 @@ async def setup_hook():
         "cmd_toneindicator",
         "cmdg_Reminders",
         "cmdg_Starboard",
-        "cmdg_Table",
+        # "cmdg_Table", # Disabled: it was never used. Will keep file in case of future projects
     ]
     for extID in range(len(extensions)):
         debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+ " "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])
-    debug(f"[##    ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
+    debug(f"[##   ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
 
     ## activate the buttons in the table message
-    debug(f"[##+   ]: Updating table message"+ " "*30,color="light_blue",end='\r')
+    ## Disabled: it was never used. Will keep file in case of future projects
+    # debug(f"[##+   ]: Updating table message"+ " "*30,color="light_blue",end='\r')
     try:
         client.logChannel = await client.fetch_channel(988118678962860032)
     except:
         client.logChannel = await client.fetch_channel(986304081234624554)
-
-    from cmdg_Table import Table
-    class Itx:
-        async def set(self):
-            guild = client.logChannel.guild
-            self.guild = guild
-            self.guild_id = guild.id
-    itx = Itx()
-    await itx.set()
-    await Table.tablemsgupdate(Table, itx)
-    debug(f"[###   ]: Updated table message"+ " "*30,color="green")
-    debug(f"[###+  ]: Restarting ongoing reminders" +" "*30,color="light_blue",end="\r")
+    # 
+    # from cmdg_Table import Table
+    # class Itx:
+    #     async def set(self):
+    #         guild = client.logChannel.guild
+    #         self.guild = guild
+    #         self.guild_id = guild.id
+    # itx = Itx()
+    # await itx.set()
+    # await Table.tablemsgupdate(Table, itx)
+    # debug(f"[###   ]: Updated table message"+ " "*30,color="green")
+    debug(f"[##+  ]: Restarting ongoing reminders" +" "*30,color="light_blue",end="\r")
     from cmdg_Reminders import Reminders
     collection = RinaDB["reminders"]
     query = {}
@@ -155,12 +156,12 @@ async def setup_hook():
                 Reminders.Reminder(client, creationtime, remindertime, user['userID'], reminder['reminder'], user, continued=True)
         except KeyError:
             pass
-    debug(f"[####  ]: Finished setting up reminders" +" "*30,color="green")
-    debug(f"[####+ ]: Caching bot's command names and their ids",color="light_blue",end='\r')
+    debug(f"[###  ]: Finished setting up reminders" +" "*30,color="green")
+    debug(f"[###+ ]: Caching bot's command names and their ids",color="light_blue",end='\r')
     commandList = await client.tree.fetch_commands()
     client.commandList = commandList
-    debug(f"[##### ]: Cached bot's command names and their ids" +" "*30,color="green")
-    debug(f"[#####+]: Starting..."+ " "*30,color="light_blue",end='\r')
+    debug(f"[#### ]: Cached bot's command names and their ids" +" "*30,color="green")
+    debug(f"[####+]: Starting..."+ " "*30,color="light_blue",end='\r')
 
     # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
     # await client.tree.sync()

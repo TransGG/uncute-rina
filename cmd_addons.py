@@ -124,8 +124,8 @@ class Addons(commands.Cog):
         async def call(itx, user, type):
             quotes = {
                 "fem_quotes" : [
-                    "Was the sun always this hot? or is it because of you?",
-                    "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
+                    # "Was the sun always this hot? or is it because of you?",
+                    # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
                     "I bet you sweat glitter.",
                     "Your hair looks stunning!",
                     "Being around you is like being on a happy little vacation.",
@@ -144,6 +144,7 @@ class Addons(commands.Cog):
                     "Good boyy!",
                     "Who's a cool guy? You are!!",
                     "I can tell that you are a very special and talented guy!",
+                    "You're such a gentleman!",
 
                 ],
                 "they_quotes" : [
@@ -185,6 +186,22 @@ class Addons(commands.Cog):
                     continue
                 else:
                     quotes[x] += quotes["unisex_quotes"]
+
+            collection = RinaDB["complimentblacklist"]
+            query = {"user": itx.user.id}
+            search = collection.find_one(query)
+            if search is None:
+                blacklist = []
+            else:
+                blacklist = search["list"]
+            for string in blacklist:
+                dec = 0
+                for x in range(len(quotes[type])):
+                    if string in quotes[type][x-dec]:
+                        del quotes[type][x-dec]
+                        dec += 1
+            if len(quotes[type]) == 0:
+                quotes[type].append("No compliment quotes could be given... This person seems to have blacklisted every quote.")
 
             base = f"{itx.user.mention} complimented {user.mention}!\n"
             if itx.response.is_done():
@@ -252,6 +269,69 @@ class Addons(commands.Cog):
                 await call(itx, user, role.name.lower())
                 return
         await confirm_gender()
+
+    @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
+    @app_commands.choices(mode=[
+    discord.app_commands.Choice(name='Add a string to your compliments blacklist', value=1),
+    discord.app_commands.Choice(name='Remove a string from your compliments blacklist', value=2),
+    discord.app_commands.Choice(name='Check your blacklisted strings', value=3)
+    ])
+    @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
+    async def complimentblacklist(self, itx: discord.Interaction, mode: int, string: str):
+        if mode == 1: # add an item to the blacklist
+            if len(string) > 150:
+                await itx.response.send_message("Please make strings shorter than 150 characters...",ephemeral=True)
+                return
+            collection = RinaDB["complimentblacklist"]
+            query = {"user": itx.user.id}
+            search = collection.find_one(query)
+            if search is None:
+                blacklist = []
+            else:
+                blacklist = search['list']
+            blacklist.append(string)
+            collection.update_one(query, {"$set":{f"list":blacklist}}, upsert=True)
+            await itx.response.send_message(f"Successfully added {repr(string)} to your blacklist. ({len(blacklist)} item{'s'*(len(blacklist)!=1)} in your blacklist now)",ephemeral=True)
+
+        elif mode == 2: # Remove item from black list
+            try:
+                string = int(string)
+            except ValueError:
+                await itx.response.send_message("To remove a string from your blacklist, you must give the id of the string you want to remove. This should be a number... You didn't give a number...", ephemeral=True)
+                return
+            collection = RinaDB["complimentblacklist"]
+            query = {"user": itx.user.id}
+            search = collection.find_one(query)
+            if search is None:
+                await itx.response.send_message("There are no items on your blacklist, so you can't remove any either...",ephemeral=True)
+                return
+            blacklist = search["list"]
+            length = len(blacklist)
+
+            try:
+                del blacklist[string]
+            except IndexError:
+                cmd_mention = self.client.getCommandMention("complimentblacklist")
+                await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention}` mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
+                return
+            collection.update_one(query, {"$set":{f"list":blacklist}}, upsert=True)
+            await itx.response.send_message(f"Successfully removed '{string}' from your blacklist. Your blacklist now contains {len(blacklist)} string{'s'*(len(blacklist)!=1)}.", ephemeral=True)
+        elif mode == 3:
+            collection = RinaDB["complimentblacklist"]
+            query = {"user": itx.user.id}
+            search = collection.find_one(query)
+            if search is None:
+                await itx.response.send_message("There are no strings in your blacklist, so.. nothing to list here....",ephemeral=True)
+                return
+            blacklist = search["list"]
+            length = len(blacklist)
+
+            ans = []
+            for id in range(length):
+                ans.append(f"`{id}`: {blacklist[id]}")
+            ans = '\n'.join(ans)
+            await itx.response.send_message(f"Found {length} string{'s'*(length!=1)}:\n{ans}",ephemeral=True)
+
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
@@ -422,6 +502,15 @@ You can also transfer your table ownership to another table member, after they j
             "fluid",
             "nb",
         ]
+        transTerms = [
+            "trans",
+            "m2f","f2m","mtf","ftm",
+            "demi",
+            "intersex",
+            "nonbinary",
+            "non-binary",
+            "non binary",
+            "fluid"]
         hasAlibi = False
 
         out = "\n"
@@ -438,7 +527,7 @@ You can also transfer your table ownership to another table member, after they j
                     out += f"Is in LGBTQ+: {term}"
                 else:
                     out += f", {term}"
-                if term == "trans":
+                if term in transTerms:
                     isTrans = 1
                 isLgbtq = 1
         if isLgbtq == 1:
@@ -449,7 +538,7 @@ You can also transfer your table ownership to another table member, after they j
         if not ("yes" in question[1] or "no" in question[1]) and isLgbtq == 0:
             out += "Indeterminate answer for question 2, cis maybe?\n"
             isLgbtq = -1
-        if (("no" not in question[2]) or (len(question[2]) > 7) and "not" not in question[2]):
+        if (("no" not in question[2]) or (len(question[2]) > 7)) and "not" not in question[2]:
             hasAlibi = True
 
         responses = []
