@@ -43,7 +43,7 @@ for v in range(len(fileVersion)):
         version = fileVersion + ["0"]
         break
 else:
-    version[-1] = str(  int( version[-1] )+1  )
+    version[-1] = str(int(version[-1])+1)
 version = '.'.join(version)
 open("version.txt","w").write(f"{version}")
 
@@ -83,11 +83,11 @@ class Bot(commands.Bot):
         return "/"+_command
 
 client = Bot(
-        intents = intents,
-        command_prefix = "/!\"@:\#", #unnecessary, but needs to be set so.. uh.. yeah. Unnecessary terminal warnings avoided.
+        intents=intents,
+        command_prefix="/!\"@:\\#", #unnecessary, but needs to be set so.. uh.. yeah. Unnecessary terminal warnings avoided.
         case_insensitive=True,
-        activity = discord.Game(name="with slash (/) commands!"),
-        allowed_mentions = discord.AllowedMentions(everyone = False)
+        activity=discord.Game(name="with slash (/) commands!"),
+        allowed_mentions=discord.AllowedMentions(everyone=False)
     )
 debug("Program started")
 
@@ -102,9 +102,9 @@ async def setup_hook():
     start = datetime.now()
 
     ## cache server settings into client, to prevent having to load settings for every extension
-    debug(f"[+    ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
+    debug(f"[+    ]: Loading server settings"+" "*30,color="light_blue",end='\r')
     client.RinaDB = RinaDB
-    debug(f"[#    ]: Loaded server settings"+ " "*30,color="green")
+    debug(f"[#    ]: Loaded server settings"+" "*30,color="green")
     ## activate the extensions/programs/code for slash commands
     extensions = [
         "cmd_addons",
@@ -121,7 +121,7 @@ async def setup_hook():
         # "cmdg_Table", # Disabled: it was never used. Will keep file in case of future projects
     ]
     for extID in range(len(extensions)):
-        debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+ " "*15,color="light_blue",end='\r')
+        debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+" "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])
     debug(f"[##   ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
 
@@ -130,7 +130,7 @@ async def setup_hook():
     # debug(f"[##+   ]: Updating table message"+ " "*30,color="light_blue",end='\r')
     try:
         client.logChannel = await client.fetch_channel(988118678962860032)
-    except:
+    except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
         client.logChannel = await client.fetch_channel(986304081234624554)
     # 
     # from cmdg_Table import Table
@@ -143,7 +143,7 @@ async def setup_hook():
     # await itx.set()
     # await Table.tablemsgupdate(Table, itx)
     # debug(f"[###   ]: Updated table message"+ " "*30,color="green")
-    debug(f"[##+  ]: Restarting ongoing reminders" +" "*30,color="light_blue",end="\r")
+    debug(f"[##+  ]: Restarting ongoing reminders"+" "*30,color="light_blue",end="\r")
     from cmdg_Reminders import Reminders
     collection = RinaDB["reminders"]
     query = {}
@@ -156,12 +156,12 @@ async def setup_hook():
                 Reminders.Reminder(client, creationtime, remindertime, user['userID'], reminder['reminder'], user, continued=True)
         except KeyError:
             pass
-    debug(f"[###  ]: Finished setting up reminders" +" "*30,color="green")
+    debug(f"[###  ]: Finished setting up reminders"+" "*30,color="green")
     debug(f"[###+ ]: Caching bot's command names and their ids",color="light_blue",end='\r')
     commandList = await client.tree.fetch_commands()
     client.commandList = commandList
-    debug(f"[#### ]: Cached bot's command names and their ids" +" "*30,color="green")
-    debug(f"[####+]: Starting..."+ " "*30,color="light_blue",end='\r')
+    debug(f"[#### ]: Cached bot's command names and their ids"+" "*30,color="green")
+    debug(f"[####+]: Starting..."+" "*30,color="light_blue",end='\r')
 
     # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
     # await client.tree.sync()
@@ -191,7 +191,7 @@ async def updateCmds(itx: discord.Interaction):
 
 @client.event
 async def on_error(event, *args, **kwargs):
-    import traceback, logging
+    import traceback #, logging
     collection = RinaDB["guildInfo"]
     try:
         logGuild = await client.fetch_guild(959551566388547676)
@@ -205,7 +205,7 @@ async def on_error(event, *args, **kwargs):
         return
     vcLog      = guild["vcLog"]
     #message = args[0]
-    msg =  ""
+    msg = ""
     msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
     msg += traceback.format_exc()
     msg = msg.replace("Floris","Mia").replace("floris","mia")

@@ -14,7 +14,7 @@ class ToneIndicator(commands.Cog):
         discord.app_commands.Choice(name='rough acronym', value=3),
     ])
     async def toneindicator(self, itx: discord.Interaction, mode: int, string: str, public: bool = False):
-        toneIndicators = {
+        tone_indicators = {
             #
             "excited" : ["/!","/exc"],
             "alterous" : ["/a","/ars"],
@@ -146,78 +146,78 @@ class ToneIndicator(commands.Cog):
 
         result = False
         results = []
-        resultStr = ""
+        result_str = ""
         if mode == 1:
-            for key in toneIndicators:
+            for key in tone_indicators:
                 if string.replace("-"," ") in key.replace("-"," "):
                     overlaps = []
                     overlapper = ""
-                    for key1 in toneIndicators:
+                    for key1 in tone_indicators:
                         if key == key1:
                             continue
-                        for indicator1 in toneIndicators[key1]:
-                            if indicator1 in toneIndicators[key]:
+                        for indicator1 in tone_indicators[key1]:
+                            if indicator1 in tone_indicators[key]:
                                 overlapper = indicator1
                                 overlaps.append(key1)
                                 break
-                    results.append([key,toneIndicators[key],overlapper,overlaps])
+                    results.append([key,tone_indicators[key],overlapper,overlaps])
                     result = True
             if result:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)!=1)} with '{string}' in:\n"
+                result_str += f"I found {len(results)} result{'s'*(len(results)!=1)} with '{string}' in:\n"
             for x in results:
-                y=""
+                y = ""
                 if len(x[3]) > 0:
                     y = f"\n   + {len(x[3])} overlapper{'s'*(len(x[3])!=1)}:\n    [ {x[2]}: {', '.join(x[3])} ]"
-                resultStr += f"> \"{x[0]}\": {', '.join(x[1])}"+y+"\n"
+                result_str += f"> \"{x[0]}\": {', '.join(x[1])}"+y+"\n"
         elif mode == 2:
-            for key in toneIndicators:
-                for indicator in toneIndicators[key]:
+            for key in tone_indicators:
+                for indicator in tone_indicators[key]:
                     if string.replace("/","") == indicator.replace("/",""):
                         results.append([indicator,key])
                         result = True
             if result:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)!=1)}:\n"
-            maxLen = 0
+                result_str += f"I found {len(results)} result{'s'*(len(results)!=1)}:\n"
+            max_length = 0
             for x in results:
-                if len(x[0]) > maxLen:
-                    maxLen = len(x[0])
+                if len(x[0]) > max_length:
+                    max_length = len(x[0])
             for x in results:
-                resultStr += f"> '{x[0]}',{' '*(maxLen-len(x[0]))} meaning {x[1]}\n"
+                result_str += f"> '{x[0]}',{' '*(max_length-len(x[0]))} meaning {x[1]}\n"
         elif mode == 3:
-            for key in toneIndicators: # "lyrics" : ["/l","/ly","/lyr"]
-                for indicator in toneIndicators[key]: # ["/l","/ly","/lyr"]
+            for key in tone_indicators: # "lyrics" : ["/l","/ly","/lyr"]
+                for indicator in tone_indicators[key]: # ["/l","/ly","/lyr"]
                     if len(string.replace("/","")) > len(indicator.replace("/","")):
                         continue
-                    lastInd = 0
-                    for strIndex in range(len(string.replace("/",""))): # "/lr" -> "lr" -> "l" "r"
+                    last_index = 0
+                    for str_index in range(len(string.replace("/",""))): # "/lr" -> "lr" -> "l" "r"
                         res = False
-                        for indIndex in range(lastInd,len(indicator)): # "/lyr", "/" "l" "y" "r"
-                            if string.replace("/","")[strIndex] == indicator[indIndex]:
+                        for indIndex in range(last_index,len(indicator)): # "/lyr", "/" "l" "y" "r"
+                            if string.replace("/","")[str_index] == indicator[indIndex]:
                                 res = True
-                                lastInd = indIndex
+                                last_index = indIndex
                                 break
-                        if res == False:
+                        if not res:
                             break
                     else:
                         results.append([indicator,key])
                         result = True
             if result:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)!=1)}:\n"
-            maxLen = 0
+                result_str += f"I found {len(results)} result{'s'*(len(results)!=1)}:\n"
+            max_length = 0
             for x in results:
-                if len(x[0]) > maxLen:
-                    maxLen = len(x[0])
+                if len(x[0]) > max_length:
+                    max_length = len(x[0])
             for x in results:
-                resultStr += f"> '{x[0]}',{' '*(maxLen-len(x[0]))} meaning {x[1]}\n"
+                result_str += f"> '{x[0]}',{' '*(max_length-len(x[0]))} meaning {x[1]}\n"
         if not result:
-            resultStr += f"No information found for '{string}'...\nIf you believe this to be a mistake or want to add a new tone indicator, message a staff member (ask for Mia)"
+            result_str += f"No information found for '{string}'...\nIf you believe this to be a mistake or want to add a new tone indicator, message a staff member (ask for Mia)"
 
-        if len(resultStr.split("\n")) > 6 and public:
+        if len(result_str.split("\n")) > 6 and public:
             public = False
-            resultStr += "\nDidn't send your message as public cause it would be spammy, having this many results."
-        if len(resultStr) > 1999    :
-            resultStr = "Your search returned too many results (discord has a 2000-character message length D:). Please search for something more specific."
-        await itx.response.send_message(resultStr,ephemeral=not public)
+            result_str += "\nDidn't send your message as public cause it would be spammy, having this many results."
+        if len(result_str) > 1999    :
+            result_str = "Your search returned too many results (discord has a 2000-character message length D:). Please search for something more specific."
+        await itx.response.send_message(result_str,ephemeral=not public)
 
 async def setup(client):
     # client.add_command("toneindicator")

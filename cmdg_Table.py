@@ -20,8 +20,8 @@ def getTableStatus(table):
             "locked":" Locked "
         }
     }
-    msg = status["msg"][ table["status"] ]
-    label = status["label"][  table["status"]  ]
+    msg = status["msg"][table["status"]]
+    label = status["label"][table["status"]]
     if table["status"] == "locked":
         disabled = True
     else:
@@ -117,11 +117,10 @@ class Table(commands.GroupCog, name="table"):
             return
         embed1 = discord.Embed(color=8481900, type='rich',description=" ")
         embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
-            description="Click one of the buttons below to create or join a table!~")
+                               description="Click one of the buttons below to create or join a table!~")
         embed1.set_image(url="https://i.imgur.com/SBy90SG.png")
         embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
 
-        components = [{  "type": 1,"components":[]  }]
         view = discord.ui.View(timeout=None)
         for x in tableInfo:
             x = tableInfo[x] #todo todo todo
@@ -131,7 +130,7 @@ class Table(commands.GroupCog, name="table"):
                 continue
             embed2.add_field(name=f'{x["emoji"]} Table {x["id"]} ({status})',value=f'<@&{x["member"]}>')
             view.add_item(self.TableButton(label=f'{label} {x["id"]}', disabled=disabled,
-                        custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"])))
+                          custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"])))
             # button = discord.ui.Button(style=discord.ButtonStyle.secondary, label=f'{label} {x["id"]}',
             #             disabled=disabled, custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"]))
             # view.add_item(button)
@@ -147,10 +146,10 @@ class Table(commands.GroupCog, name="table"):
                 c.id = tableInfo["msgChannel"]
                 msg = await c.fetch_message(tableInfo["message"])
                 await msg.delete()
-            except:
+            except (discord.errors.HTTPException, discord.errors.Forbidden): # notsure
                 warning = "Couldn't find a message to delete...\n"
 
-        msg = await itx.channel.send(embeds=[embed1,embed2],view=view)#,components=components)
+        msg = await itx.channel.send(embeds=[embed1,embed2],view=view)
 
         collection.update_one(query, {"$set":{
             "msgChannel": msg.channel.id,
@@ -168,11 +167,10 @@ class Table(commands.GroupCog, name="table"):
 
         embed1 = discord.Embed(color=8481900, type='rich',description=" ")
         embed2 = discord.Embed(color=8481900, type='rich', title='Join a Table!',
-            description="Click one of the buttons below to create or join a table!~")
+                               description="Click one of the buttons below to create or join a table!~")
         embed1.set_image(url="https://i.imgur.com/SBy90SG.png")
         embed2.set_image(url="https://i.imgur.com/t3zhm4k.png") # i feel like this doesn't do anything..
         view = discord.ui.View(timeout=None)
-        components = [{  "type": 1,"components":[]  }]
         for x in tableInfo:
             x = tableInfo[x]
             try:
@@ -181,7 +179,7 @@ class Table(commands.GroupCog, name="table"):
                 continue
             embed2.add_field(name=f'{x["emoji"]} Table {x["id"]} ({status})',value=f'<@&{x["member"]}>')
             view.add_item(self.TableButton(label=f'{label} {x["id"]}', disabled=disabled,
-                        custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"])))
+                          custom_id="table"+x["id"], emoji=discord.PartialEmoji.from_str(x["emoji"])))
 
         if "message" not in tableInfo:
             debug("Couldn't find message in tableInfo (update)",color="yellow")
@@ -216,8 +214,9 @@ class Table(commands.GroupCog, name="table"):
         tables = "List of tables:"
         for tableId in tableInfo:
             table = tableInfo[tableId]
-            if type(table) is not dict:continue
-            tables+=f"\nTable `{table['id']}`, Category:<#{table['category']}>, Owner: <@&{table['owner']}>, Member: <@&{table['member']}>, Emoji: {table['emoji']}, Status: {table['status']}"
+            if type(table) is not dict:
+                continue
+            tables += f"\nTable `{table['id']}`, Category:<#{table['category']}>, Owner: <@&{table['owner']}>, Member: <@&{table['member']}>, Emoji: {table['emoji']}, Status: {table['status']}"
         await itx.response.send_message(tables, allowed_mentions=discord.AllowedMentions.none())
 
     @admin.command(name="build",description="Link a new table to the table system")
@@ -240,13 +239,15 @@ class Table(commands.GroupCog, name="table"):
 
         warning = ""
         for table in tableInfo:
-            if type(tableInfo[table]) is not dict: continue
+            if type(tableInfo[table]) is not dict:
+                continue
             if id == tableInfo[table]["id"]:
                 await itx.response.send_message("There is already a table with this ID. You can't add two tables with the same id.\nThat would make it difficult to link buttons and remove the table in the future :/.",ephemeral=True,allowed_mentions=discord.AllowedMentions.none())
                 return
         for tableId in tableInfo:
             table = tableInfo[tableId]
-            if type(table) is not dict: continue
+            if type(table) is not dict:
+                continue
             if category.id == table["category"]:
                 warning += f"Warning: You already registered this category in table {table['id']}!\n"
             if owner.id == table["owner"]:
@@ -283,12 +284,13 @@ class Table(commands.GroupCog, name="table"):
             return
 
         closable = ""
-        if not "message" in tableInfo:
+        if "message" not in tableInfo:
             cmd_mention = self.client.getCommandMention("table admin sendmsg")
             await itx.response.send_message(f"There is no table message to update, thus I'm afraid you can't close the table.. Please ask an admin to fix this with {cmd_mention}",ephemeral=True)
             return
         for table in tableInfo:
-            if type(tableInfo[table]) is not dict: continue
+            if type(tableInfo[table]) is not dict:
+                continue
             if tableInfo[table]["id"] == id:
                 closable = table
                 break
@@ -338,7 +340,8 @@ class Table(commands.GroupCog, name="table"):
             return
 
         for tableId in tableInfo:
-            if type(tableInfo[tableId]) is not dict: continue
+            if type(tableInfo[tableId]) is not dict:
+                continue
             if tableInfo[tableId]["id"] == id:
                 collection.update_one(query, {"$unset":{f"{tableId}":""}}, upsert=True)
                 await itx.response.send_message(f"(╯°□°）╯︵ ┻━┻ Destroyed table {id} successfully. Happy now? ")
@@ -357,11 +360,12 @@ class Table(commands.GroupCog, name="table"):
             await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         lockable = ""
-        if not "message" in tableInfo:
+        if "message" not in tableInfo:
             await itx.response.send_message("There is no table message to update, thus I'm afraid you can't lock your table..",ephemeral=True)
             return
         for table in tableInfo:
-            if type(tableInfo[table]) is not dict: continue
+            if type(tableInfo[table]) is not dict:
+                continue
             for role in itx.user.roles:
                 if role.id == tableInfo[table]["owner"]:
                     lockable = table
@@ -391,11 +395,12 @@ class Table(commands.GroupCog, name="table"):
             await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         unlockable = ""
-        if not "message" in tableInfo:
+        if "message" not in tableInfo:
             await itx.response.send_message("There is no table message to update, thus I'm afraid you can't lock your table..",ephemeral=True)
             return
         for table in tableInfo:
-            if type(tableInfo[table]) is not dict: continue
+            if type(tableInfo[table]) is not dict:
+                continue
             for role in itx.user.roles:
                 if role.id == tableInfo[table]["owner"]:
                     unlockable = table
@@ -425,11 +430,12 @@ class Table(commands.GroupCog, name="table"):
             await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         closable = ""
-        if not "message" in tableInfo:
+        if "message" not in tableInfo:
             await itx.response.send_message("There is no table message to update, thus I'm afraid you can't close your table..",ephemeral=True)
             return
         for table in tableInfo:
-            if type(tableInfo[table]) is not dict: continue
+            if type(tableInfo[table]) is not dict:
+                continue
             for role in itx.user.roles:
                 if role.id == tableInfo[table]["owner"]:
                     closable = table
@@ -472,7 +478,8 @@ class Table(commands.GroupCog, name="table"):
             return
         transfer = ""
         for table in tableInfo:
-            if type(tableInfo[table]) is not dict: continue
+            if type(tableInfo[table]) is not dict:
+                continue
             for role in itx.user.roles:
                 if role.id == tableInfo[table]["owner"]:
                     transfer = table

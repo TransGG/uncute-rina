@@ -48,7 +48,6 @@ class TodoList(commands.Cog):
                 await itx.response.send_message("There are no items on your to-do list, so you can't remove any either...",ephemeral=True)
                 return
             list = search["list"]
-            length = len(list)
 
             try:
                 del list[todo]

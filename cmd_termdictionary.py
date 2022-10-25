@@ -35,8 +35,8 @@ class TermDictionary(commands.Cog):
                 terms.append(item["term"])
 
         # get list of choices from online
-        response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
-        data = json.loads(response_API)
+        response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
+        data = json.loads(response_api)
         # find exact results online
         for item in data:
             if item['term'].split("|")[0] in terms:
@@ -81,15 +81,15 @@ class TermDictionary(commands.Cog):
 
             result = False
             results = []
-            resultStr = ""
+            result_str = ""
             for item in search:
                 if simplify(term) in simplify(item["synonyms"]):
                     results.append([item["term"],item["definition"]])
                     result = True
-            if result == True:
-                resultStr += f"I found {len(results)} result{'s'*(len(results)>1)} for '{term}' in our dictionary:\n"
+            if result:
+                result_str += f"I found {len(results)} result{'s'*(len(results)>1)} for '{term}' in our dictionary:\n"
                 for x in results:
-                    resultStr += f"> **{x[0]}**: {x[1]}\n"
+                    result_str += f"> **{x[0]}**: {x[1]}\n"
             else:
                 # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
                 # Otherwise, it will return the 'not found' result of the term, and end the function.
@@ -98,20 +98,20 @@ class TermDictionary(commands.Cog):
                 #public = False
                 else:
                     cmd_mention = self.client.getCommandMention("dictionary_staff define")
-                    resultStr += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use {cmd_mention})"
+                    result_str += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use {cmd_mention})"
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
                     cmd_mention = self.client.getCommandMention("dictionary")
                     await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the {cmd_mention} command")
-            if len(resultStr.split("\n")) > 3 and public:
+            if len(result_str.split("\n")) > 3 and public:
                 public = False
-                resultStr += "\nDidn't send your message as public cause it would be spammy, having this many results."
-            if len(resultStr) > 1999:
-                resultStr = f"Your search ({term}) returned too many results (discord has a 2000-character message length D:). (Please ask staff to fix this (synonyms and stuff).)"
+                result_str += "\nDidn't send your message as public cause it would be spammy, having this many results."
+            if len(result_str) > 1999:
+                result_str = f"Your search ({term}) returned too many results (discord has a 2000-character message length D:). (Please ask staff to fix this (synonyms and stuff).)"
                 # debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
-                await logMmsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
+                await logMsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 2 or source == 4:
-            response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
-            data = json.loads(response_API)
+            response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
+            data = json.loads(response_api)
             # if len(data) == 0:
             #     await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=not public)
             #     return
@@ -119,21 +119,21 @@ class TermDictionary(commands.Cog):
             # edit definitions to hide links to other pages:
             search = []
             for item in data:
-                itemDB = item['definition']
-                while item['definition'] == itemDB:
+                item_db = item['definition']
+                while item['definition'] == item_db:
                     replacement = re.search("(?<==).+?(?=})",item['definition'])
                     if replacement is not None:
                         item['definition'] = re.sub("{(#.+?=).+?}", replacement.group(), item['definition'],1)
-                    if item['definition'] == itemDB: #if nothing changed:
+                    if item['definition'] == item_db: #if nothing changed:
                         break
-                    itemDB = item['definition']
-                while item['definition'] == itemDB:
+                    item_db = item['definition']
+                while item['definition'] == item_db:
                     replacement = re.search("(?<={).+?(?=})",item['definition'])
                     if replacement is not None:
                         item['definition'] = re.sub("{.+?}", replacement.group(), item['definition'],1)
-                    if item['definition'] == itemDB: #if nothing changed:
+                    if item['definition'] == item_db: #if nothing changed:
                         break
-                    itemDB = item['definition']
+                    item_db = item['definition']
                 search.append(item)
 
             # if one of the search results matches exactly with the search, give that definition
@@ -142,61 +142,62 @@ class TermDictionary(commands.Cog):
                 if simplify(term) in simplify(item['term'].split('|')):
                     results.append(item)
             if len(results) > 0:
-                resultStr = f"I found {len(results)} exact result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! \n"
+                result_str = f"I found {len(results)} exact result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! \n"
                 for item in results:
-                    resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-                resultStr += f"{len(search)-len(results)} other non-exact results found."*((len(search)-len(results))>0)
-                if len(resultStr) > 1999:
-                    resultStr = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the terms so you might be able to look for a more specific one:"
+                    result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
+                result_str += f"{len(search)-len(results)} other non-exact results found."*((len(search)-len(results)) > 0)
+                if len(result_str) > 1999:
+                    result_str = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the terms so you might be able to look for a more specific one:"
                     for item in results:
-                        resultStr += f"> {', '.join(item['term'].split('|'))}\n"
-                await itx.response.send_message(resultStr,ephemeral=not public, suppress_embeds=True)
+                        result_str += f"> {', '.join(item['term'].split('|'))}\n"
+                await itx.response.send_message(result_str,ephemeral=not public, suppress_embeds=True)
                 return
 
             # if search doesn't exactly match with a result / synonym
-            resultStr = f"I found {len(search)} result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! "
+            result_str = f"I found {len(search)} result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! "
             if len(search) > 25:
-                resultStr += "Here is a list to make your search more specific:\n"
+                result_str += "Here is a list to make your search more specific:\n"
                 results = []
                 for item in search:
-                    temp =  item['term']
+                    temp = item['term']
                     if "|" in temp:
                         temp = temp.split("|")[0]
                     results.append(temp)
-                resultStr += ', '.join(results)
+                result_str += ', '.join(results)
                 public = False
             elif len(search) > 2:
-                resultStr += "Here is a list to make your search more specific:\n"
+                result_str += "Here is a list to make your search more specific:\n"
                 results = []
                 for item in search:
-                    temp = ""
                     if "|" in item['term']:
-                        temp = "- __"  +   item['term'].split("|")[0]   +  "__"
-                        temp += " ("  +  ', '.join(item['term'].split("|")[1:])  +  ")"
+                        temp = "- __"  + item['term'].split("|")[0] + "__"
+                        temp += " ("  + ', '.join(item['term'].split("|")[1:]) + ")"
                     else:
                         temp = "- __" + item['term'] + "__"
                     results.append(temp)
-                resultStr += '\n'.join(results)
+                result_str += '\n'.join(results)
                 public = False
             elif len(search) > 0:
-                resultStr += "\n"
+                result_str += "\n"
                 for item in search:
-                    resultStr += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
+                    result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
             else:
-                resultStr = f"I didn't find any results for '{term}' on en.pronouns.page!"
+                result_str = f"I didn't find any results for '{term}' on en.pronouns.page!"
                 if source == 4:
-                    resultStr = f"I didn't find any results for '{term}' online or in our fancy dictionary"
+                    result_str = f"I didn't find any results for '{term}' online or in our fancy dictionary"
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
-                    cmd_mentionDict = self.client.getCommandMention("dictionary")
-                    cmd_mentionDef = self.client.getCommandMention("dictionary_staff define")
-                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mentionDict} command ({cmd_mentionDef})")
-            msgLength = len(resultStr)
-            if msgLength > 1999:
+                    cmd_mention_dict = self.client.getCommandMention("dictionary")
+                    cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
+                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
+            msg_length = len(result_str)
+            if msg_length > 1999:
                 public = False
-                resultStr = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length, and this message was {msgLength} characters D:). Please search more specifically.\n\
+                result_str = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length, and this message was {msg_length} characters D:). Please search more specifically.\n\
 Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
-            #print(response_API.status_code)
-        await itx.response.send_message(resultStr,ephemeral=not public, suppress_embeds=True)
+            #print(response_api.status_code)
+        else:
+            result_str = "" # to make my IDE happy.
+        await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
 
@@ -231,10 +232,10 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
         if simplify(term) not in synonyms:
             synonyms.append(simplify(term))
 
-        query = {"synonyms": {"$in": synonyms }}
-        synonymOverlap = collection.find(query)
+        query = {"synonyms": {"$in": synonyms}}
+        synonym_overlap = collection.find(query)
         warnings = ""
-        for overlap in synonymOverlap:
+        for overlap in synonym_overlap:
             warnings += f"You have already given a synonym before in {overlap['term']}.\n"
 
         # Add term to dictionary
@@ -289,7 +290,7 @@ Here is a link for expanded info on each term: <https://en.pronouns.page/diction
             discord.app_commands.Choice(name='Add a synonym', value=1),
             discord.app_commands.Choice(name='Remove a synonym', value=2),
         ])
-    async def editSynonym(self, itx: discord.Interaction, term: str, mode: int, synonym: str):
+    async def edit_synonym(self, itx: discord.Interaction, term: str, mode: int, synonym: str):
         if not isStaff(itx):
             await itx.response.send_message("You can't add synonyms to the dictionary without staff roles!", ephemeral=True)
             return

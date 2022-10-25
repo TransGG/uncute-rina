@@ -123,7 +123,7 @@ class Addons(commands.Cog):
             return
         async def call(itx, user, type):
             quotes = {
-                "fem_quotes" : [
+                "fem_quotes": [
                     # "Was the sun always this hot? or is it because of you?",
                     # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
                     "I bet you sweat glitter.",
@@ -135,7 +135,7 @@ class Addons(commands.Cog):
                     "I can tell that you are a very special and talented girl!",
                     "Here, have this cute sticker!"
                 ],
-                "masc_quotes" : [
+                "masc_quotes": [
                     "You are the best man out there.",
                     "You are the strongest guy I know.",
                     "You have an amazing energy!",
@@ -147,14 +147,14 @@ class Addons(commands.Cog):
                     "You're such a gentleman!",
 
                 ],
-                "they_quotes" : [
+                "they_quotes": [
                     "I can tell that you are a very special and talented person!",
                     "Their, their... ",
                 ],
-                "it_quotes" : [
+                "it_quotes": [
                     "I bet you do the crossword puzzle in ink!",
                 ],
-                "unisex_quotes" : [ #unisex quotes are added to each of the other quotes later on.
+                "unisex_quotes": [ #unisex quotes are added to each of the other quotes later on.
                     "Hey I have some leftover cookies.. \\*wink wink\\*",
                     # "_Let me just hide this here-_ hey wait, are you looking?!", #it were meant to be cookies TwT
                     "Would you like a hug?",
@@ -261,7 +261,7 @@ class Addons(commands.Cog):
             else:
                 await call(itx, user, view.value)
 
-        roles = ["he/him","she/her","they/them","it/its"]
+        roles = ["he/him", "she/her", "they/them", "it/its"]
         userroles = user.roles[:]
         random.shuffle(userroles) # pick a random order for which pronoun role to pick
         for role in userroles:
@@ -272,9 +272,9 @@ class Addons(commands.Cog):
 
     @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
     @app_commands.choices(mode=[
-    discord.app_commands.Choice(name='Add a string to your compliments blacklist', value=1),
-    discord.app_commands.Choice(name='Remove a string from your compliments blacklist', value=2),
-    discord.app_commands.Choice(name='Check your blacklisted strings', value=3)
+        discord.app_commands.Choice(name='Add a string to your compliments blacklist', value=1),
+        discord.app_commands.Choice(name='Remove a string from your compliments blacklist', value=2),
+        discord.app_commands.Choice(name='Check your blacklisted strings', value=3)
     ])
     @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
     async def complimentblacklist(self, itx: discord.Interaction, mode: int, string: str):
@@ -306,7 +306,6 @@ class Addons(commands.Cog):
                 await itx.response.send_message("There are no items on your blacklist, so you can't remove any either...",ephemeral=True)
                 return
             blacklist = search["list"]
-            length = len(blacklist)
 
             try:
                 del blacklist[string]
@@ -336,13 +335,13 @@ class Addons(commands.Cog):
 
     @nameusage.command(name="gettop", description="See how often different names occur in this server")
     @app_commands.choices(type=[
-    discord.app_commands.Choice(name='Search most-used usernames', value=1),
-    discord.app_commands.Choice(name='Search most-used nicknames', value=2),
+        discord.app_commands.Choice(name='Search most-used usernames', value=1),
+        discord.app_commands.Choice(name='Search most-used nicknames', value=2),
     ])
     # @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
     async def nameusage_gettop(self, itx: discord.Interaction, type: int):#, mode: int, string: str):
         await itx.response.defer(ephemeral=True)
-        Sections = {}
+        sections = {}
         for member in itx.guild.members:
             if type == 1:
                 name = member.name
@@ -371,29 +370,29 @@ class Addons(commands.Cog):
             name = _name
 
             for section in name.split(" "):
-                if section in Sections:
-                    Sections[section] += 1
+                if section in sections:
+                    sections[section] += 1
                 else:
                     if len(section) < 3:
                         continue
                     if section in ["the", "god", "one"]:
                         continue
-                    Sections[section] = 1
+                    sections[section] = 1
 
-        Sections = sorted(Sections.items(), key=lambda x:x[1], reverse=True)
-        # converted_dict = dict(Sections)
-        # print(Sections)
+        sections = sorted(sections.items(), key=lambda x:x[1], reverse=True)
+        # converted_dict = dict(sections)
+        # print(sections)
         pages = []
-        for i in range(int(len(Sections)/20+0.999)+1):
+        for i in range(int(len(sections)/20+0.999)+1):
             result_page = ""
-            for section in Sections[0+20*i:20+20*i]:
+            for section in sections[0+20*i:20+20*i]:
                 result_page += f"{section[1]} {section[0]}\n"
             if result_page == "":
                 result_page = "_"
             pages.append(result_page)
         # print(pages)
         page = 0
-        # def getEmbed(page, Sections):
+        # def getEmbed(page, sections):
         #
         #     embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
         #     embed.add_field(name="Column 1",value=result_page)
@@ -411,11 +410,11 @@ class Addons(commands.Cog):
             # stop the View from listening to more input.
             # We also send the user an ephemeral message that we're confirming their choice.
             @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-            async def Previous(self, itx: discord.Interaction, button: discord.ui.Button):
+            async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
                 # self.value = "previous"
                 self.page -= 1
                 if self.page < 0:
-                    self.page+=1
+                    self.page += 1
                     await itx.response.send_message("This is the first page, you can't go to a previous page!",ephemeral=True)
                     return
                 result_page = self.pages[self.page*2]
@@ -423,11 +422,11 @@ class Addons(commands.Cog):
                 embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
                 embed.add_field(name="Column 1",value=result_page)
                 embed.add_field(name="Column 2",value=result_page2)
-                embed.set_footer(text = "page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
+                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
                 await itx.response.edit_message(embed=embed)
 
             @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-            async def Next(self, itx: discord.Interaction, button: discord.ui.Button):
+            async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
                 self.page += 1
                 try:
                     result_page = self.pages[self.page*2]
@@ -438,11 +437,11 @@ class Addons(commands.Cog):
                 embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
                 embed.add_field(name="Column 1",value=result_page)
                 embed.add_field(name="Column 2",value=result_page2)
-                embed.set_footer(text = "page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
+                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
                 try:
                     await itx.response.edit_message(embed=embed)
                 except discord.errors.HTTPException:
-                    page-= 1
+                    self.page -= 1
                     await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
 
         result_page = pages[page]
@@ -450,7 +449,7 @@ class Addons(commands.Cog):
         embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
         embed.add_field(name="Column 1",value=result_page)
         embed.add_field(name="Column 2",value=result_page2)
-        embed.set_footer(text = "page: "+str(page+1)+" / "+str(int(len(pages)/2)))
+        embed.set_footer(text="page: "+str(page+1)+" / "+str(int(len(pages)/2)))
         view = Pages(pages, timeout=30)
         await itx.followup.send(f"",embed=embed, view=view,ephemeral=True)
         await view.wait()
@@ -460,8 +459,8 @@ class Addons(commands.Cog):
     @nameusage.command(name="name", description="See how often different names occur in this server")
     @app_commands.describe(name="What specific name are you looking for?")
     @app_commands.choices(type=[
-    discord.app_commands.Choice(name='usernames', value=1),
-    discord.app_commands.Choice(name='nicknames', value=2),
+        discord.app_commands.Choice(name='usernames', value=1),
+        discord.app_commands.Choice(name='nicknames', value=2),
     ])
     async def nameusage_name(self, itx: discord.Interaction, name: str, type: int):
         await itx.response.defer(ephemeral=True)
@@ -469,12 +468,12 @@ class Addons(commands.Cog):
         if type == 1:
             for member in itx.guild.members:
                 if name.lower() in member.name.lower():
-                    count+=1
+                    count += 1
         elif type == 2:
             for member in itx.guild.members:
                 if member.nick is not None:
                     if name.lower() in member.nick.lower():
-                        count+=1
+                        count += 1
 
         await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {'user' if type==1 else 'nick'}name",ephemeral=True)
 
@@ -484,7 +483,7 @@ class Addons(commands.Cog):
                            faces="How many sides does every die have?",
                            mod="Do you want to add a modifier? (add 2 after rolling the dice)",
                            advanced="Roll more advanced! example: 1d20+3cs>10. Overwrites dice/faces given; 'help' for more")
-    async def roll(self, itx: discord.Interaction, dice: int, faces: int, public: bool=False, mod: int = None, advanced: str = None):
+    async def roll(self, itx: discord.Interaction, dice: int, faces: int, public: bool = False, mod: int = None, advanced: str = None):
         if advanced is None:
             if dice < 1 or faces < 1:
                 await itx.response.send_message("You can't have negative dice/faces! Please give a number above 0",ephemeral=True)
@@ -497,30 +496,30 @@ class Addons(commands.Cog):
             rolls = []
             for die in range(dice):
                 rolls.append(random.randint(1,faces))
-            out = ""
+
             if mod is None:
                 if dice == 1:
-                    out = f"I rolled {dice} di{'c'*(dice>1)}e with {faces} face{'s'*(faces>1)}: "+\
-                    f"{str(sum(rolls))}"
+                    out = f"I rolled {dice} di{'c'*(dice>1)}e with {faces} face{'s'*(faces>1)}: " +\
+                          f"{str(sum(rolls))}"
                 else:
-                    out = f"I rolled {dice} di{'c'*(dice>1)}e with {faces} face{'s'*(faces>1)}:\n"+\
-                    f"{' + '.join([str(roll) for roll in rolls])}  =  {str(sum(rolls))}"
+                    out = f"I rolled {dice} di{'c'*(dice>1)}e with {faces} face{'s'*(faces>1)}:\n" +\
+                          f"{' + '.join([str(roll) for roll in rolls])}  =  {str(sum(rolls))}"
             else:
-                out = f"I rolled {dice} {'die' if dice == 0 else 'dice'} with {faces} face{'s'*(faces>1)} and a modifier of {mod}:\n"+\
-                f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls)+mod)}"
+                out = f"I rolled {dice} {'die' if dice == 0 else 'dice'} with {faces} face{'s'*(faces>1)} and a modifier of {mod}:\n" +\
+                      f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls)+mod)}"
             if len(out) > 1995:
-                out = f"I rolled {thousandSpace(dice,separator=',')} {'die' if dice == 0 else 'dice'} with {thousandSpace(faces,separator=',')} face{'s'*(faces>1)}"+f" and a modifier of {thousandSpace(mod or 0,separator=',')}"*(mod is not None)+":\n"+\
-                f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)+(mod or 0)),separator=',')}`."
-                rollDb = {}
+                out = f"I rolled {thousandSpace(dice,separator=',')} {'die' if dice == 0 else 'dice'} with {thousandSpace(faces,separator=',')} face{'s'*(faces>1)}"+f" and a modifier of {thousandSpace(mod or 0,separator=',')}"*(mod is not None)+":\n" +\
+                      f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)+(mod or 0)),separator=',')}`."
+                roll_db = {}
                 for roll in rolls:
                     try:
-                        rollDb[roll] += 1
+                        roll_db[roll] += 1
                     except KeyError:
-                        rollDb[roll] = 1
-                rollDb = dict(sorted(rollDb.items()))
+                        roll_db[roll] = 1
+                roll_db = dict(sorted(roll_db.items()))
                 details = "You rolled "
-                for roll in rollDb:
-                    details += f"'{roll}'x{rollDb[roll]}, "
+                for roll in roll_db:
+                    details += f"'{roll}'x{roll_db[roll]}, "
                 if len(details) > 1500:
                     details = ""
                 elif len(details) > 300:
@@ -530,9 +529,9 @@ class Addons(commands.Cog):
                 public = False
             await itx.response.send_message(out,ephemeral=not public)
         else:
-            await itx.response.send_message("```\n"+\
-            "I rolled nothing. This feature is in development!, sorryyy"+\
-            "```",ephemeral=True)
+            await itx.response.send_message("```\n" +
+                                            "I rolled nothing. This feature is in development!, sorryyy" +
+                                            "```",ephemeral=True)
 
     @app_commands.command(name="help", description="A help command to learn more about me!")
     async def help(self, itx: discord.Interaction):
@@ -564,7 +563,7 @@ You can also transfer your table ownership to another table member, after they j
 
     @app_commands.command(name="genanswer", description="Make verification question guesses")
     @app_commands.describe(messageid="Which message should I check? (id)")
-    async def genAnswer(self, itx: discord.Interaction, messageid: str):
+    async def gen_answer(self, itx: discord.Interaction, messageid: str):
         try:
             messageid = int(messageid)
             message = await itx.channel.fetch_message(messageid)
@@ -581,7 +580,7 @@ You can also transfer your table ownership to another table member, after they j
         lines = message.content.split("\n")
 
         verification = []
-        copyPasta = [
+        copy_pasta = [
             "1. Do you agree to the server rules and to respect the Discord Community Guidelines & Discord ToS?",
             "2. Do you identify as transgender; and/or any other part of the LGBTQ+ community? (Please be specific in your answer)",
             "3. Do you have any friends who are already a part of our Discord? (If yes, please send their username)",
@@ -590,16 +589,16 @@ You can also transfer your table ownership to another table member, after they j
             "6. What is gatekeeping in relation to the trans community?",
             "# If you have any social media that contains relevant post  history related to the LGBTQ+ community, please link it to your discord account or send the account name or URL.",
         ]
-        newlineCount = 0
+        # newlineCount = 0
         q_string = ""
         for line in lines:
             if line == "":
                 pass
-            elif line in copyPasta:
+            elif line in copy_pasta:
                 q_string = line[0] # copy Question number
             else:
                 verification.append(q_string+line)
-                newlineCount = 0
+                # newlineCount = 0
                 q_string = ""
         verification = '\n'.join(verification).lower()
 
@@ -611,7 +610,7 @@ You can also transfer your table ownership to another table member, after they j
                 start = verification.index(questions[number])
                 try:
                     end = verification.index(questions[number+1])
-                except:
+                except ValueError: #notsure
                     end = len(verification)
                 question.append(verification[start:end])
             except ValueError:
@@ -625,9 +624,9 @@ You can also transfer your table ownership to another table member, after they j
             await itx.response.send_message("I couldn't determine/separate the question answers in this message.",ephemeral=True)
             return
 
-        isLgbtq = 0 # -1 = uncertain; 0 = cishet; 1 = trans
-        isTrans = -1 # -1 = unconfirmed; 0 = cis; 1 = trans
-        lgbtqTerms = [
+        is_lgbtq = 0 # -1 = uncertain; 0 = cishet; 1 = trans
+        is_trans = -1 # -1 = unconfirmed; 0 = cis; 1 = trans
+        lgbtq_terms = [
             "trans",
             "m2f","f2m","mtf","ftm",
             "demi",
@@ -648,7 +647,7 @@ You can also transfer your table ownership to another table member, after they j
             "fluid",
             "nb",
         ]
-        transTerms = [
+        trans_terms = [
             "trans",
             "m2f","f2m","mtf","ftm",
             "demi",
@@ -657,7 +656,7 @@ You can also transfer your table ownership to another table member, after they j
             "non-binary",
             "non binary",
             "fluid"]
-        hasAlibi = False
+        has_alibi = False
 
         out = "\n"
         if "yes" not in question[0] and " agree" not in question[0]:
@@ -665,42 +664,42 @@ You can also transfer your table ownership to another table member, after they j
 
         if "no" in question[1] and "pronoun" not in question[1]:
             out += "They might be cis\n"
-            isTrans = 0
+            is_trans = 0
 
-        for term in lgbtqTerms:
+        for term in lgbtq_terms:
             if term in question[1]:
-                if isLgbtq == 0:
+                if is_lgbtq == 0:
                     out += f"Is in LGBTQ+: {term}"
                 else:
                     out += f", {term}"
-                if term in transTerms:
-                    isTrans = 1
-                isLgbtq = 1
-        if isLgbtq == 1:
+                if term in trans_terms:
+                    is_trans = 1
+                is_lgbtq = 1
+        if is_lgbtq == 1:
             out += "\n"
-        if "yes" in question[1] and isLgbtq < 1:
+        if "yes" in question[1] and is_lgbtq < 1:
             out += "Might not have fully answered what they identify as\n"
-            isLgbtq = -1
-        if not ("yes" in question[1] or "no" in question[1]) and isLgbtq == 0:
+            is_lgbtq = -1
+        if not ("yes" in question[1] or "no" in question[1]) and is_lgbtq == 0:
             out += "Indeterminate answer for question 2, cis maybe?\n"
-            isLgbtq = -1
+            is_lgbtq = -1
         if (("no" not in question[2]) or (len(question[2]) > 7)) and "not" not in question[2]:
-            hasAlibi = True
+            has_alibi = True
 
         responses = []
-        if not hasAlibi:
+        if not has_alibi:
             responses.append("How did you find out about this server?")
-        if isTrans == 1:
+        if is_trans == 1:
             responses.append("Since you're transgender, what makes you the happiest as your gender? What gives you the most gender euphoria?")
-        elif isLgbtq == 1:
+        elif is_lgbtq == 1:
             responses.append("Why did you decide to join a trans server instead of any general LGTBQ+ server?")
-        elif isTrans != 0 or isLgbtq == -1:
+        elif is_trans != 0 or is_lgbtq == -1:
             responses.append("If you don't mind answering, what do you identify as?")
 
-        suggestedOutput = ""
+        suggested_output = ""
         if len(responses) > 0:
             out += "\n__**Suggested output:**__\n"
-            suggestedOutput += f"""Hey there {message.author.mention},
+            suggested_output += f"""Hey there {message.author.mention},
 Thank you for taking the time to answer our questions
 If you don't mind, could you answer some more for us?
 
@@ -708,18 +707,18 @@ First of all,
 {responses[0]}"""
 
         if len(responses) > 1:
-            suggestedOutput += f"""
+            suggested_output += f"""
 
 Next,
 {responses[1]}"""
 
-        if len(suggestedOutput) > 0:
-            suggestedOutput+= """
+        if len(suggested_output) > 0:
+            suggested_output += """
 
 Once again, if you dislike answering any of these or following questions, feel free to tell me. I can give others.
 Thank you in advance :)"""
         else:
-            suggestedOutput += "\n:warning: Couldn't think of any responses."
+            suggested_output += "\n:warning: Couldn't think of any responses."
 
 
         class ConfirmSend(discord.ui.View):
@@ -732,26 +731,26 @@ Thank you in advance :)"""
             # stop the View from listening to more input.
             # We also send the user an ephemeral message that we're confirming their choice.
             @discord.ui.button(label='Send as suggested', style=discord.ButtonStyle.green)
-            async def confirm(self, itx: discord.Interaction, button: discord.ui.Button):
+            async def confirm(self, itx: discord.Interaction, _button: discord.ui.Button):
                 self.value = 1
                 await itx.response.edit_message(view=None)
                 self.stop()
 
             @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red)
-            async def cancel(self, itx: discord.Interaction, button: discord.ui.Button):
+            async def cancel(self, itx: discord.Interaction, _button: discord.ui.Button):
                 self.value = 0
                 await itx.response.edit_message(view=None)
                 self.stop()
 
         view = ConfirmSend(timeout=30)
-        await itx.response.send_message(warning+out+suggestedOutput, view=view, ephemeral=True)
+        await itx.response.send_message(warning+out+suggested_output, view=view, ephemeral=True)
         await view.wait()
         if view.value is None:
             await itx.edit_original_response(view=None)
             # await asyncio.sleep(3)
             # await itx.delete_original_response()
         elif view.value == 1:
-            await itx.channel.send(suggestedOutput)
+            await itx.channel.send(suggested_output)
 
 
 

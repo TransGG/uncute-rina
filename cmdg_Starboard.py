@@ -79,7 +79,7 @@ class Starboard(commands.Cog):
         parts = star_message.content.split("**")
         parts[1] = str(star_stat)
         new_content = '**'.join(parts)
-        await star_message.edit(content = new_content)
+        await star_message.edit(content=new_content)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -129,28 +129,28 @@ class Starboard(commands.Cog):
                         return
                     msgLink = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
                     embed = discord.Embed(
-                            color = discord.Colour.from_rgb(r=255, g=172, b=51),
-                            title = '',
-                            description = f"{message.content}",
-                            timestamp = datetime.now()
+                            color=discord.Colour.from_rgb(r=255, g=172, b=51),
+                            title='',
+                            description=f"{message.content}",
+                            timestamp=datetime.now()
                         )
-                    embed.add_field(name = "Source", value = f"[Jump!]({msgLink})")
-                    embed.set_footer(text = f"{message.id}")
+                    embed.add_field(name="Source", value=f"[Jump!]({msgLink})")
+                    embed.set_footer(text=f"{message.id}")
                     for attachment in message.attachments:
                         if attachment.height: #is image or video
-                            embed.set_image(url = attachment.url)
+                            embed.set_image(url=attachment.url)
                             break
                             # can only set one image per embed.. :/
                     embed.set_author(
-                            name = f"{message.author.nick or message.author.name}",
-                            url = "https://amitrans.org/", #todo
-                            icon_url = message.author.display_avatar.url
+                            name=f"{message.author.nick or message.author.name}",
+                            url="https://amitrans.org/", #todo
+                            icon_url=message.author.display_avatar.url
                     )
 
                     msg = await star_channel.send(
                             f"💫 **{reaction.count}** <#{message.channel.id}>",
-                            embed = embed,
-                            allowed_mentions = discord.AllowedMentions.none(),
+                            embed=embed,
+                            allowed_mentions=discord.AllowedMentions.none(),
                         )
                     await logMsg(star_channel.guild, f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}. Content: \"\"\"{message.content}\"\"\" and attachments: {[x.url for x in message.attachments]}")
                     # add initial star reaction to starboarded message, and new starboard msg
@@ -208,7 +208,7 @@ class Starboard(commands.Cog):
         star_channel = self.client.get_channel(_star_channel)
 
         if message_payload.message_id in messageIdMarkedForDeletion: #global variable
-            messageIdMarkedForDeletion.remove(message_id)
+            messageIdMarkedForDeletion.remove(message_payload.message_id)
             return
         if message_payload.channel_id == star_channel.id:
             # check if the deleted message is a starboard message; if so, log it at starboard message deletion
@@ -224,7 +224,7 @@ class Starboard(commands.Cog):
                         except AttributeError:
                             image = ""
                         try:
-                            msg_link = str(message_payload.message_id)+"  |  "+ ((await self.client.get_channel(message_payload.channel_id).fetch_message(message_payload.message_id)).jump_url)
+                            msg_link = str(message_payload.message_id)+"  |  "+(await self.client.get_channel(message_payload.channel_id).fetch_message(message_payload.message_id)).jump_url
                         except discord.NotFound:
                             msg_link = str(message_payload.message_id)+" (couldn't get jump link)"
                         await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) (original message was removed (this starboard message's linked id matched the removed message's)). Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
