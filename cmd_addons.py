@@ -119,7 +119,7 @@ class Addons(commands.Cog):
         try:
             user.roles
         except AttributeError:
-            itx.response.send_message("Aw man, it seems this person isn't in the server. I wish I could compliment them but they won't be able to see it!",ephemeral=True)
+            await itx.response.send_message("Aw man, it seems this person isn't in the server. I wish I could compliment them but they won't be able to see it!", ephemeral=True)
             return
         async def call(itx, user, type):
             quotes = {
@@ -349,10 +349,32 @@ class Addons(commands.Cog):
                 name = member.nick
             else:
                 continue
+            name = name.lower()
+
+            _pronouns = [
+                "she","her",
+                "he","him",
+                "they","them",
+                "it","its"
+            ]
+            pronouns = []
+            for pronounx in _pronouns:
+                for pronouny in _pronouns:
+                    pronouns.append(pronounx+"/"+pronouny)
+            for item in pronouns:
+                name = name.replace(item, "")
+            _name = ""
+            for char in name:
+                if char in "abcdefghijklmnopqrstuvwxyz ":
+                    _name += char
+            name = _name
+
             for section in name.split(" "):
                 if section in Sections:
                     Sections[section] += 1
                 else:
+                    if section in [" ",""]:
+                        continue
                     Sections[section] = 1
 
         Sections = sorted(Sections.items(), key=lambda x:x[1], reverse=True)
