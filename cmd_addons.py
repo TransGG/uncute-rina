@@ -332,14 +332,15 @@ class Addons(commands.Cog):
             ans = '\n'.join(ans)
             await itx.response.send_message(f"Found {length} string{'s'*(length!=1)}:\n{ans}",ephemeral=True)
 
+    nameusage = app_commands.Group(name='nameusage', description='Get data about which names are used in the server')
 
-    @app_commands.command(name="getnameusage", description="See how often different names occur in this server")
+    @nameusage.command(name="gettop", description="See how often different names occur in this server")
     @app_commands.choices(type=[
     discord.app_commands.Choice(name='Search most-used usernames', value=1),
     discord.app_commands.Choice(name='Search most-used nicknames', value=2),
     ])
     # @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
-    async def getnameusage(self, itx: discord.Interaction, type: int):#, mode: int, string: str):
+    async def nameusage_gettop(self, itx: discord.Interaction, type: int):#, mode: int, string: str):
         await itx.response.defer(ephemeral=True)
         Sections = {}
         for member in itx.guild.members:
@@ -373,7 +374,9 @@ class Addons(commands.Cog):
                 if section in Sections:
                     Sections[section] += 1
                 else:
-                    if section in [" ",""]:
+                    if len(section) < 3:
+                        continue
+                    if section in ["the", "god", "one"]:
                         continue
                     Sections[section] = 1
 
@@ -454,6 +457,26 @@ class Addons(commands.Cog):
         if view.value is None:
             await itx.edit_original_response(view=None)
 
+    @nameusage.command(name="name", description="See how often different names occur in this server")
+    @app_commands.describe(name="What specific name are you looking for?")
+    @app_commands.choices(type=[
+    discord.app_commands.Choice(name='usernames', value=1),
+    discord.app_commands.Choice(name='nicknames', value=2),
+    ])
+    async def nameusage_name(self, itx: discord.Interaction, name: str, type: int):
+        await itx.response.defer(ephemeral=True)
+        count = 0
+        if type == 1:
+            for member in itx.guild.members:
+                if name.lower() in member.name.lower():
+                    count+=1
+        elif type == 2:
+            for member in itx.guild.members:
+                if member.nick is not None:
+                    if name.lower() in member.nick.lower():
+                        count+=1
+
+        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {'user' if type==1 else 'nick'}name",ephemeral=True)
 
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
