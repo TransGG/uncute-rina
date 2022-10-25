@@ -217,7 +217,7 @@ class ToneIndicator(commands.Cog):
             resultStr += "\nDidn't send your message as public cause it would be spammy, having this many results."
         if len(resultStr) > 1999    :
             resultStr = "Your search returned too many results (discord has a 2000-character message length D:). Please search for something more specific."
-        await itx.response.send_message(resultStr,ephemeral=(public==False))
+        await itx.response.send_message(resultStr,ephemeral=not public)
 
 async def setup(client):
     # client.add_command("toneindicator")

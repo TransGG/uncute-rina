@@ -113,7 +113,7 @@ class TermDictionary(commands.Cog):
             response_API = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
             data = json.loads(response_API)
             # if len(data) == 0:
-            #     await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=(public==False))
+            #     await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=not public)
             #     return
 
             # edit definitions to hide links to other pages:
@@ -150,7 +150,7 @@ class TermDictionary(commands.Cog):
                     resultStr = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the terms so you might be able to look for a more specific one:"
                     for item in results:
                         resultStr += f"> {', '.join(item['term'].split('|'))}\n"
-                await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
+                await itx.response.send_message(resultStr,ephemeral=not public, suppress_embeds=True)
                 return
 
             # if search doesn't exactly match with a result / synonym
@@ -196,7 +196,7 @@ class TermDictionary(commands.Cog):
                 resultStr = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length, and this message was {msgLength} characters D:). Please search more specifically.\n\
 Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
             #print(response_API.status_code)
-        await itx.response.send_message(resultStr,ephemeral=(public==False), suppress_embeds=True)
+        await itx.response.send_message(resultStr,ephemeral=not public, suppress_embeds=True)
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
 

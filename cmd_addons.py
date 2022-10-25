@@ -333,6 +333,107 @@ class Addons(commands.Cog):
             await itx.response.send_message(f"Found {length} string{'s'*(length!=1)}:\n{ans}",ephemeral=True)
 
 
+    @app_commands.command(name="getnameusage", description="See how often different names occur in this server")
+    @app_commands.choices(type=[
+    discord.app_commands.Choice(name='Search most-used usernames', value=1),
+    discord.app_commands.Choice(name='Search most-used nicknames', value=2),
+    ])
+    # @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
+    async def getnameusage(self, itx: discord.Interaction, type: int):#, mode: int, string: str):
+        await itx.response.defer(ephemeral=True)
+        Sections = {}
+        for member in itx.guild.members:
+            if type == 1:
+                name = member.name
+            elif type == 2 and member.nick is not None:
+                name = member.nick
+            else:
+                continue
+            for section in name.split(" "):
+                if section in Sections:
+                    Sections[section] += 1
+                else:
+                    Sections[section] = 1
+
+        Sections = sorted(Sections.items(), key=lambda x:x[1], reverse=True)
+        # converted_dict = dict(Sections)
+        # print(Sections)
+        pages = []
+        for i in range(int(len(Sections)/20+0.999)+1):
+            result_page = ""
+            for section in Sections[0+20*i:20+20*i]:
+                result_page += f"{section[1]} {section[0]}\n"
+            if result_page == "":
+                result_page = "_"
+            pages.append(result_page)
+        # print(pages)
+        page = 0
+        # def getEmbed(page, Sections):
+        #
+        #     embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+        #     embed.add_field(name="Column 1",value=result_page)
+        #     embed.add_field(name="Column 2",value=result_page2)
+        #     return embed
+        class Pages(discord.ui.View):
+            def __init__(self, pages, timeout=None):
+                super().__init__()
+                self.value   = None
+                self.timeout = timeout
+                self.page    = 0
+                self.pages   = pages
+
+            # When the confirm button is pressed, set the inner value to `True` and
+            # stop the View from listening to more input.
+            # We also send the user an ephemeral message that we're confirming their choice.
+            @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
+            async def Previous(self, itx: discord.Interaction, button: discord.ui.Button):
+                # self.value = "previous"
+                self.page -= 1
+                if self.page < 0:
+                    self.page+=1
+                    await itx.response.send_message("This is the first page, you can't go to a previous page!",ephemeral=True)
+                    return
+                result_page = self.pages[self.page*2]
+                result_page2 = self.pages[self.page*2+1]
+                embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed.add_field(name="Column 1",value=result_page)
+                embed.add_field(name="Column 2",value=result_page2)
+                embed.set_footer(text = "page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
+                await itx.response.edit_message(embed=embed)
+
+            @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+            async def Next(self, itx: discord.Interaction, button: discord.ui.Button):
+                self.page += 1
+                try:
+                    result_page = self.pages[self.page*2]
+                    result_page2 = self.pages[self.page*2+1]
+                except IndexError:
+                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
+                    return
+                embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed.add_field(name="Column 1",value=result_page)
+                embed.add_field(name="Column 2",value=result_page2)
+                embed.set_footer(text = "page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
+                try:
+                    await itx.response.edit_message(embed=embed)
+                except discord.errors.HTTPException:
+                    page-= 1
+                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
+
+        result_page = pages[page]
+        result_page2 = pages[page+1]
+        embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+        embed.add_field(name="Column 1",value=result_page)
+        embed.add_field(name="Column 2",value=result_page2)
+        embed.set_footer(text = "page: "+str(page+1)+" / "+str(int(len(pages)/2)))
+        view = Pages(pages, timeout=30)
+        await itx.followup.send(f"",embed=embed, view=view,ephemeral=True)
+        await view.wait()
+        if view.value is None:
+            await itx.edit_original_response(view=None)
+
+
+
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
                            faces="How many sides does every die have?",
