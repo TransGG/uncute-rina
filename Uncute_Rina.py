@@ -32,7 +32,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.4.2".split(".")
+fileVersion = "1.1.4.4".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -56,6 +56,9 @@ intents.message_content = True #apparently it turned off my default intent or so
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    commandList: list[discord.app_commands.AppCommand]
+    logChannel: discord.TextChannel
 
     def getCommandMention(self, _command):
         args = _command.split(" ")+[None, None]
@@ -89,12 +92,13 @@ client = Bot(
         activity=discord.Game(name="with slash (/) commands!"),
         allowed_mentions=discord.AllowedMentions(everyone=False)
     )
+program_start = datetime.now()
 debug("Program started")
 
 # Client events begin
 @client.event
 async def on_ready():
-    debug(f"[#####] Logged in as {client.user}, in version {version}",color="green")
+    debug(f"[#####] Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
     await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
 
 @client.event
@@ -120,6 +124,7 @@ async def setup_hook():
         "cmdg_Starboard",
         # "cmdg_Table", # Disabled: it was never used. Will keep file in case of future projects
     ]
+
     for extID in range(len(extensions)):
         debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+" "*15,color="light_blue",end='\r')
         await client.load_extension(extensions[extID])

@@ -52,6 +52,7 @@ class EmojiStats(commands.Cog):
         emojis = []
         start_index = 0
         loop_catcher = 0
+        animated = None
         while True:
             emoji = re.search("<a?:[a-zA-Z_0-9]+:[0-9]+>", message.content[start_index:])
             if emoji is None:
@@ -68,7 +69,10 @@ class EmojiStats(commands.Cog):
                 await logMsg(message.guild, "<@262913789375021056> @MysticMia#7612 <@280885861984239617> @Cleo#1003 WARNING INFINITE LOOP in on_message of cmd_emojistats cog! Broken it with a `return`! Figure out the situation with Cleo!" +
                              f"\nLook at https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}")
                 return
+
+
         for emoji in emojis:
+            assert animated is not None
             await add_to_data(emoji[0], emoji[1], "message", animated)
 
     @commands.Cog.listener()

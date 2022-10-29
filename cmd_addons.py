@@ -1,7 +1,11 @@
+import datetime
+
 import discord # It's dangerous to go alone! Take this. /ref
 from discord import app_commands # v2.0, use slash commands
 from discord.ext import commands # required for client bot making
 from utils import *
+
+import re #use regex to remove pronouns from people's usernames, and split their names into sections by capital letter
 
 import pymongo # for online database
 from pymongo import MongoClient
@@ -88,7 +92,7 @@ class Addons(commands.Cog):
     @app_commands.describe(text="What will you make Rina repeat?")
     async def say(self, itx: discord.Interaction, text: str):
         if not isAdmin(itx):
-            await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True) #todo
+            await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
             return
         collection = RinaDB["guildInfo"]
         query = {"guild_id": itx.guild.id}
@@ -209,7 +213,6 @@ class Addons(commands.Cog):
                 await itx.followup.send(content=base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
             else:
                 await itx.response.send_message(base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
-                #todo check if pings work
         async def confirm_gender():
             # Define a simple View that gives us a confirmation menu
             class Confirm(discord.ui.View):
@@ -334,54 +337,91 @@ class Addons(commands.Cog):
     nameusage = app_commands.Group(name='nameusage', description='Get data about which names are used in the server')
 
     @nameusage.command(name="gettop", description="See how often different names occur in this server")
-    @app_commands.choices(type=[
+    @app_commands.choices(mode=[
         discord.app_commands.Choice(name='Search most-used usernames', value=1),
         discord.app_commands.Choice(name='Search most-used nicknames', value=2),
+        discord.app_commands.Choice(name='Search nicks and usernames', value=3),
     ])
     # @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
-    async def nameusage_gettop(self, itx: discord.Interaction, type: int):#, mode: int, string: str):
+    async def nameusage_gettop(self, itx: discord.Interaction, mode: int):#, mode: int, string: str):
         await itx.response.defer(ephemeral=True)
         sections = {}
         for member in itx.guild.members:
-            if type == 1:
-                name = member.name
-            elif type == 2 and member.nick is not None:
-                name = member.nick
+            member_sections = []
+            if mode == 1:
+                names = [member.name]
+            elif mode == 2 and member.nick is not None:
+                names = [member.nick]
+            elif mode == 3:
+                names = [member.name]
+                if member.nick is not None:
+                    names.append(member.nick)
             else:
                 continue
-            name = name.lower()
 
             _pronouns = [
-                "she","her",
-                "he","him",
-                "they","them",
-                "it","its"
+                "she", "her",
+                "he", "him",
+                "they", "them",
+                "it", "its"
             ]
             pronouns = []
             for pronounx in _pronouns:
                 for pronouny in _pronouns:
-                    pronouns.append(pronounx+"/"+pronouny)
-            for item in pronouns:
-                name = name.replace(item, "")
-            _name = ""
-            for char in name:
-                if char in "abcdefghijklmnopqrstuvwxyz ":
-                    _name += char
-            name = _name
+                    pronouns.append(pronounx + " " + pronouny)
 
-            for section in name.split(" "):
+            for index in range(len(names)):
+                new_name = ""
+                for char in names[index]:
+                    if char.lower() in "abcdefghijklmnopqrstuvwxyz":
+                        new_name += char
+                    else:
+                        new_name += " "
+
+                for pronoun in pronouns:
+                    _name_backup = new_name + " "
+                    while new_name != _name_backup:
+                        _name_backup = new_name
+                        new_name = re.sub(pronoun, "", new_name, flags=re.IGNORECASE)
+
+                names[index] = new_name
+
+            def add(part):
+                if part not in member_sections:
+                    member_sections.append(part)
+
+            for name in names:
+                for section in name.split():
+                    if section in member_sections:
+                        pass
+                    else:
+                        parts = []
+                        match = 1
+                        while match:
+                            match = re.search("[A-Z][a-z]*[A-Z]", section, re.MULTILINE)
+                            if match:
+                                caps = match.span()[1]-1
+                                parts.append(section[:caps])
+                                section = section[caps:]
+                        if len(parts) != 0:
+                            for part in parts:
+                                add(part)
+                            add(section)
+                        else:
+                            add(section)
+
+            for section in member_sections:
+                section = section.lower()
+                if section in ["the", "god", "one"]:
+                    continue
+                if len(section) < 3:
+                    continue
                 if section in sections:
                     sections[section] += 1
                 else:
-                    if len(section) < 3:
-                        continue
-                    if section in ["the", "god", "one"]:
-                        continue
                     sections[section] = 1
 
         sections = sorted(sections.items(), key=lambda x:x[1], reverse=True)
-        # converted_dict = dict(sections)
-        # print(sections)
         pages = []
         for i in range(int(len(sections)/20+0.999)+1):
             result_page = ""
@@ -390,14 +430,7 @@ class Addons(commands.Cog):
             if result_page == "":
                 result_page = "_"
             pages.append(result_page)
-        # print(pages)
         page = 0
-        # def getEmbed(page, sections):
-        #
-        #     embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
-        #     embed.add_field(name="Column 1",value=result_page)
-        #     embed.add_field(name="Column 2",value=result_page2)
-        #     return embed
         class Pages(discord.ui.View):
             def __init__(self, pages, timeout=None):
                 super().__init__()
@@ -461,6 +494,7 @@ class Addons(commands.Cog):
     @app_commands.choices(type=[
         discord.app_commands.Choice(name='usernames', value=1),
         discord.app_commands.Choice(name='nicknames', value=2),
+        discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
     ])
     async def nameusage_name(self, itx: discord.Interaction, name: str, type: int):
         await itx.response.defer(ephemeral=True)
@@ -474,6 +508,11 @@ class Addons(commands.Cog):
                 if member.nick is not None:
                     if name.lower() in member.nick.lower():
                         count += 1
+        elif type == 3:
+            for member in itx.guild.members:
+                if member.nick is not None:
+                    if name.lower() in member.nick.lower() or name.lower() in member.name.lower():
+                        count += 1
 
         await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {'user' if type==1 else 'nick'}name",ephemeral=True)
 
@@ -482,16 +521,16 @@ class Addons(commands.Cog):
     @app_commands.describe(dice="How many dice do you want to roll?",
                            faces="How many sides does every die have?",
                            mod="Do you want to add a modifier? (add 2 after rolling the dice)",
-                           advanced="Roll more advanced! example: 1d20+3cs>10. Overwrites dice/faces given; 'help' for more")
+                           advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; 'help' for more")
     async def roll(self, itx: discord.Interaction, dice: int, faces: int, public: bool = False, mod: int = None, advanced: str = None):
         if advanced is None:
             if dice < 1 or faces < 1:
                 await itx.response.send_message("You can't have negative dice/faces! Please give a number above 0",ephemeral=True)
                 return
-            if dice > 1000000:
+            if dice > 100000:
                 await itx.response.send_message(f"Sorry, if I let you roll `{thousandSpace(dice,separator=',')}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
                 return
-            if faces > 1000000:
+            if faces > 100000:
                 await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{thousandSpace(faces,separator=',')}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
             rolls = []
             for die in range(dice):
@@ -529,9 +568,89 @@ class Addons(commands.Cog):
                 public = False
             await itx.response.send_message(out,ephemeral=not public)
         else:
-            await itx.response.send_message("```\n" +
-                                            "I rolled nothing. This feature is in development!, sorryyy" +
-                                            "```",ephemeral=True)
+            advanced = advanced.replace(" ","")
+            def prod(list: list):
+                a = 1
+                for x in list:
+                    a *= x
+                return a
+
+            def generate_roll(query: str):
+                # print(query)
+                temp = query.split("d")
+                ## 2d4 = ["2","4"]
+                ## 2d3d4 = ["2","3","4"] (huh?)
+                ## 4 = 4
+                ## [] (huh?)
+                if len(temp) > 2:
+                    raise ValueError("Can't have more than 1 'd' in the query of your die!")
+                if len(temp) == 1:
+                    try:
+                        temp[0] = int(temp[0])
+                    except ValueError:
+                        raise TypeError(f"You can't do operations with '{temp[0]}'")
+                    return [temp[0]]
+                if len(temp) < 1:
+                    raise ValueError(f"I couldn't understand what you meant with {query} ({str(temp)})")
+                dice = temp[0]
+                faces = ""
+                for x in temp[1]:
+                    if x in "0123456789":
+                        faces += x
+                    else:
+                        break
+                remainder = temp[1][len(faces):]
+                try:
+                    dice = int(dice)
+                except ValueError:
+                    raise ValueError(f"You have to roll a numerical number of dice! (You tried to roll '{dice}' dice)")
+                try:
+                    faces = int(faces)
+                except ValueError:
+                    raise TypeError(
+                        f"You have to roll a die with a numerical number of faces! (You tried to roll {dice} dice with '{faces}' faces)")
+                if len(remainder) > 0:
+                    raise TypeError("Idk what happened, but you probably filled something in incorrectly.")
+                if dice > 1000000:
+                    raise OverflowError(f"Sorry, if I let you roll `{thousandSpace(dice, separator=',')}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...")
+                if faces > 1000000:
+                    raise OverflowError(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{thousandSpace(faces, separator=',')}`. Please bowl with a sphere of fewer than 1 million faces...")
+                return [random.randint(1, faces) for _ in range(dice)]
+
+            for char in advanced:
+                if char not in "0123456789d+*":  # kKxXrR": #!!pf≤≥
+                    await itx.response.send_message(f"Invalid input! This command doesn't have support for '{char}' yet!",ephemeral=True)
+                    return
+            add = advanced.split('+')
+            # print("add:       ",add)
+            multiply = []
+            for section in add:
+                multiply.append(section.split('*'))
+            # print("multiply:  ",multiply)
+            try:
+                result = [[sum(generate_roll(query)) for query in section] for section in multiply]
+            except (TypeError,ValueError) as ex:
+                ex = repr(ex).split("(",1)
+                ex_type = ex[0]
+                ex_message = ex[1][1:-2]
+                await itx.response.send_message(f"Wasn't able to roll your dice!\n  {ex_type}: {ex_message}",ephemeral=True)
+                return
+            # print("result:    ",result)
+            out = ["Input:  " + advanced]
+            if "*" in advanced:
+                out += [' + '.join([' * '.join([str(x) for x in section]) for section in result])]
+            if "+" in advanced:
+                out += [' + '.join([str(prod(section)) for section in result])]
+            out += [str(sum([prod(section) for section in result]))]
+            output = discord.utils.escape_markdown('\n= '.join(out))
+            if len(output) >= 1950:
+                output = "Your result was too long! I couldn't send it. Try making your rolls a bit smaller, perhaps by splitting it into multiple operations..."
+            if len(output) >= 500:
+                public = False
+            try:
+                await itx.response.send_message(output,ephemeral=not public)
+            except discord.errors.NotFound:
+                await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
     @app_commands.command(name="help", description="A help command to learn more about me!")
     async def help(self, itx: discord.Interaction):
@@ -596,6 +715,10 @@ You can also transfer your table ownership to another table member, after they j
                 pass
             elif line in copy_pasta:
                 q_string = line[0] # copy Question number
+            elif ''.join(copy_pasta) in line:
+                for pasta in copy_pasta:
+                    if pasta in line:
+                        q_string.replace(pasta, pasta[0])
             else:
                 verification.append(q_string+line)
                 # newlineCount = 0
@@ -635,7 +758,7 @@ You can also transfer your table ownership to another table member, after they j
             "non-binary",
             "non binary",
             "questioning",
-            "asexual",
+            "asexual","agender",
             "lesbian",
             "hrt",
             "ace",
@@ -652,13 +775,20 @@ You can also transfer your table ownership to another table member, after they j
             "m2f","f2m","mtf","ftm",
             "demi",
             "intersex",
+            "agender",
             "nonbinary",
             "non-binary",
             "non binary",
             "fluid"]
         has_alibi = False
+        is_new = False
 
         out = "\n"
+        if message.author.created_at < (datetime.now()-datetime.timedelta(days=7)):
+            out += "User might have an account younger than 7 days"
+            is_new = True
+
+
         if "yes" not in question[0] and " agree" not in question[0]:
             out += "User might not have accepted the rules\n"
 
@@ -689,6 +819,8 @@ You can also transfer your table ownership to another table member, after they j
         responses = []
         if not has_alibi:
             responses.append("How did you find out about this server?")
+        if is_new:
+            responses.append("It looks like your account is less than 7 days old.. Could you tell us why you joined with a new account?")
         if is_trans == 1:
             responses.append("Since you're transgender, what makes you the happiest as your gender? What gives you the most gender euphoria?")
         elif is_lgbtq == 1:
@@ -711,6 +843,12 @@ First of all,
 
 Next,
 {responses[1]}"""
+
+        if len(responses) > 2:
+            suggested_output += f"""
+
+aaand..
+{responses[2]}"""
 
         if len(suggested_output) > 0:
             suggested_output += """

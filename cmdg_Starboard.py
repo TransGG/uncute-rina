@@ -157,7 +157,6 @@ class Starboard(commands.Cog):
                     await message.add_reaction(starboard_emoji)
                     await msg.add_reaction(starboard_emoji)
                     await msg.add_reaction("❌")
-                    # todo downvotes
                     # add star reaction to original message to prevent message from being re-added to the starboard
 
     @commands.Cog.listener()
