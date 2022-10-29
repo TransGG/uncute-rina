@@ -688,20 +688,26 @@ You can also transfer your table ownership to another table member, after they j
     @app_commands.command(name="genanswer", description="Make verification question guesses")
     @app_commands.describe(messageid="Which message should I check? (id)")
     async def gen_answer(self, itx: discord.Interaction, messageid: str):
-        try:
-            messageid = int(messageid)
-            message = await itx.channel.fetch_message(messageid)
-        except discord.errors.NotFound:
-            await itx.response.send_message("I couldn't find that message!",ephemeral=True)
-            return
-        except ValueError:
-            await itx.response.send_message(f"That ('{messageid}') is not a valid message ID!",ephemeral=True)
-            return
+        await itx.response.defer(ephemeral=True )
+        messagelist = [messageid]
+        if "," in messageid:
+            messagelist = [i.strip() for i in messageid.split(",")]
+        lines = []
+        for messageid in messagelist:
+            try:
+                messageid = int(messageid)
+                message = await itx.channel.fetch_message(messageid)
+            except discord.errors.NotFound:
+                await itx.followup.send(f"I couldn't find that message ({messageid})!",ephemeral=True)
+                return
+            except ValueError:
+                await itx.followup.send(f"That ('{messageid}') is not a valid message ID!",ephemeral=True)
+                return
 
-        if message is None:
-            await itx.response.send_message("That message has no content?",ephemeral=True)
-            return
-        lines = message.content.split("\n")
+            if message is None:
+                await itx.followup.send(f"That message has no content ({messageid})?",ephemeral=True)
+                return
+            lines += message.content.split("\n")
 
         verification = []
         copy_pasta = [
@@ -743,7 +749,7 @@ You can also transfer your table ownership to another table member, after they j
                 question.append(verification[start:end])
             except ValueError:
                 if warning == "":
-                    warning += f"Couldn't find question number for question '{number}'"
+                    warning += f"Couldn't find question number for question '{number+1}'"
                 else:
                     warning += f", '{number}'"
                 if len(verification.split("\n")) == 6:
@@ -886,7 +892,7 @@ Thank you in advance :)"""
                 self.stop()
 
         view = ConfirmSend(timeout=30)
-        await itx.response.send_message(warning+out+suggested_output, view=view, ephemeral=True)
+        await itx.followup.send(warning+out+suggested_output, view=view, ephemeral=True)
         await view.wait()
         if view.value is None:
             await itx.edit_original_response(view=None)
