@@ -1,5 +1,3 @@
-import datetime
-
 import discord # It's dangerous to go alone! Take this. /ref
 from discord import app_commands # v2.0, use slash commands
 from discord.ext import commands # required for client bot making
@@ -11,6 +9,8 @@ import pymongo # for online database
 from pymongo import MongoClient
 
 import random # for picking a random call_cute quote
+
+from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
 
 import asyncio # for waiting a few seconds before removing a timed-out pronoun-selection message
 
@@ -412,7 +412,7 @@ class Addons(commands.Cog):
 
             for section in member_sections:
                 section = section.lower()
-                if section in ["the", "god", "one"]:
+                if section in ["the", "any"]:
                     continue
                 if len(section) < 3:
                     continue
@@ -499,22 +499,27 @@ class Addons(commands.Cog):
     async def nameusage_name(self, itx: discord.Interaction, name: str, type: int):
         await itx.response.defer(ephemeral=True)
         count = 0
+        type_string = ""
         if type == 1:
             for member in itx.guild.members:
                 if name.lower() in member.name.lower():
                     count += 1
+            type_string = "username"
         elif type == 2:
             for member in itx.guild.members:
                 if member.nick is not None:
                     if name.lower() in member.nick.lower():
                         count += 1
+            type_string = "nickname"
         elif type == 3:
             for member in itx.guild.members:
                 if member.nick is not None:
                     if name.lower() in member.nick.lower() or name.lower() in member.name.lower():
                         count += 1
-
-        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {'user' if type==1 else 'nick'}name",ephemeral=True)
+                elif name.lower() in member.name.lower():
+                    count += 1
+            type_string = "username or nickname"
+        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=True)
 
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
@@ -733,7 +738,7 @@ You can also transfer your table ownership to another table member, after they j
                 start = verification.index(questions[number])
                 try:
                     end = verification.index(questions[number+1])
-                except ValueError: #notsure
+                except IndexError: #notsure
                     end = len(verification)
                 question.append(verification[start:end])
             except ValueError:
@@ -747,8 +752,10 @@ You can also transfer your table ownership to another table member, after they j
             await itx.response.send_message("I couldn't determine/separate the question answers in this message.",ephemeral=True)
             return
 
-        is_lgbtq = 0 # -1 = uncertain; 0 = cishet; 1 = trans
+        is_lgbtq = 0 # -1 = uncertain; 0 = cishet; 1 = lgbtq+
         is_trans = -1 # -1 = unconfirmed; 0 = cis; 1 = trans
+        has_alibi = False
+        is_new = False
         lgbtq_terms = [
             "trans",
             "m2f","f2m","mtf","ftm",
@@ -780,12 +787,10 @@ You can also transfer your table ownership to another table member, after they j
             "non-binary",
             "non binary",
             "fluid"]
-        has_alibi = False
-        is_new = False
 
         out = "\n"
-        if message.author.created_at < (datetime.now()-datetime.timedelta(days=7)):
-            out += "User might have an account younger than 7 days"
+        if message.author.created_at > (datetime.now(tz=timezone.utc)-timedelta(days=7)):
+            out += "User might have an account younger than 7 days\n"
             is_new = True
 
 

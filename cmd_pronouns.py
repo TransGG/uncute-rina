@@ -136,10 +136,25 @@ class Pronouns(commands.Cog):
                     break
             return results
         if itx.namespace.mode == 3:
-            # find results in database
-            collection = RinaDB["members"]
-            query = {"member_id": itx.user.id}
-            data = collection.find_one(query)
+            staff_overwrite = False
+            data = None
+            if isStaff(itx) and " |" in current:
+                sections = current.split(" |")
+                if len(sections) == 2:
+                    try:
+                        user_id = int(sections[0])
+                        collection = RinaDB["members"]
+                        query = {"member_id": user_id}
+                        data = collection.find_one(query)
+                        staff_overwrite = True
+                        current = sections[1].strip()
+                    except ValueError:
+                        pass
+            if not staff_overwrite:
+                # find results in database
+                collection = RinaDB["members"]
+                query = {"member_id": itx.user.id}
+                data = collection.find_one(query)
             if data is None:
                 return []
             else:
@@ -147,6 +162,11 @@ class Pronouns(commands.Cog):
 
             if len(pronouns) == 0:
                 return []
+            if staff_overwrite:
+                return [
+                    app_commands.Choice(name=pronouns[index], value=str(index))
+                    for index in range(len(pronouns)) if pronouns[index].lower().startswith(current.lower())
+                ]
             return [
                 app_commands.Choice(name=pronoun, value=pronoun)
                 for pronoun in pronouns if pronoun.lower().startswith(current.lower())
