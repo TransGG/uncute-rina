@@ -65,7 +65,8 @@ class TermDictionary(commands.Cog):
             discord.app_commands.Choice(name='Search from whichever has an answer', value=1),
             discord.app_commands.Choice(name='Search from custom dictionary', value=3),
             discord.app_commands.Choice(name='Search from en.pronouns.page', value=2),
-        ])
+            discord.app_commands.Choice(name='Search from dictionaryapi.dev', value=5),
+    ])
     @app_commands.autocomplete(term=dictionary_autocomplete)
     async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
         def simplify(q):
@@ -74,6 +75,7 @@ class TermDictionary(commands.Cog):
             if type(q) is list:
                 return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
         # test if mode has been left unset or if mode has been selected: decides whether or not to move to the online API search or not.
+        result_str = ""  # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
         if source == 1 or source == 3:
             collection = RinaDB["termDictionary"]
             query = {"synonyms": term.lower()}
@@ -110,7 +112,7 @@ class TermDictionary(commands.Cog):
                 # debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
                 await logMsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 2 or source == 4:
-            response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term}').text
+            response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term.lower()}').text
             data = json.loads(response_api)
             # if len(data) == 0:
             #     await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=not public)
@@ -184,6 +186,8 @@ class TermDictionary(commands.Cog):
             else:
                 result_str = f"I didn't find any results for '{term}' on en.pronouns.page!"
                 if source == 4:
+                    source = 5
+                    #todo
                     result_str = f"I didn't find any results for '{term}' online or in our fancy dictionary"
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
                     cmd_mention_dict = self.client.getCommandMention("dictionary")
@@ -195,8 +199,131 @@ class TermDictionary(commands.Cog):
                 result_str = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length, and this message was {msg_length} characters D:). Please search more specifically.\n\
 Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
             #print(response_api.status_code)
-        else:
-            result_str = "" # to make my IDE happy.
+        if source == 5:
+            public = False
+            response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{term.lower()}').text
+            data = json.loads(response_api)
+            results = []
+            if type(data) is dict:
+                result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
+                await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
+                return
+
+            for result in data:
+                meanings = []
+                synonyms = []
+                antonyms = []
+                for meaning in result["meanings"]:
+                    meaning_list = [meaning['partOfSpeech']]
+                    # **verb**:
+                    # meaning one is very useful
+                    # meaning two is not as useful
+                    for definition in meaning["definitions"]:
+                        meaning_list.append("- "+definition['definition'])
+                        for synonym in definition['synonyms']:
+                            if synonym not in synonyms:
+                                synonyms.append(synonym)
+                        for antonym in definition['antonyms']:
+                            if antonym not in antonyms:
+                                antonyms.append(antonym)
+                    for synonym in meaning['synonyms']:
+                        if synonym not in synonyms:
+                            synonyms.append(synonym)
+                    for antonym in meaning['antonyms']:
+                        if antonym not in antonyms:
+                            antonyms.append(antonym)
+                    meanings.append(meaning_list)
+
+                results.append([
+                    result["word"],
+                    meanings,
+                    ', '.join(synonyms),
+                    ', '.join(antonyms),
+                    '\n'.join(result["sourceUrls"])
+                ])
+
+            pages = []
+            page = 0
+            for result in results:
+                embed = discord.Embed(color=8481900, type='rich',
+                                      title=f"__{result[0].capitalize()}__")
+                for meaning_index in range(len(result[1])):
+                    embed.add_field(name=result[1][meaning_index][0].capitalize(),
+                                    value='\n'.join(result[1][meaning_index][1:]),
+                                    inline=False)
+                if len(result[2]) > 0:
+                    embed.add_field(name="Synonyms",
+                                    value=result[2],
+                                    inline=False)
+                if len(result[3]) > 0:
+                    embed.add_field(name="Anyonyms",
+                                    value=result[3],
+                                    inline=False)
+                if len(result[4]) > 0:
+                    embed.add_field(name="More info:",
+                                    value=result[4],
+                                    inline=False)
+                pages.append(embed)
+                # [meaning, [type, definition1, definition2], synonym, antonym, sources]
+
+            class Pages(discord.ui.View):
+                def __init__(self, pages, timeout=None):
+                    super().__init__()
+                    self.value = None
+                    self.timeout = timeout
+                    self.page = 0
+                    self.pages = pages
+
+                @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
+                async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+                    # self.value = "previous"
+                    self.page -= 1
+                    if self.page < 0:
+                        self.page += 1
+                        await itx.response.send_message("This is the first page, you can't go to a previous page!",
+                                                        ephemeral=True)
+                        return
+                    embed = self.pages[self.page]
+                    embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+                    await itx.response.edit_message(embed=embed)
+
+                @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+                async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+                    self.page += 1
+                    try:
+                        embed = self.pages[self.page]
+                    except IndexError:
+                        await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                                        ephemeral=True)
+                        return
+                    embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+                    try:
+                        await itx.response.edit_message(embed=embed)
+                    except discord.errors.HTTPException:
+                        self.page -= 1
+                        await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                                        ephemeral=True)
+
+                @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.gray)
+                async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+                    self.value = 1
+                    embed = self.pages[self.page]
+                    await itx.response.edit_message(content="Sent successfully!",embed=None)
+                    await itx.followup.send(f"{itx.user.mention} shared a dictionary entry!", embed=embed,
+                                            ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+                    self.stop()
+
+            embed = pages[page]
+            embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
+            view = Pages(pages, timeout=30)
+            await itx.response.send_message(f"I found the following `{len(results)}` results on dictionaryapi.dev: ", embed=embed, view=view, ephemeral=True)
+            await view.wait()
+            if view.value in [None, 1]:
+                await itx.edit_original_response(view=None)
+
+            return
+
+        assert len(result_str) > 0
         await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')

@@ -14,6 +14,30 @@ from datetime import datetime, timedelta, timezone # for checking if user is old
 
 import asyncio # for waiting a few seconds before removing a timed-out pronoun-selection message
 
+
+def generateOutput(responses, author):
+    output = ""
+    if len(responses) > 0:
+        output += f"""Hey there {author.mention},
+Thank you for taking the time to answer our questions
+If you don't mind, could you answer some more for us?"""
+
+    keywords = ["First of all","Next","aaand..","Also","Lastly","PS","PPS","PPPS","PPPPS","PPPPPS","PPPPPPS"]
+    for index in range(len(responses)):
+        output += f"""
+
+{keywords[index]},
+{responses[index]}"""
+
+    if len(output) > 0:
+        output += """
+
+Once again, if you dislike answering any of these or following questions, feel free to tell me. I can give others.
+Thank you in advance :)"""
+    else:
+        output += "\n:warning: Couldn't think of any responses."
+    return output
+
 class Addons(commands.Cog):
     def __init__(self, client):
         global RinaDB
@@ -32,7 +56,11 @@ class Addons(commands.Cog):
             try:
                 await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
             except discord.errors.HTTPException:
-                await message.add_reaction("☺️") # relaxed
+                await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.url}')
+                try:
+                    await message.add_reaction("☺️") # relaxed
+                except:
+                    raise
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
@@ -91,7 +119,7 @@ class Addons(commands.Cog):
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?")
     async def say(self, itx: discord.Interaction, text: str):
-        if not isAdmin(itx):
+        if not isStaff(itx):
             await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
             return
         collection = RinaDB["guildInfo"]
@@ -99,6 +127,7 @@ class Addons(commands.Cog):
         guild = collection.find_one(query)
         if guild is None:
             debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
+            await itx.response.send_message("Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete",ephemeral=True)
             return
         try:
             vcLog      = guild["vcLog"]
@@ -533,10 +562,10 @@ class Addons(commands.Cog):
                 await itx.response.send_message("You can't have negative dice/faces! Please give a number above 0",ephemeral=True)
                 return
             if dice > 100000:
-                await itx.response.send_message(f"Sorry, if I let you roll `{thousandSpace(dice,separator=',')}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
+                await itx.response.send_message(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
                 return
             if faces > 100000:
-                await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{thousandSpace(faces,separator=',')}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
+                await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{dice:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
             rolls = []
             for die in range(dice):
                 rolls.append(random.randint(1,faces))
@@ -552,8 +581,8 @@ class Addons(commands.Cog):
                 out = f"I rolled {dice} {'die' if dice == 0 else 'dice'} with {faces} face{'s'*(faces>1)} and a modifier of {mod}:\n" +\
                       f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls)+mod)}"
             if len(out) > 1995:
-                out = f"I rolled {thousandSpace(dice,separator=',')} {'die' if dice == 0 else 'dice'} with {thousandSpace(faces,separator=',')} face{'s'*(faces>1)}"+f" and a modifier of {thousandSpace(mod or 0,separator=',')}"*(mod is not None)+":\n" +\
-                      f"With this many numbers, I've simplified it a little. You rolled `{thousandSpace(str(sum(rolls)+(mod or 0)),separator=',')}`."
+                out = f"I rolled {dice:,} {'die' if dice == 0 else 'dice'} with {faces:,} face{'s'*(faces>1)}"+f" and a modifier of {(mod or 0):,}"*(mod is not None)+":\n" +\
+                      f"With this many numbers, I've simplified it a little. You rolled `{sum(rolls)+(mod or 0):,}`."
                 roll_db = {}
                 for roll in rolls:
                     try:
@@ -617,9 +646,9 @@ class Addons(commands.Cog):
                 if len(remainder) > 0:
                     raise TypeError("Idk what happened, but you probably filled something in incorrectly.")
                 if dice > 1000000:
-                    raise OverflowError(f"Sorry, if I let you roll `{thousandSpace(dice, separator=',')}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...")
+                    raise OverflowError(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...")
                 if faces > 1000000:
-                    raise OverflowError(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{thousandSpace(faces, separator=',')}`. Please bowl with a sphere of fewer than 1 million faces...")
+                    raise OverflowError(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...")
                 return [random.randint(1, faces) for _ in range(dice)]
 
             for char in advanced:
@@ -707,6 +736,9 @@ You can also transfer your table ownership to another table member, after they j
             if message is None:
                 await itx.followup.send(f"That message has no content ({messageid})?",ephemeral=True)
                 return
+            if type(message.author) is discord.User:
+                await itx.followup.send(f"This user left the server!",ephemeral=True)
+
             lines += message.content.split("\n")
 
         verification = []
@@ -749,13 +781,13 @@ You can also transfer your table ownership to another table member, after they j
                 question.append(verification[start:end])
             except ValueError:
                 if warning == "":
-                    warning += f"Couldn't find question number for question '{number+1}'"
+                    warning += f"Couldn't find question number for question '{questions[number]}'"
                 else:
-                    warning += f", '{number}'"
-                if len(verification.split("\n")) == 6:
+                    warning += f", '{questions[number]}'"
+                if len(verification.split("\n")) >= 6:
                     question.append(verification.split("\n")[number])
         if len(question) < 3:
-            await itx.response.send_message("I couldn't determine/separate the question answers in this message.",ephemeral=True)
+            await itx.followup.send("I couldn't determine/separate the question answers in this message.",ephemeral=True)
             return
 
         is_lgbtq = 0 # -1 = uncertain; 0 = cishet; 1 = lgbtq+
@@ -793,12 +825,21 @@ You can also transfer your table ownership to another table member, after they j
             "non-binary",
             "non binary",
             "fluid"]
+        templates = [
+            "What made you discover you were transgender?",
+            "What would be an example of invalidating someone's identity?",
+            "What do you hope to add or gain from this community?",
+            "Anything you do or wish to do that makes you feel euphoric about your identity?",
+        ]
+
 
         out = "\n"
         if message.author.created_at > (datetime.now(tz=timezone.utc)-timedelta(days=7)):
             out += "User might have an account younger than 7 days\n"
             is_new = True
 
+        if type(message.author) is discord.User:
+            out += "User might have left the server\n"
 
         if "yes" not in question[0] and " agree" not in question[0]:
             out += "User might not have accepted the rules\n"
@@ -824,7 +865,7 @@ You can also transfer your table ownership to another table member, after they j
         if not ("yes" in question[1] or "no" in question[1]) and is_lgbtq == 0:
             out += "Indeterminate answer for question 2, cis maybe?\n"
             is_lgbtq = -1
-        if (("no" not in question[2]) or (len(question[2]) > 7)) and "not" not in question[2]:
+        if ("no" not in question[2]) and (len(question[2]) > 7): # and "not" not in question[2]:
             has_alibi = True
 
         responses = []
@@ -839,49 +880,90 @@ You can also transfer your table ownership to another table member, after they j
         elif is_trans != 0 or is_lgbtq == -1:
             responses.append("If you don't mind answering, what do you identify as?")
 
-        suggested_output = ""
         if len(responses) > 0:
             out += "\n__**Suggested output:**__\n"
-            suggested_output += f"""Hey there {message.author.mention},
-Thank you for taking the time to answer our questions
-If you don't mind, could you answer some more for us?
-
-First of all,
-{responses[0]}"""
-
-        if len(responses) > 1:
-            suggested_output += f"""
-
-Next,
-{responses[1]}"""
-
-        if len(responses) > 2:
-            suggested_output += f"""
-
-aaand..
-{responses[2]}"""
-
-        if len(suggested_output) > 0:
-            suggested_output += """
-
-Once again, if you dislike answering any of these or following questions, feel free to tell me. I can give others.
-Thank you in advance :)"""
-        else:
-            suggested_output += "\n:warning: Couldn't think of any responses."
-
 
         class ConfirmSend(discord.ui.View):
-            def __init__(self, timeout=None):
+            class AddQuestion(discord.ui.Modal, title="Add question to Rina's verification message"):
+                def __init__(self, responses, timeout=None):
+                    super().__init__()
+                    self.value = None
+                    self.timeout = timeout
+                    self.responses = responses
+                    self.question = discord.ui.TextInput(label='Question',
+                                                         placeholder="What made you start questioning that you were trans?",
+                                                         style=discord.TextStyle.paragraph,
+                                                         required=True)
+                    self.add_item(self.question)
+
+                async def on_submit(self, interaction: discord.Interaction):
+                    self.value = 1
+                    self.question = self.question.value.strip()
+                    if len(self.question) < 3:
+                        self.value = 9
+                        try:
+                            self.question = templates[int(self.question)]
+                            self.value = 2
+                        except (ValueError, IndexError):
+                            await interaction.response.send_message("If you're trying to use a template.. you messed up\n"
+                                                                    "Otherwise, make your string longer than 2 characters",
+                                                                    ephemeral=True)
+                            self.stop()
+                            return
+
+                    if self.question in self.responses:
+                        await interaction.response.send_message('You added that question already.. but okay sure...', ephemeral=True)
+                    else:
+                        await interaction.response.send_message('Adding question...', ephemeral=True)
+                    self.stop()
+
+            class RemoveQuestion(discord.ui.Modal, title="Remove from Rina's verification message"):
+                def __init__(self, responses, timeout=None):
+                    super().__init__()
+                    self.value = None
+                    self.timeout = timeout
+                    self.responses = responses
+                    self.question = None
+                    self.question_text = discord.ui.TextInput(label='Question index',
+                                                              placeholder=f"[A number from 0 to {len(responses)-1} ]",
+                                                              # style=discord.TextStyle.short,
+                                                              # required=True
+                                                              )
+                    self.add_item(self.question_text)
+
+                async def on_submit(self, itx: discord.Interaction):
+                    self.value = 9
+                    try:
+                        self.question = int(self.question_text.value)
+                    except ValueError:
+                        await itx.response.send_message(content=f"Couldn't add question: '{self.question_text.value}' is not an integer. "
+                                                                "It has to be an index number from a response in the verification message.", ephemeral=True)
+                        return
+                    if self.question < 0 or self.question >= len(responses):
+                        await itx.response.send_message(content=f"Couldn't add question: '{self.question}' is not a possible index value for removing a verification response. "
+                                                                "It has to be an index number from a question in the verification message.", ephemeral=True)
+                        return
+                    self.value = 1
+                    await itx.response.send_message(f'Removing question...', ephemeral=True)
+                    self.stop()
+
+            def __init__(self, prefix, responses, msg_author, suggested_output, timeout=None):
                 super().__init__()
+                self.prefix = prefix
                 self.value = None
                 self.timeout = timeout
+                self.msg_author = msg_author
+                self.responses = responses
+                self.suggested_output = suggested_output
 
-            # When the confirm button is pressed, set the inner value to `True` and
+        # When the confirm button is pressed, set the inner value to `True` and
             # stop the View from listening to more input.
             # We also send the user an ephemeral message that we're confirming their choice.
             @discord.ui.button(label='Send as suggested', style=discord.ButtonStyle.green)
             async def confirm(self, itx: discord.Interaction, _button: discord.ui.Button):
                 self.value = 1
+
+                await itx.channel.send(self.suggested_output)
                 await itx.response.edit_message(view=None)
                 self.stop()
 
@@ -891,16 +973,53 @@ Thank you in advance :)"""
                 await itx.response.edit_message(view=None)
                 self.stop()
 
-        view = ConfirmSend(timeout=30)
+            @discord.ui.button(label='Add question', style=discord.ButtonStyle.blurple)
+            async def add_question(self, itx: discord.Interaction, _button: discord.ui.Button):
+                self.value = 10
+                new_question = ConfirmSend.AddQuestion(self.responses)
+                await itx.response.send_modal(new_question)
+                await new_question.wait()
+                if new_question.value in [None, 9]:
+                    pass
+                else:
+                    self.responses.append(new_question.question)
+                    self.suggested_output = generateOutput(self.responses, self.msg_author)
+                    await itx.edit_original_response(content=self.prefix+self.suggested_output)
+
+            @discord.ui.button(label='Remove question', style=discord.ButtonStyle.blurple)
+            async def remove_question(self, itx: discord.Interaction, _button: discord.ui.Button):
+                self.value = 11
+                remove_question = ConfirmSend.RemoveQuestion(self.responses)
+                await itx.response.send_modal(remove_question)
+                await remove_question.wait()
+                if remove_question.value in [None, 9]:
+                    pass
+                else:
+                    try:
+                        del self.responses[remove_question.question]
+                    except IndexError:
+                        await itx.edit_original_response(content=self.prefix+self.suggested_output+"\n\n***__" +
+                                                         f"Couldn't add question: '{remove_question.question}' is not a possible index value for removing a verification response. "
+                                                         "It has to be an index number from a question in the verification message.__***")
+                        return
+                    self.suggested_output = generateOutput(self.responses, self.msg_author)
+                    await itx.edit_original_response(content=self.prefix+self.suggested_output)
+
+            @discord.ui.button(label='Templates', style=discord.ButtonStyle.gray)
+            async def templates(self, itx: discord.Interaction, _button: discord.ui.Button):
+                self.value = 20
+                await itx.response.send_message(
+                    "In the 'Add Question' modal, type one of the numbers of the questions below to automatically add that one:\n" +
+                    '\n'.join([f"{i}. {templates[i]}" for i in range(len(templates))]),
+                    ephemeral=True
+                )
+
+        suggested_output = generateOutput(responses, message.author)
+        view = ConfirmSend(warning+out, responses, message.author, suggested_output, timeout=30)
+        # data = [warning, out, suggested_output]
         await itx.followup.send(warning+out+suggested_output, view=view, ephemeral=True)
         await view.wait()
-        if view.value is None:
-            await itx.edit_original_response(view=None)
-            # await asyncio.sleep(3)
-            # await itx.delete_original_response()
-        elif view.value == 1:
-            await itx.channel.send(suggested_output)
-
+        await itx.edit_original_response(view=None)
 
 
 
