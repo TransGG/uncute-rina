@@ -38,17 +38,30 @@ class TermDictionary(commands.Cog):
         response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
         data = json.loads(response_api)
         # find exact results online
-        for item in data:
-            if item['term'].split("|")[0] in terms:
-                continue
-            if simplify(current) in simplify(item['term'].split('|')):
-                terms.append(item['term'].split('|')[0])
+        if len(data) != 0:
+            for item in data:
+                if item['term'].split("|")[0] in terms:
+                    continue
+                if simplify(current) in simplify(item['term'].split('|')):
+                    terms.append(item['term'].split('|')[0])
 
-        # then, find whichever other terms are there (append / last) online
-        for item in data:
-            if item['term'].split("|")[0] in terms:
-                continue
-            terms.append(item['term'].split("|")[0])
+            # then, find whichever other terms are there (append / last) online
+            for item in data:
+                if item['term'].split("|")[0] in terms:
+                    continue
+                terms.append(item['term'].split("|")[0])
+
+        # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
+        # but only if there aren't already 7 responses; to prevent extra loading time
+        if len(terms) < 7:
+            response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{current}').text
+            data = json.loads(response_api)
+            if type(data) is not dict:
+                for result in data:
+                    if result["word"] not in terms:
+                        terms.append(result["word"])
+
+
         # limit choices to the first 7
         terms = terms[:7]
 
@@ -114,100 +127,119 @@ class TermDictionary(commands.Cog):
         if source == 2 or source == 4:
             response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term.lower()}').text
             data = json.loads(response_api)
+            continue0 = False
+            if len(data) == 0:
+                if source == 4:
+                    source = 6
+                    continue0 = True
+                else:
+                    result_str = f"I didn't find any results for '{term}' online or in our fancy dictionary"
+                    # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
+                    cmd_mention_dict = self.client.getCommandMention("dictionary")
+                    cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
+                    await logMsg(itx.guild,
+                                 f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
+
+                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
+                    return
             # if len(data) == 0:
             #     await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=not public)
             #     return
 
             # edit definitions to hide links to other pages:
-            search = []
-            for item in data:
-                item_db = item['definition']
-                while item['definition'] == item_db:
-                    replacement = re.search("(?<==).+?(?=})",item['definition'])
-                    if replacement is not None:
-                        item['definition'] = re.sub("{(#.+?=).+?}", replacement.group(), item['definition'],1)
-                    if item['definition'] == item_db: #if nothing changed:
-                        break
+            if not continue0:
+                search = []
+                for item in data:
                     item_db = item['definition']
-                while item['definition'] == item_db:
-                    replacement = re.search("(?<={).+?(?=})",item['definition'])
-                    if replacement is not None:
-                        item['definition'] = re.sub("{.+?}", replacement.group(), item['definition'],1)
-                    if item['definition'] == item_db: #if nothing changed:
-                        break
-                    item_db = item['definition']
-                search.append(item)
+                    while item['definition'] == item_db:
+                        replacement = re.search("(?<==).+?(?=})",item['definition'])
+                        if replacement is not None:
+                            item['definition'] = re.sub("{(#.+?=).+?}", replacement.group(), item['definition'],1)
+                        if item['definition'] == item_db: #if nothing changed:
+                            break
+                        item_db = item['definition']
+                    while item['definition'] == item_db:
+                        replacement = re.search("(?<={).+?(?=})",item['definition'])
+                        if replacement is not None:
+                            item['definition'] = re.sub("{.+?}", replacement.group(), item['definition'],1)
+                        if item['definition'] == item_db: #if nothing changed:
+                            break
+                        item_db = item['definition']
+                    search.append(item)
 
-            # if one of the search results matches exactly with the search, give that definition
-            results = []
-            for item in search:
-                if simplify(term) in simplify(item['term'].split('|')):
-                    results.append(item)
-            if len(results) > 0:
-                result_str = f"I found {len(results)} exact result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! \n"
-                for item in results:
-                    result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-                result_str += f"{len(search)-len(results)} other non-exact results found."*((len(search)-len(results)) > 0)
-                if len(result_str) > 1999:
-                    result_str = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the terms so you might be able to look for a more specific one:"
+                # if one of the search results matches exactly with the search, give that definition
+                results = []
+                for item in search:
+                    if simplify(term) in simplify(item['term'].split('|')):
+                        results.append(item)
+                if len(results) > 0:
+                    result_str = f"I found {len(results)} exact result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! \n"
                     for item in results:
-                        result_str += f"> {', '.join(item['term'].split('|'))}\n"
-                await itx.response.send_message(result_str,ephemeral=not public, suppress_embeds=True)
-                return
+                        result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
+                    result_str += f"{len(search)-len(results)} other non-exact results found."*((len(search)-len(results)) > 0)
+                    if len(result_str) > 1999:
+                        result_str = f"Your search ('{term}') returned a too-long result! (discord has a 2000-character message length D:). To still let you get better results, I've rewritten the terms so you might be able to look for a more specific one:"
+                        for item in results:
+                            result_str += f"> {', '.join(item['term'].split('|'))}\n"
+                    await itx.response.send_message(result_str,ephemeral=not public, suppress_embeds=True)
+                    return
 
-            # if search doesn't exactly match with a result / synonym
-            result_str = f"I found {len(search)} result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! "
-            if len(search) > 25:
-                result_str += "Here is a list to make your search more specific:\n"
-                results = []
-                for item in search:
-                    temp = item['term']
-                    if "|" in temp:
-                        temp = temp.split("|")[0]
-                    results.append(temp)
-                result_str += ', '.join(results)
-                public = False
-            elif len(search) > 2:
-                result_str += "Here is a list to make your search more specific:\n"
-                results = []
-                for item in search:
-                    if "|" in item['term']:
-                        temp = "- __"  + item['term'].split("|")[0] + "__"
-                        temp += " ("  + ', '.join(item['term'].split("|")[1:]) + ")"
-                    else:
-                        temp = "- __" + item['term'] + "__"
-                    results.append(temp)
-                result_str += '\n'.join(results)
-                public = False
-            elif len(search) > 0:
-                result_str += "\n"
-                for item in search:
-                    result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-            else:
-                result_str = f"I didn't find any results for '{term}' on en.pronouns.page!"
-                if source == 4:
-                    source = 5
-                    #todo
-                    result_str = f"I didn't find any results for '{term}' online or in our fancy dictionary"
-                    # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
-                    cmd_mention_dict = self.client.getCommandMention("dictionary")
-                    cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
-                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
-            msg_length = len(result_str)
-            if msg_length > 1999:
-                public = False
-                result_str = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length, and this message was {msg_length} characters D:). Please search more specifically.\n\
-Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
-            #print(response_api.status_code)
-        if source == 5:
+                # if search doesn't exactly match with a result / synonym
+                result_str = f"I found {len(search)} result{'s'*(len(results)!=1)} for '{term}' on en.pronouns.page! "
+                if len(search) > 25:
+                    result_str += "Here is a list to make your search more specific:\n"
+                    results = []
+                    for item in search:
+                        temp = item['term']
+                        if "|" in temp:
+                            temp = temp.split("|")[0]
+                        results.append(temp)
+                    result_str += ', '.join(results)
+                    public = False
+                elif len(search) > 2:
+                    result_str += "Here is a list to make your search more specific:\n"
+                    results = []
+                    for item in search:
+                        if "|" in item['term']:
+                            temp = "- __"  + item['term'].split("|")[0] + "__"
+                            temp += " ("  + ', '.join(item['term'].split("|")[1:]) + ")"
+                        else:
+                            temp = "- __" + item['term'] + "__"
+                        results.append(temp)
+                    result_str += '\n'.join(results)
+                    public = False
+                elif len(search) > 0:
+                    result_str += "\n"
+                    for item in search:
+                        result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
+                else:
+                    result_str = f"I didn't find any results for '{term}' on en.pronouns.page!"
+                    if source == 4:
+                        source = 6
+                msg_length = len(result_str)
+                if msg_length > 1999:
+                    public = False
+                    result_str = f"Your search ('{term}') returned too many results ({len(search)} in total!) (discord has a 2000-character message length, and this message was {msg_length} characters D:). Please search more specifically.\n\
+    Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
+                #print(response_api.status_code)
+        if source == 5 or source == 6:
             public = False
             response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{term.lower()}').text
             data = json.loads(response_api)
             results = []
             if type(data) is dict:
-                result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
-                await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
-                return
+                if source == 5:
+                    result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
+                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
+                    return
+                if source == 6:
+                    result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
+                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
+                    cmd_mention_dict = self.client.getCommandMention("dictionary")
+                    cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
+                    await logMsg(itx.guild,
+                                 f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
+                    return
 
             for result in data:
                 meanings = []
