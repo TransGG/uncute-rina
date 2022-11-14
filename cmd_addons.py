@@ -54,15 +54,26 @@ class Addons(commands.Cog):
         #random cool commands
         self.headpatWait += 1
         if self.headpatWait >= 500:
-            self.headpatWait = 0
-            try:
-                await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
-            except discord.errors.HTTPException:
-                await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
+            ignore = False
+            if type(message.channel) is discord.Thread:
+                if message.channel.parent == 987358841245151262: # <#welcome-verify>
+                    ignore = True
+            if message.channel.name.startswith('ticket-') or message.channel.name.startswith('closed-'):
+                ignore = True
+            if message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692]: # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>
+                ignore = True
+            if message.guild_id in [981730502987898960]: # don't send in Mod server
+                ignore = True
+            if not ignore:
+                self.headpatWait = 0
                 try:
-                    await message.add_reaction("☺️") # relaxed
-                except:
-                    raise
+                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
+                except discord.errors.HTTPException:
+                    await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
+                    try:
+                        await message.add_reaction("☺️") # relaxed
+                    except:
+                        raise
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
@@ -902,6 +913,12 @@ You can also transfer your table ownership to another table member, after they j
             "What would be an example of invalidating someone's identity?",
             "What do you hope to add or gain from this community?",
             "Anything you do or wish to do that makes you feel euphoric about your identity?",
+            "Has the process of actually coming out and coming to terms with your identity been something recent?",
+            "What is one thing only another lgbtq+ person would know? This can be as lighthearted or as serious as you want.",
+            "How long have you been questioning? If it's for a short time, could you share me some things you've experimented with in terms of activities or appearance? "
+                "If it's for a long time, could you share some experiences or opinions on different things you've tried?",
+            "Do you have any pins, hats, flags, or something else pride-related that a random person trying to get verified wouldnt have that ties you to the lgbtq+ community?",
+            "Do you have a fun or interesting story about something you did before you were trans (but still on-topic)? If you have any to share. If you don't that's fine too",
         ]
 
 
