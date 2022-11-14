@@ -1087,7 +1087,7 @@ You can also transfer your table ownership to another table member, after they j
                 )
 
         suggested_output = generateOutput(responses, message.author)
-        view = ConfirmSend(warning+out, responses, message.author, suggested_output, timeout=30)
+        view = ConfirmSend(warning+out, responses, message.author, suggested_output, timeout=90)
         # data = [warning, out, suggested_output]
         await itx.followup.send(warning+out+suggested_output, view=view, ephemeral=True)
         await view.wait()
