@@ -188,7 +188,7 @@ class Reminders(commands.GroupCog,name="reminder"):
 
         now = datetime.now()
         try:
-            time = time.replace(",","").replace(" ","").replace("and","").lower()
+            time = (" "+time).replace(",","").replace("and","").replace(" in ", "").replace(" ","").strip().lower()
             distance = parse_date(time, now)
         except ValueError as ex:
             await itx.response.send_message(f"Couldn't make new reminder:\n  {str(ex)}\nFor now, you can only use a format like \"3mo5d\",\"2 hours, 3 mins\", \"3day4hour\", or \"4d 1m\"",ephemeral=True)

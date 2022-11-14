@@ -53,9 +53,9 @@ class MemberData(commands.Cog):
     @app_commands.describe(period="Get data from [period] days ago",
                            doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
     async def get_member_data(self, itx: discord.Interaction, period: str, doubles: bool = False, hidden: bool = True):
-        if not isStaff(itx):
-            await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
-            return
+        # if not isStaff(itx):
+        #     await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True)
+        #     return
         try:
             period = float(period)
             if period <= 0:
@@ -104,7 +104,7 @@ class MemberData(commands.Cog):
                     results[y][column[time]] = 1
             if len(column) == 0:
                 warning += f"\nThere were no '{y}' users found for this time period."
-                debug(warning[1:],color="light purple")
+                #debug(warning[1:],color="light purple")
             else:
                 time_list = sorted(column)
                 if min_time > time_list[0]:

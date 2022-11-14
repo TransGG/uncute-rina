@@ -7,8 +7,10 @@ import re #use regex to remove pronouns from people's usernames, and split their
 
 import pymongo # for online database
 from pymongo import MongoClient
-
 import random # for picking a random call_cute quote
+
+import requests # for getting the equality index of countries
+import json # to interpret the obtained api data
 
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
 
@@ -56,7 +58,7 @@ class Addons(commands.Cog):
             try:
                 await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
             except discord.errors.HTTPException:
-                await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.url}')
+                await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
                 try:
                     await message.add_reaction("☺️") # relaxed
                 except:
@@ -65,7 +67,11 @@ class Addons(commands.Cog):
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
             if ((("cute" or "cutie" or "adorable" in msg) and "not" in msg) or "uncute" in msg) and "not uncute" not in msg:
-                await message.add_reaction("<:this:960916817801535528>")
+                try:
+                    await message.add_reaction("<:this:960916817801535528>")
+                except:
+                    await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
+                    raise
             elif "cutie" in msg or "cute" in msg:
                 responses = [
                     "I'm not cute >_<",
@@ -686,6 +692,55 @@ class Addons(commands.Cog):
             except discord.errors.NotFound:
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
+    @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
+    @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
+    async def equaldex(self, itx: discord.Interaction, country_id: str):
+        response_api = requests.get(
+            f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true&apiKey=edd1d1790184e97861e7b5a51138845222d4c68b").text
+        # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
+        # it also has some <br \/>\r\n strings in there for some reason..? so uh
+        response_api = response_api[6:-6].replace(r"<br \/>\r\n", r"\n")
+        data = json.loads(response_api)
+        if "error" in data:
+            if country_id == "uk":
+                await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...\nTry 'GB' instead!", ephemeral=True)
+            else:
+                await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...",ephemeral=True)
+            return
+
+        class Region:
+            def __init__(self, data):
+                self.id = data['region_id']
+                self.name = data['name']
+                self.continent = data['continent']
+                self.url = data['url']
+                self.issues = data['issues']
+
+        region = Region(data['regions']['region'])
+
+        embed = discord.Embed(color=7829503, type='rich',
+                              title=region.name)
+        for issue in region.issues:
+            if type(region.issues[issue]['current_status']) is list:
+                value = "No data"
+            else:
+                value = region.issues[issue]['current_status']['value_formatted']
+                if len(region.issues[issue]['current_status']['description']) > 0:
+                    value += f" ({region.issues[issue]['current_status']['description']})"
+            embed.add_field(name=region.issues[issue]['label'],
+                            value=value,
+                            inline=False)
+        embed.set_footer(text=f"For more info, click the button below,")
+        class MoreInfo(discord.ui.View):
+            def __init__(self, url):
+                super().__init__()
+                link_button = discord.ui.Button(style = discord.ButtonStyle.gray,
+                                                label = "More info",
+                                                url = url)
+                self.add_item(link_button)
+        view = MoreInfo(region.url)
+        await itx.response.send_message(embed=embed, view=view, ephemeral=True)
+
     @app_commands.command(name="help", description="A help command to learn more about me!")
     async def help(self, itx: discord.Interaction):
         out = f"""\
@@ -716,11 +771,28 @@ You can also transfer your table ownership to another table member, after they j
 
     @app_commands.command(name="genanswer", description="Make verification question guesses")
     @app_commands.describe(messageid="Which message should I check? (id)")
-    async def gen_answer(self, itx: discord.Interaction, messageid: str):
-        await itx.response.defer(ephemeral=True )
-        messagelist = [messageid]
-        if "," in messageid:
-            messagelist = [i.strip() for i in messageid.split(",")]
+    async def gen_answer(self, itx: discord.Interaction, messageid: str = None):
+        await itx.response.defer(ephemeral=True)
+        if messageid is None:
+            messages = []
+            async for msg in itx.channel.history(limit=100):
+                class Interaction:
+                    def __init__(self, user):
+                        self.guild = user.guild
+                        self.user = user
+                if msg.author.bot:
+                    continue
+                elif type(msg.author) is discord.User:
+                    messages.append(msg)
+                elif not isVerified(Interaction(msg.author)):
+                    messages.append(msg)
+            messagelist = [str(i.id) for i in messages][::-1] # reverse list to make newest messages last
+            if len(messagelist) == 0:
+                await itx.followup.send(f"I can't find any messages in this channel that are from unverified people!", ephemeral=True)
+        else:
+            messagelist = [messageid]
+            if "," in messageid:
+                messagelist = [i.strip() for i in messageid.split(",")]
         lines = []
         for messageid in messagelist:
             try:

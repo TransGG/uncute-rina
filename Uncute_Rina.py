@@ -12,7 +12,6 @@ import random # for very uncute responses
 import pymongo # for online database
 from pymongo import MongoClient
 
-# import asyncio # for threading the extension imports #todo?
 import sys # kill switch for rina (search for :kill)
 
 mongoURI = open("mongo.txt","r").read()
