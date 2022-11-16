@@ -300,7 +300,7 @@ class Addons(commands.Cog):
                     await itx.response.edit_message(content='Selected Unisex/Unknown gender for the compliment', view=None)
                     self.stop()
 
-            view = Confirm(timeout=30)
+            view = Confirm(timeout=60)
             await itx.response.send_message(f"{user.mention} doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view,ephemeral=True)
             await view.wait()
             if view.value is None:
@@ -529,7 +529,7 @@ class Addons(commands.Cog):
         embed.add_field(name="Column 1",value=result_page)
         embed.add_field(name="Column 2",value=result_page2)
         embed.set_footer(text="page: "+str(page+1)+" / "+str(int(len(pages)/2)))
-        view = Pages(pages, timeout=30)
+        view = Pages(pages, timeout=60)
         await itx.followup.send(f"",embed=embed, view=view,ephemeral=True)
         await view.wait()
         if view.value is None:
@@ -1003,7 +1003,7 @@ You can also transfer your table ownership to another table member, after they j
                     if self.question in self.responses:
                         await interaction.response.send_message('You added that question already.. but okay sure...', ephemeral=True)
                     else:
-                        await interaction.response.send_message('Adding question...', ephemeral=True)
+                        await interaction.response.send_message('Adding question...', ephemeral=True, delete_after=8)
                     self.stop()
 
             class RemoveQuestion(discord.ui.Modal, title="Remove from Rina's verification message"):
@@ -1028,12 +1028,12 @@ You can also transfer your table ownership to another table member, after they j
                         await itx.response.send_message(content=f"Couldn't add question: '{self.question_text.value}' is not an integer. "
                                                                 "It has to be an index number from a response in the verification message.", ephemeral=True)
                         return
-                    if self.question < 0 or self.question >= len(responses):
+                    if self.question < 0 or self.question >= len(self.responses):
                         await itx.response.send_message(content=f"Couldn't add question: '{self.question}' is not a possible index value for removing a verification response. "
                                                                 "It has to be an index number from a question in the verification message.", ephemeral=True)
                         return
                     self.value = 1
-                    await itx.response.send_message(f'Removing question...', ephemeral=True)
+                    await itx.response.send_message(f'Removing question...', ephemeral=True, delete_after=8)
                     self.stop()
 
             def __init__(self, prefix, responses, msg_author, suggested_output, timeout=None):
