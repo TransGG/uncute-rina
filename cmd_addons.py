@@ -62,7 +62,7 @@ class Addons(commands.Cog):
                 ignore = True
             if message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692]: # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>
                 ignore = True
-            if message.guild_id in [981730502987898960]: # don't send in Mod server
+            if message.guild.id in [981730502987898960]: # don't send in Mod server
                 ignore = True
             if not ignore:
                 self.headpatWait = 0
