@@ -292,13 +292,17 @@ class CustomVcs(commands.Cog):
         # await itx.response.send_message(warning+f"Voice channel successfully renamed from \"{oldName}\" to \"{name}\""+limitInfo, ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
 
     @app_commands.command(name="editguildinfo",description="Edit guild settings (staff only)")
-    @app_commands.describe(vc_hub="Mention the voice channel that should make a new voice channel when you join it",
-                           vc_log="Mention the channel in which logs should be posted",
-                           vc_category="Mention the category in which new voice channels should be created",
-                           vc_nomic="Mention the channel in which guide messages are sent ([x] joined, use /editvc to rename ur vc)",
-                           star_channel="Mention the channel in which you want starboard messages to be sent",
-                           star_minimum="How many star reactions must a message get before it is added to the starboard?")
-    async def editGuildInfo(self, itx: discord.Interaction, vc_hub: discord.VoiceChannel = None, vc_log: discord.TextChannel = None, vc_category: discord.CategoryChannel = None, vc_nomic: discord.TextChannel = None, star_channel: discord.TextChannel = None, star_minimum: int = None):
+    @app_commands.choices(mode=[
+        discord.app_commands.Choice(name='VC Hub (which channel makes new Custom-VCs?)', value=1),
+        discord.app_commands.Choice(name="Log (which channel logs Rina's messages?)", value=2),
+        discord.app_commands.Choice(name='VC category (Where do these new channels get created?)', value=3),
+        discord.app_commands.Choice(name='No-mic (Which channel to use for Custom VC no-mic messages?', value=4),
+        discord.app_commands.Choice(name='Starboard channel (where are starboard messages sent?)', value=5),
+        discord.app_commands.Choice(name='Star minimum (How many stars should a message get before starboarded', value=6),
+    ])
+    @app_commands.describe(mode="What mode do you want to use?",
+                           value="Fill in the value/channel-id of the thing/channel you want to edit")
+    async def editGuildInfo(self, itx: discord.Interaction, mode: int, value: str):
         if not isAdmin(itx):
             await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
             return
@@ -306,20 +310,84 @@ class CustomVcs(commands.Cog):
         query = {"guild_id": itx.guild_id}
         collection = RinaDB["guildInfo"]
 
-        if vc_hub is not None:
-            collection.update_one(query, {"$set":{"vcHub":vc_hub.id}}, upsert=True)
-        if vc_log is not None:
-            collection.update_one(query, {"$set":{"vcLog":vc_log.id}}, upsert=True)
-        if vc_category is not None:
-            collection.update_one(query, {"$set":{"vcCategory":vc_category.id}}, upsert=True)
-        if vc_nomic is not None:
-            collection.update_one(query, {"$set":{"vcNoMic":vc_nomic.id}}, upsert=True)
-        if star_channel is not None:
-            collection.update_one(query, {"$set":{"starboardChannel":star_channel.id}}, upsert=True)
-        if star_minimum is not None:
-            collection.update_one(query, {"$set":{"starboardCountMinimum":star_minimum}}, upsert=True)
+        modes = [
+            "", #0
+            "vc hub", #1
+            "log", #2
+            "vc category", #3
+            "no-mic", #4
+            "star channel", #5
+            "star minimum" #6
+        ]
+        mode = modes[mode]
 
-        await itx.response.send_message("Edited the settings.",ephemeral=True)
+        async def to_int(value, error_msg):
+            try:
+                return int(value)
+            except ValueError:
+                await itx.response.send_message(error_msg, ephemeral=True)
+                return None
+
+        if mode == "vc hub":
+            if value is not None:
+                value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
+                if value is None:
+                    return
+                ch = self.client.get_channel(value)
+                if type(ch) is not discord.VoiceChannel:
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.VoiceChannel'>, got {type(ch)})", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {"vcHub": ch.id}}, upsert=True)
+        elif mode == "log":
+            if value is not None:
+                value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
+                if value is None:
+                    return
+                ch = self.client.get_channel(value)
+                if type(ch) is not discord.TextChannel:
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {"vcLog": ch.id}}, upsert=True)
+        elif mode == "vc category":
+            if value is not None:
+                value = await to_int(value, "You have to give a numerical ID for the category you want to use!")
+                if value is None:
+                    return
+                ch = self.client.get_channel(value)
+                if type(ch) is not discord.CategoryChannel:
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.CategoryChannel'>, got {type(ch)})", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {"vcCategory": ch.id}}, upsert=True)
+        elif mode == "no-mic":
+            if value is not None:
+                value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
+                if value is None:
+                    return
+                ch = self.client.get_channel(value)
+                if type(ch) is not discord.TextChannel:
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {"vcNoMic": ch.id}}, upsert=True)
+        elif mode == "star channel":
+            if value is not None:
+                value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
+                if value is None:
+                    return
+                ch = self.client.get_channel(value)
+                if type(ch) is not discord.TextChannel:
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {"starboardChannel": ch.id}}, upsert=True)
+        elif mode == "star minimum":
+            if value is not None:
+                value = await to_int(value, "You need to give an integer value for your new minimum amount!")
+                if value is None:
+                    return
+                if value < 1:
+                    await itx.response.send_message("Your new value has to be at least 1!", ephemeral=True)
+                collection.update_one(query, {"$set": {"starboardCountMinimum": value}}, upsert=True)
+
+        await itx.response.send_message(f"Edited value of '{mode}' successfully.",ephemeral=True)
 
 async def setup(client):
     await client.add_cog(CustomVcs(client))
