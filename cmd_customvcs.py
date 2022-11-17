@@ -36,6 +36,9 @@ class CustomVcs(commands.Cog):
                 pass
             elif before.channel.id == vcHub: # avoid deleting the hub channel
                 pass
+            elif before.channel.id in [959626329689583616, 960984256425893958, 960984642717102122]:
+                # new blacklisted channels: "#General" "#Quiet" and "#Private"
+                pass
             elif len(before.channel.members) == 0:
                 # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
                 # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
