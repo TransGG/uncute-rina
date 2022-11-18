@@ -222,7 +222,9 @@ class CustomVcs(commands.Cog):
             await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
             return
         channel = itx.user.voice.channel
-        if channel.category.id not in [vcCategory] or channel.id == vcHub:
+        if channel.category.id not in [vcCategory] or \
+                channel.id == vcHub or \
+                channel.id in [959626329689583616, 960984256425893958, 960984642717102122]:
             await itx.response.send_message("You can't change that voice channel's name!",ephemeral=True)
             return
         if name is not None:
