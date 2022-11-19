@@ -141,8 +141,12 @@ class Starboard(commands.Cog):
                             embed.set_image(url=attachment.url)
                             break
                             # can only set one image per embed.. :/
+                    try:
+                        name = message.author.nick
+                    except AttributeError:
+                        name = message.author.name
                     embed.set_author(
-                            name=f"{message.author.nick or message.author.name}",
+                            name=f"{name}",
                             url="https://amitrans.org/", #todo
                             icon_url=message.author.display_avatar.url
                     )
@@ -183,10 +187,10 @@ class Starboard(commands.Cog):
             return
 
         for reaction in message.reactions:
-            if reaction.emoji == '⭐':
+            if str(reaction.emoji) == starboard_emoji:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    async for star_message in star_channel.history(limit=200):
+                    async for star_message in star_channel.history(limit=500):
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
                                 await self.updateStat(star_message)

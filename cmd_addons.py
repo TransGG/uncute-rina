@@ -800,6 +800,7 @@ You can also transfer your table ownership to another table member, after they j
             messagelist = [str(i.id) for i in messages][::-1] # reverse list to make newest messages last
             if len(messagelist) == 0:
                 await itx.followup.send(f"I can't find any messages in this channel that are from unverified people!", ephemeral=True)
+                return
         else:
             messagelist = [messageid]
             if "," in messageid:
@@ -877,16 +878,20 @@ You can also transfer your table ownership to another table member, after they j
         is_trans = -1 # -1 = unconfirmed; 0 = cis; 1 = trans
         has_alibi = False
         is_new = False
-        lgbtq_terms = [
+        trans_terms = [
             "trans",
-            "m2f","f2m","mtf","ftm",
+            "m2f", "f2m", "mtf", "ftm",
             "demi",
             "intersex",
+            "agender",
             "nonbinary",
             "non-binary",
             "non binary",
-            "questioning",
-            "asexual","agender",
+            "question",
+            "fluid",
+            "nb", ]
+        lgbtq_terms = [
+            "asexual",
             "lesbian",
             "hrt",
             "ace",
@@ -895,19 +900,7 @@ You can also transfer your table ownership to another table member, after they j
             "homosexual",
             "bi",
             "pan",
-            "fluid",
-            "nb",
-        ]
-        trans_terms = [
-            "trans",
-            "m2f","f2m","mtf","ftm",
-            "demi",
-            "intersex",
-            "agender",
-            "nonbinary",
-            "non-binary",
-            "non binary",
-            "fluid"]
+        ] + trans_terms
         templates = [
             "What made you discover you were transgender?",
             "What would be an example of invalidating someone's identity?",
