@@ -151,7 +151,7 @@ class Addons(commands.Cog):
             logChannel = itx.guild.get_channel(vcLog)
             await logChannel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}", allowed_mentions=discord.AllowedMentions.none())
             text = text.replace("[[\\n]]","\n").replace("[[del]]","")
-            await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions.none())
+            await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions(everyone=False,users=True,roles=True,replied_user=True))
         except discord.Forbidden:
             await itx.response.send_message("Forbidden! I can't send a message in this channel/thread because I can't see it or because I'm not added to it yet!\n(Add me to the thread by mentioning me, or let Rina see this channel)",ephemeral=True)
             return
@@ -771,12 +771,12 @@ Make a custom voice channel by joining "Join to create VC"
 {self.client.getCommandMention('removepronoun')}: remove a pronoun
 
 {self.client.getCommandMention('qotw')}: Suggest a question of the week to staff
-
-Check out the #join-a-table channel: In this channel, you can claim a channel for roleplaying or tabletop games for you and your group!
-The first person that joins/creates a table gets a Table Owner role, and can lock, unlock, or close their table.
-{self.client.getCommandMention('table lock')}, {self.client.getCommandMention('table unlock')}, {self.client.getCommandMention('table close')}
-You can also transfer your table ownership to another table member, after they joined your table: {self.client.getCommandMention('table newowner')}\
 """
+# Check out the #join-a-table channel: In this channel, you can claim a channel for roleplaying or tabletop games for you and your group!
+# The first person that joins/creates a table gets a Table Owner role, and can lock, unlock, or close their table.
+# {self.client.getCommandMention('table lock')}, {self.client.getCommandMention('table unlock')}, {self.client.getCommandMention('table close')}
+# You can also transfer your table ownership to another table member, after they joined your table: {self.client.getCommandMention('table newowner')}\
+# """
         await itx.response.send_message(out, ephemeral=True)
 
 
@@ -784,6 +784,7 @@ You can also transfer your table ownership to another table member, after they j
     @app_commands.describe(messageid="Which message should I check? (id)")
     async def gen_answer(self, itx: discord.Interaction, messageid: str = None):
         await itx.response.defer(ephemeral=True)
+        is_in_server = True
         if messageid is None:
             messages = []
             async for msg in itx.channel.history(limit=100):
@@ -798,7 +799,7 @@ You can also transfer your table ownership to another table member, after they j
                 elif not isVerified(Interaction(msg.author)):
                     messages.append(msg)
             messagelist = [str(i.id) for i in messages][::-1] # reverse list to make newest messages last
-            if len(messagelist) == 0:
+            if len(messagelist) < 1:
                 await itx.followup.send(f"I can't find any messages in this channel that are from unverified people!", ephemeral=True)
                 return
         else:
@@ -821,9 +822,11 @@ You can also transfer your table ownership to another table member, after they j
                 await itx.followup.send(f"That message has no content ({messageid})?",ephemeral=True)
                 return
             if type(message.author) is discord.User:
-                await itx.followup.send(f"This user left the server!",ephemeral=True)
+                is_in_server = False
 
             lines += message.content.split("\n")
+        if not is_in_server:
+            await itx.followup.send(f"This user left the server!",ephemeral=True)
 
         verification = []
         copy_pasta = [

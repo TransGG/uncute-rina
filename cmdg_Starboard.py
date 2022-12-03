@@ -108,7 +108,6 @@ class Starboard(commands.Cog):
             await self.updateStat(message)
             return
 
-
         for reaction in message.reactions:
             try:
                 reaction.emoji.id

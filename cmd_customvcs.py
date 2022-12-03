@@ -15,6 +15,7 @@ class CustomVcs(commands.Cog):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
+        self.blacklisted_channels = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -36,7 +37,7 @@ class CustomVcs(commands.Cog):
                 pass
             elif before.channel.id == vcHub: # avoid deleting the hub channel
                 pass
-            elif before.channel.id in [959626329689583616, 960984256425893958, 960984642717102122]:
+            elif before.channel.id in self.blacklisted_channels:
                 # new blacklisted channels: "#General" "#Quiet" and "#Private"
                 pass
             elif len(before.channel.members) == 0:
@@ -224,7 +225,7 @@ class CustomVcs(commands.Cog):
         channel = itx.user.voice.channel
         if channel.category.id not in [vcCategory] or \
                 channel.id == vcHub or \
-                channel.id in [959626329689583616, 960984256425893958, 960984642717102122]:
+                channel.id in self.blacklisted_channels:
             await itx.response.send_message("You can't change that voice channel's name!",ephemeral=True)
             return
         if name is not None:
