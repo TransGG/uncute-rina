@@ -97,7 +97,7 @@ def parse_date(time_string, now):
     while _timedict["h"] >= 24:
         _timedict["h"] -= 24
         _timedict["d"] += 1
-    while _timedict["M"] >= 12:
+    while _timedict["M"] > 12:
         _timedict["M"] -= 12
         _timedict["y"] += 1
     if _timedict["y"] >= 3999 or _timedict["d"] >= 1500000:
