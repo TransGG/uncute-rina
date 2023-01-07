@@ -69,11 +69,11 @@ class Addons(commands.Cog):
                 try:
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
                 except discord.errors.HTTPException:
-                    await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
+                    await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. They might have blocked Rina...')
                     try:
-                        await message.add_reaction("☺️") # relaxed
-                    except:
-                        raise
+                        await message.add_reaction("☺") # relaxed
+                    except discord.errors.Forbidden:
+                        pass
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()

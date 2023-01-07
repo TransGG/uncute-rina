@@ -74,7 +74,7 @@ class ToneIndicator(commands.Cog):
             "lovingly" : ["/lv"],
             "metaphorically / metaphor" : ["/m"],
             "mad" : ["/m","/mad"],
-            "messing around" : ["/ma"],
+            "messing around  or  manifesting" : ["/ma"],
             "major joke" : ["/mj"],
             "not a brag / flex" : ["/nabr","/nafx"],
             "not an order" : ["/nao"],
@@ -85,19 +85,17 @@ class ToneIndicator(commands.Cog):
             "not being rude" : ["/nbr"],
             "nobody specific" : ["/nbs"],
             "nobody you know" : ["/nbyk"],
-            "not flirting" : ["/nfl"],
             "negative connotation" : ["/neg","/nc"],
             "neutral connotation" : ["/neu"],
             "not fake" : ["/nf"],
-            "not forced to answer" : ["/nfta","/nf"],
             "not flirting" : ["/nfl"],
-            "not mad" : ["/nm"],
+            "not forced to answer" : ["/nfta","/nf"],
+            "not mad / not upset" : ["/nm"],
             "not mad at you, to specify that someone isnt mad at someone else" : ["/nmay"],
             "not passive aggressive" : ["/npa"],
             "not prideful" : ["/npr"],
             "not subtweeting" : ["/nsb", "/nst"],
             "non-sexual intent" : ["/nsx","/nx","/nsxs"],
-            "not mad" : ["/nm"],
             "non-serious / not serious" : ["/nsrs"],
             "not a serious question" : ["/nsrsq"],
             "not yelling" : ["/ny"],
@@ -149,7 +147,7 @@ class ToneIndicator(commands.Cog):
         result_str = ""
         if mode == 1:
             for key in tone_indicators:
-                if string.replace("-"," ") in key.replace("-"," "):
+                if string.replace("-"," ") in key.replace("-"," ") or string.replace("-","") in key.replace("-",""):
                     overlaps = []
                     overlapper = ""
                     for key1 in tone_indicators:

@@ -31,7 +31,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.4.9".split(".")
+fileVersion = "1.1.4.10".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -212,7 +212,6 @@ async def on_error(event, *args, **kwargs):
     msg = ""
     msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
     msg += traceback.format_exc()
-    msg = msg.replace("Floris","Mia").replace("floris","mia")
     debug(f"{msg}",addTime=False)
 
     # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"

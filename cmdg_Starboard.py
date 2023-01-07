@@ -87,8 +87,14 @@ class Starboard(commands.Cog):
             return
 
         #get the message id from payload.message_id through the channel (with payload.channel_id) (oof lengthy process)
-        ch = self.client.get_channel(payload.channel_id)
-        message = await ch.fetch_message(payload.message_id)
+        try:
+            ch = self.client.get_channel(payload.channel_id)
+            message = await ch.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            await logMsg(
+                self.client.get_guild(payload.guild_id),
+                f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) or message {payload.message_id}!\n'
+                f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}')
 
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message.guild.id}
@@ -126,6 +132,16 @@ class Starboard(commands.Cog):
                     if message.author == self.client.user:
                         #can't starboard Rina's message
                         return
+                    try:
+                        # Try to add the initial starboard emoji to starboarded message
+                        # to prevent duplicate entries in starboard.
+                        await message.add_reaction(starboard_emoji)
+                    except discord.errors.Forbidden:
+                        # If "Reaction blocked", then maybe message author blocked Rina.
+                        # Thus, I can't track if Rina added it to starboard already or not.
+                        await logMsg(self.client.get_guild(payload.guild_id), f'**:warning: Warning: **Couldn\'t add starboard emoji to {message.jump_url}. They might have blocked Rina...')
+                        return
+
                     msgLink = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
                     embed = discord.Embed(
                             color=discord.Colour.from_rgb(r=255, g=172, b=51),
@@ -156,8 +172,7 @@ class Starboard(commands.Cog):
                             allowed_mentions=discord.AllowedMentions.none(),
                         )
                     await logMsg(star_channel.guild, f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}. Content: \"\"\"{message.content}\"\"\" and attachments: {[x.url for x in message.attachments]}")
-                    # add initial star reaction to starboarded message, and new starboard msg
-                    await message.add_reaction(starboard_emoji)
+                    # add new starboard msg
                     await msg.add_reaction(starboard_emoji)
                     await msg.add_reaction("❌")
                     # add star reaction to original message to prevent message from being re-added to the starboard
