@@ -26,7 +26,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.5.1".split(".")
+fileVersion = "1.1.5.2".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -136,7 +136,7 @@ async def setup_hook():
         if testing_environment == 1:
             client.logChannel = await client.fetch_channel(986304081234624554)
         else:
-            client.logChannel = await client.fetch_channel(1062079367653630033)
+            client.logChannel = await client.fetch_channel(1062396920187863111)
     # 
     # from cmdg_Table import Table
     # class Interaction:

@@ -159,7 +159,7 @@ class Starboard(commands.Cog):
                         name = message.author.name
                     embed.set_author(
                             name=f"{name}",
-                            url="https://amitrans.org/", #todo
+                            # url="https://amitrans.org/",
                             icon_url=message.author.display_avatar.url
                     )
 

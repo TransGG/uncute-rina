@@ -3,15 +3,20 @@ from datetime import datetime, timezone
 from time import mktime # for unix time code
 import matplotlib.pyplot as plt
 import pandas as pd
-
+import motor.motor_asyncio as motor
+import asyncio # lets rina take small pauses while getting emojis from MongoDB to allow room for other commands
+# apparently letting it run asynchronously might prevent a lot of missing heartbeats when adding data on data-editing events
+mongoURI = open("mongo.txt","r").read()
+cluster = motor.AsyncIOMotorClient(mongoURI)
+asyncRinaDB = cluster["Rina"]
 
 async def add_to_data(member, type):
-    collection = RinaDB["data"]
+    collection = asyncRinaDB["data"]
     query = {"guild_id": member.guild.id}
-    data = collection.find_one(query)
+    data = await collection.find_one(query)
     if data is None:
-        collection.insert_one(query)
-        data = collection.find_one(query)
+        await collection.insert_one(query)
+        data = await collection.find_one(query)
 
     try:
         #see if this user already has data, if so, add a new joining time to the list
@@ -21,15 +26,11 @@ async def add_to_data(member, type):
     except KeyError:
         data[type] = {}
         data[type][str(member.id)] = [mktime(datetime.now(timezone.utc).timetuple())]
-    collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
+    await collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
     #debug(f"Successfully added new data for {member.name} to {repr(type)}",color="blue")
 
 
 class MemberData(commands.Cog):
-    def __init__(self, client):
-        global RinaDB
-        RinaDB = client.RinaDB
-
     @commands.Cog.listener()
     async def on_member_join(self, member):
         await add_to_data(member, "joined")
@@ -56,6 +57,12 @@ class MemberData(commands.Cog):
             if period <= 0:
                 await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",ephemeral=True)
                 return
+            if period < 0.0035:
+                await itx.response.send_message("Idk why but it seems to break when period is smaller than 0.0035, so better not use it.", ephemeral=True)
+                return #todo: figure out why you can't fill in less than 0.0035: ValueError: All arrays must be of the same length
+            if period > 10958:
+                await itx.response.send_message("... I doubt you'll be needing to look 30 years into the past..",ephemeral=True)
+                return
         except ValueError:
             await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",ephemeral=True)
             return
@@ -70,9 +77,9 @@ class MemberData(commands.Cog):
         min_time = int((current_time-period)/accuracy)*accuracy
         max_time = int(current_time/accuracy)*accuracy
 
-        collection = RinaDB["data"]
+        collection = asyncRinaDB["data"]
         query = {"guild_id": itx.guild_id}
-        data = collection.find_one(query)
+        data = await collection.find_one(query)
         if data is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please hope someone joins sometime soon lol",ephemeral=True)
             return

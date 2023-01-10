@@ -535,7 +535,7 @@ class Addons(commands.Cog):
                     return
                 result_page = self.pages[self.page*2]
                 result_page2 = self.pages[self.page*2+1]
-                embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
                 embed.add_field(name="Column 1",value=result_page)
                 embed.add_field(name="Column 2",value=result_page2)
                 embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
@@ -562,7 +562,7 @@ class Addons(commands.Cog):
 
         result_page = pages[page]
         result_page2 = pages[page+1]
-        embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+        embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick" if type==2 else "username and nick"}names leaderboard!')
         embed.add_field(name="Column 1",value=result_page)
         embed.add_field(name="Column 2",value=result_page2)
         embed.set_footer(text="page: "+str(page+1)+" / "+str(int(len(pages)/2)))
@@ -766,8 +766,7 @@ class Addons(commands.Cog):
 
         region = Region(data['regions']['region'])
 
-        embed = discord.Embed(color=7829503, type='rich',
-                              title=region.name)
+        embed = discord.Embed(color=7829503, title=region.name)
         for issue in region.issues:
             if type(region.issues[issue]['current_status']) is list:
                 value = "No data"
@@ -840,6 +839,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             if "," in messageid:
                 messagelist = [i.strip() for i in messageid.split(",")]
         lines = []
+        message = 0 # stupid IDE
         for messageid in messagelist:
             try:
                 messageid = int(messageid)
@@ -944,8 +944,8 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             "Anything you do or wish to do that makes you feel euphoric about your identity?",
             "Has the process of actually coming out and coming to terms with your identity been something recent?",
             "What is one thing only another lgbtq+ person would know? This can be as lighthearted or as serious as you want.",
-            "How long have you been questioning? If it's for a short time, could you share me some things you've experimented with in terms of activities or appearance? "
-                "If it's for a long time, could you share some experiences or opinions on different things you've tried?",
+            "How long have you been questioning? If it's for a short time, could you share me some things you've experimented with in terms of activities or appearance?"
+            " If it's for a long time, could you share some experiences or opinions on different things you've tried?",
             "Do you have any pins, hats, flags, or something else pride-related that a random person trying to get verified wouldnt have that ties you to the lgbtq+ community?",
             "Do you have a fun or interesting story about something you did before you were trans (but still on-topic)? If you have any to share. If you don't that's fine too",
         ]
@@ -1010,8 +1010,8 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                     self.responses = responses
                     self.question = discord.ui.TextInput(label='Question',
                                                          placeholder="What made you start questioning that you were trans?",
-                                                         style=discord.TextStyle.paragraph,
-                                                         required=True)
+                                                         style=discord.TextStyle.paragraph,)
+                    #                                    required=True)
                     self.add_item(self.question)
 
                 async def on_submit(self, interaction: discord.Interaction):

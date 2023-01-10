@@ -92,9 +92,9 @@ class EmojiStats(commands.Cog):
                 await itx.response.send_message("You need to fill in the ID of the emoji. This ID can't contain other characters. Only numbers.",ephemeral=True)
                 return
 
-        collection = RinaDB["emojistats"]
+        collection = asyncRinaDB["emojistats"]
         query = {"id": emoji_id}
-        emoji = collection.find_one(query)
+        emoji = await collection.find_one(query)
         if emoji is None:
             await itx.response.send_message("That emoji doesn't have data yet. It hasn't been used since we started tracking the data yet. (<t:1660156260:R>, <t:1660156260:F>)", ephemeral=True)
             return
@@ -178,11 +178,11 @@ class EmojiStats(commands.Cog):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
 
-        collection = RinaDB["emojistats"]
+        collection = asyncRinaDB["emojistats"]
         output = ""
         for type in ["messageUsedCount","reactionUsedCount"]:
             results = []
-            search = collection.find({},limit=10,sort=[(type,pymongo.DESCENDING)])
+            search = await collection.find({},limit=10,sort=[(type,pymongo.DESCENDING)])
             for emoji in search:
                 animated = 0
                 try:

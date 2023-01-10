@@ -38,7 +38,6 @@ class QOTW(commands.Cog):
             )
         embed.set_author(
                 name=f"{itx.user.nick or itx.user.name}",
-                url=f"", #todo
                 icon_url=itx.user.display_avatar.url
         )
         embed.set_footer(text=f"")
