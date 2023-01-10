@@ -36,6 +36,9 @@ try:
     version = open("version.txt", "r").read().split(".")
 except:
     version = ["0"]*len(fileVersion)
+# if testing, which environment are you in?
+# 1: private dev server; 2: public dev server (TransPlace [Copy])
+testing_environment = 2
 
 for v in range(len(fileVersion)):
     if int(fileVersion[v]) > int(version[v]):
@@ -135,15 +138,18 @@ async def setup_hook():
     try:
         client.logChannel = await client.fetch_channel(988118678962860032)
     except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
-        client.logChannel = await client.fetch_channel(986304081234624554)
+        if testing_environment == 1:
+            client.logChannel = await client.fetch_channel(986304081234624554)
+        else:
+            client.logChannel = await client.fetch_channel(1062079367653630033)
     # 
     # from cmdg_Table import Table
-    # class Itx:
+    # class Interaction:
     #     async def set(self):
     #         guild = client.logChannel.guild
     #         self.guild = guild
     #         self.guild_id = guild.id
-    # itx = Itx()
+    # itx = Interaction()
     # await itx.set()
     # await Table.tablemsgupdate(Table, itx)
     # debug(f"[###   ]: Updated table message"+ " "*30,color="green")
@@ -200,7 +206,10 @@ async def on_error(event, *args, **kwargs):
     try:
         logGuild = await client.fetch_guild(959551566388547676)
     except discord.errors.Forbidden:
-        logGuild = await client.fetch_guild(985931648094834798)
+        if testing_environment == 1:
+            logGuild = await client.fetch_guild(985931648094834798)
+        else:
+            logGuild = await client.fetch_guild(1046086050029772840)
 
     query = {"guild_id": logGuild.id}
     guild = collection.find_one(query)
@@ -228,4 +237,4 @@ except SystemExit:
 
 # todo
 # - Translator
-# -
+# - (Unisex) compliment quotes

@@ -123,7 +123,7 @@ class Table(commands.GroupCog, name="table"):
 
         view = discord.ui.View(timeout=None)
         for x in tableInfo:
-            x = tableInfo[x] #todo todo todo
+            x = tableInfo[x] #todo todo todo # i forgot why i wrote this thrice...
             try:
                 disabled,status,label = getTableStatus(x)
             except TypeError:

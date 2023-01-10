@@ -171,6 +171,7 @@ class Pronouns(commands.Cog):
                 app_commands.Choice(name=pronoun, value=pronoun)
                 for pronoun in pronouns if pronoun.lower().startswith(current.lower())
             ]
+        return []
 
     @app_commands.command(name="pronouns",description="Get someone's pronouns!")
     @app_commands.describe(argument="Check a user or add/remove a pronoun here!")

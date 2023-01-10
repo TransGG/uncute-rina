@@ -13,9 +13,11 @@ import requests # for getting the equality index of countries
 import json # to interpret the obtained api data
 
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
+from time import mktime # for unix time code
 
 import asyncio # for waiting a few seconds before removing a timed-out pronoun-selection message
 
+report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 
 def generateOutput(responses, author):
     output = ""
@@ -40,6 +42,45 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
+class Tags:
+    @staticmethod
+    async def send_report_info(context: [discord.Interaction, discord.TextChannel], additional_info=None, public=True):
+        # additional_info = [message.author.name, message.author.id]
+        embed = discord.Embed(
+            color=discord.Colour.from_rgb(r=255, g=66, b=0),
+            title='Reporting a message or scenario',
+            description="Hi there! If anyone is making you uncomfortable, or you want to report or prevent a rule-breaking situation, "
+                        "you can `Right Click Message > Apps > Report Message` to notify our staff confidentially. You can also "
+                        "create a mod ticket in <#995343855069175858> or DM a staff member.")  # channel-id = #contact-staff
+        if additional_info is not None:
+            embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
+        embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
+        if isinstance(context, discord.Interaction):
+            await context.response.send_message(embed = embed, ephemeral = not public)
+        else:
+            await context.send(embed=embed)
+
+    @staticmethod
+    async def send_customvc_info(context: [discord.Interaction, discord.TextChannel], client, public=True):
+        collection = RinaDB["guildInfo"]
+        query = {"guild_id": context.guild.id}
+        guild = collection.find_one(query)
+        if guild is None:
+            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",
+                  color="red")
+            return
+        vc_hub = guild["vcHub"]
+        embed = discord.Embed(
+            color=discord.Colour.from_rgb(r=200, g=255, b=120),
+            title="TransPlace's custom voice channels (vc)",
+            description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You are then moved to this channel automatically. "
+                        f"You can change the name and user limit of this channel with the {client.getCommandMention('editvc')} command. "
+                        f"When everyone leaves the channel, the channel is deleted automatically.")
+        if isinstance(context, discord.Interaction):
+            await context.response.send_message(embed=embed, ephemeral=not public)
+        else:
+            await context.send(embed=embed)
+
 class Addons(commands.Cog):
     def __init__(self, client):
         global RinaDB
@@ -49,11 +90,12 @@ class Addons(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        global report_message_reminder_unix
         if message.author.bot:
             return
         #random cool commands
         self.headpatWait += 1
-        if self.headpatWait >= 500:
+        if self.headpatWait >= 1000:
             ignore = False
             if type(message.channel) is discord.Thread:
                 if message.channel.parent == 987358841245151262: # <#welcome-verify>
@@ -74,6 +116,14 @@ class Addons(commands.Cog):
                         await message.add_reaction("☺") # relaxed
                     except discord.errors.Forbidden:
                         pass
+
+        for trigger in ["<@&981735650971775077>", "<@&1012954384142966807>", "<@&981735525784358962>"]:
+            if trigger in message.content:
+                time_now = int(mktime(datetime.now().timetuple())) # get time in unix
+                if time_now - report_message_reminder_unix > 900: # 15 minutes
+                    await Tags.send_report_info(message.channel, additional_info=[message.author.name, message.author.id])
+                    report_message_reminder_unix = time_now
+                    break
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
@@ -1106,8 +1156,24 @@ Make a custom voice channel by joining "Join to create VC"
         await view.wait()
         await itx.edit_original_response(view=None)
 
+    async def tag_autocomplete(self, itx: discord.Interaction, current: str):
+        options = ["report", "customvc"]
+        return [
+            app_commands.Choice(name=term, value=term)
+            for term in options if current.lower() in term
+        ]
 
-
+    @app_commands.command(name="tag", description="Look up something through a tag")
+    @app_commands.describe(tag="What tag do you want more information about?")
+    @app_commands.describe(public="Show everyone in chat? (default: yes)")
+    @app_commands.autocomplete(tag=tag_autocomplete)
+    async def tag(self, itx: discord.Interaction, tag: str, public: bool = True):
+        if tag == "report":
+            await Tags.send_report_info(itx, public=public)
+        elif tag == "customvc":
+            await Tags.send_customvc_info(itx, self.client, public=public)
+        else:
+            await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
 
 
