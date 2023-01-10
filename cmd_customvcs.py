@@ -1,12 +1,6 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
-from datetime import datetime, timedelta
+from utils import * #imports 'discord import' and 'mongodb' things too
+from datetime import datetime
 from time import mktime # for unix time code
-
-import pymongo # for online database
-from pymongo import MongoClient
 
 newVcs = {} # make your own vcs!
 

@@ -1,13 +1,8 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
-from datetime import datetime, timedelta, timezone
+from utils import * #imports 'discord import' and 'mongodb' things too
+from datetime import datetime, timezone
 from time import mktime # for unix time code
 import matplotlib.pyplot as plt
 import pandas as pd
-import pymongo # for online database
-from pymongo import MongoClient
 
 
 async def add_to_data(member, type):
@@ -138,7 +133,7 @@ class MemberData(commands.Cog):
             await itx.followup.send(f"{ex} did not have data, thus could not make the graph.")
             return
         df = pd.DataFrame(data=d)
-        fig, (ax1) = plt.subplots(1, 1)
+        fig, (ax1) = plt.subplots()#1, 1)
         fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
         fig.tight_layout(pad=1.0)
         ax1.plot(df['time'], df["joined"], 'r')

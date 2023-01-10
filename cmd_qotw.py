@@ -1,12 +1,4 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
-
-import pymongo # for online database
-from pymongo import MongoClient
-
-
+from utils import * #imports 'discord import' and 'mongodb' things too
 
 class QOTW(commands.Cog):
     def __init__(self, client):

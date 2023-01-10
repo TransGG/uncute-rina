@@ -1,11 +1,13 @@
 import discord # It's dangerous to go alone! Take this. /ref
 from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from datetime import datetime, timedelta
+from discord.ext import commands # required for client bot
+from pymongo import MongoClient
+import pymongo # used in cmd_emojistats
+#/\ not used in this file, but used in every other file.
+
+from datetime import datetime
 import warnings #used to warn for invalid color thingy in the debug function
 
-import pymongo # for online database
-from pymongo import MongoClient
 
 def isVerified(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
@@ -103,9 +105,9 @@ def debug(text="", color="default", addTime=True, end=None, advanced=False):
         try:
             # is given color a valid option?
             colors[color]
-        except:
+        except KeyError:
             warnings.warn("Invalid color given for debug function: "+color, SyntaxWarning)
-            color="default"
+            color = "default"
     if addTime:
         time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: "
     else:

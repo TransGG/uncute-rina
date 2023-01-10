@@ -1,11 +1,6 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
+from utils import * #imports 'discord import' and 'mongodb' things too
 from datetime import datetime # for embed timestamp
 
-import pymongo # for online database
-from pymongo import MongoClient
 
 starboard_emoji_id = 992493515714068480
 starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"
@@ -95,6 +90,8 @@ class Starboard(commands.Cog):
                 self.client.get_guild(payload.guild_id),
                 f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) or message {payload.message_id}!\n'
                 f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}')
+            # return
+            #todo: I would like to return/remove this here, but I'm still trying to figure out why it's broken in the first place.
 
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message.guild.id}

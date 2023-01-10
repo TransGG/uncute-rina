@@ -1,12 +1,6 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
+from utils import * #imports 'discord import' and 'mongodb' things too
 
-import pymongo # for online database
-from pymongo import MongoClient
-
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from time import mktime # for unix time code
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling reminders
@@ -54,6 +48,7 @@ def parse_date(time_string, now):
         else:
             raise ValueError(f"You can't use '{date}' as unit for your date/time")
         return time
+    index = 0 #for making my IDE happy
     for index in range(len(time_string)):
         if time_string[index] in numbers:
             if not is_number:

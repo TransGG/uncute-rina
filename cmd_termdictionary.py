@@ -1,13 +1,7 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
+from utils import * #imports 'discord import' and 'mongodb' things too
 import requests #grab from en.pronouns.page api (search)
 import json # turn api request into dictionary
 import re #use regex to remove API hyperlink definitions: {#Ace=asexual}
-
-import pymongo # for online database
-from pymongo import MongoClient
 
 class TermDictionary(commands.Cog):
     def __init__(self, client):
@@ -95,7 +89,7 @@ class TermDictionary(commands.Cog):
             search = collection.find(query)
 
             result = False
-            results = []
+            results: list[any] = []
             result_str = ""
             for item in search:
                 if simplify(term) in simplify(item["synonyms"]):
@@ -282,8 +276,7 @@ class TermDictionary(commands.Cog):
             for result in results:
                 result_id = 0
                 page_detailed = []
-                embed = discord.Embed(color=8481900, type='rich',
-                                      title=f"__{result[0].capitalize()}__")
+                embed = discord.Embed(color=8481900, title=f"__{result[0].capitalize()}__")
                 for meaning_index in range(len(result[1])):
                     _part = result[1][meaning_index][1:]
                     part = []
@@ -414,8 +407,7 @@ class TermDictionary(commands.Cog):
                         ## pages_detailed = [ [result_id: int,   term: str,   type: str,   value: str],    [...], [...] ]
                         page = self.pages_detailed[self.page][send_one.id]
                         ## page = [result_id: int,   term: str,   type: str,   value: str]
-                        embed = discord.Embed(color=8481900, type='rich',
-                                              title=page[1])
+                        embed = discord.Embed(color=8481900, title=page[1])
                         embed.add_field(name=page[2],
                                         value=page[3],
                                         inline=False)

@@ -1,15 +1,10 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
+# import discord # It's dangerous to go alone! Take this. /ref
+# from discord import app_commands # v2.0, use slash commands
+# from discord.ext import commands # required for client bot
 from utils import *
-# import signal # save files when receiving KeyboardInterrupt
-# import sys # exit program after Keyboardinterrupt signal is noticed
+#The discord modules get imported from the utils file already
 
-from datetime import datetime, timedelta, timezone
-from time import mktime # for unix time code
-import random # for very uncute responses
-
-import pymongo # for online database
+from datetime import datetime
 from pymongo import MongoClient
 
 import sys # kill switch for rina (search for :kill)
@@ -31,7 +26,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.4.11".split(".")
+fileVersion = "1.1.5.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:

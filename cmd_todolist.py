@@ -1,15 +1,10 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
-
-import pymongo # for online database
-from pymongo import MongoClient
+from utils import * #imports 'discord import' and 'mongodb' things too
 
 class TodoList(commands.Cog):
     def __init__(self, client):
         global RinaDB
         RinaDB = client.RinaDB
+        self.client = client
 
     @app_commands.command(name="todo",description="Add or remove a to-do!")
     @app_commands.describe(mode="Do you want to add, remove a to-do item, or check your current items?",

@@ -1,16 +1,10 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
+from utils import * #imports 'discord import' and 'mongodb' things too
 import re #use regex to identify custom emojis in a text message
 from time import mktime # for unix time code
 from datetime import datetime, timezone # for turning unix time into datetime
-
-import pymongo # for online database
-from pymongo import MongoClient
 import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
-
 import asyncio # lets rina take small pauses while getting emojis from MongoDB to allow room for other commands
+# that asyncio is literally just 'await asyncio.sleep(0)' lol
 
 mongoURI = open("mongo.txt","r").read()
 cluster = motor.AsyncIOMotorClient(mongoURI)

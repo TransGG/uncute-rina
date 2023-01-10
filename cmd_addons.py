@@ -1,21 +1,10 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot making
-from utils import *
-
+from utils import * #imports 'discord import' and 'mongodb' things too
 import re #use regex to remove pronouns from people's usernames, and split their names into sections by capital letter
-
-import pymongo # for online database
-from pymongo import MongoClient
 import random # for picking a random call_cute quote
-
 import requests # for getting the equality index of countries
 import json # to interpret the obtained api data
-
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
 from time import mktime # for unix time code
-
-import asyncio # for waiting a few seconds before removing a timed-out pronoun-selection message
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 
@@ -355,8 +344,6 @@ class Addons(commands.Cog):
             await view.wait()
             if view.value is None:
                 await itx.edit_original_response(content=':x: Timed out...', view=None)
-                # await asyncio.sleep(3)
-                # await itx.delete_original_response()
             else:
                 await call(itx, user, view.value)
 
