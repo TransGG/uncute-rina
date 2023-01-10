@@ -171,6 +171,10 @@ class Pronouns(commands.Cog):
                 app_commands.Choice(name=pronoun, value=pronoun)
                 for pronoun in pronouns if pronoun.lower().startswith(current.lower())
             ]
+        if itx.namespace.mode == 4:
+            return [
+                app_commands.Choice(name="This mode doesn't need an argument", value="None")
+            ]
         return []
 
     @app_commands.command(name="pronouns",description="Get someone's pronouns!")
