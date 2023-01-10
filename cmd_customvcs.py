@@ -10,6 +10,7 @@ class CustomVcs(commands.Cog):
         self.client = client
         RinaDB = client.RinaDB
         self.blacklisted_channels = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
+        #  #General, #Private, #Quiet, and #Minecraft. Later, it also excludes channels starting with "〙"
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -31,8 +32,9 @@ class CustomVcs(commands.Cog):
                 pass
             elif before.channel.id == vcHub: # avoid deleting the hub channel
                 pass
-            elif before.channel.id in self.blacklisted_channels:
-                # new blacklisted channels: "#General" "#Quiet" and "#Private"
+            elif before.channel.id in self.blacklisted_channels or \
+                    before.channel.name.startswith('〙'):
+                # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
                 pass
             elif len(before.channel.members) == 0:
                 # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
@@ -219,7 +221,8 @@ class CustomVcs(commands.Cog):
         channel = itx.user.voice.channel
         if channel.category.id not in [vcCategory] or \
                 channel.id == vcHub or \
-                channel.id in self.blacklisted_channels:
+                channel.id in self.blacklisted_channels or \
+                channel.name.startswith("〙"):
             await itx.response.send_message("You can't change that voice channel's name!",ephemeral=True)
             return
         if name is not None:
