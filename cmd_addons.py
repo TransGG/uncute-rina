@@ -74,15 +74,15 @@ class Tags:
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=155, g=155, b=255),
             title="Using trigger warnings correctly",
-            description="Content warnings, or trigger warnings (or TW for short), are notices placed before "
-                        "the beginning of a (section of) text to warn the reader of potential traumatic "
-                        "triggers contained in it. Often, people might want to avoid reading these, so a "
-                        "warning will help them be aware of it.\n"
-                        "You can spoiler the text itself and warn the reader in-text, or at the beginning "
-                        "like so: \"TW: ||guns||: ||The gun was fired.||\".\n"
+            description="Content or trigger warnings (CW and TW for short) are notices placed before a "
+                        "(section of) text to warn the reader of potential traumatic triggers in it. Often, "
+                        "people might want to avoid reading these, so a warning will help them be aware of "
+                        "it.\n"
+                        "You can warn the reader in the beginning or the middle of the text, and spoiler the "
+                        "triggering section like so: \"TW: ||guns||: ||The gun was fired.||\".\n"
                         "\n"
-                        r"You can spoiler messages with a double upright slash \|\|text\|\|. \n"
-                        "Some potential triggers include (TW: triggers): abuse, bugs, death, dieting/weight loss, injections, kidnapping, self-harm, transmed/truscum points of view or transphobic content.")
+                        r"You can spoiler messages with a double upright slash \|\|text\|\|. " "\n"
+                        "Some potential triggers include (TW: triggers): abuse, bugs/spiders, death, dieting/weight loss, injections, self-harm, transmed/truscum points of view or transphobic content.")
         # embed.set_footer(text=f"Triggered by {itx.user.name} ({itx.user.id})")
         await itx.response.send_message(embed=embed, ephemeral=not public)
 
