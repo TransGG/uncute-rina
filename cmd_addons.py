@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone # for checking if user is old
 from time import mktime # for unix time code
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
+selfies_delete_week_command_cooldown = 0
 
 def generateOutput(responses, author):
     output = ""
@@ -41,16 +42,16 @@ class Tags:
             description="Hi there! If anyone is making you uncomfortable, or you want to report or prevent a rule-breaking situation, "
                         "you can `Right Click Message > Apps > Report Message` to notify our staff confidentially. You can also "
                         "create a mod ticket in <#995343855069175858> or DM a staff member.")  # channel-id = #contact-staff
-        if additional_info is not None:
-            embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):
             await context.response.send_message(embed = embed, ephemeral = not public)
         else:
+            if additional_info is not None:
+                embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
             await context.send(embed=embed)
 
     @staticmethod
-    async def send_customvc_info(context: [discord.Interaction, discord.TextChannel], client, public=True):
+    async def send_customvc_info(context: discord.Interaction, client, public=True):
         collection = RinaDB["guildInfo"]
         query = {"guild_id": context.guild.id}
         guild = collection.find_one(query)
@@ -59,18 +60,293 @@ class Tags:
                   color="red")
             return
         vc_hub = guild["vcHub"]
+
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=200, g=255, b=120),
             title="TransPlace's custom voice channels (vc)",
             description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You are then moved to this channel automatically. "
                         f"You can change the name and user limit of this channel with the {client.getCommandMention('editvc')} command. "
                         f"When everyone leaves the channel, the channel is deleted automatically.")
-        if isinstance(context, discord.Interaction):
-            await context.response.send_message(embed=embed, ephemeral=not public)
-        else:
-            await context.send(embed=embed)
+        await context.response.send_message(embed=embed, ephemeral=not public)
 
-class Addons(commands.Cog):
+    @staticmethod
+    async def send_triggerwarning_info(itx: discord.Interaction, public=True):
+        embed = discord.Embed(
+            color=discord.Colour.from_rgb(r=155, g=155, b=255),
+            title="Using trigger warnings correctly",
+            description="Content warnings, or trigger warnings (or TW for short), are notices placed before "
+                        "the beginning of a (section of) text to warn the reader of potential traumatic "
+                        "triggers contained in it. Often, people might want to avoid reading these, so a "
+                        "warning will help them be aware of it.\n"
+                        "You can spoiler the text itself and warn the reader in-text, or at the beginning "
+                        "like so: \"TW: ||guns||: ||The gun was fired.||\".\n"
+                        "\n"
+                        r"You can spoiler messages with a double upright slash \|\|text\|\|. \n"
+                        "Some potential triggers include (TW: triggers): abuse, bugs, death, dieting/weight loss, injections, kidnapping, self-harm, transmed/truscum points of view or transphobic content.")
+        # embed.set_footer(text=f"Triggered by {itx.user.name} ({itx.user.id})")
+        await itx.response.send_message(embed=embed, ephemeral=not public)
+
+class SearchAddons(commands.Cog):
+    def __init__(self, client):
+        self.client = client
+
+    nameusage = app_commands.Group(name='nameusage', description='Get data about which names are used in the server')
+
+    @nameusage.command(name="gettop", description="See how often different names occur in this server")
+    @app_commands.choices(mode=[
+        discord.app_commands.Choice(name='Search most-used usernames', value=1),
+        discord.app_commands.Choice(name='Search most-used nicknames', value=2),
+        discord.app_commands.Choice(name='Search nicks and usernames', value=3),
+    ])
+    # @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
+    async def nameusage_gettop(self, itx: discord.Interaction, mode: int):#, mode: int, string: str):
+        await itx.response.defer(ephemeral=True)
+        sections = {}
+        for member in itx.guild.members:
+            member_sections = []
+            if mode == 1:
+                names = [member.name]
+            elif mode == 2 and member.nick is not None:
+                names = [member.nick]
+            elif mode == 3:
+                names = [member.name]
+                if member.nick is not None:
+                    names.append(member.nick)
+            else:
+                continue
+
+            _pronouns = [
+                "she", "her",
+                "he", "him",
+                "they", "them",
+                "it", "its"
+            ]
+            pronouns = []
+            for pronounx in _pronouns:
+                for pronouny in _pronouns:
+                    pronouns.append(pronounx + " " + pronouny)
+
+            for index in range(len(names)):
+                new_name = ""
+                for char in names[index]:
+                    if char.lower() in "abcdefghijklmnopqrstuvwxyz":
+                        new_name += char
+                    else:
+                        new_name += " "
+
+                for pronoun in pronouns:
+                    _name_backup = new_name + " "
+                    while new_name != _name_backup:
+                        _name_backup = new_name
+                        new_name = re.sub(pronoun, "", new_name, flags=re.IGNORECASE)
+
+                names[index] = new_name
+
+            def add(part):
+                if part not in member_sections:
+                    member_sections.append(part)
+
+            for name in names:
+                for section in name.split():
+                    if section in member_sections:
+                        pass
+                    else:
+                        parts = []
+                        match = 1
+                        while match:
+                            match = re.search("[A-Z][a-z]*[A-Z]", section, re.MULTILINE)
+                            if match:
+                                caps = match.span()[1]-1
+                                parts.append(section[:caps])
+                                section = section[caps:]
+                        if len(parts) != 0:
+                            for part in parts:
+                                add(part)
+                            add(section)
+                        else:
+                            add(section)
+
+            for section in member_sections:
+                section = section.lower()
+                if section in ["the", "any", "not"]:
+                    continue
+                if len(section) < 3:
+                    continue
+                if section in sections:
+                    sections[section] += 1
+                else:
+                    sections[section] = 1
+
+        sections = sorted(sections.items(), key=lambda x:x[1], reverse=True)
+        pages = []
+        for i in range(int(len(sections)/20+0.999)+1):
+            result_page = ""
+            for section in sections[0+20*i:20+20*i]:
+                result_page += f"{section[1]} {section[0]}\n"
+            if result_page == "":
+                result_page = "_"
+            pages.append(result_page)
+        page = 0
+        class Pages(discord.ui.View):
+            def __init__(self, pages, timeout=None):
+                super().__init__()
+                self.value   = None
+                self.timeout = timeout
+                self.page    = 0
+                self.pages   = pages
+
+            # When the confirm button is pressed, set the inner value to `True` and
+            # stop the View from listening to more input.
+            # We also send the user an ephemeral message that we're confirming their choice.
+            @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
+            async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+                # self.value = "previous"
+                self.page -= 1
+                if self.page < 0:
+                    self.page += 1
+                    await itx.response.send_message("This is the first page, you can't go to a previous page!",ephemeral=True)
+                    return
+                result_page = self.pages[self.page*2]
+                result_page2 = self.pages[self.page*2+1]
+                embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed.add_field(name="Column 1",value=result_page)
+                embed.add_field(name="Column 2",value=result_page2)
+                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
+                await itx.response.edit_message(embed=embed)
+
+            @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+            async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+                self.page += 1
+                try:
+                    result_page = self.pages[self.page*2]
+                    result_page2 = self.pages[self.page*2+1]
+                except IndexError:
+                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
+                    return
+                embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed.add_field(name="Column 1",value=result_page)
+                embed.add_field(name="Column 2",value=result_page2)
+                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
+                try:
+                    await itx.response.edit_message(embed=embed)
+                except discord.errors.HTTPException:
+                    self.page -= 1
+                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
+
+        result_page = pages[page]
+        result_page2 = pages[page+1]
+        embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick" if type==2 else "username and nick"}names leaderboard!')
+        embed.add_field(name="Column 1",value=result_page)
+        embed.add_field(name="Column 2",value=result_page2)
+        embed.set_footer(text="page: "+str(page+1)+" / "+str(int(len(pages)/2)))
+        view = Pages(pages, timeout=60)
+        await itx.followup.send(f"",embed=embed, view=view,ephemeral=True)
+        await view.wait()
+        if view.value is None:
+            await itx.edit_original_response(view=None)
+
+    @nameusage.command(name="name", description="See how often different names occur in this server")
+    @app_commands.describe(name="What specific name are you looking for?")
+    @app_commands.choices(type=[
+        discord.app_commands.Choice(name='usernames', value=1),
+        discord.app_commands.Choice(name='nicknames', value=2),
+        discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
+    ])
+    async def nameusage_name(self, itx: discord.Interaction, name: str, type: int):
+        await itx.response.defer(ephemeral=True)
+        count = 0
+        type_string = ""
+        if type == 1:
+            for member in itx.guild.members:
+                if name.lower() in member.name.lower():
+                    count += 1
+            type_string = "username"
+        elif type == 2:
+            for member in itx.guild.members:
+                if member.nick is not None:
+                    if name.lower() in member.nick.lower():
+                        count += 1
+            type_string = "nickname"
+        elif type == 3:
+            for member in itx.guild.members:
+                if member.nick is not None:
+                    if name.lower() in member.nick.lower() or name.lower() in member.name.lower():
+                        count += 1
+                elif name.lower() in member.name.lower():
+                    count += 1
+            type_string = "username or nickname"
+        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=True)
+
+    @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
+    @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
+    async def equaldex(self, itx: discord.Interaction, country_id: str):
+        response_api = requests.get(
+            f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true&apiKey=edd1d1790184e97861e7b5a51138845222d4c68b").text
+        # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
+        # it also has some <br \/>\r\n strings in there for some reason..? so uh
+        response_api = response_api[6:-6].replace(r"<br \/>\r\n", r"\n")
+        data = json.loads(response_api)
+        if "error" in data:
+            if country_id == "uk":
+                await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...\nTry 'GB' instead!", ephemeral=True)
+            else:
+                await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...",ephemeral=True)
+            return
+
+        class Region:
+            def __init__(self, data):
+                self.id = data['region_id']
+                self.name = data['name']
+                self.continent = data['continent']
+                self.url = data['url']
+                self.issues = data['issues']
+
+        region = Region(data['regions']['region'])
+
+        embed = discord.Embed(color=7829503, title=region.name)
+        for issue in region.issues:
+            if type(region.issues[issue]['current_status']) is list:
+                value = "No data"
+            else:
+                value = region.issues[issue]['current_status']['value_formatted']
+                if len(region.issues[issue]['current_status']['description']) > 0:
+                    value += f" ({region.issues[issue]['current_status']['description']})"
+            embed.add_field(name=region.issues[issue]['label'],
+                            value=value,
+                            inline=False)
+        embed.set_footer(text=f"For more info, click the button below,")
+        class MoreInfo(discord.ui.View):
+            def __init__(self, url):
+                super().__init__()
+                link_button = discord.ui.Button(style = discord.ButtonStyle.gray,
+                                                label = "More info",
+                                                url = url)
+                self.add_item(link_button)
+        view = MoreInfo(region.url)
+        await itx.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    async def tag_autocomplete(self, itx: discord.Interaction, current: str):
+        options = ["report", "customvc", "trigger warnings"]
+        return [
+            app_commands.Choice(name=term, value=term)
+            for term in options if current.lower() in term
+        ][:15]
+
+    @app_commands.command(name="tag", description="Look up something through a tag")
+    @app_commands.describe(tag="What tag do you want more information about?")
+    @app_commands.describe(public="Show everyone in chat? (default: no)")
+    @app_commands.autocomplete(tag=tag_autocomplete)
+    async def tag(self, itx: discord.Interaction, tag: str, public: bool = False):
+        if tag == "report":
+            await Tags.send_report_info(itx, public=public)
+        elif tag == "customvc":
+            await Tags.send_customvc_info(itx, self.client, public=public)
+        elif tag == "trigger warnings":
+            await Tags.send_triggerwarning_info(itx, public=public)
+        else:
+            await itx.response.send_message("No tag found with this name!", ephemeral=True)
+
+class OtherAddons(commands.Cog):
     def __init__(self, client):
         global RinaDB
         self.client = client
@@ -169,8 +445,6 @@ class Addons(commands.Cog):
                 await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
             else:
                 await message.channel.send("I use slash commands! Use /command  and see what cool things might pop up! or something\nPS: If you're trying to call me cute: no, i'm not", delete_after=8)
-
-
 
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?")
@@ -417,194 +691,6 @@ class Addons(commands.Cog):
             ans = '\n'.join(ans)
             await itx.response.send_message(f"Found {length} string{'s'*(length!=1)}:\n{ans}",ephemeral=True)
 
-    nameusage = app_commands.Group(name='nameusage', description='Get data about which names are used in the server')
-
-    @nameusage.command(name="gettop", description="See how often different names occur in this server")
-    @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Search most-used usernames', value=1),
-        discord.app_commands.Choice(name='Search most-used nicknames', value=2),
-        discord.app_commands.Choice(name='Search nicks and usernames', value=3),
-    ])
-    # @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
-    async def nameusage_gettop(self, itx: discord.Interaction, mode: int):#, mode: int, string: str):
-        await itx.response.defer(ephemeral=True)
-        sections = {}
-        for member in itx.guild.members:
-            member_sections = []
-            if mode == 1:
-                names = [member.name]
-            elif mode == 2 and member.nick is not None:
-                names = [member.nick]
-            elif mode == 3:
-                names = [member.name]
-                if member.nick is not None:
-                    names.append(member.nick)
-            else:
-                continue
-
-            _pronouns = [
-                "she", "her",
-                "he", "him",
-                "they", "them",
-                "it", "its"
-            ]
-            pronouns = []
-            for pronounx in _pronouns:
-                for pronouny in _pronouns:
-                    pronouns.append(pronounx + " " + pronouny)
-
-            for index in range(len(names)):
-                new_name = ""
-                for char in names[index]:
-                    if char.lower() in "abcdefghijklmnopqrstuvwxyz":
-                        new_name += char
-                    else:
-                        new_name += " "
-
-                for pronoun in pronouns:
-                    _name_backup = new_name + " "
-                    while new_name != _name_backup:
-                        _name_backup = new_name
-                        new_name = re.sub(pronoun, "", new_name, flags=re.IGNORECASE)
-
-                names[index] = new_name
-
-            def add(part):
-                if part not in member_sections:
-                    member_sections.append(part)
-
-            for name in names:
-                for section in name.split():
-                    if section in member_sections:
-                        pass
-                    else:
-                        parts = []
-                        match = 1
-                        while match:
-                            match = re.search("[A-Z][a-z]*[A-Z]", section, re.MULTILINE)
-                            if match:
-                                caps = match.span()[1]-1
-                                parts.append(section[:caps])
-                                section = section[caps:]
-                        if len(parts) != 0:
-                            for part in parts:
-                                add(part)
-                            add(section)
-                        else:
-                            add(section)
-
-            for section in member_sections:
-                section = section.lower()
-                if section in ["the", "any"]:
-                    continue
-                if len(section) < 3:
-                    continue
-                if section in sections:
-                    sections[section] += 1
-                else:
-                    sections[section] = 1
-
-        sections = sorted(sections.items(), key=lambda x:x[1], reverse=True)
-        pages = []
-        for i in range(int(len(sections)/20+0.999)+1):
-            result_page = ""
-            for section in sections[0+20*i:20+20*i]:
-                result_page += f"{section[1]} {section[0]}\n"
-            if result_page == "":
-                result_page = "_"
-            pages.append(result_page)
-        page = 0
-        class Pages(discord.ui.View):
-            def __init__(self, pages, timeout=None):
-                super().__init__()
-                self.value   = None
-                self.timeout = timeout
-                self.page    = 0
-                self.pages   = pages
-
-            # When the confirm button is pressed, set the inner value to `True` and
-            # stop the View from listening to more input.
-            # We also send the user an ephemeral message that we're confirming their choice.
-            @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-            async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
-                # self.value = "previous"
-                self.page -= 1
-                if self.page < 0:
-                    self.page += 1
-                    await itx.response.send_message("This is the first page, you can't go to a previous page!",ephemeral=True)
-                    return
-                result_page = self.pages[self.page*2]
-                result_page2 = self.pages[self.page*2+1]
-                embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
-                embed.add_field(name="Column 1",value=result_page)
-                embed.add_field(name="Column 2",value=result_page2)
-                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
-                await itx.response.edit_message(embed=embed)
-
-            @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-            async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.page += 1
-                try:
-                    result_page = self.pages[self.page*2]
-                    result_page2 = self.pages[self.page*2+1]
-                except IndexError:
-                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
-                    return
-                embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
-                embed.add_field(name="Column 1",value=result_page)
-                embed.add_field(name="Column 2",value=result_page2)
-                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
-                try:
-                    await itx.response.edit_message(embed=embed)
-                except discord.errors.HTTPException:
-                    self.page -= 1
-                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
-
-        result_page = pages[page]
-        result_page2 = pages[page+1]
-        embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick" if type==2 else "username and nick"}names leaderboard!')
-        embed.add_field(name="Column 1",value=result_page)
-        embed.add_field(name="Column 2",value=result_page2)
-        embed.set_footer(text="page: "+str(page+1)+" / "+str(int(len(pages)/2)))
-        view = Pages(pages, timeout=60)
-        await itx.followup.send(f"",embed=embed, view=view,ephemeral=True)
-        await view.wait()
-        if view.value is None:
-            await itx.edit_original_response(view=None)
-
-    @nameusage.command(name="name", description="See how often different names occur in this server")
-    @app_commands.describe(name="What specific name are you looking for?")
-    @app_commands.choices(type=[
-        discord.app_commands.Choice(name='usernames', value=1),
-        discord.app_commands.Choice(name='nicknames', value=2),
-        discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
-    ])
-    async def nameusage_name(self, itx: discord.Interaction, name: str, type: int):
-        await itx.response.defer(ephemeral=True)
-        count = 0
-        type_string = ""
-        if type == 1:
-            for member in itx.guild.members:
-                if name.lower() in member.name.lower():
-                    count += 1
-            type_string = "username"
-        elif type == 2:
-            for member in itx.guild.members:
-                if member.nick is not None:
-                    if name.lower() in member.nick.lower():
-                        count += 1
-            type_string = "nickname"
-        elif type == 3:
-            for member in itx.guild.members:
-                if member.nick is not None:
-                    if name.lower() in member.nick.lower() or name.lower() in member.name.lower():
-                        count += 1
-                elif name.lower() in member.name.lower():
-                    count += 1
-            type_string = "username or nickname"
-        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=True)
-
-
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
                            faces="How many sides does every die have?",
@@ -740,66 +826,22 @@ class Addons(commands.Cog):
             except discord.errors.NotFound:
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
-    @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
-    @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
-    async def equaldex(self, itx: discord.Interaction, country_id: str):
-        response_api = requests.get(
-            f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true&apiKey=edd1d1790184e97861e7b5a51138845222d4c68b").text
-        # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
-        # it also has some <br \/>\r\n strings in there for some reason..? so uh
-        response_api = response_api[6:-6].replace(r"<br \/>\r\n", r"\n")
-        data = json.loads(response_api)
-        if "error" in data:
-            if country_id == "uk":
-                await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...\nTry 'GB' instead!", ephemeral=True)
-            else:
-                await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...",ephemeral=True)
-            return
-
-        class Region:
-            def __init__(self, data):
-                self.id = data['region_id']
-                self.name = data['name']
-                self.continent = data['continent']
-                self.url = data['url']
-                self.issues = data['issues']
-
-        region = Region(data['regions']['region'])
-
-        embed = discord.Embed(color=7829503, title=region.name)
-        for issue in region.issues:
-            if type(region.issues[issue]['current_status']) is list:
-                value = "No data"
-            else:
-                value = region.issues[issue]['current_status']['value_formatted']
-                if len(region.issues[issue]['current_status']['description']) > 0:
-                    value += f" ({region.issues[issue]['current_status']['description']})"
-            embed.add_field(name=region.issues[issue]['label'],
-                            value=value,
-                            inline=False)
-        embed.set_footer(text=f"For more info, click the button below,")
-        class MoreInfo(discord.ui.View):
-            def __init__(self, url):
-                super().__init__()
-                link_button = discord.ui.Button(style = discord.ButtonStyle.gray,
-                                                label = "More info",
-                                                url = url)
-                self.add_item(link_button)
-        view = MoreInfo(region.url)
-        await itx.response.send_message(embed=embed, view=view, ephemeral=True)
-
     @app_commands.command(name="help", description="A help command to learn more about me!")
     async def help(self, itx: discord.Interaction):
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 {self.client.getCommandMention('compliment')}: Rina can compliment others (matching their pronoun role)
-{self.client.getCommandMention('dictionary')}: search for an lgbtq+-related term!
-{self.client.getCommandMention('help')}: see this help page
-{self.client.getCommandMention('pronouns')}: see someone's pronouns or edit your own
+{self.client.getCommandMention('dictionary')}: Search for an lgbtq+-related term!
+{self.client.getCommandMention('equaldex')}: See LGBTQ safety and rights in a country (with API)
+{self.client.getCommandMention('help')}: See this help page
+{self.client.getCommandMention('nameusage')}: See how many people are using the same name
+{self.client.getCommandMention('pronouns')}: See someone's pronouns or edit your own
 {self.client.getCommandMention('qotw')}: Suggest a Question Of The Week to staff
-{self.client.getCommandMention('roll')}: roll some dice with a random result!
-{self.client.getCommandMention('reminder')}: make or see your reminders!
-{self.client.getCommandMention('todo')}: make, add, or remove items from your to-do list!
+{self.client.getCommandMention('roll')}: Roll some dice with a random result
+{self.client.getCommandMention('reminder')}: Make or see your reminders
+{self.client.getCommandMention('tag')}: Get information about some of Rina's extra features
+{self.client.getCommandMention('todo')}: Make, add, or remove items from your to-do list
+{self.client.getCommandMention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)
 
 Make a custom voice channel by joining "Join to create VC" (use {self.client.getCommandMention('tag')}` tag:customvc` for more info)
 {self.client.getCommandMention('editvc')}: edit the name or user limit of your custom voice channel
@@ -811,355 +853,45 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
 # """
         await itx.response.send_message(out, ephemeral=True)
 
-
-    @app_commands.command(name="genanswer", description="Make verification question guesses")
-    @app_commands.describe(messageid="Which message should I check? (id)")
-    async def gen_answer(self, itx: discord.Interaction, messageid: str = None):
-        await itx.response.defer(ephemeral=True)
-        is_in_server = True
-        if messageid is None:
-            messages = []
-            async for msg in itx.channel.history(limit=100):
-                class Interaction:
-                    def __init__(self, user):
-                        self.guild = user.guild
-                        self.user = user
-                if msg.author.bot:
-                    continue
-                elif type(msg.author) is discord.User:
-                    messages.append(msg)
-                elif not isVerified(Interaction(msg.author)):
-                    messages.append(msg)
-            messagelist = [str(i.id) for i in messages][::-1] # reverse list to make newest messages last
-            if len(messagelist) < 1:
-                await itx.followup.send(f"I can't find any messages in this channel that are from unverified people!", ephemeral=True)
-                return
-        else:
-            messagelist = [messageid]
-            if "," in messageid:
-                messagelist = [i.strip() for i in messageid.split(",")]
-        lines = []
-        message = 0 # stupid IDE
-        for messageid in messagelist:
-            try:
-                messageid = int(messageid)
-                message = await itx.channel.fetch_message(messageid)
-            except discord.errors.NotFound:
-                await itx.followup.send(f"I couldn't find that message ({messageid})!",ephemeral=True)
-                return
-            except ValueError:
-                await itx.followup.send(f"That ('{messageid}') is not a valid message ID!",ephemeral=True)
-                return
-
-            if message is None:
-                await itx.followup.send(f"That message has no content ({messageid})?",ephemeral=True)
-                return
-            if type(message.author) is discord.User:
-                is_in_server = False
-
-            lines += message.content.split("\n")
-        if not is_in_server:
-            await itx.followup.send(f"This user left the server!",ephemeral=True)
-
-        verification = []
-        copy_pasta = [
-            "1. Do you agree to the server rules and to respect the Discord Community Guidelines & Discord ToS?",
-            "2. Do you identify as transgender; and/or any other part of the LGBTQ+ community? (Please be specific in your answer)",
-            "3. Do you have any friends who are already a part of our Discord? (If yes, please send their username)",
-            "4. What’s your main goal/motivation in joining the TransPlace Discord?",
-            "5. If you could change one thing about the dynamic of the LGBTQ+ community, what would it be? ",
-            "6. What is gatekeeping in relation to the trans community?",
-            "# If you have any social media that contains relevant post  history related to the LGBTQ+ community, please link it to your discord account or send the account name or URL.",
-        ]
-        # newlineCount = 0
-        q_string = ""
-        for line in lines:
-            if line == "":
-                pass
-            elif line in copy_pasta:
-                q_string = line[0] # copy Question number
-            elif ''.join(copy_pasta) in line:
-                for pasta in copy_pasta:
-                    if pasta in line:
-                        q_string.replace(pasta, pasta[0])
-            else:
-                verification.append(q_string+line)
-                # newlineCount = 0
-                q_string = ""
-        verification = '\n'.join(verification).lower()
-
-        questions = ["1","2","3","4","5","6"]
-        question = []
-        warning = ""
-        for number in range(len(questions)):
-            try:
-                start = verification.index(questions[number])
-                try:
-                    end = verification.index(questions[number+1])
-                except IndexError: #notsure
-                    end = len(verification)
-                question.append(verification[start:end])
-            except ValueError:
-                if warning == "":
-                    warning += f"Couldn't find question number for question '{questions[number]}'"
-                else:
-                    warning += f", '{questions[number]}'"
-                if len(verification.split("\n")) >= 6:
-                    question.append(verification.split("\n")[number])
-        if len(question) < 3:
-            await itx.followup.send("I couldn't determine/separate the question answers in this message.",ephemeral=True)
+    @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
+    async def delete_week_selfies(self, itx: discord.Interaction):
+        global selfies_delete_week_command_cooldown
+        if not isStaff(itx):
+            await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
             return
+        time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
+        if time_now - report_message_reminder_unix < 86400:  # 1 day
+            await itx.response.send_message("This command has already been used yesterday! Please give it some time and prevent ratelimiting.", ephemeral=True)
+            return
+        if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
+            await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
+            return
+        output = "Attempting deletion...\n"
+        await itx.response.send_message(output+"...", ephemeral=True)
+        await logMsg(itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
 
-        is_lgbtq = 0 # -1 = uncertain; 0 = cishet; 1 = lgbtq+
-        is_trans = -1 # -1 = unconfirmed; 0 = cis; 1 = trans
-        has_alibi = False
-        is_new = False
-        trans_terms = [
-            "trans",
-            "m2f", "f2m", "mtf", "ftm",
-            "demi",
-            "intersex",
-            "agender",
-            "nonbinary",
-            "non-binary",
-            "non binary",
-            "question",
-            "fluid",
-            "nb", ]
-        lgbtq_terms = [
-            "asexual",
-            "lesbian",
-            "hrt",
-            "ace",
-            "aro",
-            "gay",
-            "homosexual",
-            "bi",
-            "pan",
-        ] + trans_terms
-        templates = [
-            "What made you discover you were transgender?",
-            "What would be an example of invalidating someone's identity?",
-            "What do you hope to add or gain from this community?",
-            "Anything you do or wish to do that makes you feel euphoric about your identity?",
-            "Has the process of actually coming out and coming to terms with your identity been something recent?",
-            "What is one thing only another lgbtq+ person would know? This can be as lighthearted or as serious as you want.",
-            "How long have you been questioning? If it's for a short time, could you share me some things you've experimented with in terms of activities or appearance?"
-            " If it's for a long time, could you share some experiences or opinions on different things you've tried?",
-            "Do you have any pins, hats, flags, or something else pride-related that a random person trying to get verified wouldnt have that ties you to the lgbtq+ community?",
-            "Do you have a fun or interesting story about something you did before you were trans (but still on-topic)? If you have any to share. If you don't that's fine too",
-        ]
+        message_delete_count = 0
+        async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
+            message_date = int(mktime(message.created_at.timetuple()))
+            if time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
+                if "[info]" in message.content.lower():
+                    class Interaction:
+                        def __init__(self, member: discord.Member):
+                            self.user = member
+                            self.guild = member.guild
+                    if isStaff(Interaction(message.author)): # nested to save having to look through function 1000 times
+                        continue
+                await message.delete()
+                # print("----Deleted---- ["+str(message.created_at)+f"] {message.author}: {message.content}")
+                message_delete_count += 1
+                if message_delete_count % 50 == 0:
+                    await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
+                continue
+            # print("++++Not deleted++++ ["+str(message.created_at)+f"] {message.author}: {message.content}")
 
-
-        out = "\n"
-        if message.author.created_at > (datetime.now(tz=timezone.utc)-timedelta(days=7)):
-            out += "User might have an account younger than 7 days\n"
-            is_new = True
-
-        if type(message.author) is discord.User:
-            out += "User might have left the server\n"
-
-        if "yes" not in question[0] and " agree" not in question[0]:
-            out += "User might not have accepted the rules\n"
-
-        if "no" in question[1] and "pronoun" not in question[1]:
-            out += "They might be cis\n"
-            is_trans = 0
-
-        for term in lgbtq_terms:
-            if term in question[1]:
-                if is_lgbtq == 0:
-                    out += f"Is in LGBTQ+: {term}"
-                else:
-                    out += f", {term}"
-                if term in trans_terms:
-                    is_trans = 1
-                is_lgbtq = 1
-        if is_lgbtq == 1:
-            out += "\n"
-        if "yes" in question[1] and is_lgbtq < 1:
-            out += "Might not have fully answered what they identify as\n"
-            is_lgbtq = -1
-        if not ("yes" in question[1] or "no" in question[1]) and is_lgbtq == 0:
-            out += "Indeterminate answer for question 2, cis maybe?\n"
-            is_lgbtq = -1
-        if ("no" not in question[2]) and (len(question[2]) > 7): # and "not" not in question[2]:
-            has_alibi = True
-
-        responses = []
-        if not has_alibi:
-            responses.append("How did you find out about this server?")
-        if is_new:
-            responses.append("It looks like your account is less than 7 days old.. Could you tell us why you joined with a new account?")
-        if is_trans == 1:
-            responses.append("Since you're transgender, what makes you the happiest as your gender? What gives you the most gender euphoria?")
-        elif is_lgbtq == 1:
-            responses.append("Why did you decide to join a trans server instead of any general LGTBQ+ server?")
-        elif is_trans != 0 or is_lgbtq == -1:
-            responses.append("If you don't mind answering, what do you identify as?")
-
-        if len(responses) > 0:
-            out += "\n__**Suggested output:**__\n"
-
-        class ConfirmSend(discord.ui.View):
-            class AddQuestion(discord.ui.Modal, title="Add question to Rina's verification message"):
-                def __init__(self, responses, timeout=None):
-                    super().__init__()
-                    self.value = None
-                    self.timeout = timeout
-                    self.responses = responses
-                    self.question = discord.ui.TextInput(label='Question',
-                                                         placeholder="What made you start questioning that you were trans?",
-                                                         style=discord.TextStyle.paragraph,)
-                    #                                    required=True)
-                    self.add_item(self.question)
-
-                async def on_submit(self, interaction: discord.Interaction):
-                    self.value = 1
-                    self.question = self.question.value.strip()
-                    if len(self.question) < 3:
-                        self.value = 9
-                        try:
-                            self.question = templates[int(self.question)]
-                            self.value = 2
-                        except (ValueError, IndexError):
-                            await interaction.response.send_message("If you're trying to use a template.. you messed up\n"
-                                                                    "Otherwise, make your string longer than 2 characters",
-                                                                    ephemeral=True)
-                            self.stop()
-                            return
-
-                    if self.question in self.responses:
-                        await interaction.response.send_message('You added that question already.. but okay sure...', ephemeral=True)
-                    else:
-                        await interaction.response.send_message('Adding question...', ephemeral=True, delete_after=8)
-                    self.stop()
-
-            class RemoveQuestion(discord.ui.Modal, title="Remove from Rina's verification message"):
-                def __init__(self, responses, timeout=None):
-                    super().__init__()
-                    self.value = None
-                    self.timeout = timeout
-                    self.responses = responses
-                    self.question = None
-                    self.question_text = discord.ui.TextInput(label='Question index',
-                                                              placeholder=f"[A number from 0 to {len(responses)-1} ]",
-                                                              # style=discord.TextStyle.short,
-                                                              # required=True
-                                                              )
-                    self.add_item(self.question_text)
-
-                async def on_submit(self, itx: discord.Interaction):
-                    self.value = 9
-                    try:
-                        self.question = int(self.question_text.value)
-                    except ValueError:
-                        await itx.response.send_message(content=f"Couldn't add question: '{self.question_text.value}' is not an integer. "
-                                                                "It has to be an index number from a response in the verification message.", ephemeral=True)
-                        return
-                    if self.question < 0 or self.question >= len(self.responses):
-                        await itx.response.send_message(content=f"Couldn't add question: '{self.question}' is not a possible index value for removing a verification response. "
-                                                                "It has to be an index number from a question in the verification message.", ephemeral=True)
-                        return
-                    self.value = 1
-                    await itx.response.send_message(f'Removing question...', ephemeral=True, delete_after=8)
-                    self.stop()
-
-            def __init__(self, prefix, responses, msg_author, suggested_output, timeout=None):
-                super().__init__()
-                self.prefix = prefix
-                self.value = None
-                self.timeout = timeout
-                self.msg_author = msg_author
-                self.responses = responses
-                self.suggested_output = suggested_output
-
-        # When the confirm button is pressed, set the inner value to `True` and
-            # stop the View from listening to more input.
-            # We also send the user an ephemeral message that we're confirming their choice.
-            @discord.ui.button(label='Send as suggested', style=discord.ButtonStyle.green)
-            async def confirm(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.value = 1
-
-                await itx.channel.send(self.suggested_output)
-                await itx.response.edit_message(view=None)
-                self.stop()
-
-            @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red)
-            async def cancel(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.value = 0
-                await itx.response.edit_message(view=None)
-                self.stop()
-
-            @discord.ui.button(label='Add question', style=discord.ButtonStyle.blurple)
-            async def add_question(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.value = 10
-                new_question = ConfirmSend.AddQuestion(self.responses)
-                await itx.response.send_modal(new_question)
-                await new_question.wait()
-                if new_question.value in [None, 9]:
-                    pass
-                else:
-                    self.responses.append(new_question.question)
-                    self.suggested_output = generateOutput(self.responses, self.msg_author)
-                    await itx.edit_original_response(content=self.prefix+self.suggested_output)
-
-            @discord.ui.button(label='Remove question', style=discord.ButtonStyle.blurple)
-            async def remove_question(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.value = 11
-                remove_question = ConfirmSend.RemoveQuestion(self.responses)
-                await itx.response.send_modal(remove_question)
-                await remove_question.wait()
-                if remove_question.value in [None, 9]:
-                    pass
-                else:
-                    try:
-                        del self.responses[remove_question.question]
-                    except IndexError:
-                        await itx.edit_original_response(content=self.prefix+self.suggested_output+"\n\n***__" +
-                                                         f"Couldn't add question: '{remove_question.question}' is not a possible index value for removing a verification response. "
-                                                         "It has to be an index number from a question in the verification message.__***")
-                        return
-                    self.suggested_output = generateOutput(self.responses, self.msg_author)
-                    await itx.edit_original_response(content=self.prefix+self.suggested_output)
-
-            @discord.ui.button(label='Templates', style=discord.ButtonStyle.gray)
-            async def templates(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.value = 20
-                await itx.response.send_message(
-                    "In the 'Add Question' modal, type one of the numbers of the questions below to automatically add that one:\n" +
-                    '\n'.join([f"{i}. {templates[i]}" for i in range(len(templates))]),
-                    ephemeral=True
-                )
-
-        suggested_output = generateOutput(responses, message.author)
-        view = ConfirmSend(warning+out, responses, message.author, suggested_output, timeout=90)
-        # data = [warning, out, suggested_output]
-        await itx.followup.send(warning+out+suggested_output, view=view, ephemeral=True)
-        await view.wait()
-        await itx.edit_original_response(view=None)
-
-    async def tag_autocomplete(self, itx: discord.Interaction, current: str):
-        options = ["report", "customvc"]
-        return [
-            app_commands.Choice(name=term, value=term)
-            for term in options if current.lower() in term
-        ]
-
-    @app_commands.command(name="tag", description="Look up something through a tag")
-    @app_commands.describe(tag="What tag do you want more information about?")
-    @app_commands.describe(public="Show everyone in chat? (default: yes)")
-    @app_commands.autocomplete(tag=tag_autocomplete)
-    async def tag(self, itx: discord.Interaction, tag: str, public: bool = True):
-        if tag == "report":
-            await Tags.send_report_info(itx, public=public)
-        elif tag == "customvc":
-            await Tags.send_customvc_info(itx, self.client, public=public)
-        else:
-            await itx.response.send_message("No tag found with this name!", ephemeral=True)
-
-
-
+        selfies_delete_week_command_cooldown = time_now
+        await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days successfully!", ephemeral=True)
 
 async def setup(client):
-    await client.add_cog(Addons(client))
+    await client.add_cog(OtherAddons(client))
+    await client.add_cog(SearchAddons(client))

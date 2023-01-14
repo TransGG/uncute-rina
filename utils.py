@@ -144,4 +144,4 @@ async def logMsg(_guild, msg: str):
         return
     vcLog = guild["vcLog"]
     logChannel = _guild.get_channel(vcLog)
-    await logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+    return await logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())

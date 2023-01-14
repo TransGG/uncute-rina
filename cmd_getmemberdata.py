@@ -57,15 +57,16 @@ class MemberData(commands.Cog):
             if period <= 0:
                 await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",ephemeral=True)
                 return
-            if period < 0.0035:
-                await itx.response.send_message("Idk why but it seems to break when period is smaller than 0.0035, so better not use it.", ephemeral=True)
-                return #todo: figure out why you can't fill in less than 0.0035: ValueError: All arrays must be of the same length
+            # if period < 0.035:
+            #     await itx.response.send_message("Idk why but it seems to break when period is smaller than 0.0035, so better not use it.", ephemeral=True)
+            #     return #todo: figure out why you can't fill in less than 0.0035: ValueError: All arrays must be of the same length
             if period > 10958:
                 await itx.response.send_message("... I doubt you'll be needing to look 30 years into the past..",ephemeral=True)
                 return
         except ValueError:
             await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",ephemeral=True)
             return
+
         accuracy = period*2400 #divide graph into 36 sections
         period *= 86400 # days to seconds
         # Get a list of people (in this server) that joined at certain times. Maybe round these to a certain factor (don't overstress the x-axis)
@@ -128,46 +129,51 @@ class MemberData(commands.Cog):
             for j in sorted(results[i]):
                 result[i][j] = results[i][j]
             results[i] = result[i]
-
         try:
-            d = {
-                "time": [i for i in results["joined"]],
-                "joined":[results["joined"][i] for i in results["joined"]],
-                "left":[results["left"][i] for i in results["left"]],
-                "verified":[results["verified"][i] for i in results["verified"]]
-            }
-        except KeyError as ex:
-            await itx.followup.send(f"{ex} did not have data, thus could not make the graph.")
-            return
-        df = pd.DataFrame(data=d)
-        fig, (ax1) = plt.subplots()#1, 1)
-        fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
-        fig.tight_layout(pad=1.0)
-        ax1.plot(df['time'], df["joined"], 'r')
-        ax1.plot(df['time'], df["left"], 'g')
-        ax1.plot(df['time'], df["verified"], 'b')
-        if doubles:
-            re_text = "exc"
-        else:
-            re_text = "inc"
-        ax1.set_ylabel(f"# of members ({re_text}. rejoins/-leaves/etc)")
+            try:
+                d = {
+                    "time": [i for i in results["joined"]],
+                    "joined":[results["joined"][i] for i in results["joined"]],
+                    "left":[results["left"][i] for i in results["left"]],
+                    "verified":[results["verified"][i] for i in results["verified"]]
+                }
+            except KeyError as ex:
+                await itx.followup.send(f"{ex} did not have data, thus could not make the graph.")
+                return
+            df = pd.DataFrame(data=d)
+            fig, (ax1) = plt.subplots()#1, 1)
+            fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
+            fig.tight_layout(pad=1.0)
+            ax1.plot(df['time'], df["joined"], 'r')
+            ax1.plot(df['time'], df["left"], 'g')
+            ax1.plot(df['time'], df["verified"], 'b')
+            if doubles:
+                re_text = "exc"
+            else:
+                re_text = "inc"
+            ax1.set_ylabel(f"# of members ({re_text}. rejoins/-leaves/etc)")
 
-        tick_loc = [i for i in df['time'][::3]]
-        if period/86400 <= 1:
-            tick_disp = [datetime.fromtimestamp(i).strftime('%H:%M') for i in tick_loc]
-        else:
-            tick_disp = [datetime.fromtimestamp(i).strftime('%Y-%m-%dT%H:%M') for i in tick_loc]
+            tick_loc = [i for i in df['time'][::3]]
+            if period/86400 <= 1:
+                tick_disp = [datetime.fromtimestamp(i).strftime('%H:%M') for i in tick_loc]
+            else:
+                tick_disp = [datetime.fromtimestamp(i).strftime('%Y-%m-%dT%H:%M') for i in tick_loc]
 
-        # plt.xticks(tick_loc, tick_disp, rotation='vertical')
-        # plt.setp(tick_disp, rotation=45, horizontalalignment='right')
-        ax1.set_xticks(tick_loc,
-                       labels=tick_disp,
-                       horizontalalignment='right',
-                       minor=False,
-                       rotation=30)
-        ax1.grid(visible=True, which='major', axis='both')
-        fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
-        plt.savefig('userJoins.png')
+
+            # plt.xticks(tick_loc, tick_disp, rotation='vertical')
+            # plt.setp(tick_disp, rotation=45, horizontalalignment='right')
+            ax1.set_xticks(tick_loc,
+                           labels=tick_disp,
+                           horizontalalignment='right',
+                           minor=False,
+                           rotation=30)
+            ax1.grid(visible=True, which='major', axis='both')
+            fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
+            plt.savefig('userJoins.png')
+        except ValueError:
+            await itx.followup.send("You encountered an error! This is likely a ValueError, caused by a too small number. "
+                                    "I still have to figure out why this happens, exactly. Probably some rounding error or something. "
+                                    "Anyway, try a larger number, it might work better",ephemeral=True)
         await itx.followup.send(f"In the past {period/86400} days, `{totals['joined']}` members joined, `{totals['left']}` left, and `{totals['verified']}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
 
 async def setup(client):

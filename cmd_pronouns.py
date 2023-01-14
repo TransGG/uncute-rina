@@ -62,7 +62,7 @@ class Pronouns(commands.Cog):
         else:
             await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n" + '\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
-    async def remove_pronoun_autocomplete(self, itx: discord.Interaction, current: str):
+    async def pronoun_autocomplete(self, itx: discord.Interaction, current: str):
         if itx.namespace.mode == 1:
             results = []
             for member in itx.guild.members:
@@ -70,10 +70,11 @@ class Pronouns(commands.Cog):
                     nick = current in member.nick
                 else:
                     nick = False
-                if current in member.name or nick:
+                if current in member.name:
                     name = member.name + "    #"+member.discriminator
-                    if member.nick is not None:
-                        name = f"{member.nick}     ({member})"
+                    results.append(app_commands.Choice(name=name, value=member.mention))
+                elif nick:
+                    name = f"{member.nick}     ({member})"
                     results.append(app_commands.Choice(name=name, value=member.mention))
                 if len(results) >= 10:
                     return results
@@ -178,7 +179,7 @@ class Pronouns(commands.Cog):
         discord.app_commands.Choice(name='Remove pronoun: Type the pronoun you wanna remove', value=3),
         discord.app_commands.Choice(name='Help', value=4),
     ])
-    @app_commands.autocomplete(argument=remove_pronoun_autocomplete)
+    @app_commands.autocomplete(argument=pronoun_autocomplete)
     async def pronouns_command(self, itx: discord.Interaction, mode: int, argument: str = None):
         if mode == 1:
             if argument is not None:
