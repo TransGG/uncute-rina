@@ -34,16 +34,14 @@ class TermDictionary(commands.Cog):
         # find exact results online
         if len(data) != 0:
             for item in data:
-                if item['term'].split("|")[0] in terms:
-                    continue
-                if simplify(current) in simplify(item['term'].split('|')):
-                    terms.append(item['term'].split('|')[0])
+                if item['term'].split("|")[0] not in terms:
+                    if simplify(current) in simplify(item['term'].split('|')):
+                        terms.append(item['term'].split('|')[0])
 
             # then, find whichever other terms are there (append / last) online
             for item in data:
-                if item['term'].split("|")[0] in terms:
-                    continue
-                terms.append(item['term'].split("|")[0])
+                if item['term'].split("|")[0] not in terms:
+                    terms.append(item['term'].split("|")[0])
 
         # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
         # but only if there aren't already 7 responses; to prevent extra loading time
@@ -52,9 +50,15 @@ class TermDictionary(commands.Cog):
             data = json.loads(response_api)
             if type(data) is not dict:
                 for result in data:
-                    if result["word"] not in terms:
-                        terms.append(result["word"])
-
+                    if result["word"].capitalize() not in terms:
+                        terms.append(result["word"].capitalize())
+        # same for Urban Dictionary, searching only if there are no results for the others
+        if len(terms) < 1:
+            response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
+            data = json.loads(response_api)['list']
+            for result in data:
+                if result["word"].capitalize() + " (from UD)" not in terms:
+                    terms.append(result["word"].capitalize() + " (from UD)")
 
         # limit choices to the first 7
         terms = terms[:7]
@@ -83,13 +87,14 @@ class TermDictionary(commands.Cog):
                 return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
         # test if mode has been left unset or if mode has been selected: decides whether or not to move to the online API search or not.
         result_str = ""  # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
+        results: list[any]
         if source == 1 or source == 3:
             collection = RinaDB["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
 
             result = False
-            results: list[any] = []
+            results = []
             result_str = ""
             for item in search:
                 if simplify(term) in simplify(item["synonyms"]):
@@ -121,11 +126,9 @@ class TermDictionary(commands.Cog):
         if source == 2 or source == 4:
             response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term.lower()}').text
             data = json.loads(response_api)
-            continue0 = False
             if len(data) == 0:
                 if source == 4:
                     source = 6
-                    continue0 = True
                 else:
                     result_str = f"I didn't find any results for '{term}' online or in our fancy dictionary"
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
@@ -141,7 +144,7 @@ class TermDictionary(commands.Cog):
             #     return
 
             # edit definitions to hide links to other pages:
-            if not continue0:
+            else:
                 search = []
                 for item in data:
                     item_db = item['definition']
@@ -217,142 +220,246 @@ class TermDictionary(commands.Cog):
     Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
                 #print(response_api.status_code)
         if source == 5 or source == 6:
-            public = False
             response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{term.lower()}').text
             data = json.loads(response_api)
-            results: list[any] = []
+            results = []
             if type(data) is dict:
                 if source == 5:
                     result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
-                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
-                    return
+                    await itx.response.send_message(result_str, ephemeral=True, suppress_embeds=True)
                 if source == 6:
-                    result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
-                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
-                    cmd_mention_dict = self.client.getCommandMention("dictionary")
-                    cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
-                    await logMsg(itx.guild,
-                                 f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
-                    return
-
-            for result in data:
-                meanings = []
-                synonyms = []
-                antonyms = []
-                for meaning in result["meanings"]:
-                    meaning_list = [meaning['partOfSpeech']]
-                    # **verb**:
-                    # meaning one is very useful
-                    # meaning two is not as useful
-                    for definition in meaning["definitions"]:
-                        meaning_list.append("- "+definition['definition'])
-                        for synonym in definition['synonyms']:
+                    source = 7
+            else:
+                for result in data:
+                    meanings = []
+                    synonyms = []
+                    antonyms = []
+                    for meaning in result["meanings"]:
+                        meaning_list = [meaning['partOfSpeech']]
+                        # **verb**:
+                        # meaning one is very useful
+                        # meaning two is not as useful
+                        for definition in meaning["definitions"]:
+                            meaning_list.append("- "+definition['definition'])
+                            for synonym in definition['synonyms']:
+                                if synonym not in synonyms:
+                                    synonyms.append(synonym)
+                            for antonym in definition['antonyms']:
+                                if antonym not in antonyms:
+                                    antonyms.append(antonym)
+                        for synonym in meaning['synonyms']:
                             if synonym not in synonyms:
                                 synonyms.append(synonym)
-                        for antonym in definition['antonyms']:
+                        for antonym in meaning['antonyms']:
                             if antonym not in antonyms:
                                 antonyms.append(antonym)
-                    for synonym in meaning['synonyms']:
-                        if synonym not in synonyms:
-                            synonyms.append(synonym)
-                    for antonym in meaning['antonyms']:
-                        if antonym not in antonyms:
-                            antonyms.append(antonym)
-                    meanings.append(meaning_list)
+                        meanings.append(meaning_list)
 
-                results.append([
-                    # train
-                    result["word"],
-                    # [  ["noun", "- Hello there this is 1", "- number two"], ["verb", ...], [...]  ]
-                    meanings,
-                    ', '.join(synonyms),
-                    ', '.join(antonyms),
-                    '\n'.join(result["sourceUrls"])
-                ])
+                    results.append([
+                        # train
+                        result["word"],
+                        # [  ["noun", "- Hello there this is 1", "- number two"], ["verb", ...], [...]  ]
+                        meanings,
+                        ', '.join(synonyms),
+                        ', '.join(antonyms),
+                        '\n'.join(result["sourceUrls"])
+                    ])
 
-            pages = []
-            pages_detailed: [int, str, str, str] = []
-            page = 0
-            for result in results:
-                result_id = 0
-                page_detailed = []
-                embed = discord.Embed(color=8481900, title=f"__{result[0].capitalize()}__")
-                for meaning_index in range(len(result[1])):
-                    _part = result[1][meaning_index][1:]
-                    part = []
-                    for definition in _part:
-                        page_detailed.append([result_id, f"__{result[0].capitalize()}__", result[1][meaning_index][0].capitalize(),
-                                              definition])
-                        part.append(f"`{result_id}`"+definition)
+                pages = []
+                pages_detailed: [int, str, str, str] = []
+                page = 0
+                for result in results:
+                    result_id = 0
+                    page_detailed = []
+                    embed = discord.Embed(color=8481900, title=f"__{result[0].capitalize()}__")
+                    for meaning_index in range(len(result[1])):
+                        _part = result[1][meaning_index][1:]
+                        part = []
+                        for definition in _part:
+                            page_detailed.append([result_id, f"__{result[0].capitalize()}__", result[1][meaning_index][0].capitalize(),
+                                                  definition])
+                            part.append(f"`{result_id}`"+definition)
+                            result_id += 1
+                        embed.add_field(name=result[1][meaning_index][0].capitalize(),
+                                        value='\n'.join(part),
+                                        inline=False)
+                    if len(result[2]) > 0:
+                        embed.add_field(name="Synonyms",
+                                        value=f"`{result_id}`"+result[2],
+                                        inline=False)
+                        page_detailed.append([result_id, f"__{result[0].capitalize()}__", "Synonyms", result[2]])
                         result_id += 1
-                    embed.add_field(name=result[1][meaning_index][0].capitalize(),
-                                    value='\n'.join(part),
-                                    inline=False)
-                if len(result[2]) > 0:
-                    embed.add_field(name="Synonyms",
-                                    value=f"`{result_id}`"+result[2],
-                                    inline=False)
-                    page_detailed.append([result_id, f"__{result[0].capitalize()}__", "Synonyms", result[2]])
-                    result_id += 1
-                if len(result[3]) > 0:
-                    embed.add_field(name="Antonyms",
-                                    value=f"`{result_id}`"+result[3],
-                                    inline=False)
-                    page_detailed.append([result_id, f"__{result[0].capitalize()}__", "Antonyms", result[3]])
-                    result_id += 1
-                if len(result[4]) > 0:
-                    embed.add_field(name=f"`{result_id}`-"+"More info:",
-                                    value=result[4],
-                                    inline=False)
-                    page_detailed.append([result_id, f"__{result[0].capitalize()}__", "More info:", result[4]])
-                    result_id += 1
-                pages.append(embed)
-                pages_detailed.append(page_detailed)
-                # [meaning, [type, definition1, definition2], synonym, antonym, sources]
+                    if len(result[3]) > 0:
+                        embed.add_field(name="Antonyms",
+                                        value=f"`{result_id}`"+result[3],
+                                        inline=False)
+                        page_detailed.append([result_id, f"__{result[0].capitalize()}__", "Antonyms", result[3]])
+                        result_id += 1
+                    if len(result[4]) > 0:
+                        embed.add_field(name=f"`{result_id}`-"+"More info:",
+                                        value=result[4],
+                                        inline=False)
+                        page_detailed.append([result_id, f"__{result[0].capitalize()}__", "More info:", result[4]])
+                        result_id += 1
+                    pages.append(embed)
+                    pages_detailed.append(page_detailed)
+                    # [meaning, [type, definition1, definition2], synonym, antonym, sources]
 
-            class Pages(discord.ui.View):
-                class SendEntry(discord.ui.Modal, title="Share single dictionary entry?"):
-                    def __init__(self, entries, timeout=None):
+                class Pages(discord.ui.View):
+                    class SendEntry(discord.ui.Modal, title="Share single dictionary entry?"):
+                        def __init__(self, entries, timeout=None):
+                            super().__init__()
+                            self.value = None
+                            self.timeout = timeout
+                            self.entries = entries
+                            self.id = None
+                            self.question_text = discord.ui.TextInput(label='Entry index',
+                                                                      placeholder=f"[A number from 0 to {len(entries) - 1} ]",
+                                                                      # style=discord.TextStyle.short,
+                                                                      # required=True
+                                                                      )
+                            self.add_item(self.question_text)
+
+                        async def on_submit(self, itx: discord.Interaction):
+                            self.value = 9 # failed; placeholder
+                            try:
+                                self.id = int(self.question_text.value)
+                            except ValueError:
+                                await itx.response.send_message(
+                                    content=f"Couldn't send entry: '{self.question_text.value}' is not an integer. "
+                                            "It has to be an index number from an entry in the /dictionary response.",
+                                    ephemeral=True)
+                                return
+                            if self.id < 0 or self.id >= len(self.entries):
+                                await itx.response.send_message(
+                                    content=f"Couldn't send intry: '{self.id}' is not a possible index value for your dictionary entry. "
+                                            "It has to be an index number from an entry in the /dictionary response.",
+                                    ephemeral=True)
+                                return
+                            self.value = 1 # succeeded
+                            await itx.response.send_message(f'Sending item...', ephemeral=True, delete_after=8)
+                            self.stop()
+
+                    def __init__(self, pages, pages_detailed, timeout=None):
                         super().__init__()
                         self.value = None
                         self.timeout = timeout
-                        self.entries = entries
-                        self.id = None
-                        self.question_text = discord.ui.TextInput(label='Entry index',
-                                                                  placeholder=f"[A number from 0 to {len(entries) - 1} ]",
-                                                                  # style=discord.TextStyle.short,
-                                                                  # required=True
-                                                                  )
-                        self.add_item(self.question_text)
+                        self.page = 0
+                        self.pages = pages
+                        self.printouts = 0
+                        self.pages_detailed = pages_detailed
 
-                    async def on_submit(self, itx: discord.Interaction):
-                        self.value = 9 # failed; placeholder
+                    @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
+                    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+                        # self.value = "previous"
+                        self.page -= 1
+                        if self.page < 0:
+                            self.page += 1
+                            await itx.response.send_message("This is the first page, you can't go to a previous page!",
+                                                            ephemeral=True)
+                            return
+                        embed = self.pages[self.page]
+                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+                        await itx.response.edit_message(embed=embed)
+
+                    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+                    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+                        self.page += 1
                         try:
-                            self.id = int(self.question_text.value)
-                        except ValueError:
-                            await itx.response.send_message(
-                                content=f"Couldn't send entry: '{self.question_text.value}' is not an integer. "
-                                        "It has to be an index number from an entry in the /dictionary response.",
-                                ephemeral=True)
+                            embed = self.pages[self.page]
+                        except IndexError:
+                            await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                                            ephemeral=True)
                             return
-                        if self.id < 0 or self.id >= len(self.entries):
-                            await itx.response.send_message(
-                                content=f"Couldn't send intry: '{self.id}' is not a possible index value for your dictionary entry. "
-                                        "It has to be an index number from an entry in the /dictionary response.",
-                                ephemeral=True)
-                            return
-                        self.value = 1 # succeeded
-                        await itx.response.send_message(f'Sending item...', ephemeral=True, delete_after=8)
+                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+                        try:
+                            await itx.response.edit_message(embed=embed)
+                        except discord.errors.HTTPException:
+                            self.page -= 1
+                            await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                                            ephemeral=True)
+
+                    @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.gray)
+                    async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+                        self.value = 1
+                        embed = self.pages[self.page]
+                        await itx.response.edit_message(content="Sent successfully!",embed=None)
+                        await itx.followup.send(f"{itx.user.mention} shared a dictionary entry!", embed=embed,
+                                                ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
                         self.stop()
 
-                def __init__(self, pages, pages_detailed, timeout=None):
+                    @discord.ui.button(label='Send one entry', style=discord.ButtonStyle.gray)
+                    async def send_single_entry(self, itx: discord.Interaction, _button: discord.ui.Button):
+                        self.value = 2
+                        self.printouts += 1
+
+                        send_one = Pages.SendEntry(self.pages_detailed[self.page])
+                        await itx.response.send_modal(send_one)
+                        await send_one.wait()
+                        if send_one.value in [None, 9]:
+                            pass
+                        else:
+                            ## pages_detailed = [ [result_id: int,   term: str,   type: str,   value: str],    [...], [...] ]
+                            page = self.pages_detailed[self.page][send_one.id]
+                            ## page = [result_id: int,   term: str,   type: str,   value: str]
+                            embed = discord.Embed(color=8481900, title=page[1])
+                            embed.add_field(name=page[2],
+                                            value=page[3],
+                                            inline=False)
+                            await itx.followup.send(f"{itx.user.mention} shared a section of a dictionary entry! (item {page[0]})",embed=embed,
+                                                    allowed_mentions=discord.AllowedMentions.none())
+
+                        #only let someone send 3 of the entries in a dictionary before disabling to prevent spam
+                        if self.printouts == 3:
+                            self.stop()
+
+                embed = pages[page]
+                embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
+                view = Pages(pages, pages_detailed, timeout=90)
+                await itx.response.send_message(f"I found the following `{len(results)}` results on dictionaryapi.dev: ", embed=embed, view=view, ephemeral=True)
+                await view.wait()
+                if view.value in [None, 1, 2]:
+                    await itx.edit_original_response(view=None)
+                return
+        if source == 7:
+            public = False
+            response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={term.lower()}').text
+            # who decided to put the output into a dictionary with a list named 'list'? {"list":[{},{},{}]}
+            data = json.loads(response_api)['list']
+            if len(data) == 0:
+                result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
+                await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
+                cmd_mention_dict = self.client.getCommandMention("dictionary")
+                cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
+                await logMsg(itx.guild, f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
+                return
+            pages = []
+            page = 0
+            for result in data:
+                embed = discord.Embed(color=8481900,
+                                      title=f"__{result['word'].capitalize()}__",
+                                      description=result['definition'],
+                                      url=result['permalink'])
+                post_date = int(mktime(
+                                datetime.strptime(
+                                    result['written_on'][:-1], # "2009-03-04T01:16:08.000Z" ([:-1] to remove Z at end)
+                                    "%Y-%m-%dT%H:%M:%S.%f"
+                                ).timetuple()
+                ))
+                embed.add_field(name="Example",
+                                value=f"{result['example']}\n\n"
+                                      f"{result['thumbs_up']}:thumbsup: :thumbsdown: {result['thumbs_down']}\n"
+                                      f"Sent by {result['author']} on <t:{post_date}:d> at <t:{post_date}:T> (<t:{post_date}:R>)",
+                                inline=False)
+                pages.append(embed)
+
+            class Pages(discord.ui.View):
+                def __init__(self, pages, timeout=None):
                     super().__init__()
                     self.value = None
                     self.timeout = timeout
                     self.page = 0
                     self.pages = pages
-                    self.printouts = 0
-                    self.pages_detailed = pages_detailed
 
                 @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
                 async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
@@ -384,48 +491,14 @@ class TermDictionary(commands.Cog):
                         await itx.response.send_message("This is the last page, you can't go to a next page!",
                                                         ephemeral=True)
 
-                @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.gray)
-                async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.value = 1
-                    embed = self.pages[self.page]
-                    await itx.response.edit_message(content="Sent successfully!",embed=None)
-                    await itx.followup.send(f"{itx.user.mention} shared a dictionary entry!", embed=embed,
-                                            ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
-                    self.stop()
-
-                @discord.ui.button(label='Send one entry', style=discord.ButtonStyle.gray)
-                async def send_single_entry(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.value = 2
-                    self.printouts += 1
-
-                    send_one = Pages.SendEntry(self.pages_detailed[self.page])
-                    await itx.response.send_modal(send_one)
-                    await send_one.wait()
-                    if send_one.value in [None, 9]:
-                        pass
-                    else:
-                        ## pages_detailed = [ [result_id: int,   term: str,   type: str,   value: str],    [...], [...] ]
-                        page = self.pages_detailed[self.page][send_one.id]
-                        ## page = [result_id: int,   term: str,   type: str,   value: str]
-                        embed = discord.Embed(color=8481900, title=page[1])
-                        embed.add_field(name=page[2],
-                                        value=page[3],
-                                        inline=False)
-                        await itx.followup.send(f"{itx.user.mention} shared a section of a dictionary entry! (item {page[0]})",embed=embed,
-                                                allowed_mentions=discord.AllowedMentions.none())
-
-                    #only let someone send 3 of the entries in a dictionary before disabling to prevent spam
-                    if self.printouts == 3:
-                        self.stop()
-
             embed = pages[page]
             embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
-            view = Pages(pages, pages_detailed, timeout=90)
-            await itx.response.send_message(f"I found the following `{len(results)}` results on dictionaryapi.dev: ", embed=embed, view=view, ephemeral=True)
+            view = Pages(pages, timeout=90)
+            await itx.response.send_message(f"I found the following `{len(pages)}` results on urbandictionary.com: ",
+                                            embed=embed, view=view, ephemeral=True)
             await view.wait()
             if view.value in [None, 1, 2]:
                 await itx.edit_original_response(view=None)
-
             return
 
         assert len(result_str) > 0

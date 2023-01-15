@@ -12,6 +12,7 @@ import sys # kill switch for rina (search for :kill)
 mongoURI = open("mongo.txt","r").read()
 cluster = MongoClient(mongoURI)
 RinaDB = cluster["Rina"]
+appcommanderror_cooldown = 0
 
 # Dependencies:
 #   server members intent,
@@ -26,7 +27,7 @@ RinaDB = cluster["Rina"]
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.5.3".split(".")
+fileVersion = "1.1.5.4".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -225,6 +226,41 @@ async def on_error(event, *args, **kwargs):
     embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
     await channel.send("<@262913789375021056>", embed=embed)
 
+@client.tree.error
+async def on_app_command_error(interaction, error):
+    global appcommanderror_cooldown
+    if int(mktime(datetime.now().timetuple())) - appcommanderror_cooldown < 60:
+        # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if within 1 minute
+        return
+    import traceback  # , logging
+    collection = RinaDB["guildInfo"]
+    try:
+        logGuild = await client.fetch_guild(959551566388547676)
+    except discord.errors.Forbidden:
+        if testing_environment == 1:
+            logGuild = await client.fetch_guild(985931648094834798)
+        else:
+            logGuild = await client.fetch_guild(1046086050029772840)
+
+    query = {"guild_id": logGuild.id}
+    guild = collection.find_one(query)
+    if guild is None:
+        debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!", color="red")
+        return
+    vcLog = guild["vcLog"]
+    # message = args[0]
+    msg = ""
+    msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {error}\n\n"
+    msg += traceback.format_exc()
+    debug(f"{msg}", addTime=False)
+
+    # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
+    # msg += '\n\n                   '.join([repr(i) for i in kwargs])
+    msg = msg.replace("\\", "\\\\").replace("*", "\\*").replace("`", "\\`").replace("_", "\\_").replace("~~", "\\~\\~")
+    channel = await logGuild.fetch_channel(vcLog)
+    embed = discord.Embed(color=discord.Colour.from_rgb(r=255, g=0, b=127), title='App Command Error log', description=msg)
+    await channel.send("<@262913789375021056>", embed=embed)
+    appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
 try:
     client.run(open('token.txt',"r").read())
 except SystemExit:

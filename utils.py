@@ -3,8 +3,8 @@ from discord import app_commands # v2.0, use slash commands
 from discord.ext import commands # required for client bot
 from pymongo import MongoClient
 import pymongo # used in cmd_emojistats
+from time import mktime
 #/\ not used in this file, but used in every other file.
-
 from datetime import datetime
 import warnings #used to warn for invalid color thingy in the debug function
 
@@ -139,9 +139,9 @@ async def logMsg(_guild, msg: str):
     guild = collection.find(query)
     try:
         guild = guild[0]
-    except IndexError:
+        vcLog = guild["vcLog"]
+        logChannel = _guild.get_channel(vcLog)
+        return await logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+    except (IndexError, AttributeError):
         debug("Not enough data is configured to log a message in the logging channel! Please fix this with `/editguildinfo`!",color="red")
         return
-    vcLog = guild["vcLog"]
-    logChannel = _guild.get_channel(vcLog)
-    return await logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())

@@ -1,3 +1,5 @@
+import discord.errors
+
 from utils import * #imports 'discord import' and 'mongodb' things too
 import re #use regex to remove pronouns from people's usernames, and split their names into sections by capital letter
 import random # for picking a random call_cute quote
@@ -382,8 +384,8 @@ class OtherAddons(commands.Cog):
                     except discord.errors.Forbidden:
                         pass
 
-        for trigger in ["<@&981735650971775077>", "<@&1012954384142966807>", "<@&981735525784358962>"]:
-            if trigger in message.content:
+        for staff_role_mention in ["<@&981735650971775077>", "<@&1012954384142966807>", "<@&981735525784358962>"]:
+            if staff_role_mention in message.content:
                 time_now = int(mktime(datetime.now().timetuple())) # get time in unix
                 if time_now - report_message_reminder_unix > 900: # 15 minutes
                     await Tags.send_report_info(message.channel, additional_info=[message.author.name, message.author.id])
@@ -868,29 +870,36 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             return
         output = "Attempting deletion...\n"
         await itx.response.send_message(output+"...", ephemeral=True)
-        await logMsg(itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
+        try:
+            await logMsg(itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
 
-        message_delete_count = 0
-        async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
-            message_date = int(mktime(message.created_at.timetuple()))
-            if time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
-                if "[info]" in message.content.lower():
-                    class Interaction:
-                        def __init__(self, member: discord.Member):
-                            self.user = member
-                            self.guild = member.guild
-                    if isStaff(Interaction(message.author)): # nested to save having to look through function 1000 times
-                        continue
-                await message.delete()
-                # print("----Deleted---- ["+str(message.created_at)+f"] {message.author}: {message.content}")
-                message_delete_count += 1
-                if message_delete_count % 50 == 0:
-                    await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
-                continue
-            # print("++++Not deleted++++ ["+str(message.created_at)+f"] {message.author}: {message.content}")
+            message_delete_count = 0
+            async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
+                message_date = int(mktime(message.created_at.timetuple()))
+                if time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
+                    if "[info]" in message.content.lower():
+                        class Interaction:
+                            def __init__(self, member: discord.Member):
+                                self.user = member
+                                self.guild = member.guild
+                        if isStaff(Interaction(message.author)): # nested to save having to look through function 1000 times
+                            continue
+                    await message.delete()
+                    # print("----Deleted---- ["+str(message.created_at)+f"] {message.author}: {message.content}")
+                    message_delete_count += 1
+                    if message_delete_count % 50 == 0:
+                        try:
+                            await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
+                        except discord.errors.HTTPException:
+                            pass # ephemeral message timed out or something..
+                    continue
+                # print("++++Not deleted++++ ["+str(message.created_at)+f"] {message.author}: {message.content}")
 
-        selfies_delete_week_command_cooldown = time_now
-        await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days successfully!", ephemeral=True)
+            selfies_delete_week_command_cooldown = time_now
+            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days successfully!", ephemeral=True)
+        except:
+            await itx.followup.send_message("Something went wrong!")
+            raise
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))
