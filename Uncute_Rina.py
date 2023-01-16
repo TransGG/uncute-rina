@@ -261,6 +261,7 @@ async def on_app_command_error(interaction, error):
     embed = discord.Embed(color=discord.Colour.from_rgb(r=255, g=0, b=127), title='App Command Error log', description=msg)
     await channel.send("<@262913789375021056>", embed=embed)
     appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
+
 try:
     client.run(open('token.txt',"r").read())
 except SystemExit:

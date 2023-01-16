@@ -57,14 +57,14 @@ class TermDictionary(commands.Cog):
             response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
             data = json.loads(response_api)['list']
             for result in data:
-                if result["word"].capitalize() + " (from UD)" not in terms:
-                    terms.append(result["word"].capitalize() + " (from UD)")
+                if result["word"].capitalize() + " ([from UD])" not in terms:
+                    terms.append(result["word"].capitalize() + " ([from UD])")
 
         # limit choices to the first 7
         terms = terms[:7]
 
         return [
-            app_commands.Choice(name=term, value=term)
+            app_commands.Choice(name=term.replace(" ([from UD])"), value=term)
             for term in terms
         ]
 

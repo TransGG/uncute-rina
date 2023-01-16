@@ -862,7 +862,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
             return
         time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
-        if time_now - report_message_reminder_unix < 86400:  # 1 day
+        if time_now - selfies_delete_week_command_cooldown < 86400:  # 1 day
             await itx.response.send_message("This command has already been used yesterday! Please give it some time and prevent ratelimiting.", ephemeral=True)
             return
         if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
