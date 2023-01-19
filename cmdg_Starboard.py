@@ -74,11 +74,25 @@ class Starboard(commands.Cog):
         parts = star_message.content.split("**")
         parts[1] = str(star_stat)
         new_content = '**'.join(parts)
-        await star_message.edit(content=new_content)
+        # update embed message to keep most accurate nickname
+        embed = star_message.embeds[0]
+        try:
+            name = original_message.author.nick
+        except AttributeError:
+            name = original_message.author.name
+        embed.set_author(
+            name=f"{name}",
+            url=f"https://original-poster-{original_message.author.id}/",
+            icon_url=original_message.author.display_avatar.url
+        )
+        await star_message.edit(content=new_content, embed=embed)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.member.id == self.client.user.id:
+            return
+        if payload.emoji.id != starboard_emoji_id and payload.emoji.name != "❌":
+            # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
             return
 
         #get the message id from payload.message_id through the channel (with payload.channel_id) (oof lengthy process)
@@ -159,7 +173,7 @@ class Starboard(commands.Cog):
                         name = message.author.name
                     embed.set_author(
                             name=f"{name}",
-                            # url="https://amitrans.org/",
+                            url=f"https://original-poster-{message.author.id}/",
                             icon_url=message.author.display_avatar.url
                     )
 
@@ -176,6 +190,9 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
+        if payload.emoji.id != starboard_emoji_id and payload.emoji.name != "❌":
+            # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
+            return
         #get the message id from payload.message_id through the channel (with payload.channel_id) (oof lengthy process)
         ch = self.client.get_channel(payload.channel_id)
         message = await ch.fetch_message(payload.message_id)
@@ -222,6 +239,7 @@ class Starboard(commands.Cog):
         star_channel = self.client.get_channel(_star_channel)
 
         if message_payload.message_id in messageIdMarkedForDeletion: #global variable
+            # this prevents having two 'message deleted' logs
             messageIdMarkedForDeletion.remove(message_payload.message_id)
             return
         if message_payload.channel_id == star_channel.id:
