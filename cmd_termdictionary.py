@@ -220,8 +220,11 @@ class TermDictionary(commands.Cog):
     Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
                 #print(response_api.status_code)
         if source == 5 or source == 6:
-            response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{term.lower()}').text
-            data = json.loads(response_api)
+            response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{term.lower().replace("/","%2F")}').text
+            try:
+                data: any = json.loads(response_api)
+            except json.decoder.JSONDecodeError: # if a bad api response is given, catch and continue as if empty results
+                data: dict = {} # specify class to make IDE happy
             results = []
             if type(data) is dict:
                 if source == 5:

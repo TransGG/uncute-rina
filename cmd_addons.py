@@ -708,6 +708,7 @@ class OtherAddons(commands.Cog):
                 return
             if faces > 100000:
                 await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{dice:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
+                return
             rolls = []
             for die in range(dice):
                 rolls.append(random.randint(1,faces))
@@ -722,7 +723,7 @@ class OtherAddons(commands.Cog):
             else:
                 out = f"I rolled {dice} {'die' if dice == 0 else 'dice'} with {faces} face{'s'*(faces>1)} and a modifier of {mod}:\n" +\
                       f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls)+mod)}"
-            if len(out) > 1995:
+            if len(out) > 300:
                 out = f"I rolled {dice:,} {'die' if dice == 0 else 'dice'} with {faces:,} face{'s'*(faces>1)}"+f" and a modifier of {(mod or 0):,}"*(mod is not None)+":\n" +\
                       f"With this many numbers, I've simplified it a little. You rolled `{sum(rolls)+(mod or 0):,}`."
                 roll_db = {}
@@ -731,6 +732,8 @@ class OtherAddons(commands.Cog):
                         roll_db[roll] += 1
                     except KeyError:
                         roll_db[roll] = 1
+                # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
+                # x.items() gives a list of tuples [(1,4),(2,1),(3,4),(4,1)] that is then sorted by the first item in the tuple
                 roll_db = dict(sorted(roll_db.items()))
                 details = "You rolled "
                 for roll in roll_db:

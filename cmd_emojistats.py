@@ -182,8 +182,7 @@ class EmojiStats(commands.Cog):
         output = ""
         for type in ["messageUsedCount","reactionUsedCount"]:
             results = []
-            search = await collection.find({},limit=10,sort=[(type,pymongo.DESCENDING)])
-            for emoji in search:
+            async for emoji in collection.find({},limit=10,sort=[(type,pymongo.DESCENDING)]):
                 animated = 0
                 try:
                     animated = emoji['animated']

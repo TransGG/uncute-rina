@@ -91,7 +91,7 @@ class Starboard(commands.Cog):
                 f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) or message {payload.message_id}!\n'
                 f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}')
             # return
-            #todo: I would like to return/remove this here, but I'm still trying to figure out why it's broken in the first place.
+            # todo: I would like to return/remove this here, but I'm still trying to figure out why it's broken in the first place.
 
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message.guild.id}

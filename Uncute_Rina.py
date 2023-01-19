@@ -27,7 +27,7 @@ appcommanderror_cooldown = 0
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.5.4".split(".")
+fileVersion = "1.1.5.5".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -201,11 +201,11 @@ async def on_error(event, *args, **kwargs):
     collection = RinaDB["guildInfo"]
     try:
         logGuild = await client.fetch_guild(959551566388547676)
-    except discord.errors.Forbidden:
+    except discord.errors.NotFound:
         if testing_environment == 1:
             logGuild = await client.fetch_guild(985931648094834798)
         else:
-            logGuild = await client.fetch_guild(1046086050029772840)
+            logGuild = await client.fetch_guild(981615050664075404)
 
     query = {"guild_id": logGuild.id}
     guild = collection.find_one(query)
@@ -236,11 +236,19 @@ async def on_app_command_error(interaction, error):
     collection = RinaDB["guildInfo"]
     try:
         logGuild = await client.fetch_guild(959551566388547676)
-    except discord.errors.Forbidden:
+    except discord.errors.NotFound:
         if testing_environment == 1:
             logGuild = await client.fetch_guild(985931648094834798)
         else:
-            logGuild = await client.fetch_guild(1046086050029772840)
+            logGuild = await client.fetch_guild(981615050664075404)
+
+    #     try:
+    #         client.logChannel = await client.fetch_channel(988118678962860032)
+    #     except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
+    #         if testing_environment == 1:
+    #             client.logChannel = await client.fetch_channel(986304081234624554)
+    #         else:
+    #             client.logChannel = await client.fetch_channel(1062396920187863111)
 
     query = {"guild_id": logGuild.id}
     guild = collection.find_one(query)
