@@ -27,7 +27,7 @@ appcommanderror_cooldown = 0
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.5.5".split(".")
+fileVersion = "1.1.6.0".split(".")
 try:
     version = open("version.txt", "r").read().split(".")
 except:
@@ -138,17 +138,7 @@ async def setup_hook():
             client.logChannel = await client.fetch_channel(986304081234624554)
         else:
             client.logChannel = await client.fetch_channel(1062396920187863111)
-    # 
-    # from cmdg_Table import Table
-    # class Interaction:
-    #     async def set(self):
-    #         guild = client.logChannel.guild
-    #         self.guild = guild
-    #         self.guild_id = guild.id
-    # itx = Interaction()
-    # await itx.set()
-    # await Table.tablemsgupdate(Table, itx)
-    # debug(f"[###   ]: Updated table message"+ " "*30,color="green")
+
     debug(f"[##+  ]: Restarting ongoing reminders"+" "*30,color="light_blue",end="\r")
     from cmdg_Reminders import Reminders
     collection = RinaDB["reminders"]
@@ -232,6 +222,7 @@ async def on_app_command_error(interaction, error):
     if int(mktime(datetime.now().timetuple())) - appcommanderror_cooldown < 60:
         # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if within 1 minute
         return
+    await interaction.followup.send("Something went wrong!", ephemeral=True)
     import traceback  # , logging
     collection = RinaDB["guildInfo"]
     try:

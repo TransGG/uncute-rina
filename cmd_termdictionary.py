@@ -64,7 +64,7 @@ class TermDictionary(commands.Cog):
         terms = terms[:7]
 
         return [
-            app_commands.Choice(name=term.replace(" ([from UD])"), value=term)
+            app_commands.Choice(name=term, value=term.replace(" ([from UD])", ""))
             for term in terms
         ]
 
@@ -233,6 +233,7 @@ class TermDictionary(commands.Cog):
                 if source == 6:
                     source = 7
             else:
+                await itx.response.defer(ephemeral=True)
                 for result in data:
                     meanings = []
                     synonyms = []
@@ -419,19 +420,19 @@ class TermDictionary(commands.Cog):
                 embed = pages[page]
                 embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
                 view = Pages(pages, pages_detailed, timeout=90)
-                await itx.response.send_message(f"I found the following `{len(results)}` results on dictionaryapi.dev: ", embed=embed, view=view, ephemeral=True)
+                await itx.followup.send(f"I found the following `{len(results)}` results on dictionaryapi.dev: ", embed=embed, view=view, ephemeral=True)
                 await view.wait()
                 if view.value in [None, 1, 2]:
                     await itx.edit_original_response(view=None)
                 return
         if source == 7:
-            public = False
+            await itx.response.defer(ephemeral=True)
             response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={term.lower()}').text
             # who decided to put the output into a dictionary with a list named 'list'? {"list":[{},{},{}]}
             data = json.loads(response_api)['list']
             if len(data) == 0:
                 result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
-                await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
+                await itx.followup.send(result_str, ephemeral=True, suppress_embeds=True)
                 cmd_mention_dict = self.client.getCommandMention("dictionary")
                 cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
                 await logMsg(itx.guild, f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
@@ -497,8 +498,8 @@ class TermDictionary(commands.Cog):
             embed = pages[page]
             embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
             view = Pages(pages, timeout=90)
-            await itx.response.send_message(f"I found the following `{len(pages)}` results on urbandictionary.com: ",
-                                            embed=embed, view=view, ephemeral=True)
+            await itx.followup.send(f"I found the following `{len(pages)}` results on urbandictionary.com: ",
+                                    embed=embed, view=view, ephemeral=True)
             await view.wait()
             if view.value in [None, 1, 2]:
                 await itx.edit_original_response(view=None)

@@ -1,5 +1,3 @@
-import discord.errors
-
 from utils import * #imports 'discord import' and 'mongodb' things too
 import re #use regex to remove pronouns from people's usernames, and split their names into sections by capital letter
 import random # for picking a random call_cute quote
@@ -225,7 +223,7 @@ class SearchAddons(commands.Cog):
                 except IndexError:
                     await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
                     return
-                embed = discord.Embed(color=8481900, type='rich', title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
                 embed.add_field(name="Column 1",value=result_page)
                 embed.add_field(name="Column 2",value=result_page2)
                 embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
@@ -327,7 +325,7 @@ class SearchAddons(commands.Cog):
         view = MoreInfo(region.url)
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    async def tag_autocomplete(self, itx: discord.Interaction, current: str):
+    async def tag_autocomplete(self, _itx: discord.Interaction, current: str):
         options = ["report", "customvc", "trigger warnings"]
         return [
             app_commands.Choice(name=term, value=term)
@@ -425,7 +423,7 @@ class OtherAddons(commands.Cog):
                     "You gotta praise those around you as well. "+(message.author.nick or message.author.name)+", for example, is very cute.",
                     "Oh by the way, did I say "+(message.author.nick or message.author.name)+" was cute yet? I probably didn't. "+(message.author.nick or message.author.name)+"? You're very cute",
                     "Such nice weather outside, isn't it? What- you asked me a question?\nNo you didn't, you're just talking to youself.",
-                    "".join(random.choice("acefgilrsuwnopacefgilrsuwnopacefgilrsuwnop;;  ") for i in range(random.randint(10,25))), # 3:2 letters to symbols
+                    "".join(random.choice("acefgilrsuwnopacefgilrsuwnopacefgilrsuwnop;;  ") for _ in range(random.randint(10,25))), # 3:2 letters to symbols
                     "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
                     "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
                     "...",
@@ -446,7 +444,8 @@ class OtherAddons(commands.Cog):
                     await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
                 await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
             else:
-                await message.channel.send("I use slash commands! Use /command  and see what cool things might pop up! or something\nPS: If you're trying to call me cute: no, i'm not", delete_after=8)
+                cmd_mention = self.client.getCommandMention("help")
+                await message.channel.send(f"I use slash commands! Use /command  and see what cool things might pop up! or try {cmd_mention}\nPS: If you're trying to call me cute: no, I'm not", delete_after=8)
 
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?")
@@ -480,12 +479,13 @@ class OtherAddons(commands.Cog):
     async def compliment(self, itx: discord.Interaction, user: discord.User):
         # await itx.response.send_message("This command is currently disabled for now, since we're missing compliments. Feel free to suggest some, and ping @MysticMia#7612",ephemeral=True)
         # return
-
         try:
-            user.roles
+            user: discord.Member # make IDE happy, i guess
+            userroles = user.roles[:]
         except AttributeError:
             await itx.response.send_message("Aw man, it seems this person isn't in the server. I wish I could compliment them but they won't be able to see it!", ephemeral=True)
             return
+
         async def call(itx, user, type):
             quotes = {
                 "fem_quotes": [
@@ -624,7 +624,6 @@ class OtherAddons(commands.Cog):
                 await call(itx, user, view.value)
 
         roles = ["he/him", "she/her", "they/them", "it/its"]
-        userroles = user.roles[:]
         random.shuffle(userroles) # pick a random order for which pronoun role to pick
         for role in userroles:
             if role.name.lower() in roles:
@@ -844,7 +843,7 @@ Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 {self.client.getCommandMention('qotw')}: Suggest a Question Of The Week to staff
 {self.client.getCommandMention('roll')}: Roll some dice with a random result
 {self.client.getCommandMention('reminder')}: Make or see your reminders
-{self.client.getCommandMention('tag')}: Get information about some of Rina's extra features
+{self.client.getCommandMention('tag')}: Get information about some of the server's extra features
 {self.client.getCommandMention('todo')}: Make, add, or remove items from your to-do list
 {self.client.getCommandMention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)
 
