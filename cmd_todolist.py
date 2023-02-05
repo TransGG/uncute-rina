@@ -48,7 +48,7 @@ class TodoList(commands.Cog):
                 del list[todo]
             except IndexError:
                 cmd_mention = self.client.getCommandMention("todo")
-                await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention}` mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
+                await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention} `mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
                 return
             collection.update_one(query, {"$set":{f"list":list}}, upsert=True)
             await itx.response.send_message(f"Successfully removed '{todo}' from your to-do list. Your list now contains {len(list)} item{'s'*(len(list)!=1)}.", ephemeral=True)

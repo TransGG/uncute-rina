@@ -27,7 +27,7 @@ class Pronouns(commands.Cog):
             pronouns = data['pronouns']
         if len(pronouns) == 0:
             cmd_mention = self.client.getCommandMention("pronouns")
-            warning = f"\nThis person hasn't added custom pronouns yet! (They need to use {cmd_mention}` mode:Add argument:<pronoun>` to add one)"
+            warning = f"\nThis person hasn't added custom pronouns yet! (They need to use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one)"
 
         list = []
         for pronoun in pronouns:
@@ -58,7 +58,7 @@ class Pronouns(commands.Cog):
 
         if len(list) == 0:
             cmd_mention = self.client.getCommandMention("pronouns")
-            await itx.response.send_message(f"This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use {cmd_mention}` mode:Add argument:<pronoun>`\nThey might also have pronouns mentioned in their About Me.. I can't see that sadly, so you'd have to check yourself.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            await itx.response.send_message(f"This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use {cmd_mention} `mode:Add` `argument:<pronoun>`\nThey might also have pronouns mentioned in their About Me.. I can't see that sadly, so you'd have to check yourself.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         else:
             await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n" + '\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
@@ -239,7 +239,7 @@ class Pronouns(commands.Cog):
             collection.update_one(query, {"$set": {f"pronouns": pronouns}}, upsert=True)
             cmd_mention = self.client.getCommandMention("pronouns")
             await itx.response.send_message(
-                warning + f"Successfully added `{pronoun}`. Use {cmd_mention}` mode:Check` to see your custom pronouns, and use {cmd_mention}` mode:Remove argument:pronoun` to remove one",
+                warning + f"Successfully added `{pronoun}`. Use {cmd_mention} `mode:Check` to see your custom pronouns, and use {cmd_mention} `mode:Remove` `argument:pronoun` to remove one",
                 ephemeral=True)
         elif mode == 3:
             collection = RinaDB["members"]
@@ -249,12 +249,12 @@ class Pronouns(commands.Cog):
                 # see if this user already has data, if not, add empty
                 cmd_mention = self.client.getCommandMention("pronouns")
                 await itx.response.send_message(
-                    f"You haven't added pronouns yet! Use {cmd_mention}` mode:Add argument:<pronoun>` to add one!", ephemeral=True)
+                    f"You haven't added pronouns yet! Use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one!", ephemeral=True)
                 return
 
             if argument is None:
                 cmd_mention = self.client.getCommandMention("pronouns")
-                await itx.response.send_message(f"You can remove pronouns with this command. Check the pronouns you have with the {cmd_mention}` mode:Check` command."
+                await itx.response.send_message(f"You can remove pronouns with this command. Check the pronouns you have with the {cmd_mention} `mode:Check` command."
                                                 f"If you have a pronoun you want to remove, write the pronoun in the 'argument' section of the command.",ephemeral=True)
                 return
             pronoun = argument
@@ -270,7 +270,7 @@ class Pronouns(commands.Cog):
                             # see if this user already has data, if not, add empty
                             cmd_mention = self.client.getCommandMention("pronouns")
                             await itx.response.send_message(
-                                f"This person hasn't added pronouns yet! Tell them to use {cmd_mention}` mode:Add <pronoun>` to add one!",
+                                f"This person hasn't added pronouns yet! Tell them to use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one!",
                                 ephemeral=True)
                             return
                         pronouns = data['pronouns']
@@ -278,13 +278,13 @@ class Pronouns(commands.Cog):
                     except ValueError:
                         cmd_mention = self.client.getCommandMention("pronouns")
                         await itx.response.send_message(
-                            f"If you are staff, and wanna remove a pronoun, then type `argument:USERID | PronounYouWannaRemove` like {cmd_mention}` mode:Remove argument:4491185284728472 | 1`\nThe pronoun/item you wanna remove will be in order of the pronouns, starting at 1 at the top. So if someone has 3 pronouns and you wanna remove the second one, type '2'.",
+                            f"If you are staff, and wanna remove a pronoun, then type `argument:USERID | PronounYouWannaRemove` like {cmd_mention} `mode:Remove` `argument:4491185284728472 | 1`\nThe pronoun/item you wanna remove will be in order of the pronouns, starting at 1 at the top. So if someone has 3 pronouns and you wanna remove the second one, type '2'.",
                             ephemeral=True)
                         return
                 else:
                     cmd_mention = self.client.getCommandMention("pronouns")
                     await itx.response.send_message(
-                        f"You haven't added this pronoun yet, so I can't really remove it either! Use {cmd_mention}` mode:Add argument:<pronoun>` to add one, or `{cmd_mention} mode:Check` to see what pronouns you have added",
+                        f"You haven't added this pronoun yet, so I can't really remove it either! Use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one, or `{cmd_mention} mode:Check` to see what pronouns you have added",
                         ephemeral=True)
                     return
             else:

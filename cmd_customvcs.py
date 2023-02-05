@@ -63,7 +63,7 @@ class CustomVcs(commands.Cog):
                 for target in before.channel.overwrites:
                     if target not in before.channel.members:
                         continue
-                    if before.channel.overwrites[target].speak:
+                    if before.channel.overwrites[target].connect:
                         reset_vctable = False
                         break
                 if reset_vctable:
@@ -75,7 +75,10 @@ class CustomVcs(commands.Cog):
                         if before.channel.id not in recently_renamed_vcs:
                             recently_renamed_vcs[before.channel.id] = []
                         recently_renamed_vcs[before.channel.id].append(int(mktime(datetime.now().timetuple())))
-                        await before.channel.edit(name=new_channel_name)
+                        try:
+                            await before.channel.edit(name=new_channel_name)
+                        except discord.errors.NotFound:
+                            pass
         if after.channel is not None:
             if after.channel.id == vcHub:
                 default_name = "Untitled voice chat"
@@ -422,8 +425,13 @@ class CustomVcs(commands.Cog):
 
     vctable = app_commands.Group(name='vctable', description='Make your voice channels advanced!')
     # Owner   = Speaking perms
-    # Muted   = No speaking perms
     # Speaker = Connection perms
+    # Muted   = No speaking perms
+
+    #update
+    # Owner   = Connection perms
+    # Speaker = Speaking perms
+    # Muted   = No speaking perms
 
     async def get_current_channel(self, itx: discord.Interaction, action: str, from_event: bool = None):
         collection = RinaDB["guildInfo"]
@@ -461,7 +469,7 @@ class CustomVcs(commands.Cog):
         if channel is None:
             return
         try:  # Check if executor is the VcTable owner
-            if not channel.overwrites[itx.user].speak:
+            if not channel.overwrites[itx.user].connect:
                 raise KeyError("Not owner.")
         except KeyError:
             if from_event:
@@ -515,22 +523,25 @@ class CustomVcs(commands.Cog):
         await itx.response.defer(ephemeral=True)
         owner_present = False
         for target in channel.overwrites:
-            if channel.overwrites[target].speak and target not in channel.category.overwrites:
+            if channel.overwrites[target].connect and target not in channel.category.overwrites:
                 owner_present = True
         if owner_present:
             cmd_mention = self.client.getCommandMention("vctable owner")
-            await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention}` mode:Check owners` to see who the owners of this table are!", ephemeral=True)
+            await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to see who the owners of this table are!", ephemeral=True)
             return
         for owner_id in added_owners:
             owner = itx.guild.get_member(int(owner_id))
-            await channel.set_permissions(owner, speak=True, reason="VcTable created: set as owner")
+            await channel.set_permissions(owner, overwrite=discord.PermissionOverwrite(connect=True,speak=True), reason="VcTable created: set as owner")
         owner_taglist = ', '.join([f'<@{id}>' for id in added_owners])
         await channel.send("CustomVC converted to VcTable\n"
                            f"Made {owner_taglist} a VcTable Owner",allowed_mentions=discord.AllowedMentions.none())
         await logMsg(itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
         recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
-        await channel.edit(name=VcTable_prefix+channel.name)
-        await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n"+warning,ephemeral=True)
+        try:
+            await channel.edit(name=VcTable_prefix+channel.name)
+            await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n"+warning,ephemeral=True)
+        except discord.errors.NotFound:
+            await itx.followup.send("I was unable to name your VcTable, but I managed to set the permissions for it.")
 
     @vctable.command(name="owner", description="Manage the owners of your VcTable")
     @app_commands.describe(user="Who to add/remove as a VcTable owner (ignore if 'Check')")
@@ -546,7 +557,7 @@ class CustomVcs(commands.Cog):
             elif mode == 2:
                 cmd_mention = self.client.getCommandMention("vctable owner")
                 await itx.response.send_message("You can't remove your ownership of this VcTable!\n"
-                                                f"You can make more people owner with {cmd_mention}` user:<user>` though...",
+                                                f"You can make more people owner with {cmd_mention} `user: ` though...",
                                                 ephemeral=True)
             return
 
@@ -556,31 +567,28 @@ class CustomVcs(commands.Cog):
             if channel is None:
                 return
             try:
-                if channel.overwrites[user].speak:
+                if channel.overwrites[user].connect:
                     await itx.response.send_message(f"This user is already an owner!", ephemeral=True)
                     return
             except KeyError:
                 pass
-            try:
-                if channel.overwrites[user].speak is False:
-                    warning = "\nThis user was muted. Making this person an owner caused their speaking permissions to be allowed!"
-            except KeyError:
-                pass
-            await channel.set_permissions(user, speak=True, reason="VcTable edited: set as owner")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(connect=True,speak=True), reason="VcTable edited: set as owner (+speaker)")
             await channel.send(f"{itx.user.mention} added {user.mention} as VcTable owner", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully added {user.mention} as owner." + warning, ephemeral=True)
+            if user in channel.members:
+                await user.move_to(channel)
 
         if mode == 2:  # remove
             channel = await self.get_channel_if_owner(itx, "remove owner")
             if channel is None:
                 return
             try:
-                if channel.overwrites[user].speak is not True: # if False or None
+                if channel.overwrites[user].connect is not True: # if False or None
                     await itx.response.send_message("This user wasn't an owner yet.. Try taking someone else's ownership away.", ephemeral=True)
                     return
             except KeyError:
                 pass
-            await channel.set_permissions(user, speak=None, reason="VcTable edited: removed as owner")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(connect=None), reason="VcTable edited: removed as owner")
             await channel.send(f"{itx.user.mention} removed {user.mention} as VcTable owner", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully removed {user.mention} as owner.", ephemeral=True)
 
@@ -590,7 +598,7 @@ class CustomVcs(commands.Cog):
                 return
             owners = []
             for target in channel.overwrites:  # key in dictionary
-                if channel.overwrites[target].speak:
+                if channel.overwrites[target].connect:
                     if isinstance(target, discord.Member):
                         owners.append(target.mention)
             await itx.response.send_message("Here is a list of this VcTable's owners:\n  "+', '.join(owners), ephemeral=True)
@@ -611,44 +619,51 @@ class CustomVcs(commands.Cog):
             channel = await self.get_channel_if_owner(itx, "add speaker")
             if channel is None:
                 return
-            warning = ""
             try:
-                if channel.overwrites[user].connect:
+                warning = "\nThis user was muted before. Making them a speaker removed their mute." if channel.overwrites[user].speak is False else ""
+                if channel.overwrites[user].speak:
                     await itx.response.send_message(f"This user is already a speaker!", ephemeral=True)
                     return
             except KeyError:
-                pass
+                warning = ""
             try:
-                if channel.overwrites[itx.guild.default_role].speak is False: # No IDE, this expression can't be simplified.
+                if channel.overwrites[itx.guild.default_role].speak is not False:
                     cmd_mention = self.client.getCommandMention("vctable make_authorized_only")
-                    warning = f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}"
+                    warning += f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}"
             except KeyError:
                 pass
-            await channel.set_permissions(user, connect=True, reason="VcTable edited: set as speaker")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=True), reason="VcTable edited: set as speaker")
             await channel.send(f"{itx.user.mention} made {user.mention} a speaker", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully made {user.mention} a speaker."+warning, ephemeral=True)
+            if user in channel.members:
+                await user.move_to(channel)
 
         if mode == 2:  # remove
             channel = await self.get_channel_if_owner(itx, "remove speaker")
             if channel is None:
                 return
             try:
-                if not channel.overwrites[user].connect:
+                if channel.overwrites[user].speak is not True:
                     await itx.response.send_message(f"This user is not a speaker! You can't unspeech a non-speaker!", ephemeral=True)
+                    return
+                if channel.overwrites[user].connect:
+                    await itx.response.send_message(f"This user is an owner of this VcTable! If you want to reset their speaking permissions, un-owner them first!", ephemeral=True)
                     return
             except KeyError:
                 await itx.response.send_message(f"This user is not a speaker! You can't unspeech a non-speaker!", ephemeral=True)
                 return
             warning = ""
             try:
-                if channel.overwrites[itx.guild.default_role].speak is False:  # No IDE, this expression can't be simplified.
+                if channel.overwrites[itx.guild.default_role].speak is False:
                     cmd_mention = self.client.getCommandMention("vctable make_authorized_only")
                     warning = f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}"
             except KeyError:
                 pass
-            await channel.set_permissions(user, connect=None, reason="VcTable edited: removed as speaker")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=None), reason="VcTable edited: removed as speaker")
             await channel.send(f"{itx.user.mention} removed {user.mention} as speaker", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully made {user.mention} a speaker."+warning, ephemeral=True)
+            if user in channel.members:
+                await user.move_to(channel)
 
         if mode == 3:  # check
             channel = await self.get_current_channel(itx, "check speakers")
@@ -656,7 +671,7 @@ class CustomVcs(commands.Cog):
                 return
             speakers = []
             for target in channel.overwrites:  # key in dictionary
-                if channel.overwrites[target].connect:
+                if channel.overwrites[target].speak:
                     if isinstance(target, discord.Member):
                         speakers.append(target.mention)
             await itx.response.send_message("Here is a list of this VcTable's speakers:\n  " + ', '.join(speakers), ephemeral=True)
@@ -678,19 +693,13 @@ class CustomVcs(commands.Cog):
             if channel is None:
                 return
             try:
+                warning = "\nThis user was a speaker before. Muting them overwrote this permissions and removed their speaker permissions" if channel.overwrites[user].speak else ""
                 if channel.overwrites[user].speak is False:
                     await itx.response.send_message(f"This user is already muted!", ephemeral=True)
                     return
-            except KeyError:
-                pass
-            try:
-                if channel.overwrites[user].speak:
-                    await itx.response.send_message(f"This user is an owner! You can't mute a VcTable owner!", ephemeral=True)
+                if channel.overwrites[user].connect:
+                    await itx.response.send_message(f"This user is an owner of this VcTable! If you want to mute them, un-owner them first!", ephemeral=True)
                     return
-            except KeyError:
-                pass
-            try:
-                warning = "\nThis user was a speaker before. Muting them overwrote this permissions and removed their speaker permissions" if channel.overwrites[user].speak else ""
             except KeyError:
                 warning = ""
 
@@ -701,13 +710,13 @@ class CustomVcs(commands.Cog):
             if isStaff(Interaction(itx.guild, user)):
                 await itx.response.send_message("You can't mute staff members! If you have an issue with staff, make a ticket or DM an admin!",ephemeral=True)
                 return
-            await channel.set_permissions(user, speak=False, reason="VcTable edited: muted participant")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=False), reason="VcTable edited: muted participant")
             await channel.send(f"{itx.user.mention} muted {user.mention}", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully muted {user.mention}."+warning, ephemeral=True)
             if user in channel.members:
                 await user.move_to(channel)
 
-        if mode == 2:  # remove
+        if mode == 2:  # unmute
             channel = await self.get_channel_if_owner(itx, "unmute participant")
             if channel is None:
                 return
@@ -718,13 +727,7 @@ class CustomVcs(commands.Cog):
             except KeyError:
                 await itx.response.send_message(f"This user is already unmuted! Let people be silent if they wanna be >:(", ephemeral=True)
                 return
-            try:
-                if channel.overwrites[user].speak:
-                    await itx.response.send_message("This user is an owner. Unmuting this person would reset their speaking permissions! (Cancelled!)", ephemeral=True)
-                    return
-            except KeyError:
-                pass
-            await channel.set_permissions(user, speak=None, reason="VcTable edited: unmuted participant")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=None), reason="VcTable edited: unmuted participant")
             await channel.send(f"{itx.user.mention} unmuted {user.mention}", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully unmuted {user.mention}.", ephemeral=True)
             if user in channel.members:
@@ -752,7 +755,7 @@ class CustomVcs(commands.Cog):
         # if authorized-only is enabled -> (the role overwrite is not nonexistant and is False):
         if channel.overwrites.get(itx.guild.default_role, False):
             if channel.overwrites[itx.guild.default_role].speak is False:
-                await channel.set_permissions(itx.guild.default_role, speak=None, reason="VcTable edited: disaled authorized-only for speaking")
+                await channel.set_permissions(itx.guild.default_role, overwrite=discord.PermissionOverwrite(speak=None), reason="VcTable edited: disaled authorized-only for speaking")
                 await channel.send(f"{itx.user.mention} disabled whitelist for speaking", allowed_mentions=discord.AllowedMentions.none())
                 await itx.response.send_message(f"Successfully disabled whitelist.", ephemeral=True)
                 return
@@ -780,13 +783,13 @@ class CustomVcs(commands.Cog):
         view = Confirm()
         cmd_mention = self.client.getCommandMention("vctable speaker")
         await itx.response.send_message(f"Enabling authorized-only (a whitelist) will make only owners and speakers (people that have been whitelisted) able to talk\n"
-                                        f"Please make sure everyone is aware of this change."
-                                        f"To whitelist someone, use {cmd_mention}`mode:Add user:<user>`, (and they might have to rejoin to update their permissions)",
+                                        f"Please make sure everyone is aware of this change. "
+                                        f"To whitelist someone, use {cmd_mention} `mode:Add` `user: `, (and they might have to rejoin to update their permissions)",
                                         ephemeral=True,
                                         view=view)
         await view.wait()
         if view.value == 1:
-            await channel.set_permissions(itx.guild.default_role, speak=False, reason="VcTable edited: enabled authorized-only for speaking")
+            await channel.set_permissions(itx.guild.default_role, overwrite=discord.PermissionOverwrite(speak=False), reason="VcTable edited: enabled authorized-only for speaking")
             await channel.send(f"{itx.user.mention} enabled whitelist for speaking", allowed_mentions=discord.AllowedMentions.none())
             for member in channel.members: # member has no owner or speaking perms, move to same vc?
                 if member in channel.overwrites:
@@ -794,12 +797,10 @@ class CustomVcs(commands.Cog):
                         continue
                 await member.move_to(channel)
             cmd_mention = self.client.getCommandMention("vctable speaker")
-            await itx.edit_original_response(content= f"Successfully enabled whitelist. Use {cmd_mention}` user:<user>` to let more people speak.",
+            await itx.edit_original_response(content= f"Successfully enabled whitelist. Use {cmd_mention} `user: ` to let more people speak.",
                                              view   = None)
         else:
             await itx.edit_original_response(content="Cancelling...", view=None)
-
-
 
     @vctable.command(name="about", description="Get information about this CustomVC add-on feature")
     async def vctable_help(self, itx: discord.Interaction):
@@ -816,11 +817,11 @@ class CustomVcs(commands.Cog):
             description = f"Words in brackets [like so] mean they are optional for the command.\n"
                           f"Most commands are for owners only, like muting, adding/removing permissions. Normal participants can check who's owner, speaker, or muted though.\n"
                           f"{self.client.getCommandMention('vctable about')}: See this help page\n"
-                          f"{self.client.getCommandMention('vctable create')}` [owners:]`: Turns your CustomVC into a VcTable and makes you (and any additional mentioned user(s)) the owner\n"
-                          f"{self.client.getCommandMention('vctable owner')}` mode:  user:`: Add/Remove an owner to your table. If you want to check the owners, then it doesn't matter what you fill in for 'user'\n"
-                          f"{self.client.getCommandMention('vctable mute')}` mode:  user:`: Mute/Unmute a user in your table. If you want to check the muted participants, see ^ (same as for checking owners)\n"
+                          f"{self.client.getCommandMention('vctable create')} `[owners: ]`: Turns your CustomVC into a VcTable and makes you (and any additional mentioned user(s)) the owner\n"
+                          f"{self.client.getCommandMention('vctable owner')} `mode: ` `user: `: Add/Remove an owner to your table. If you want to check the owners, then it doesn't matter what you fill in for 'user'\n"
+                          f"{self.client.getCommandMention('vctable mute')} `mode: ` `user: `: Mute/Unmute a user in your table. If you want to check the muted participants, see ^ (same as for checking owners)\n"
                           f"{self.client.getCommandMention('vctable make_authorized_only')}: Toggle the whitelist for speaking (requires rejoining to update permissions)\n"
-                          f"{self.client.getCommandMention('vctable speaker')}` mode:  user:`: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted participants\n")
+                          f"{self.client.getCommandMention('vctable speaker')} `mode: ` `user: `: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted participants\n")
         await itx.response.send_message(embeds=[embed1,embed2], ephemeral=True)
 
 async def setup(client):

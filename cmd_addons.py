@@ -741,7 +741,7 @@ class OtherAddons(commands.Cog):
                 del blacklist[string]
             except IndexError:
                 cmd_mention = self.client.getCommandMention("complimentblacklist")
-                await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention}` mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
+                await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention} `mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
                 return
             collection.update_one(query, {"$set":{f"list":blacklist}}, upsert=True)
             await itx.response.send_message(f"Successfully removed '{string}' from your blacklist. Your blacklist now contains {len(blacklist)} string{'s'*(len(blacklist)!=1)}.", ephemeral=True)
@@ -907,16 +907,16 @@ Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 {self.client.getCommandMention('dictionary')}: Search for an lgbtq+-related term!
 {self.client.getCommandMention('equaldex')}: See LGBTQ safety and rights in a country (with API)
 {self.client.getCommandMention('help')}: See this help page
-{self.client.getCommandMention('nameusage')}: See how many people are using the same name
+{self.client.getCommandMention('nameusage gettop')}: See how many people are using the same name
 {self.client.getCommandMention('pronouns')}: See someone's pronouns or edit your own
 {self.client.getCommandMention('qotw')}: Suggest a Question Of The Week to staff
 {self.client.getCommandMention('roll')}: Roll some dice with a random result
-{self.client.getCommandMention('reminder')}: Make or see your reminders
+{self.client.getCommandMention('reminder reminders')}: Make or see your reminders
 {self.client.getCommandMention('tag')}: Get information about some of the server's extra features
 {self.client.getCommandMention('todo')}: Make, add, or remove items from your to-do list
 {self.client.getCommandMention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)
 
-Make a custom voice channel by joining "Join to create VC" (use {self.client.getCommandMention('tag')}` tag:customvc` for more info)
+Make a custom voice channel by joining "Join to create VC" (use {self.client.getCommandMention('tag')} `tag:customvc` for more info)
 {self.client.getCommandMention('editvc')}: edit the name or user limit of your custom voice channel
 {self.client.getCommandMention('vctable about')}: Learn about making your voice chat more on-topic!
 """
