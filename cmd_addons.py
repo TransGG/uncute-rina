@@ -9,6 +9,75 @@ from time import mktime # for unix time code
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 selfies_delete_week_command_cooldown = 0
 
+conversion_rates = { # [default 0, incrementation]
+    "temperature":{
+        "Celcius"    : [273.15, 1, "°C"],
+        "Kelvin"     : [0, 1, "K"],
+        "Fahrenheit" : [459.67, 1.8, "°F"],
+        "Rankine"    : [0, 1.8, "°R"]
+    },
+    "length":{
+        "kilometer"  : [0, 1000, "km"],
+        "hectometer" : [0, 100, "hm"],
+        "meter"      : [0, 1, "m"],
+        "decimeter"  : [0, 0.1, "dm"],
+        "centimeter" : [0, 0.01, "cm"],
+        "millimeter" : [0, 0.001, "mm"],
+        "micrometer" : [0, 1 * 10 ** (-6), "μm"],
+        "nanometer"  : [0, 1 * 10 ** (-9), "nm"],
+        "picometer"  : [0, 1 * 10 ** (-12), "pm"],
+        "femtometer" :  [0, 1 * 10 ** (-15), "fm"],
+        "ångström"   : [0, 1 * 10 ** (-10), "Å"],
+
+        "mile"       : [0, 0.0006213711922373339, "mi"],
+        "yard"       : [0, 1.09361329833770778652, "yd"],
+        "foot"       : [0, 3.28083989501312335958, "ft"],
+        "inch"       : [0, 39.37007874015748031496, "in"],
+
+    },
+    "surface area": {
+        "square kilometer"  : [0, 0.000001, "km²"],
+        "square meter"      : [0, 1, "m²"],
+        "square centimeter" : [0, 10000, "cm²"],
+        "square mile"       : [0, 0.00000038610215854781256, "mi²"],
+        "square yard"       : [0, 1.19599, "yd²"],
+        "square feet"       : [0, 10.76391, "ft²"],
+        "square inch"       : [0, 1550, "in²"],
+        "hectare"           : [0, 0.0001, "ha"],
+        "acre"              : [0, 0.00024710538146716534, "ac"]
+    },
+    "volume": {
+        "cubic meter"      : [0, 1, "m³"],
+        "cubic centimeter" : [0, 1000000, "cm³"],
+        "cubic feet"       : [0, 35.31466666, "ft³"],
+        "quart"            : [0, 1056.688209, "qt"],
+        "pint"             : [0, 2113.376419, "pt"],
+        "fluid ounce"      : [0, 33814.0227, "fl oz"],
+        "milliliter"       : [0, 1000000, "mL"],
+        "liter"            : [0, 1000, "L"],
+        "gallon"           : [0, 264.172052, "gal"],
+        "cup"              : [0, 4226.752838, "cp"],
+    },
+    "speed": {
+        "meter per second"    : [0, 1, "m/s"],
+        "feet per second"     : [0, 3.28084, "ft/s"],
+        "kilometers per hour" : [0, 3.6, "km/h"],
+        "miles per hour"      : [0, 2.23694, "mph"],
+        "knots"               : [0, 1.94384, "kn"]
+    },
+    "weight": {
+        "kilogram"  : [0, 1, "kg"],
+        "gram"      : [0, 1000, "g"],
+        "milligram" : [0, 1000000, "mg"],
+        "ounce"     : [0, 35.273962, "oz"], # 28.349523125
+        "pound"     : [0, 2.20462262, "lb"], # 0.45359237
+        "stone"     : [0, 0.157473],
+        "US ton"    : [0, 0.001102311310924388],
+        "UK ton"    : [0, 0.0009842065264486655],
+        "Metric ton": [0, 0.001],
+    },
+}
+
 def generateOutput(responses, author):
     output = ""
     if len(responses) > 0:
@@ -706,7 +775,7 @@ class OtherAddons(commands.Cog):
                 await itx.response.send_message(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
                 return
             if faces > 100000:
-                await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{dice:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
+                await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
                 return
             rolls = []
             for die in range(dice):
@@ -849,6 +918,7 @@ Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 
 Make a custom voice channel by joining "Join to create VC" (use {self.client.getCommandMention('tag')}` tag:customvc` for more info)
 {self.client.getCommandMention('editvc')}: edit the name or user limit of your custom voice channel
+{self.client.getCommandMention('vctable about')}: Learn about making your voice chat more on-topic!
 """
 # Check out the #join-a-table channel: In this channel, you can claim a channel for roleplaying or tabletop games for you and your group!
 # The first person that joins/creates a table gets a Table Owner role, and can lock, unlock, or close their table.
@@ -902,6 +972,52 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         except:
             await itx.followup.send_message("Something went wrong!")
             raise
+
+    async def unit_autocomplete(self, itx: discord.Interaction, current: str):
+        options = conversion_rates.copy()
+        if itx.namespace.mode not in options:
+            return [] # user hasn't selected a mode yet.
+        options = options[itx.namespace.mode]
+        return [
+            app_commands.Choice(name=option, value=option)
+            for option in options if current.lower() in option.lower()
+        ]
+
+    @app_commands.command(name="convert_unit", description="Convert temperature or distance from imperial to metric etc.")
+    @app_commands.choices(mode=[
+        discord.app_commands.Choice(name='Temperature (Fahrenheit, C, K, etc.)', value="temperature"),
+        discord.app_commands.Choice(name='Length (miles,km,inch)', value="length"),
+        discord.app_commands.Choice(name='Surface area (sq.ft., m^2)', value="surface area"),
+        discord.app_commands.Choice(name='Volume (m^3)', value="volume"),
+        discord.app_commands.Choice(name='Speed (mph, km/h, m/s, etc.)', value="speed"),
+        discord.app_commands.Choice(name='Weight (pounds, ounces, kg, gram, etc.)', value="weight"),
+        # discord.app_commands.Choice(name='Currency/money (USD, EUR, CAD)', value="currency"),
+    ])
+    @app_commands.describe(mode="What category of unit do you want to convert",
+                           from_unit="Which unit do you want to convert from?",
+                           public="Do you want to share the result with everyone in chat?")
+    @app_commands.rename(from_unit='from')
+    @app_commands.autocomplete(from_unit=unit_autocomplete)
+    @app_commands.rename(from_unit='to')
+    @app_commands.autocomplete(to_unit=unit_autocomplete)
+    async def convert_unit(self, itx:discord.Interaction, mode: str, from_unit: str, value: float, to_unit: str, public: bool = False):
+        rates = conversion_rates.copy()
+        if mode not in rates:
+            await itx.response.send_message("You didn't give a valid conversion method/mode!", ephemeral=True)
+            return
+        options = rates[mode]
+        if from_unit not in options or to_unit not in options:
+            await itx.response.send_message("Your unit conversion things need to be options that are in the list/database (as given by the autocomplete)!",ephemeral=True)
+            return
+        base_value = (value + options[from_unit][0]) / options[from_unit][1]
+        # base_value is essentially the "x" in the conversion rates
+        #      {"Celcius": [273.15, 1],
+        #       "Fahrenheit": [459.67, 1.8]}
+        # x = (273.15 + C degrees Celcius) / 1
+        # result = x * 1.8 - 459.67
+        result = (base_value * options[to_unit][1]) - options[to_unit][0]
+        result = round(result,12)
+        await itx.response.send_message(f"Converting {mode} from {value} {from_unit} to {to_unit}: {result} {options[to_unit][2]}", ephemeral=not public)
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))
