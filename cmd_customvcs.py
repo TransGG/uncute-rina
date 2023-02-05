@@ -515,7 +515,7 @@ class CustomVcs(commands.Cog):
         await itx.response.defer(ephemeral=True)
         owner_present = False
         for target in channel.overwrites:
-            if channel.overwrites[target].speak:
+            if channel.overwrites[target].speak and target not in channel.category.overwrites:
                 owner_present = True
         if owner_present:
             cmd_mention = self.client.getCommandMention("vctable owner")
