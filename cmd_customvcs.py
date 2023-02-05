@@ -661,7 +661,7 @@ class CustomVcs(commands.Cog):
                 pass
             await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=None), reason="VcTable edited: removed as speaker")
             await channel.send(f"{itx.user.mention} removed {user.mention} as speaker", allowed_mentions=discord.AllowedMentions.none())
-            await itx.response.send_message(f"Successfully made {user.mention} a speaker."+warning, ephemeral=True)
+            await itx.response.send_message(f"Successfully removed {user.mention} as speaker."+warning, ephemeral=True)
             if user in channel.members:
                 await user.move_to(channel)
 
