@@ -693,6 +693,14 @@ class CustomVcs(commands.Cog):
                 warning = "\nThis user was a speaker before. Muting them overwrote this permissions and removed their speaker permissions" if channel.overwrites[user].speak else ""
             except KeyError:
                 warning = ""
+
+            class Interaction:
+                def __init__(self,guild, user):
+                    self.user = user
+                    self.guild = guild
+            if isStaff(Interaction(itx.guild, user)):
+                await itx.response.send_message("You can't mute staff members! If you have an issue with staff, make a ticket or DM an admin!",ephemeral=True)
+                return
             await channel.set_permissions(user, speak=False, reason="VcTable edited: muted participant")
             await channel.send(f"{itx.user.mention} muted {user.mention}", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully muted {user.mention}."+warning, ephemeral=True)
