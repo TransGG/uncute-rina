@@ -58,7 +58,7 @@ class CustomVcs(commands.Cog):
                 logChannel = member.guild.get_channel(vcLog)
                 await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
 
-            elif len(before.channel.overwrites) > 0:  # if VcTable, reset ownership; and all owners leave: reset all perms
+            elif len(before.channel.overwrites) > len(before.channel.category.overwrites):  # if VcTable, reset ownership; and all owners leave: reset all perms
                 reset_vctable = True #check if no owners left --> all members in the voice channel aren't owner
                 for target in before.channel.overwrites:
                     if target not in before.channel.members:
@@ -67,7 +67,7 @@ class CustomVcs(commands.Cog):
                         reset_vctable = False
                         break
                 if reset_vctable:
-                    await before.channel.edit(overwrites={}) #reset overrides
+                    await before.channel.edit(overwrites=before.channel.category.overwrites) #reset overrides
                     await before.channel.send("This channel was converted from a VcTable back to a normal CustomVC because all the owners left")
                     # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
                     if before.channel.name.startswith(VcTable_prefix):
@@ -263,7 +263,7 @@ class CustomVcs(commands.Cog):
                 return
             if name == "Untitled voice chat":
                 warning += "Are you really going to change it to that..\n"
-            if len(itx.user.voice.channel.overwrites) > 0: # if VcTable, add prefix
+            if len(itx.user.voice.channel.overwrites) > len(itx.user.voice.channel.category.overwrites): # if VcTable, add prefix
                 name = VcTable_prefix + name
         if limit is not None:
             if limit < 2 and limit != 0:
