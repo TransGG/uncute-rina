@@ -230,6 +230,7 @@ class TermDictionary(commands.Cog):
                 if source == 5:
                     result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
                     await itx.response.send_message(result_str, ephemeral=True, suppress_embeds=True)
+                    return
                 if source == 6:
                     source = 7
             else:
