@@ -82,7 +82,7 @@ class Starboard(commands.Cog):
             name = original_message.author.name
         embed.set_author(
             name=f"{name}",
-            url=f"https://original-poster-{original_message.author.id}/",
+            url=f"https://original.poster.{original_message.author.id}/",
             icon_url=original_message.author.display_avatar.url
         )
         await star_message.edit(content=new_content, embed=embed)

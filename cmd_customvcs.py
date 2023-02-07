@@ -533,7 +533,9 @@ class CustomVcs(commands.Cog):
             owner = itx.guild.get_member(int(owner_id))
             await channel.set_permissions(owner, overwrite=discord.PermissionOverwrite(connect=True,speak=True), reason="VcTable created: set as owner")
         owner_taglist = ', '.join([f'<@{id}>' for id in added_owners])
-        await channel.send("CustomVC converted to VcTable\n"
+        cmd_mention = self.client.getCommandMention("vctable about")
+        await channel.send(f"CustomVC converted to VcTable\n"
+                           f"Use {cmd_mention} to learn more!\n"
                            f"Made {owner_taglist} a VcTable Owner",allowed_mentions=discord.AllowedMentions.none())
         await logMsg(itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
         recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
@@ -784,7 +786,7 @@ class CustomVcs(commands.Cog):
         cmd_mention = self.client.getCommandMention("vctable speaker")
         await itx.response.send_message(f"Enabling authorized-only (a whitelist) will make only owners and speakers (people that have been whitelisted) able to talk\n"
                                         f"Please make sure everyone is aware of this change. "
-                                        f"To whitelist someone, use {cmd_mention} `mode:Add` `user: `, (and they might have to rejoin to update their permissions)",
+                                        f"To whitelist someone, use {cmd_mention} `mode:Add` `user: `",
                                         ephemeral=True,
                                         view=view)
         await view.wait()
@@ -820,7 +822,7 @@ class CustomVcs(commands.Cog):
                           f"{self.client.getCommandMention('vctable create')} `[owners: ]`: Turns your CustomVC into a VcTable and makes you (and any additional mentioned user(s)) the owner\n"
                           f"{self.client.getCommandMention('vctable owner')} `mode: ` `user: `: Add/Remove an owner to your table. If you want to check the owners, then it doesn't matter what you fill in for 'user'\n"
                           f"{self.client.getCommandMention('vctable mute')} `mode: ` `user: `: Mute/Unmute a user in your table. If you want to check the muted participants, see ^ (same as for checking owners)\n"
-                          f"{self.client.getCommandMention('vctable make_authorized_only')}: Toggle the whitelist for speaking (requires rejoining to update permissions)\n"
+                          f"{self.client.getCommandMention('vctable make_authorized_only')}: Toggle the whitelist for speaking\n"
                           f"{self.client.getCommandMention('vctable speaker')} `mode: ` `user: `: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted participants\n")
         await itx.response.send_message(embeds=[embed1,embed2], ephemeral=True)
 
