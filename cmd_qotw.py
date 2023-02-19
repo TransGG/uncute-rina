@@ -40,7 +40,7 @@ class QOTW(commands.Cog):
                 )
             embed.set_author(
                     name=f"{itx.user.nick or itx.user.name}",
-                    url=f"https://original-poster-{itx.user.id}/",
+                    url=f"https://original.poster/{itx.user.id}/",
                     icon_url=itx.user.display_avatar.url
             )
             embed.set_footer(text=f"")

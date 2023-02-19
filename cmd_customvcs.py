@@ -321,9 +321,6 @@ class CustomVcs(commands.Cog):
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
             await logChannel.send("Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {oldName} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
-        # await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", user_limit=limit,name=name) #todo
-        # await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
-        # await itx.response.send_message(warning+f"Voice channel successfully renamed from \"{oldName}\" to \"{name}\""+limitInfo, ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
 
     @app_commands.command(name="editguildinfo",description="Edit guild settings (staff only)")
     @app_commands.choices(mode=[
@@ -338,7 +335,7 @@ class CustomVcs(commands.Cog):
                            value="Fill in the value/channel-id of the thing/channel you want to edit")
     async def editGuildInfo(self, itx: discord.Interaction, mode: int, value: str):
         if not isAdmin(itx):
-            await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True) #todo
+            await itx.response.send_message("You don't have sufficient permissions to execute this command! (don't want you to break the bot ofc.)",ephemeral=True)
             return
 
         query = {"guild_id": itx.guild_id}

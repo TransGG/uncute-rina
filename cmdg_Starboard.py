@@ -82,16 +82,16 @@ class Starboard(commands.Cog):
             name = original_message.author.name
         embed.set_author(
             name=f"{name}",
-            url=f"https://original.poster.{original_message.author.id}/",
+            url=f"https://original.poster/{original_message.author.id}/",
             icon_url=original_message.author.display_avatar.url
         )
         await star_message.edit(content=new_content, embed=embed)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if payload.member.id == self.client.user.id:
-            return
-        if payload.emoji.id != starboard_emoji_id and payload.emoji.name != "❌":
+        if payload.member.id == self.client.user.id or \
+                (payload.emoji.id != starboard_emoji_id and
+                 payload.emoji.name != "❌"):
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
             return
 
@@ -103,9 +103,9 @@ class Starboard(commands.Cog):
             await logMsg(
                 self.client.get_guild(payload.guild_id),
                 f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) or message {payload.message_id}!\n'
-                f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}')
-            # return
-            # todo: I would like to return/remove this here, but I'm still trying to figure out why it's broken in the first place.
+                f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}\n'
+                f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
+            return
 
         collection = RinaDB["guildInfo"]
         query = {"guild_id": message.guild.id}
@@ -173,7 +173,7 @@ class Starboard(commands.Cog):
                         name = message.author.name
                     embed.set_author(
                             name=f"{name}",
-                            url=f"https://original-poster-{message.author.id}/",
+                            url=f"https://original.poster/{message.author.id}/",
                             icon_url=message.author.display_avatar.url
                     )
 

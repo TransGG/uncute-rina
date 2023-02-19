@@ -74,7 +74,7 @@ class MemberData(commands.Cog):
         totals = {}
         results = {}
         warning = ""
-        current_time = mktime(datetime.now(timezone.utc).timetuple()) #  todo: globalize the time # maybe fixed with .utcnow() ?
+        current_time = mktime(datetime.now(timezone.utc).timetuple())
         min_time = int((current_time-period)/accuracy)*accuracy
         max_time = int(current_time/accuracy)*accuracy
 

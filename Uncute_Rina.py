@@ -27,10 +27,10 @@ appcommanderror_cooldown = 0
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.6.3".split(".")
+fileVersion = "1.1.6.4".split(".")
 try:
-    version = open("version.txt", "r").read().split(".")
-except:
+    version = open("versione.txt", "r").read().split(".")
+except FileNotFoundError:
     version = ["0"]*len(fileVersion)
 # if testing, which environment are you in?
 # 1: private dev server; 2: public dev server (TransPlace [Copy])
@@ -57,6 +57,7 @@ class Bot(commands.Bot):
 
     commandList: list[discord.app_commands.AppCommand]
     logChannel: discord.TextChannel
+    startup_time = datetime.now() # used in /version
 
     def getCommandMention(self, _command):
         args = _command.split(" ")+[None, None]
@@ -173,7 +174,7 @@ async def on_message(message):
 
 @client.tree.command(name="version",description="Get bot version")
 async def botVersion(itx: discord.Interaction):
-    await itx.response.send_message(f"Bot is currently running on v{version}")
+    await itx.response.send_message(f"Bot is currently running on v{version} (started at {client.startup_time.strftime('%Y-%m-%dT%H:%M:%S.%f')})")
 
 @client.tree.command(name="update",description="Update slash-commands")
 async def updateCmds(itx: discord.Interaction):
@@ -186,7 +187,7 @@ async def updateCmds(itx: discord.Interaction):
     await itx.response.send_message("Updated commands")
 
 @client.event
-async def on_error(event, *args, **kwargs):
+async def on_error(event, *_args, **_kwargs):
     import traceback #, logging
     collection = RinaDB["guildInfo"]
     try:
@@ -266,6 +267,7 @@ try:
 except SystemExit:
     print("Exited the program forcefully using the kill switch")
 
-# todo
+# todo:
 # - Translator
 # - (Unisex) compliment quotes
+# - Add error catch for when dictionaryapi.com is down
