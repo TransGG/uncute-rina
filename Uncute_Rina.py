@@ -27,9 +27,9 @@ appcommanderror_cooldown = 0
 #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
 # dumb code for cool version updates
-fileVersion = "1.1.6.4".split(".")
+fileVersion = "1.1.6.5".split(".")
 try:
-    version = open("versione.txt", "r").read().split(".")
+    version = open("version.txt", "r").read().split(".")
 except FileNotFoundError:
     version = ["0"]*len(fileVersion)
 # if testing, which environment are you in?

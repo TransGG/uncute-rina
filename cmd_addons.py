@@ -1,3 +1,5 @@
+import discord
+
 from utils import * #imports 'discord import' and 'mongodb' things too
 import re #use regex to remove pronouns from people's usernames, and split their names into sections by capital letter
 import random # for picking a random call_cute quote
@@ -106,11 +108,13 @@ class Tags:
     async def send_report_info(context: [discord.Interaction, discord.TextChannel], additional_info=None, public=True):
         # additional_info = [message.author.name, message.author.id]
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=255, g=66, b=0),
+            color=discord.Colour.from_rgb(r=255, g=66, b=0), #a more saturated red orange color
             title='Reporting a message or scenario',
-            description="Hi there! If anyone is making you uncomfortable, or you want to report or prevent a rule-breaking situation, "
-                        "you can `Right Click Message > Apps > Report Message` to notify our staff confidentially. You can also "
-                        "create a mod ticket in <#995343855069175858> or DM a staff member.")  # channel-id = #contact-staff
+            description="Hi there! If anyone is making you uncomfortable, or you want to "
+                        "report or prevent a rule-breaking situation, you can `Right Click "
+                        "Message > Apps > Report Message` to notify our staff confidentially. "
+                        "You can also create a mod ticket in <#995343855069175858> or DM a staff " # channel-id = #contact-staff
+                        "member.")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):
             await context.response.send_message(embed = embed, ephemeral = not public)
@@ -130,18 +134,20 @@ class Tags:
             return
         vc_hub = guild["vcHub"]
 
+        cmd_mention = client.getCommandMention('editvc')
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=200, g=255, b=120),
+            color=discord.Colour.from_rgb(r=200, g=255, b=120), # greenish lime-colored
             title="TransPlace's custom voice channels (vc)",
-            description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You are then moved to this channel automatically. "
-                        f"You can change the name and user limit of this channel with the {client.getCommandMention('editvc')} command. "
-                        f"When everyone leaves the channel, the channel is deleted automatically.")
+            description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You "
+                        f"are then moved to this channel automatically. You can change the name and user "
+                        f"limit of this channel with the {cmd_mention} command. When everyone leaves the "
+                        f"channel, the channel is deleted automatically.")
         await context.response.send_message(embed=embed, ephemeral=not public)
 
     @staticmethod
     async def send_triggerwarning_info(itx: discord.Interaction, public=True):
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=155, g=155, b=255),
+            color=discord.Colour.from_rgb(r=155, g=155, b=255), #bluer than baby blue ish. kinda light indigo
             title="Using trigger warnings correctly",
             description="Content or trigger warnings (CW and TW for short) are notices placed before a "
                         "(section of) text to warn the reader of potential traumatic triggers in it. Often, "
@@ -150,9 +156,58 @@ class Tags:
                         "You can warn the reader in the beginning or the middle of the text, and spoiler the "
                         "triggering section like so: \"TW: ||guns||: ||The gun was fired.||\".\n"
                         "\n"
-                        r"You can spoiler messages with a double upright slash \|\|text\|\|. " "\n"
-                        "Some potential triggers include (TW: triggers): abuse, bugs/spiders, death, dieting/weight loss, injections, self-harm, transmed/truscum points of view or transphobic content.")
+                        r"You can spoiler messages with a double upright slash \|\|text\|\|.\n"
+                        "Some potential triggers include (TW: triggers): abuse, bugs/spiders, death, "
+                        "dieting/weight loss, injections, self-harm, transmed/truscum points of view or "
+                        "transphobic content.")
         # embed.set_footer(text=f"Triggered by {itx.user.name} ({itx.user.id})")
+        await itx.response.send_message(embed=embed, ephemeral=not public)
+
+    @staticmethod
+    async def send_toneindicator_info(itx: discord.Interaction, client, public=True):
+        embed = discord.Embed(
+            color=discord.Colour.from_rgb(r=142, g=237, b=221), # tealish aqua
+            title="When to use tone indicators?",
+            description="Tone indicators are a useful tool to clarify the meaning of a message.\n"
+                        "Occasionally, people reading your comment may not be certain about the tone of "
+                        "a message. Is it meant as positive feedback, a joke, or sarcasm?\n"
+                        "\n"
+                        "For example, you may playfully tease a friend. Without tone indicators, the "
+                        "message may come across as rude or mean, but adding “/lh” (meaning light-"
+                        "hearted) helps clarify that it was meant in good fun.\n"
+                        "\n"
+                        "Some tone indicators have multiple definitions depending on the context. For "
+                        "example: \"/m\" can mean 'mad' or 'metaphor'. You can look up tone indicators by "
+                        f"their tag or definition using {client.getCommandMention('toneindicator')}."
+        )
+        await itx.response.send_message(embed=embed, ephemeral=not public)
+
+    @staticmethod
+    async def send_trustedrole_info(itx: discord.Interaction, public=True):
+        embed = discord.Embed(
+            color=discord.Colour.from_rgb(r=220,g=155,b=255), # magenta
+            title="The trusted role (and selfies)",
+            description="The trusted role is the role we use to add an extra layer of protection to some "
+                        "aspects of our community. Currently, this involves the selfie channel, but may be "
+                        "expanded to other channels in future.\n"
+                        "\n"
+                        "You can obtain the trusted role by sending 500 messages or after gaining the "
+                        "equivalent XP from voice channel usage. If you rejoin the server you can always "
+                        "ask for the role back too!"
+        )
+        await itx.response.send_message(embed=embed, ephemeral=not public)
+
+    @staticmethod
+    async def send_minimodding_info(itx: discord.Interaction, public=True):
+        embed = discord.Embed(
+            color=discord.Colour.from_rgb(r=255,g=115,b=162),  # bright slightly reddish pink
+            title="Correcting staff or minimodding",
+            description="If you have any input on how members of staff operate, please open a ticket to "
+                        "properly discuss."
+                        "\n"
+                        "Please do not interfere with moderator actions, as it can make situations worse. It can be seen as "
+                        "harassment, and you could be warned."
+        )
         await itx.response.send_message(embed=embed, ephemeral=not public)
 
 class SearchAddons(commands.Cog):
@@ -395,7 +450,8 @@ class SearchAddons(commands.Cog):
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
     async def tag_autocomplete(self, _itx: discord.Interaction, current: str):
-        options = ["report", "customvc", "trigger warnings"]
+        options = ["report", "customvc", "trigger warnings", "tone indicators",
+                   "trusted role", "minimodding or correcting staff"]
         return [
             app_commands.Choice(name=term, value=term)
             for term in options if current.lower() in term
@@ -412,6 +468,12 @@ class SearchAddons(commands.Cog):
             await Tags.send_customvc_info(itx, self.client, public=public)
         elif tag == "trigger warnings":
             await Tags.send_triggerwarning_info(itx, public=public)
+        elif tag == "tone indicators":
+            await Tags.send_toneindicator_info(itx, self.client, public=public)
+        elif tag == "trusted role":
+            await Tags.send_trustedrole_info(itx, public=public)
+        elif tag == "minimodding or correcting staff":
+            await Tags.send_minimodding_info(itx, public=public)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
