@@ -104,8 +104,27 @@ Thank you in advance :)"""
     return output
 
 class Tags:
+    class TagView(discord.ui.View):
+        def __init__(self, embed, timeout=None):
+            super().__init__()
+            self.value = None
+            self.timeout = timeout
+            self.embed = embed
+
+        @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.primary)
+        async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+            self.value = 1
+            self.embed.set_footer(text=f"Triggered by {itx.user.name} ({itx.user.id})")
+            await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
+            await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+            self.stop()
+
+        def on_timeout(self):
+            self.send_publicly.disabled = True
+            self.send_publicly.style = discord.ButtonStyle.gray
+
     @staticmethod
-    async def send_report_info(context: [discord.Interaction, discord.TextChannel], additional_info=None, public=True):
+    async def send_report_info(context: [discord.Interaction, discord.TextChannel], additional_info=None, public=False):
         # additional_info = [message.author.name, message.author.id]
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=255, g=66, b=0), #a more saturated red orange color
@@ -117,16 +136,22 @@ class Tags:
                         "member.")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):
-            await context.response.send_message(embed = embed, ephemeral = not public)
+            if public is True:
+                await context.response.send_message(embed = embed)
+            else:
+                view = Tags().TagView(embed, timeout=60)
+                await context.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+                if await view.wait():
+                    await context.edit_original_response(view=view)
         else:
             if additional_info is not None:
                 embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
             await context.send(embed=embed)
 
     @staticmethod
-    async def send_customvc_info(context: discord.Interaction, client, public=True):
+    async def send_customvc_info(itx: discord.Interaction, client, public=True):
         collection = RinaDB["guildInfo"]
-        query = {"guild_id": context.guild.id}
+        query = {"guild_id": itx.guild.id}
         guild = collection.find_one(query)
         if guild is None:
             debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",
@@ -142,7 +167,13 @@ class Tags:
                         f"are then moved to this channel automatically. You can change the name and user "
                         f"limit of this channel with the {cmd_mention} command. When everyone leaves the "
                         f"channel, the channel is deleted automatically.")
-        await context.response.send_message(embed=embed, ephemeral=not public)
+        if public:
+            await itx.response.send_message(embed=embed, ephemeral=False)
+        else:
+            view = Tags().TagView(embed, timeout=60)
+            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            if await view.wait():
+                await itx.edit_original_response(view=view)
 
     @staticmethod
     async def send_triggerwarning_info(itx: discord.Interaction, public=True):
@@ -161,7 +192,13 @@ class Tags:
                         "dieting/weight loss, injections, self-harm, transmed/truscum points of view or "
                         "transphobic content.")
         # embed.set_footer(text=f"Triggered by {itx.user.name} ({itx.user.id})")
-        await itx.response.send_message(embed=embed, ephemeral=not public)
+        if public:
+            await itx.response.send_message(embed=embed)
+        else:
+            view = Tags().TagView(embed, timeout=60)
+            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            if await view.wait():
+                await itx.edit_original_response(view=view)
 
     @staticmethod
     async def send_toneindicator_info(itx: discord.Interaction, client, public=True):
@@ -180,7 +217,13 @@ class Tags:
                         "example: \"/m\" can mean 'mad' or 'metaphor'. You can look up tone indicators by "
                         f"their tag or definition using {client.getCommandMention('toneindicator')}."
         )
-        await itx.response.send_message(embed=embed, ephemeral=not public)
+        if public:
+            await itx.response.send_message(embed=embed)
+        else:
+            view = Tags().TagView(embed, timeout=60)
+            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            if await view.wait():
+                await itx.edit_original_response(view=view)
 
     @staticmethod
     async def send_trustedrole_info(itx: discord.Interaction, public=True):
@@ -195,7 +238,13 @@ class Tags:
                         "equivalent XP from voice channel usage. If you rejoin the server you can always "
                         "ask for the role back too!"
         )
-        await itx.response.send_message(embed=embed, ephemeral=not public)
+        if public:
+            await itx.response.send_message(embed=embed)
+        else:
+            view = Tags().TagView(embed, timeout=60)
+            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            if await view.wait():
+                await itx.edit_original_response(view=view)
 
     @staticmethod
     async def send_minimodding_info(itx: discord.Interaction, public=True):
@@ -208,7 +257,13 @@ class Tags:
                         "Please do not interfere with moderator actions, as it can make situations worse. It can be seen as "
                         "harassment, and you could be warned."
         )
-        await itx.response.send_message(embed=embed, ephemeral=not public)
+        if public:
+            await itx.response.send_message(embed=embed)
+        else:
+            view = Tags().TagView(embed, timeout=60)
+            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            if await view.wait():
+                await itx.edit_original_response(view=view)
 
 class SearchAddons(commands.Cog):
     def __init__(self, client):
@@ -684,7 +739,7 @@ class OtherAddons(commands.Cog):
                     quotes[x] += quotes["unisex_quotes"]
 
             collection = RinaDB["complimentblacklist"]
-            query = {"user": itx.user.id}
+            query = {"user": user.id}
             search = collection.find_one(query)
             if search is None:
                 blacklist = []

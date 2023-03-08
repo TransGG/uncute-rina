@@ -197,7 +197,7 @@ class ToneIndicator(commands.Cog):
                         results.append([indicator,key])
                         result = True
             if result:
-                result_str += f"I found {len(results)} result{'s'*(len(results)!=1)}:\n"
+                result_str += f"I found {len(results)} result{'s'*(len(results)!=1)} for {string}:\n"
             max_length = 0
             for x in results:
                 if len(x[0]) > max_length:
