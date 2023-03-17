@@ -2,8 +2,9 @@ from utils import * #imports 'discord import' and 'mongodb' things too
 from datetime import datetime # for embed timestamp
 
 
-starboard_emoji_id = 992493515714068480
-starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"
+starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"#"<:upvote:989259317146439690>"
+starboard_emoji_id = int(starboard_emoji.split(":")[-1].replace(">",""))
+# starboard_emoji_id = 992493515714068480
 
 messageIdMarkedForDeletion = []
 
@@ -75,17 +76,17 @@ class Starboard(commands.Cog):
         parts[1] = str(star_stat)
         new_content = '**'.join(parts)
         # update embed message to keep most accurate nickname
-        embed = star_message.embeds[0]
-        try:
-            name = original_message.author.nick
-        except AttributeError:
+        embeds = star_message.embeds
+        if isinstance(original_message.author, discord.Member):
+            name = original_message.author.nick or original_message.author.name
+        else:
             name = original_message.author.name
-        embed.set_author(
+        embeds[0].set_author(
             name=f"{name}",
             url=f"https://original.poster/{original_message.author.id}/",
             icon_url=original_message.author.display_avatar.url
         )
-        await star_message.edit(content=new_content, embed=embed)
+        await star_message.edit(content=new_content, embeds=embeds)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -162,24 +163,55 @@ class Starboard(commands.Cog):
                         )
                     embed.add_field(name="Source", value=f"[Jump!]({msgLink})")
                     embed.set_footer(text=f"{message.id}")
-                    for attachment in message.attachments:
-                        if attachment.height: #is image or video
-                            embed.set_image(url=attachment.url)
-                            break
-                            # can only set one image per embed.. :/
-                    try:
-                        name = message.author.nick
-                    except AttributeError:
+                    if isinstance(message.author, discord.Member):
+                        name = message.author.nick or message.author.name
+                    else:
                         name = message.author.name
                     embed.set_author(
                             name=f"{name}",
                             url=f"https://original.poster/{message.author.id}/",
                             icon_url=message.author.display_avatar.url
                     )
+                    embed_list = []
+                    for attachment in message.attachments:
+                        print(repr(attachment.content_type), type(attachment.content_type))
+                        try:
+                            if attachment.content_type.split("/")[0] == "image": #is image or GIF
+                                if len(embed_list) == 0:
+                                    embed.set_image(url=attachment.url)
+                                    embed_list = [embed]
+                                else:
+                                    # can only set one image per embed... But you can add multiple embeds :]
+                                    embed = discord.Embed(
+                                        color = discord.Colour.from_rgb(r=255, g=172, b=51),
+                                    )
+                                    embed.set_image(url=attachment.url)
+                                    embed_list.append(embed)
+                            else:
+                                if len(embed_list) == 0:
+                                    embed.set_field_at(0,
+                                                       name = embed.fields[0].name,
+                                                       value = embed.fields[0].value + f"\n\n(⚠️ +1 Unknown attachment ({attachment.content_type}))")
+                                else:
+                                    embed_list[0].set_field_at(0,
+                                                               name=embed_list[0].fields[0].name,
+                                                               value=embed_list[0].fields[0].value + f"\n\n(⚠️ +1 Unknown attachment ({attachment.content_type}))")
+                        except AttributeError:
+                            # if it is neither an image, video, application, or recognised file type:
+                            if len(embed_list) == 0:
+                                embed.set_field_at(0,
+                                                   name=embed.fields[0].name,
+                                                   value=embed.fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+                            else:
+                                embed_list[0].set_field_at(0,
+                                                           name=embed_list[0].fields[0].name,
+                                                           value=embed_list[0].fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+                    if len(embed_list) == 0:
+                        embed_list.append(embed)
 
                     msg = await star_channel.send(
-                            f"💫 **{reaction.count}** <#{message.channel.id}>",
-                            embed=embed,
+                            f"💫 **{reaction.count}** | <#{message.channel.id}>",
+                            embeds=embed_list,
                             allowed_mentions=discord.AllowedMentions.none(),
                         )
                     await logMsg(star_channel.guild, f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}. Content: \"\"\"{message.content}\"\"\" and attachments: {[x.url for x in message.attachments]}")

@@ -11,6 +11,14 @@ from time import mktime # for unix time code
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 selfies_delete_week_command_cooldown = 0
 
+currency_options = {
+    code: 0 for code in "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,"
+                        "CHF,CLF,CLP,CNH,CNY,COP,CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,GGP,GHS,GIP,GMD,GNF,"
+                        "GTQ,GYD,HKD,HNL,HRK,HTG,HUF,IDR,ILS,IMP,INR,IQD,IRR,ISK,JEP,JMD,JOD,JPY,KES,KGS,KHR,KMF,KPW,KRW,KWD,KYD,KZT,LAK,"
+                        "LBP,LKR,LRD,LSL,LYD,MAD,MDL,MGA,MKD,MMK,MNT,MOP,MRU,MUR,MVR,MWK,MXN,MYR,MZN,NAD,NGN,NIO,NOK,NPR,NZD,OMR,PAB,PEN,"
+                        "PGK,PHP,PKR,PLN,PYG,QAR,RON,RSD,RUB,RWF,SAR,SBD,SCR,SDG,SEK,SGD,SHP,SLL,SOS,SRD,SSP,STD,STN,SVC,SYP,SZL,THB,TJS,"
+                        "TMT,TND,TOP,TRY,TTD,TWD,TZS,UAH,UGX,USD,UYU,UZS,VES,VND,VUV,WST,XAF,XAG,XAU,XCD,XDR,XOF,XPD,XPF,XPT,YER,"
+                        "ZAR,ZMW,ZWL".split(",")}
 conversion_rates = { # [default 0, incrementation]
     "temperature":{
         "Celcius"    : [273.15, 1, "°C"],
@@ -78,6 +86,7 @@ conversion_rates = { # [default 0, incrementation]
         "UK ton"    : [0, 0.0009842065264486655],
         "Metric ton": [0, 0.001],
     },
+    "currency":currency_options
 }
 
 def generateOutput(responses, author):
@@ -463,10 +472,10 @@ class SearchAddons(commands.Cog):
             f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true&apiKey=edd1d1790184e97861e7b5a51138845222d4c68b").text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
         # it also has some <br \/>\r\n strings in there for some reason..? so uh
-        response_api = response_api[6:-6].replace(r"<br \/>\r\n", r"\n")
+        response_api = response_api.replace(r"<br \/>\r\n", r"\n").replace("<pre>","").replace("</pre>","")
         data = json.loads(response_api)
         if "error" in data:
-            if country_id == "uk":
+            if country_id.lower() == "uk":
                 await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...\nTry 'GB' instead!", ephemeral=True)
             else:
                 await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...",ephemeral=True)
@@ -488,11 +497,31 @@ class SearchAddons(commands.Cog):
                 value = "No data"
             else:
                 value = region.issues[issue]['current_status']['value_formatted']
+                # if region.issues[issue]['current_status']['value'] in ['Legal',
+                #                                                        'Equal',
+                #                                                        'No censorship',
+                #                                                        'Legal, '
+                #                                                        'surgery not required',
+                #                                                        "Sexual orientation and gender identity",
+                #                                                        "Recognized"]:
+                #     value = "❤️ " + value
+                # elif region.issues[issue]['current_status']['value'] in ["Illegal"]:
+                #     value = "🚫 " + value
+                # elif region.issues[issue]['current_status']['value'] in ["Not legally recognized",
+                #                                                          "Not banned",
+                #                                                          "Varies by Region"]:
+                #     value = "🟨 " + value
+                # else:
+                #     value = "➖ " + value
                 if len(region.issues[issue]['current_status']['description']) > 0:
                     value += f" ({region.issues[issue]['current_status']['description']})"
-            embed.add_field(name=region.issues[issue]['label'],
-                            value=value,
-                            inline=False)
+                elif len(region.issues[issue]['description']) > 0:
+                    value += f" ({region.issues[issue]['description']})"
+                if len(value) > 1024:
+                    value = value[:1020]+"..."
+            embed.add_field(name   = region.issues[issue]['label'],
+                            value  = value,
+                            inline = False)
         embed.set_footer(text=f"For more info, click the button below,")
         class MoreInfo(discord.ui.View):
             def __init__(self, url):
@@ -544,6 +573,14 @@ class OtherAddons(commands.Cog):
         global report_message_reminder_unix
         if message.author.bot:
             return
+
+        if message.channel.category.id in [995330645901455380, 995330667665707108]:
+            if message.author.id == 557628352828014614 and len(message.embeds) == 1:
+                # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
+                components = message.embeds[0].description.split(" ")
+                if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
+                    await message.channel.send("Obligatory ping to notify newly added user: " + components[0], allowed_mentions=discord.AllowedMentions.all())
+
         #random cool commands
         self.headpatWait += 1
         if self.headpatWait >= 1000:
@@ -1021,7 +1058,8 @@ class OtherAddons(commands.Cog):
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 {self.client.getCommandMention('compliment')}: Rina can compliment others (matching their pronoun role)
-{self.client.getCommandMention('dictionary')}: Search for an lgbtq+-related term!
+{self.client.getCommandMention('convert_unit')}: Convert a value from one to another! Distance, speed, currency, etc.
+{self.client.getCommandMention('dictionary')}: Search for an lgbtq+-related or dictionary term!
 {self.client.getCommandMention('equaldex')}: See LGBTQ safety and rights in a country (with API)
 {self.client.getCommandMention('help')}: See this help page
 {self.client.getCommandMention('nameusage gettop')}: See how many people are using the same name
@@ -1095,10 +1133,16 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         if itx.namespace.mode not in options:
             return [] # user hasn't selected a mode yet.
         options = options[itx.namespace.mode]
-        return [
-            app_commands.Choice(name=option, value=option)
-            for option in options if current.lower() in option.lower()
-        ]
+        if itx.namespace.mode == "currency":
+            return [
+                app_commands.Choice(name=option, value=option)
+                for option in options if option.lower().startswith(current.lower())
+            ][:10]
+        else:
+            return [
+                app_commands.Choice(name=option, value=option)
+                for option in options if current.lower() in option.lower()
+            ][:25]
 
     @app_commands.command(name="convert_unit", description="Convert temperature or distance from imperial to metric etc.")
     @app_commands.choices(mode=[
@@ -1108,6 +1152,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         discord.app_commands.Choice(name='Volume (m^3)', value="volume"),
         discord.app_commands.Choice(name='Speed (mph, km/h, m/s, etc.)', value="speed"),
         discord.app_commands.Choice(name='Weight (pounds, ounces, kg, gram, etc.)', value="weight"),
+        discord.app_commands.Choice(name='Currency (USD, EUR, CAD, etc.)', value="currency"),
         # discord.app_commands.Choice(name='Currency/money (USD, EUR, CAD)', value="currency"),
     ])
     @app_commands.describe(mode="What category of unit do you want to convert",
@@ -1122,7 +1167,18 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         if mode not in rates:
             await itx.response.send_message("You didn't give a valid conversion method/mode!", ephemeral=True)
             return
-        options = rates[mode]
+        if mode == "currency":
+            response_api = requests.get(
+                "https://openexchangerates.org/api/latest.json?app_id=ae67dc29a2784513837e671c7fe90074").text
+            data = json.loads(response_api)
+            if data.get("error",0):
+                await itx.response.send_message(f"I'm sorry, something went wrong while trying to get the latest data", ephemeral=True)
+                return
+            options = {x:[0,data['rates'][x],x] for x in data['rates']}
+            from_unit = from_unit.upper()
+            to_unit = to_unit.upper()
+        else:
+            options = rates[mode]
         if from_unit not in options or to_unit not in options:
             await itx.response.send_message("Your unit conversion things need to be options that are in the list/database (as given by the autocomplete)!",ephemeral=True)
             return
@@ -1134,7 +1190,10 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         # result = x * 1.8 - 459.67
         result = (base_value * options[to_unit][1]) - options[to_unit][0]
         result = round(result,12)
-        await itx.response.send_message(f"Converting {mode} from {value} {from_unit} to {to_unit}: {result} {options[to_unit][2]}", ephemeral=not public)
+        if mode == "currency":
+            await itx.response.send_message(f"Converting {mode} from {value} {from_unit} to {result} {options[to_unit][2]}", ephemeral=not public)
+        else:
+            await itx.response.send_message(f"Converting {mode} from {value} {from_unit} to {to_unit}: {result} {options[to_unit][2]}", ephemeral=not public)
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))
