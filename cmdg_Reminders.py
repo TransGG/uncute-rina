@@ -1,9 +1,4 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
-
-from datetime import datetime, timedelta
-from time import mktime # for unix time code
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling reminders
+from Uncute_Rina import *
 
 sched = AsyncIOScheduler()
 sched.start()
@@ -105,13 +100,13 @@ def parse_date(time_string, now):
 
 
 class Reminders(commands.GroupCog,name="reminder"):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client
 
     class Reminder:
-        def __init__(self, client, creationtime, remindertime, userID, reminder, db_data, continued=False):
+        def __init__(self, client: Bot, creationtime, remindertime, userID, reminder, db_data, continued=False):
             self.client = client
             self.creationtime = creationtime
             self.remindertime = remindertime

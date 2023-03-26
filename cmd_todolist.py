@@ -1,7 +1,7 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
+from Uncute_Rina import *
 
 class TodoList(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client

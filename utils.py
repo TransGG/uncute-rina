@@ -1,13 +1,4 @@
-import discord # It's dangerous to go alone! Take this. /ref
-from discord import app_commands # v2.0, use slash commands
-from discord.ext import commands # required for client bot
-from pymongo import MongoClient
-import pymongo # used in cmd_emojistats
-from time import mktime
-#/\ not used in this file, but used in every other file.
-from datetime import datetime
-import warnings #used to warn for invalid color thingy in the debug function
-
+from Uncute_Rina import *
 
 def isVerified(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
@@ -31,7 +22,7 @@ def isAdmin(itx: discord.Interaction):
              discord.utils.find(lambda r: r.name == 'Owner'     , itx.guild.roles)]
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
 
-def debug(text="", color="default", addTime=True, end=None, advanced=False):
+def debug(text="", color="default", add_time=True, end=None, advanced=False):
     colors = {
         "default":"\033[0m",
         "black":"\033[30m",
@@ -108,7 +99,7 @@ def debug(text="", color="default", addTime=True, end=None, advanced=False):
         except KeyError:
             warnings.warn("Invalid color given for debug function: "+color, SyntaxWarning)
             color = "default"
-    if addTime:
+    if add_time:
         time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: "
     else:
         time = colors[color]
@@ -117,6 +108,7 @@ def debug(text="", color="default", addTime=True, end=None, advanced=False):
     else:
         print(f"{time}{text}{colors['default']}",end=end)
 
+#unused
 def thousandSpace(number, interval = 3, separator = " "):
     decimals = []
     if type(number) is int or type(number) is float:

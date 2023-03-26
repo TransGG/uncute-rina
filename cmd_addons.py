@@ -1,12 +1,4 @@
-import discord
-
-from utils import * #imports 'discord import' and 'mongodb' things too
-import re #use regex to remove pronouns from people's usernames, and split their names into sections by capital letter
-import random # for picking a random call_cute quote
-import requests # for getting the equality index of countries
-import json # to interpret the obtained api data
-from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
-from time import mktime # for unix time code
+from Uncute_Rina import *
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 selfies_delete_week_command_cooldown = 0
@@ -27,17 +19,17 @@ conversion_rates = { # [default 0, incrementation]
         "Rankine"    : [0, 1.8, "°R"]
     },
     "length":{
-        "kilometer"  : [0, 1000, "km"],
-        "hectometer" : [0, 100, "hm"],
+        "kilometer"  : [0, 0.001, "km"],
+        "hectometer" : [0, 0.01, "hm"],
         "meter"      : [0, 1, "m"],
-        "decimeter"  : [0, 0.1, "dm"],
-        "centimeter" : [0, 0.01, "cm"],
-        "millimeter" : [0, 0.001, "mm"],
-        "micrometer" : [0, 1 * 10 ** (-6), "μm"],
-        "nanometer"  : [0, 1 * 10 ** (-9), "nm"],
-        "picometer"  : [0, 1 * 10 ** (-12), "pm"],
-        "femtometer" :  [0, 1 * 10 ** (-15), "fm"],
-        "ångström"   : [0, 1 * 10 ** (-10), "Å"],
+        "decimeter"  : [0, 10, "dm"],
+        "centimeter" : [0, 100, "cm"],
+        "millimeter" : [0, 1000, "mm"],
+        "micrometer" : [0, 10 ** 6, "μm"],
+        "nanometer"  : [0, 10 ** 9, "nm"],
+        "picometer"  : [0, 10 ** 12, "pm"],
+        "femtometer" : [0, 10 ** 15, "fm"],
+        "ångström"   : [0, 10 ** 10, "Å"],
 
         "mile"       : [0, 0.0006213711922373339, "mi"],
         "yard"       : [0, 1.09361329833770778652, "yd"],
@@ -169,13 +161,15 @@ class Tags:
         vc_hub = guild["vcHub"]
 
         cmd_mention = client.getCommandMention('editvc')
+        cmd_mention2 = client.getCommandMention('vctable about')
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=200, g=255, b=120), # greenish lime-colored
             title="TransPlace's custom voice channels (vc)",
             description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You "
                         f"are then moved to this channel automatically. You can change the name and user "
                         f"limit of this channel with the {cmd_mention} command. When everyone leaves the "
-                        f"channel, the channel is deleted automatically.")
+                        f"channel, the channel is deleted automatically."
+                        f"You can use {cmd_mention2} for additional features.")
         if public:
             await itx.response.send_message(embed=embed, ephemeral=False)
         else:
@@ -275,7 +269,7 @@ class Tags:
                 await itx.edit_original_response(view=view)
 
 class SearchAddons(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         self.client = client
 
     nameusage = app_commands.Group(name='nameusage', description='Get data about which names are used in the server')
@@ -469,7 +463,7 @@ class SearchAddons(commands.Cog):
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
     async def equaldex(self, itx: discord.Interaction, country_id: str):
         response_api = requests.get(
-            f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true&apiKey=edd1d1790184e97861e7b5a51138845222d4c68b").text
+            f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true").text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
         # it also has some <br \/>\r\n strings in there for some reason..? so uh
         response_api = response_api.replace(r"<br \/>\r\n", r"\n").replace("<pre>","").replace("</pre>","")
@@ -562,7 +556,7 @@ class SearchAddons(commands.Cog):
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
 class OtherAddons(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -571,15 +565,22 @@ class OtherAddons(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         global report_message_reminder_unix
+        try: # mention targeted user if added to mod-ticket with /add target:@user
+            if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
+                print("embeds:", len(message.embeds), "| message.author.id:", message.author.id)
+                if message.author.id == 557628352828014614 and len(message.embeds) == 1:
+                    # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
+                    components = message.embeds[0].description.split(" ")
+                    print("components:", repr(components))
+                    print("@" in components[0])
+                    print(f'{components[1]} {components[2]} {components[3]} == "added to ticket"', f"{components[1]} {components[2]} {components[3]}" == "added to ticket")
+                    if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
+                        await message.channel.send("Obligatory ping to notify newly added user: " + components[0], allowed_mentions=discord.AllowedMentions.all())
+        except AttributeError:
+            pass
+
         if message.author.bot:
             return
-
-        if message.channel.category.id in [995330645901455380, 995330667665707108]:
-            if message.author.id == 557628352828014614 and len(message.embeds) == 1:
-                # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
-                components = message.embeds[0].description.split(" ")
-                if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
-                    await message.channel.send("Obligatory ping to notify newly added user: " + components[0], allowed_mentions=discord.AllowedMentions.all())
 
         #random cool commands
         self.headpatWait += 1
@@ -590,7 +591,9 @@ class OtherAddons(commands.Cog):
                     ignore = True
             if message.channel.name.startswith('ticket-') or message.channel.name.startswith('closed-'):
                 ignore = True
-            if message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692]: # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>
+            if message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
+                                               995330645901455380, 995330667665707108]:
+                # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
                 ignore = True
             if message.guild.id in [981730502987898960]: # don't send in Mod server
                 ignore = True
@@ -809,31 +812,31 @@ class OtherAddons(commands.Cog):
                 # stop the View from listening to more input.
                 # We also send the user an ephemeral message that we're confirming their choice.
                 @discord.ui.button(label='She/Her', style=discord.ButtonStyle.green)
-                async def feminine(self, itx: discord.Interaction, button: discord.ui.Button):
+                async def feminine(self, itx: discord.Interaction, _button: discord.ui.Button):
                     self.value = "she/her"
                     await itx.response.edit_message(content='Selected She/Her pronouns for compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='He/Him', style=discord.ButtonStyle.green)
-                async def masculine(self, itx: discord.Interaction, button: discord.ui.Button):
+                async def masculine(self, itx: discord.Interaction, _button: discord.ui.Button):
                     self.value = "he/him"
                     await itx.response.edit_message(content='Selected He/Him pronouns for the compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='They/Them', style=discord.ButtonStyle.green)
-                async def enby_them(self, itx: discord.Interaction, button: discord.ui.Button):
+                async def enby_them(self, itx: discord.Interaction, _button: discord.ui.Button):
                     self.value = "they/them"
                     await itx.response.edit_message(content='Selected They/Them pronouns for the compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='It/Its', style=discord.ButtonStyle.green)
-                async def enby_its(self, itx: discord.Interaction, button: discord.ui.Button):
+                async def enby_its(self, itx: discord.Interaction, _button: discord.ui.Button):
                     self.value = "it/its"
                     await itx.response.edit_message(content='Selected It/Its pronouns for the compliment', view=None)
                     self.stop()
 
                 @discord.ui.button(label='Unisex/Unknown', style=discord.ButtonStyle.grey)
-                async def unisex(self, itx: discord.Interaction, button: discord.ui.Button):
+                async def unisex(self, itx: discord.Interaction, _button: discord.ui.Button):
                     self.value = "unisex"
                     await itx.response.edit_message(content='Selected Unisex/Unknown gender for the compliment', view=None)
                     self.stop()
@@ -956,7 +959,7 @@ class OtherAddons(commands.Cog):
                         roll_db[roll] = 1
                 # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
                 # x.items() gives a list of tuples [(1,4),(2,1),(3,4),(4,1)] that is then sorted by the first item in the tuple
-                roll_db = dict(sorted(roll_db.items()))
+                roll_db = dict(sorted([x for x in roll_db.items()]))
                 details = "You rolled "
                 for roll in roll_db:
                     details += f"'{roll}'x{roll_db[roll]}, "
@@ -1168,8 +1171,10 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             await itx.response.send_message("You didn't give a valid conversion method/mode!", ephemeral=True)
             return
         if mode == "currency":
+            # more info: https://docs.openexchangerates.org/reference/latest-json
+            api_key = self.client.api_tokens['Open Exchange Rates']
             response_api = requests.get(
-                "https://openexchangerates.org/api/latest.json?app_id=ae67dc29a2784513837e671c7fe90074").text
+                f"https://openexchangerates.org/api/latest.json?app_id={api_key}&show_alternative=true").text
             data = json.loads(response_api)
             if data.get("error",0):
                 await itx.response.send_message(f"I'm sorry, something went wrong while trying to get the latest data", ephemeral=True)

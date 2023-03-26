@@ -1,4 +1,4 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
+from Uncute_Rina import *
 
 class ToneIndicator(commands.Cog):
     @app_commands.command(name="toneindicator",description="Look for the definition of a tone indicator")

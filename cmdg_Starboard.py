@@ -1,6 +1,4 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
-from datetime import datetime # for embed timestamp
-
+from Uncute_Rina import *
 
 starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"#"<:upvote:989259317146439690>"
 starboard_emoji_id = int(starboard_emoji.split(":")[-1].replace(">",""))
@@ -9,7 +7,7 @@ starboard_emoji_id = int(starboard_emoji.split(":")[-1].replace(">",""))
 messageIdMarkedForDeletion = []
 
 class Starboard(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB

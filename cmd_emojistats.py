@@ -1,15 +1,4 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
-import re #use regex to identify custom emojis in a text message
-from time import mktime # for unix time code
-from datetime import datetime, timezone # for turning unix time into datetime
-import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
-import asyncio # lets rina take small pauses while getting emojis from MongoDB to allow room for other commands
-# that asyncio is literally just 'await asyncio.sleep(0)' lol
-
-mongoURI = open("mongo.txt","r").read()
-cluster = motor.AsyncIOMotorClient(mongoURI)
-asyncRinaDB = cluster["Rina"]
-
+from Uncute_Rina import *
 
 async def add_to_data(emoji_id, emoji_name, location, animated):
     collection = asyncRinaDB["emojistats"]
@@ -33,9 +22,9 @@ async def add_to_data(emoji_id, emoji_name, location, animated):
 
 
 class EmojiStats(commands.Cog):
-    def __init__(self, client):
-        global RinaDB
-        RinaDB = client.RinaDB
+    def __init__(self, client: Bot):
+        global asyncRinaDB
+        asyncRinaDB = client.asyncRinaDB
 
     emojistats = app_commands.Group(name='emojistats', description='Get information about emoji usage in messages and reactions')
 

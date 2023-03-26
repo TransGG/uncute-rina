@@ -1,14 +1,8 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
-from datetime import datetime, timezone
-from time import mktime # for unix time code
-import matplotlib.pyplot as plt
-import pandas as pd
-import motor.motor_asyncio as motor
-import asyncio # lets rina take small pauses while getting emojis from MongoDB to allow room for other commands
-# apparently letting it run asynchronously might prevent a lot of missing heartbeats when adding data on data-editing events
-mongoURI = open("mongo.txt","r").read()
-cluster = motor.AsyncIOMotorClient(mongoURI)
-asyncRinaDB = cluster["Rina"]
+from Uncute_Rina import *
+
+# mongoURI = open("mongo.txt","r").read()
+# cluster = motor.AsyncIOMotorClient(mongoURI)
+# asyncRinaDB = cluster["Rina"]
 
 async def add_to_data(member, type):
     collection = asyncRinaDB["data"]
@@ -31,6 +25,11 @@ async def add_to_data(member, type):
 
 
 class MemberData(commands.Cog):
+    def __init__(self, client: Bot):
+        global asyncRinaDB
+        asyncRinaDB = client.asyncRinaDB
+
+
     @commands.Cog.listener()
     async def on_member_join(self, member):
         await add_to_data(member, "joined")

@@ -1,7 +1,7 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
+from Uncute_Rina import *
 
 class QOTW(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB

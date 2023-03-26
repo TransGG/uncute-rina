@@ -1,10 +1,7 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
-import requests #grab from en.pronouns.page api (search)
-import json # turn api request into dictionary
-import re #use regex to remove API hyperlink definitions: {#Ace=asexual}
+from Uncute_Rina import *
 
 class TermDictionary(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client

@@ -1,14 +1,10 @@
-import discord
-
-from utils import * #imports 'discord import' and 'mongodb' things too
-from datetime import datetime
-from time import mktime # for unix time code
+from Uncute_Rina import *
 
 recently_renamed_vcs = {} # make your own vcs!
 VcTable_prefix = "[T] "
 
 class CustomVcs(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -498,7 +494,11 @@ class CustomVcs(commands.Cog):
                     break
             added_owners.append(mention)
         else:
-            added_owners = [itx.user.id] + [int(mention.strip()[2:-1]) for mention in added_owners]
+            owner_list = [itx.user.id] + [int(mention.strip()[2:-1]) for mention in added_owners]
+            added_owners = []
+            for owner_id in owner_list:
+                if owner_id not in added_owners:
+                    added_owners.append(owner_id)
         channel = await self.get_current_channel(itx, "create VcTable")
         if channel is None:
             return

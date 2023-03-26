@@ -1,7 +1,7 @@
-from utils import * #imports 'discord import' and 'mongodb' things too
+from Uncute_Rina import *
 
 class Pronouns(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client
@@ -48,10 +48,10 @@ class Pronouns(commands.Cog):
 
         roles = []
         lowered_list = [i.lower() for i in list]
-        pronoun_roles = ["he/him", "she/her", "they/them", "it/its"]
+        pronoun_roles = ["he/him", "she/her", "they/them", "it/its", "any pronouns"]
         for role in user.roles:
-            if role.name.lower() == "other" and len(list) == 0:
-                roles.append("This person has the 'Other' role, so ask them if they have different pronouns.")
+            if role.name.lower() == "ask pronouns" and len(list) == 0:
+                roles.append("This person has the 'Ask Pronouns' role, so ask them if they have different pronouns.")
             if role.name.lower() in pronoun_roles and role.name.lower() not in lowered_list:
                 roles.append("=> " + role.name+" (from role)")
         list += roles
