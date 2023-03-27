@@ -103,10 +103,13 @@ def debug(text="", color="default", add_time=True, end=None, advanced=False):
         time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: "
     else:
         time = colors[color]
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
+    logger = logging.getLogger()
+    print = logger.info
     if end is None:
         print(f"{time}{text}{colors['default']}")
     else:
-        print(f"{time}{text}{colors['default']}",end=end)
+        print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
 
 #unused
 def thousandSpace(number, interval = 3, separator = " "):
@@ -123,8 +126,8 @@ def thousandSpace(number, interval = 3, separator = " "):
 
 
 async def logMsg(_guild, msg: str):
-    mongoURI = open("mongo.txt","r").read()
-    cluster = MongoClient(mongoURI)
+    api_keys = json.loads(open("api_keys.json", "r").read())
+    cluster = MongoClient(api_keys['MongoDB'])
     RinaDB = cluster["Rina"]
     collection = RinaDB["guildInfo"]
     query = {"guild_id": _guild.id}

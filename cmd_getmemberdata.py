@@ -1,9 +1,5 @@
 from Uncute_Rina import *
 
-# mongoURI = open("mongo.txt","r").read()
-# cluster = motor.AsyncIOMotorClient(mongoURI)
-# asyncRinaDB = cluster["Rina"]
-
 async def add_to_data(member, type):
     collection = asyncRinaDB["data"]
     query = {"guild_id": member.guild.id}
@@ -23,12 +19,10 @@ async def add_to_data(member, type):
     await collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
     #debug(f"Successfully added new data for {member.name} to {repr(type)}",color="blue")
 
-
 class MemberData(commands.Cog):
     def __init__(self, client: Bot):
         global asyncRinaDB
         asyncRinaDB = client.asyncRinaDB
-
 
     @commands.Cog.listener()
     async def on_member_join(self, member):

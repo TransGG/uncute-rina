@@ -118,7 +118,10 @@ class Reminders(commands.GroupCog,name="reminder"):
                 # self.creationtime = self.creationtime+(datetime.now()-datetime.utcnow())
                 if self.remindertime < datetime.now():
                     self.alert = "Your reminder was delayed. Probably because the bot was offline for a while. I hope it didn't cause much of an issue!\n"
-                    sched.add_job(self.send_reminder, "date", run_date=datetime.now())
+                    try:
+                        asyncio.get_event_loop().create_task(self.send_reminder())
+                    except RuntimeError:
+                        pass
                     return
                 sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
             else:
@@ -142,7 +145,7 @@ class Reminders(commands.GroupCog,name="reminder"):
             user = await self.client.fetch_user(self.userID)
             creationtime = int(mktime(self.creationtime.timetuple()))
             await user.send(f"{self.alert}On <t:{creationtime}:F>, you asked to be reminded of \"{self.reminder}.\"")
-            collection = RinaDB["reminders"]
+            collection = self.client.RinaDB["reminders"]
             query = {"userID": self.userID}
             db_data = collection.find_one(query)
             indexSubtraction = 0
@@ -154,7 +157,6 @@ class Reminders(commands.GroupCog,name="reminder"):
                 collection.update_one(query, {"$set":{"reminders":db_data['reminders']}}, upsert=True)
             else:
                 collection.delete_one(query)
-
 
     @app_commands.command(name="remindme",description="Add a reminder for yourself!")
     @app_commands.describe(time="When would you like me to remind you? (1d2h, 5 weeks, 1mo10d)",
@@ -171,7 +173,10 @@ class Reminders(commands.GroupCog,name="reminder"):
             db_data = collection.find_one(query)
         try:
             if len(db_data['reminders']) > 50:
-                await itx.response.send_message("please don't make more than 50 reminders. # todo, there is no way to erase reminders or see your current reminders",ephemeral=True)
+                cmd_mention = self.client.getCommandMention("reminder reminders")
+                cmd_mention1 = self.client.getCommandMention("reminder remove")
+                await itx.response.send_message(f"Please don't make more than 50 reminders. Use {cmd_mention} to see "
+                                                f"your reminders, and use {cmd_mention1} `item: ` to remove a reminder",ephemeral=True)
                 return
         except KeyError:
             pass
@@ -219,13 +224,14 @@ class Reminders(commands.GroupCog,name="reminder"):
                     for reminder in db_data['reminders']:
                         out.append(f"`{index}` | <t:{reminder['remindertime']}:F>")
                         index += 1
-                    outMsg = f"You have {len(db_data['reminders'])} reminders (use /reminder reminders item:[] to get more info about a reminder):\n"+'\n'.join(out)[:1996]
+                    cmd_mention = self.client.getCommandMention("reminder reminders")
+                    outMsg = f"You have {len(db_data['reminders'])} reminders (use {cmd_mention} `item: ` to get more info about a reminder):\n"+'\n'.join(out)[:1996]
                 await itx.response.send_message(outMsg,ephemeral=True)
             else:
                 reminder = db_data['reminders'][item]
                 await itx.response.send_message(f"Showing reminder `{index}` out of `{len(db_data['reminders'])}`:\n" +
                                                 f"  ID: `{index}`\n" +
-                                                f"  Created at:       <t:{reminder['creationtime']}:F> (<t:{reminder['creationtime']}>)\n" +
+                                                f"  Created at:             <t:{reminder['creationtime']}:F> (<t:{reminder['creationtime']}>)\n" +
                                                 f"  Reminding you at: <t:{reminder['remindertime']}:F> (<t:{reminder['remindertime']}:R>)\n" +
                                                 f"  Remind you about: {discord.utils.escape_markdown(reminder['reminder'])}",ephemeral=True)
         except IndexError:
