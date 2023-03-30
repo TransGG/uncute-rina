@@ -1,4 +1,5 @@
 from Uncute_Rina import *
+from import_modules import *
 
 class ToneIndicator(commands.Cog):
     @app_commands.command(name="toneindicator",description="Look for the definition of a tone indicator")

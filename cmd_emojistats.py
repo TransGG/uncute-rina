@@ -1,4 +1,5 @@
 from Uncute_Rina import *
+from import_modules import *
 
 async def add_to_data(emoji_id, emoji_name, location, animated):
     collection = asyncRinaDB["emojistats"]

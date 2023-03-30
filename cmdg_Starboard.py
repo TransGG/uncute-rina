@@ -1,4 +1,5 @@
 from Uncute_Rina import *
+from import_modules import *
 
 starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"#"<:upvote:989259317146439690>"
 starboard_emoji_id = int(starboard_emoji.split(":")[-1].replace(">",""))

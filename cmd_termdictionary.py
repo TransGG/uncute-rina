@@ -1,4 +1,5 @@
 from Uncute_Rina import *
+from import_modules import *
 
 class TermDictionary(commands.Cog):
     def __init__(self, client: Bot):
@@ -529,7 +530,7 @@ class TermDictionary(commands.Cog):
             cmd_mention = self.client.getCommandMention("dictionary")
             await itx.response.send_message(f"You have already previously defined this term (try to find it with {cmd_mention}).", ephemeral=True)
             return
-
+        await itx.response.defer(ephemeral=True)
         # Test if a synonym is already used before
         if synonyms != "":
             synonyms = synonyms.split(", ")
@@ -550,7 +551,7 @@ class TermDictionary(commands.Cog):
         collection.insert_one(post)
 
         await logMsg(itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) added the dictionary definition of '{term}' and set it to '{definition}', with synonyms: {synonyms}")
-        await itx.response.send_message(warnings+f"Successfully added '{term}' to the dictionary (with synonyms: {synonyms}): {definition}", ephemeral=True)
+        await itx.followup.send(content=warnings+f"Successfully added '{term}' to the dictionary (with synonyms: {synonyms}): {definition}", ephemeral=True)
 
     @admin.command(name="redefine",description="Edit a dictionary entry for a word!")
     @app_commands.describe(term="This is the main word for the dictionary entry (case sens.) Example: Egg, Hormone Replacement Therapy (HRT), etc.",

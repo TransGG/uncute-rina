@@ -1,4 +1,5 @@
 from Uncute_Rina import *
+from import_modules import *
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 selfies_delete_week_command_cooldown = 0
@@ -370,12 +371,51 @@ class SearchAddons(commands.Cog):
             pages.append(result_page)
         page = 0
         class Pages(discord.ui.View):
-            def __init__(self, pages, timeout=None):
+            class GetName(discord.ui.Modal, title="Search page with word"):
+                def __init__(self, pages, embed_title, timeout=None):
+                    super().__init__()
+                    self.value = None
+                    self.timeout = timeout
+                    self.embed_title = embed_title
+                    self.pages = pages
+                    self.page = None
+
+                    self.word = None
+                    self.question_text = discord.ui.TextInput(label='What word to look up in the server name list?',
+                                                              placeholder=f"The word you want to look up",
+                                                              # style=discord.TextStyle.short,
+                                                              # required=True
+                                                              )
+                    self.add_item(self.question_text)
+
+                async def on_submit(self, itx: discord.Interaction):
+                    self.value = 9  # failed; placeholder
+                    self.word = self.question_text.value
+                    for page_id in range(len(self.pages)):
+                        if self.word in self.pages[page_id]:
+                            self.page = page_id
+                            break
+                    else:
+                        await itx.response.send_message(
+                            content=f"I couldn't find '{self.word}' in any of the pages! Perhaps nobody chose this name!",
+                            ephemeral=True)
+                        return
+                    result_page = self.pages[self.page * 2]
+                    result_page2 = self.pages[self.page * 2 + 1]
+                    embed = discord.Embed(color=8481900, title=self.embed_title)
+                    embed.add_field(name="Column 1", value=result_page)
+                    embed.add_field(name="Column 2", value=result_page2)
+                    embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages) / 2)))
+                    await itx.response.edit_message(embed=embed)
+                    self.stop()
+
+            def __init__(self, pages, embed_title, timeout=None):
                 super().__init__()
                 self.value   = None
                 self.timeout = timeout
                 self.page    = 0
                 self.pages   = pages
+                self.embed_title = embed_title
 
             # When the confirm button is pressed, set the inner value to `True` and
             # stop the View from listening to more input.
@@ -390,7 +430,7 @@ class SearchAddons(commands.Cog):
                     return
                 result_page = self.pages[self.page*2]
                 result_page2 = self.pages[self.page*2+1]
-                embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed = discord.Embed(color=8481900, title=self.embed_title)
                 embed.add_field(name="Column 1",value=result_page)
                 embed.add_field(name="Column 2",value=result_page2)
                 embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
@@ -405,23 +445,35 @@ class SearchAddons(commands.Cog):
                 except IndexError:
                     await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
                     return
-                embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick"}names leaderboard!')
+                embed = discord.Embed(color=8481900, title=self.embed_title)
                 embed.add_field(name="Column 1",value=result_page)
                 embed.add_field(name="Column 2",value=result_page2)
                 embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
                 try:
                     await itx.response.edit_message(embed=embed)
                 except discord.errors.HTTPException:
+                    # todo: I think discord.errors.HTTPException can be caught by already checking if embed field value is empty ('')
                     self.page -= 1
                     await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
 
+            @discord.ui.button(label='Find my name', style=discord.ButtonStyle.blurple)
+            async def find_name(self, itx: discord.Interaction, _button: discord.ui.Button):
+                send_one = Pages.GetName(self.pages, self.embed_title)
+                await itx.response.send_modal(send_one)
+                await send_one.wait()
+                if send_one.value in [None, 9]:
+                    pass
+                else:
+                    self.page = send_one.page
+
         result_page = pages[page]
         result_page2 = pages[page+1]
-        embed = discord.Embed(color=8481900, title=f'Most-used {"user" if type==1 else "nick" if type==2 else "username and nick"}names leaderboard!')
+        embed_title = f'Most-used {"user" if type==1 else "nick" if type==2 else "username and nick"}names leaderboard!'
+        embed = discord.Embed(color=8481900, title=embed_title)
         embed.add_field(name="Column 1",value=result_page)
         embed.add_field(name="Column 2",value=result_page2)
         embed.set_footer(text="page: "+str(page+1)+" / "+str(int(len(pages)/2)))
-        view = Pages(pages, timeout=60)
+        view = Pages(pages, embed_title, timeout=60)
         await itx.followup.send(f"",embed=embed, view=view,ephemeral=True)
         await view.wait()
         if view.value is None:
@@ -434,8 +486,8 @@ class SearchAddons(commands.Cog):
         discord.app_commands.Choice(name='nicknames', value=2),
         discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
     ])
-    async def nameusage_name(self, itx: discord.Interaction, name: str, type: int):
-        await itx.response.defer(ephemeral=True)
+    async def nameusage_name(self, itx: discord.Interaction, name: str, type: int, public: bool = False):
+        await itx.response.defer(ephemeral=not public)
         count = 0
         type_string = ""
         if type == 1:
@@ -457,7 +509,7 @@ class SearchAddons(commands.Cog):
                 elif name.lower() in member.name.lower():
                     count += 1
             type_string = "username or nickname"
-        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=True)
+        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=not public)
 
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
@@ -928,10 +980,10 @@ class OtherAddons(commands.Cog):
             if dice < 1 or faces < 1:
                 await itx.response.send_message("You can't have negative dice/faces! Please give a number above 0",ephemeral=True)
                 return
-            if dice > 100000:
+            if dice >= 1000000:
                 await itx.response.send_message(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
                 return
-            if faces > 100000:
+            if faces >= 1000000:
                 await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
                 return
             rolls = []
@@ -997,6 +1049,9 @@ class OtherAddons(commands.Cog):
                 if len(temp) < 1:
                     raise ValueError(f"I couldn't understand what you meant with {query} ({str(temp)})")
                 dice = temp[0]
+                negative = dice.startswith("-")
+                if negative:
+                    dice = dice.replace("-", "", 1)
                 faces = ""
                 for x in temp[1]:
                     if x in "0123456789":
@@ -1015,17 +1070,18 @@ class OtherAddons(commands.Cog):
                         f"You have to roll a die with a numerical number of faces! (You tried to roll {dice} dice with '{faces}' faces)")
                 if len(remainder) > 0:
                     raise TypeError("Idk what happened, but you probably filled something in incorrectly.")
-                if dice > 1000000:
+                if dice >= 1000000:
                     raise OverflowError(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...")
-                if faces > 1000000:
+                if faces >= 1000000:
                     raise OverflowError(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...")
-                return [random.randint(1, faces) for _ in range(dice)]
+                return [(negative*-2+1)*random.randint(1, faces) for _ in range(dice)]
 
             for char in advanced:
-                if char not in "0123456789d+*":  # kKxXrR": #!!pf≤≥
+                if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
                     await itx.response.send_message(f"Invalid input! This command doesn't have support for '{char}' yet!",ephemeral=True)
                     return
-            add = advanced.split('+')
+            _add = advanced.replace('-', '+-').split('+')
+            add = [section for section in _add if len(section) > 0]
             # print("add:       ",add)
             multiply = []
             for section in add:
@@ -1033,17 +1089,17 @@ class OtherAddons(commands.Cog):
             # print("multiply:  ",multiply)
             try:
                 result = [[sum(generate_roll(query)) for query in section] for section in multiply]
-            except (TypeError,ValueError) as ex:
+            except (TypeError,ValueError, OverflowError) as ex:
                 ex = repr(ex).split("(",1)
                 ex_type = ex[0]
-                ex_message = ex[1][1:-2]
+                ex_message = ex[1][1:-1]
                 await itx.response.send_message(f"Wasn't able to roll your dice!\n  {ex_type}: {ex_message}",ephemeral=True)
                 return
             # print("result:    ",result)
             out = ["Input:  " + advanced]
             if "*" in advanced:
                 out += [' + '.join([' * '.join([str(x) for x in section]) for section in result])]
-            if "+" in advanced:
+            if "+" in advanced or '-' in advanced:
                 out += [' + '.join([str(prod(section)) for section in result])]
             out += [str(sum([prod(section) for section in result]))]
             output = discord.utils.escape_markdown('\n= '.join(out))
