@@ -2,7 +2,9 @@ from Uncute_Rina import *
 
 def isVerified(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx)
+    user_role_ids = [role.id for role in itx.user.roles]
+    role_ids = [959748411844874240]  # verified
+    return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
 
 # def isVerifier(itx: discord.Interaction):
 #     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
@@ -11,8 +13,11 @@ def isVerified(itx: discord.Interaction):
 def isStaff(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Trial Moderator' , itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
+    user_role_ids = [role.id for role in itx.user.roles]
+    role_ids = [1069398630944997486,981735650971775077] #trial ; moderator
+    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
 
 def isAdmin(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
@@ -20,7 +25,9 @@ def isAdmin(itx: discord.Interaction):
              discord.utils.find(lambda r: r.name == 'Admins'    , itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Owner'     , itx.guild.roles)]
-    return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056
+    user_role_ids = [role.id for role in itx.user.roles]
+    role_ids = [981735525784358962]  # admin
+    return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056 or len(set(role_ids).intersection(user_role_ids)) > 0
 
 def debug(text="", color="default", add_time=True, end=None, advanced=False):
     colors = {
