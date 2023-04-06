@@ -65,6 +65,9 @@ class CustomVcs(commands.Cog):
                         break
                 if reset_vctable:
                     await before.channel.edit(overwrites=before.channel.category.overwrites) #reset overrides
+                    #update every user's permissions
+                    for user in before.channel.members:
+                        await user.move_to(before.channel)
                     await before.channel.send("This channel was converted from a VcTable back to a normal CustomVC because all the owners left")
                     # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
                     if before.channel.name.startswith(VcTable_prefix):
@@ -107,7 +110,7 @@ class CustomVcs(commands.Cog):
                     raise
                     # pass
                 nomicChannel = member.guild.get_channel(vcNoMic)
-                cmd_mention = self.client.getCommandMention("editvc")
+                cmd_mention = self.client.get_command_mention("editvc")
                 await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", delete_after=120, allowed_mentions=discord.AllowedMentions.none())
                 await self.client.logChannel.send(content=warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
 
@@ -124,7 +127,7 @@ class CustomVcs(commands.Cog):
         query = {"guild_id": itx.guild_id}
         guild = collection.find_one(query)
         if guild is None:
-            cmd_mention = self.client.getCommandMention("editguildinfo")
+            cmd_mention = self.client.get_command_mention("editguildinfo")
             await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
             return
         vcHub = guild["vcHub"]
@@ -288,7 +291,7 @@ class CustomVcs(commands.Cog):
                 return
             else:
                 # clear and continue command
-                recently_renamed_vcs[channel.id] = []
+                recently_renamed_vcs[channel.id] = recently_renamed_vcs[channel.id][2:]
         else:
             # create and continue command
             recently_renamed_vcs[channel.id] = []
@@ -434,7 +437,7 @@ class CustomVcs(commands.Cog):
         if guild is None:
             if from_event:
                 return
-            cmd_mention = self.client.getCommandMention("editguildinfo")
+            cmd_mention = self.client.get_command_mention("editguildinfo")
             await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!", ephemeral=True)
             return
 
@@ -468,7 +471,7 @@ class CustomVcs(commands.Cog):
         except KeyError:
             if from_event:
                 return
-            cmd_mention = self.client.getCommandMention('vctable create')
+            cmd_mention = self.client.get_command_mention('vctable create')
             await itx.response.send_message(f"Invalid permissions: You are not an owner of this VcTable! (Perhaps this isn't a VcTable yet: use {cmd_mention} to make it one!)", ephemeral=True)
             return
         return channel
@@ -478,7 +481,7 @@ class CustomVcs(commands.Cog):
     async def create_vctable(self, itx: discord.Interaction, owners: str = ""):
         warning = ""
         owners = owners.split(",")
-        cmd_mention = self.client.getCommandMention("vctable add_owner")
+        cmd_mention = self.client.get_command_mention("vctable add_owner")
         added_owners = []
         for mention in owners:
             if mention == "":
@@ -512,9 +515,9 @@ class CustomVcs(commands.Cog):
                     # ignore entirely, don't continue command
                     return
                 else:
-                    recently_renamed_vcs[channel.id] = []
+                    recently_renamed_vcs[channel.id] = recently_renamed_vcs[channel.id][2:]
             else:
-                recently_renamed_vcs[channel.id] = []
+                pass
         else:
             recently_renamed_vcs[channel.id] = []
 
@@ -524,17 +527,18 @@ class CustomVcs(commands.Cog):
             if channel.overwrites[target].connect and target not in channel.category.overwrites:
                 owner_present = True
         if owner_present:
-            cmd_mention = self.client.getCommandMention("vctable owner")
+            cmd_mention = self.client.get_command_mention("vctable owner")
             await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to see who the owners of this table are!", ephemeral=True)
             return
         for owner_id in added_owners:
             owner = itx.guild.get_member(int(owner_id))
             await channel.set_permissions(owner, overwrite=discord.PermissionOverwrite(connect=True,speak=True), reason="VcTable created: set as owner")
         owner_taglist = ', '.join([f'<@{id}>' for id in added_owners])
-        cmd_mention = self.client.getCommandMention("vctable about")
+        cmd_mention = self.client.get_command_mention("vctable about")
         await channel.send(f"CustomVC converted to VcTable\n"
                            f"Use {cmd_mention} to learn more!\n"
-                           f"Made {owner_taglist} a VcTable Owner",allowed_mentions=discord.AllowedMentions.none())
+                           f"Made {owner_taglist} a VcTable Owner"
+                           f"**:warning: If someone is breaking the rules, TELL A MOD** (don't try to moderate a vc yourself)",allowed_mentions=discord.AllowedMentions.none())
         await logMsg(itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
         recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
         try:
@@ -555,9 +559,11 @@ class CustomVcs(commands.Cog):
             if mode == 1:
                 await itx.response.send_message("You can't set yourself as owner!", ephemeral=True)
             elif mode == 2:
-                cmd_mention = self.client.getCommandMention("vctable owner")
+                cmd_mention = self.client.get_command_mention("vctable owner")
+                cmd_mention1 = self.client.get_command_mention("vctable disband")
                 await itx.response.send_message("You can't remove your ownership of this VcTable!\n"
-                                                f"You can make more people owner with {cmd_mention} `user: ` though...",
+                                                f"You can make more people owner with {cmd_mention} `user: ` though..."
+                                                f"If you want to delete the VcTable, you can use {cmd_mention1}",
                                                 ephemeral=True)
             return
 
@@ -628,11 +634,11 @@ class CustomVcs(commands.Cog):
                 warning = ""
             try:
                 if channel.overwrites[itx.guild.default_role].speak is not False:
-                    cmd_mention = self.client.getCommandMention("vctable make_authorized_only")
+                    cmd_mention = self.client.get_command_mention("vctable make_authorized_only")
                     warning += f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}"
             except KeyError:
                 pass
-            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=True), reason="VcTable edited: set as speaker")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=True,camera=True), reason="VcTable edited: set as speaker")
             await channel.send(f"{itx.user.mention} made {user.mention} a speaker", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully made {user.mention} a speaker."+warning, ephemeral=True)
             if user in channel.members:
@@ -655,7 +661,7 @@ class CustomVcs(commands.Cog):
             warning = ""
             try:
                 if channel.overwrites[itx.guild.default_role].speak is False:
-                    cmd_mention = self.client.getCommandMention("vctable make_authorized_only")
+                    cmd_mention = self.client.get_command_mention("vctable make_authorized_only")
                     warning = f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}"
             except KeyError:
                 pass
@@ -781,7 +787,7 @@ class CustomVcs(commands.Cog):
 
         # if authorized-only is disabled:
         view = Confirm()
-        cmd_mention = self.client.getCommandMention("vctable speaker")
+        cmd_mention = self.client.get_command_mention("vctable speaker")
         await itx.response.send_message(f"Enabling authorized-only (a whitelist) will make only owners and speakers (people that have been whitelisted) able to talk\n"
                                         f"Please make sure everyone is aware of this change. "
                                         f"To whitelist someone, use {cmd_mention} `mode:Add` `user: `",
@@ -796,11 +802,34 @@ class CustomVcs(commands.Cog):
                     if channel.overwrites[member].speak or channel.overwrites[member].connect:
                         continue
                 await member.move_to(channel)
-            cmd_mention = self.client.getCommandMention("vctable speaker")
+            cmd_mention = self.client.get_command_mention("vctable speaker")
             await itx.edit_original_response(content= f"Successfully enabled whitelist. Use {cmd_mention} `user: ` to let more people speak.",
                                              view   = None)
         else:
             await itx.edit_original_response(content="Cancelling...", view=None)
+
+    async def vctable_disband(self, itx: discord.Interaction):
+        channel = await self.get_channel_if_owner(itx, "disband VcTable")
+        if channel is None:
+            return
+
+        await channel.edit(overwrites=channel.category.overwrites)  # reset overrides
+        # update every user's permissions
+        for user in channel.members:
+            await user.move_to(channel)
+        await channel.send(
+            f"{itx.user.mention} disbanded the VcTable and turned it back to a normal CustomVC",allowed_mentions=discord.AllowedMentions.none())
+        # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
+        await itx.response.send_message("Successfully disbanded VcTable.", ephemeral=True)
+        if channel.name.startswith(VcTable_prefix):
+            new_channel_name = channel.name[len(VcTable_prefix):]
+            if channel.id not in recently_renamed_vcs:
+                recently_renamed_vcs[channel.id] = []
+            recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
+            try:
+                await channel.edit(name=new_channel_name)
+            except discord.errors.NotFound:
+                pass
 
     @vctable.command(name="about", description="Get information about this CustomVC add-on feature")
     async def vctable_help(self, itx: discord.Interaction):
@@ -816,12 +845,12 @@ class CustomVcs(commands.Cog):
             title       = 'Command documentation and explanation',
             description = f"Words in brackets [like so] mean they are optional for the command.\n"
                           f"Most commands are for owners only, like muting, adding/removing permissions. Normal participants can check who's owner, speaker, or muted though.\n"
-                          f"{self.client.getCommandMention('vctable about')}: See this help page\n"
-                          f"{self.client.getCommandMention('vctable create')} `[owners: ]`: Turns your CustomVC into a VcTable and makes you (and any additional mentioned user(s)) the owner\n"
-                          f"{self.client.getCommandMention('vctable owner')} `mode: ` `user: `: Add/Remove an owner to your table. If you want to check the owners, then it doesn't matter what you fill in for 'user'\n"
-                          f"{self.client.getCommandMention('vctable mute')} `mode: ` `user: `: Mute/Unmute a user in your table. If you want to check the muted participants, see ^ (same as for checking owners)\n"
-                          f"{self.client.getCommandMention('vctable make_authorized_only')}: Toggle the whitelist for speaking\n"
-                          f"{self.client.getCommandMention('vctable speaker')} `mode: ` `user: `: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted participants\n")
+                          f"{self.client.get_command_mention('vctable about')}: See this help page\n"
+                          f"{self.client.get_command_mention('vctable create')} `[owners: ]`: Turns your CustomVC into a VcTable and makes you (and any additional mentioned user(s)) the owner\n"
+                          f"{self.client.get_command_mention('vctable owner')} `mode: ` `user: `: Add/Remove an owner to your table. If you want to check the owners, then it doesn't matter what you fill in for 'user'\n"
+                          f"{self.client.get_command_mention('vctable mute')} `mode: ` `user: `: Mute/Unmute a user in your table. If you want to check the muted participants, see ^ (same as for checking owners)\n"
+                          f"{self.client.get_command_mention('vctable make_authorized_only')}: Toggle the whitelist for speaking\n"
+                          f"{self.client.get_command_mention('vctable speaker')} `mode: ` `user: `: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted participants\n")
         await itx.response.send_message(embeds=[embed1,embed2], ephemeral=True)
 
 async def setup(client):

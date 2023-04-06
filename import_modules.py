@@ -25,8 +25,7 @@ import re #use regex to remove pronouns from people's usernames, and split their
 print_progress(9,22, "requests")
 import requests # for getting the equality index of countries and to grab from en.pronouns.page api (search)
 print_progress(10,22, "warnings")
-import warnings #used to warn for invalid color thingy in the debug function
-                # todo: add this to more files, or use this in debug instead of print()
+import warnings #used to warn for invalid color thingy in the debug function; as well as for debug()
 print_progress(11,22, "pymongo")
 import pymongo # used in cmd_emojistats
 print_progress(12,22, "pymongo/MongoClient")

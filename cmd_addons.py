@@ -151,7 +151,7 @@ class Tags:
             await context.send(embed=embed)
 
     @staticmethod
-    async def send_customvc_info(itx: discord.Interaction, client, public=True):
+    async def send_customvc_info(itx: discord.Interaction, client: Bot, public=True):
         collection = RinaDB["guildInfo"]
         query = {"guild_id": itx.guild.id}
         guild = collection.find_one(query)
@@ -161,8 +161,8 @@ class Tags:
             return
         vc_hub = guild["vcHub"]
 
-        cmd_mention = client.getCommandMention('editvc')
-        cmd_mention2 = client.getCommandMention('vctable about')
+        cmd_mention = client.get_command_mention('editvc')
+        cmd_mention2 = client.get_command_mention('vctable about')
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=200, g=255, b=120), # greenish lime-colored
             title="TransPlace's custom voice channels (vc)",
@@ -205,7 +205,7 @@ class Tags:
                 await itx.edit_original_response(view=view)
 
     @staticmethod
-    async def send_toneindicator_info(itx: discord.Interaction, client, public=True):
+    async def send_toneindicator_info(itx: discord.Interaction, client: Bot, public=True):
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=142, g=237, b=221), # tealish aqua
             title="When to use tone indicators?",
@@ -219,7 +219,7 @@ class Tags:
                         "\n"
                         "Some tone indicators have multiple definitions depending on the context. For "
                         "example: \"/m\" can mean 'mad' or 'metaphor'. You can look up tone indicators by "
-                        f"their tag or definition using {client.getCommandMention('toneindicator')}."
+                        f"their tag or definition using {client.get_command_mention('toneindicator')}."
         )
         if public:
             await itx.response.send_message(embed=embed)
@@ -722,7 +722,7 @@ class OtherAddons(commands.Cog):
                     await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
                 await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
             else:
-                cmd_mention = self.client.getCommandMention("help")
+                cmd_mention = self.client.get_command_mention("help")
                 await message.channel.send(f"I use slash commands! Use /command  and see what cool things might pop up! or try {cmd_mention}\nPS: If you're trying to call me cute: no, I'm not", delete_after=8)
 
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
@@ -949,7 +949,7 @@ class OtherAddons(commands.Cog):
             try:
                 del blacklist[string]
             except IndexError:
-                cmd_mention = self.client.getCommandMention("complimentblacklist")
+                cmd_mention = self.client.get_command_mention("complimentblacklist")
                 await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention} `mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
                 return
             collection.update_one(query, {"$set":{f"list":blacklist}}, upsert=True)
@@ -1024,6 +1024,7 @@ class OtherAddons(commands.Cog):
                 public = False
             await itx.response.send_message(out,ephemeral=not public)
         else:
+            await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ","")
             def prod(list: list):
                 a = 1
@@ -1074,11 +1075,14 @@ class OtherAddons(commands.Cog):
                     raise OverflowError(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...")
                 if faces >= 1000000:
                     raise OverflowError(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...")
+
                 return [(negative*-2+1)*random.randint(1, faces) for _ in range(dice)]
 
             for char in advanced:
                 if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
-                    await itx.response.send_message(f"Invalid input! This command doesn't have support for '{char}' yet!",ephemeral=True)
+                    if public:
+                        await itx.delete_original_response()
+                    await itx.followup.send(f"Invalid input! This command doesn't have support for '{char}' yet!",ephemeral=True)
                     return
             _add = advanced.replace('-', '+-').split('+')
             add = [section for section in _add if len(section) > 0]
@@ -1093,7 +1097,9 @@ class OtherAddons(commands.Cog):
                 ex = repr(ex).split("(",1)
                 ex_type = ex[0]
                 ex_message = ex[1][1:-1]
-                await itx.response.send_message(f"Wasn't able to roll your dice!\n  {ex_type}: {ex_message}",ephemeral=True)
+                if public:
+                    await itx.delete_original_response()
+                await itx.followup.send(f"Wasn't able to roll your dice!\n  {ex_type}: {ex_message}",ephemeral=True)
                 return
             # print("result:    ",result)
             out = ["Input:  " + advanced]
@@ -1108,36 +1114,38 @@ class OtherAddons(commands.Cog):
             if len(output) >= 500:
                 public = False
             try:
-                await itx.response.send_message(output,ephemeral=not public)
+                await itx.followup.send(output,ephemeral=not public)
             except discord.errors.NotFound:
+                if public:
+                    await itx.delete_original_response()
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
     @app_commands.command(name="help", description="A help command to learn more about me!")
     async def help(self, itx: discord.Interaction):
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
-{self.client.getCommandMention('compliment')}: Rina can compliment others (matching their pronoun role)
-{self.client.getCommandMention('convert_unit')}: Convert a value from one to another! Distance, speed, currency, etc.
-{self.client.getCommandMention('dictionary')}: Search for an lgbtq+-related or dictionary term!
-{self.client.getCommandMention('equaldex')}: See LGBTQ safety and rights in a country (with API)
-{self.client.getCommandMention('help')}: See this help page
-{self.client.getCommandMention('nameusage gettop')}: See how many people are using the same name
-{self.client.getCommandMention('pronouns')}: See someone's pronouns or edit your own
-{self.client.getCommandMention('qotw')}: Suggest a Question Of The Week to staff
-{self.client.getCommandMention('roll')}: Roll some dice with a random result
-{self.client.getCommandMention('reminder reminders')}: Make or see your reminders
-{self.client.getCommandMention('tag')}: Get information about some of the server's extra features
-{self.client.getCommandMention('todo')}: Make, add, or remove items from your to-do list
-{self.client.getCommandMention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)
+{self.client.get_command_mention('compliment')}: Rina can compliment others (matching their pronoun role)
+{self.client.get_command_mention('convert_unit')}: Convert a value from one to another! Distance, speed, currency, etc.
+{self.client.get_command_mention('dictionary')}: Search for an lgbtq+-related or dictionary term!
+{self.client.get_command_mention('equaldex')}: See LGBTQ safety and rights in a country (with API)
+{self.client.get_command_mention('help')}: See this help page
+{self.client.get_command_mention('nameusage gettop')}: See how many people are using the same name
+{self.client.get_command_mention('pronouns')}: See someone's pronouns or edit your own
+{self.client.get_command_mention('qotw')}: Suggest a Question Of The Week to staff
+{self.client.get_command_mention('roll')}: Roll some dice with a random result
+{self.client.get_command_mention('reminder reminders')}: Make or see your reminders
+{self.client.get_command_mention('tag')}: Get information about some of the server's extra features
+{self.client.get_command_mention('todo')}: Make, add, or remove items from your to-do list
+{self.client.get_command_mention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)
 
-Make a custom voice channel by joining "Join to create VC" (use {self.client.getCommandMention('tag')} `tag:customvc` for more info)
-{self.client.getCommandMention('editvc')}: edit the name or user limit of your custom voice channel
-{self.client.getCommandMention('vctable about')}: Learn about making your voice chat more on-topic!
+Make a custom voice channel by joining "Join to create VC" (use {self.client.get_command_mention('tag')} `tag:customvc` for more info)
+{self.client.get_command_mention('editvc')}: edit the name or user limit of your custom voice channel
+{self.client.get_command_mention('vctable about')}: Learn about making your voice chat more on-topic!
 """
 # Check out the #join-a-table channel: In this channel, you can claim a channel for roleplaying or tabletop games for you and your group!
 # The first person that joins/creates a table gets a Table Owner role, and can lock, unlock, or close their table.
-# {self.client.getCommandMention('table lock')}, {self.client.getCommandMention('table unlock')}, {self.client.getCommandMention('table close')}
-# You can also transfer your table ownership to another table member, after they joined your table: {self.client.getCommandMention('table newowner')}\
+# {self.client.get_command_mention('table lock')}, {self.client.get_command_mention('table unlock')}, {self.client.get_command_mention('table close')}
+# You can also transfer your table ownership to another table member, after they joined your table: {self.client.get_command_mention('table newowner')}\
 # """
         await itx.response.send_message(out, ephemeral=True)
 
@@ -1182,9 +1190,9 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                 # print("++++Not deleted++++ ["+str(message.created_at)+f"] {message.author}: {message.content}")
 
             selfies_delete_week_command_cooldown = time_now
-            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days successfully!", ephemeral=True)
+            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
         except:
-            await itx.followup.send_message("Something went wrong!")
+            await itx.followup.send("Something went wrong!")
             raise
 
     async def unit_autocomplete(self, itx: discord.Interaction, current: str):

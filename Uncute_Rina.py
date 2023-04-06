@@ -75,7 +75,7 @@ else:
         RinaDB = RinaDB
         asyncRinaDB = asyncRinaDB
 
-        def getCommandMention(self, _command):
+        def get_command_mention(self, _command):
             args = _command.split(" ")+[None, None]
             command_name, subcommand, subcommand_group = args[0:3]
             # returns one of the following:

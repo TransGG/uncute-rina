@@ -109,10 +109,10 @@ class TermDictionary(commands.Cog):
                     source = 4
                 #public = False
                 else:
-                    cmd_mention = self.client.getCommandMention("dictionary_staff define")
+                    cmd_mention = self.client.get_command_mention("dictionary_staff define")
                     result_str += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use {cmd_mention})"
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
-                    cmd_mention = self.client.getCommandMention("dictionary")
+                    cmd_mention = self.client.get_command_mention("dictionary")
                     await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the {cmd_mention} command")
             if len(result_str.split("\n")) > 3 and public:
                 public = False
@@ -122,7 +122,7 @@ class TermDictionary(commands.Cog):
                 # debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
                 await logMsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 2 or source == 4:
-            response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term.lower()}').text
+            response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term.lower().replace("/"," ").replace("%"," ")}').text
             data = json.loads(response_api)
             if len(data) == 0:
                 if source == 4:
@@ -130,8 +130,8 @@ class TermDictionary(commands.Cog):
                 else:
                     result_str = f"I didn't find any results for '{term}' online or in our fancy dictionary"
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
-                    cmd_mention_dict = self.client.getCommandMention("dictionary")
-                    cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
+                    cmd_mention_dict = self.client.get_command_mention("dictionary")
+                    cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
                     await logMsg(itx.guild,
                                  f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
 
@@ -284,7 +284,7 @@ class TermDictionary(commands.Cog):
                             part.append(f"`{result_id}`"+definition)
                             result_id += 1
                         embed.add_field(name=result[1][meaning_index][0].capitalize(),
-                                        value='\n'.join(part),
+                                        value='\n'.join(part)[:995]+"... (shortened due to size)", # limit to 1024 chars in Value field
                                         inline=False)
                     if len(result[2]) > 0:
                         embed.add_field(name="Synonyms",
@@ -432,8 +432,8 @@ class TermDictionary(commands.Cog):
             if len(data) == 0:
                 result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
                 await itx.followup.send(result_str, ephemeral=True, suppress_embeds=True)
-                cmd_mention_dict = self.client.getCommandMention("dictionary")
-                cmd_mention_def = self.client.getCommandMention("dictionary_staff define")
+                cmd_mention_dict = self.client.get_command_mention("dictionary")
+                cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
                 await logMsg(itx.guild, f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
                 return
             pages = []
@@ -449,8 +449,11 @@ class TermDictionary(commands.Cog):
                                     "%Y-%m-%dT%H:%M:%S.%f"
                                 ).timetuple()
                 ))
+                warning = ""
+                if len(result['example']) > 800:
+                    warning = "... (shortened due to size)"
                 embed.add_field(name="Example",
-                                value=f"{result['example']}\n\n"
+                                value=f"{result['example'][:800]}{warning}\n\n"
                                       f"{result['thumbs_up']}:thumbsup: :thumbsdown: {result['thumbs_down']}\n"
                                       f"Sent by {result['author']} on <t:{post_date}:d> at <t:{post_date}:T> (<t:{post_date}:R>)",
                                 inline=False)
@@ -527,7 +530,7 @@ class TermDictionary(commands.Cog):
         query = {"term": term}
         search = collection.find_one(query)
         if search is not None:
-            cmd_mention = self.client.getCommandMention("dictionary")
+            cmd_mention = self.client.get_command_mention("dictionary")
             await itx.response.send_message(f"You have already previously defined this term (try to find it with {cmd_mention}).", ephemeral=True)
             return
         await itx.response.defer(ephemeral=True)
@@ -564,7 +567,7 @@ class TermDictionary(commands.Cog):
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = self.client.getCommandMention("dictionary_staff define")
+            cmd_mention = self.client.get_command_mention("dictionary_staff define")
             await itx.response.send_message(f"This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use {cmd_mention}.",ephemeral=True)
             return
         collection.update_one(query, {"$set":{"definition":definition}})
@@ -606,7 +609,7 @@ class TermDictionary(commands.Cog):
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = self.client.getCommandMention("dictionary_staff define")
+            cmd_mention = self.client.get_command_mention("dictionary_staff define")
             await itx.response.send_message(f"This term hasn't been added to the dictionary yet, and thus cannot get new synonyms! Use {cmd_mention}.",ephemeral=True)
             return
 
