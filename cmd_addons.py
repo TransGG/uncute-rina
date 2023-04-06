@@ -986,6 +986,7 @@ class OtherAddons(commands.Cog):
             if faces >= 1000000:
                 await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
                 return
+            await itx.response.defer()
             rolls = []
             for die in range(dice):
                 rolls.append(random.randint(1,faces))
@@ -1022,7 +1023,9 @@ class OtherAddons(commands.Cog):
                 out = out + "\n" + details
             elif len(out) > 300:
                 public = False
-            await itx.response.send_message(out,ephemeral=not public)
+            if not public:
+                await itx.delete_original_response()
+            await itx.followup.send(out,ephemeral=not public)
         else:
             await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ","")
