@@ -393,7 +393,7 @@ class SearchAddons(commands.Cog):
                     self.word = self.question_text.value
                     for page_id in range(len(self.pages)):
                         if self.word in self.pages[page_id]:
-                            self.page = page_id
+                            self.page = int((page_id+1) / 2)
                             break
                     else:
                         await itx.response.send_message(
@@ -407,6 +407,7 @@ class SearchAddons(commands.Cog):
                     embed.add_field(name="Column 2", value=result_page2)
                     embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages) / 2)))
                     await itx.response.edit_message(embed=embed)
+                    self.value = 1
                     self.stop()
 
             def __init__(self, pages, embed_title, timeout=None):
@@ -986,7 +987,7 @@ class OtherAddons(commands.Cog):
             if faces >= 1000000:
                 await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
                 return
-            await itx.response.defer()
+            await itx.response.defer(ephemeral=not public)
             rolls = []
             for die in range(dice):
                 rolls.append(random.randint(1,faces))
