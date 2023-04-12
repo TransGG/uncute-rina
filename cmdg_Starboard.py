@@ -16,8 +16,13 @@ class Starboard(commands.Cog):
     async def updateStat(self, star_message):
         # find original message
         text = star_message.embeds[0].fields[0].value ## "[Jump!]({msgLink})"
-        link = text.split("(")[1][:-1]
-        #    https: 0 / 1 / discord.com 2 / channels 3 / 985931648094834798 4 / 1006682505149169694 5 / 1014887159485968455 6
+        link = text.split("(")[1]
+        # Initial attempt to use [:-1] to remove the final ")" character doesn't work if there are unknown
+        # files in the original starboard message because rina mentions them in the starboard msg after the
+        # [Jump] link, adding "\n[...]" so ye.
+        link = link.split(")",1)[0]
+        #      0    1      2           3          4: guild_id          5: channel_id         6: message_id
+        #    https:/ /discord.com / channels / 985931648094834798 / 1006682505149169694 / 1014887159485968455
         guild_id, channel_id, message_id = [int(i) for i in link.split("/")[4:]]
         try:
             ch = self.client.get_channel(channel_id)

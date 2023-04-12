@@ -163,7 +163,7 @@ class MemberData(commands.Cog):
                            rotation=30)
             ax1.grid(visible=True, which='major', axis='both')
             fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
-            plt.savefig('userJoins.png')
+            plt.savefig('userJoins.png', dpi=300)
         except ValueError:
             await itx.followup.send("You encountered an error! This is likely a ValueError, caused by a too small number. "
                                     "I still have to figure out why this happens, exactly. Probably some rounding error or something. "

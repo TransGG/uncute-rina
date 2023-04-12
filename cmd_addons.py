@@ -191,7 +191,7 @@ class Tags:
                         "You can warn the reader in the beginning or the middle of the text, and spoiler the "
                         "triggering section like so: \"TW: ||guns||: ||The gun was fired.||\".\n"
                         "\n"
-                        r"You can spoiler messages with a double upright slash \|\|text\|\|.\n"
+                        r"You can spoiler messages with a double upright slash \|\|text\|\|." "\n"
                         "Some potential triggers include (TW: triggers): abuse, bugs/spiders, death, "
                         "dieting/weight loss, injections, self-harm, transmed/truscum points of view or "
                         "transphobic content.")
@@ -1024,7 +1024,7 @@ class OtherAddons(commands.Cog):
                 out = out + "\n" + details
             elif len(out) > 300:
                 public = False
-            if not public:
+            if public:
                 await itx.delete_original_response()
             await itx.followup.send(out,ephemeral=not public)
         else:
