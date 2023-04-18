@@ -107,7 +107,7 @@ Thank you in advance :)"""
 
 class Tags:
     class TagView(discord.ui.View):
-        def __init__(self, embed: discord.Embed, timeout=None, public_footer=None):
+        def __init__(self, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None):
             super().__init__()
             if embed.footer.text is None:
                 self.footer = ""
@@ -118,16 +118,20 @@ class Tags:
             self.timeout = timeout
             self.public_footer = public_footer
             self.embed = embed
+            self.logmsg = logmsg
 
         @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.primary)
         async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
             self.value = 1
             if self.public_footer is None:
-                self.embed.set_footer(text=self.footer + f"Triggered by {itx.user.name} ({itx.user.id})")
+                self.public_footer = f"Triggered by {itx.user.name} ({itx.user.id})"
             else:
-                self.embed.set_footer(text=self.footer + self.public_footer + "\n" + f"Triggered by {itx.user.name} ({itx.user.id})")
+                self.value = 2
+            self.embed.set_footer(text=self.footer + self.public_footer)
             await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
             await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+            if self.value == 2 and self.logmsg is not None:
+                await logMsg(itx.guild, self.logmsg)
             self.stop()
 
         def on_timeout(self):
@@ -270,16 +274,20 @@ class Tags:
                         "Please do not interfere with moderator actions, as it can make situations worse. It can be seen as "
                         "harassment, and you could be warned."
         )
+
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:avoiding politics"
         if public:
-            await itx.response.send_message(embed=embed)
+            await itx.response.send_message("Sending...", ephemeral=True)
+            await itx.followup.send(embed=embed)
+            await logMsg(itx.guild, logmsg)
         else:
-            view = Tags().TagView(embed, timeout=60)
+            view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
     @staticmethod
-    async def send_avoidpolitics_info(itx: discord.Interaction, public=True):
+    async def send_avoidpolitics_info(itx: discord.Interaction, client: Bot, public=True):
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=220,g=155,b=255), # magenta
             title="Please avoid political discussions!",
@@ -288,16 +296,20 @@ class Tags:
                         "politics, a moderator may need to take action and mute you. Thank you for your "
                         "cooperation."
         )
+
+        public_footer = f"Note: If you believe that this command was misused or abused, " \
+                        f"please do not argue in this channel. Instead, open a mod ticket " \
+                        f"and explain the situation there. Thank you."
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:avoiding politics"
         if public:
-            embed.set_footer(text="Note: If you believe that this command was misused or abused, "
-                                  "please do not argue in this channel. Instead, open a mod ticket "
-                                  "and explain the situation there. Thank you.")
-            await itx.response.send_message(embed=embed)
+            embed.set_footer(text=public_footer)
+            await itx.response.send_message("Sending...", ephemeral=True)
+            await itx.followup.send(embed=embed)
+            await logMsg(itx.guild, logmsg)
         else:
             view = Tags().TagView(embed, timeout=60,
-                                  public_footer="Note: If you believe that this command was misused or abused, "
-                                                "please do not argue in this channel. Instead, open a mod ticket "
-                                                "and explain the situation there. Thank you.\n")
+                                  public_footer = public_footer + "\n",
+                                  logmsg = logmsg)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
@@ -640,7 +652,7 @@ class SearchAddons(commands.Cog):
         elif tag == "minimodding or correcting staff":
             await Tags.send_minimodding_info(itx, public=public)
         elif tag == "avoiding politics":
-            await Tags.send_avoidpolitics_info(itx, public=public)
+            await Tags.send_avoidpolitics_info(itx, self.client, public=public)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
