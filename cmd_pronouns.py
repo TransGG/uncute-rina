@@ -202,7 +202,7 @@ class Pronouns(commands.Cog):
             await self.get_pronouns(itx, user)
         elif mode == 2:
             if argument is None:
-                await itx.response.send("You can add pronouns here. For example, \"she/her\", or \":Alex\". For more information about pronouns, "
+                await itx.response.send_message("You can add pronouns here. For example, \"she/her\", or \":Alex\". For more information about pronouns, "
                                         "or if you want to try out your own pronouns, check out <https://en.pronouns.page/pronouns>",ephemeral=True)
                 return
             pronoun = argument

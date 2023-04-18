@@ -139,7 +139,7 @@ class Tags:
             self.send_publicly.style = discord.ButtonStyle.gray
 
     @staticmethod
-    async def send_report_info(context: [discord.Interaction, discord.TextChannel], additional_info=None, public=False):
+    async def send_report_info(context: [discord.Interaction, discord.TextChannel], additional_info=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=255, g=66, b=0), #a more saturated red orange color
@@ -151,10 +151,19 @@ class Tags:
                         "member.")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):
-            if public is True:
-                await context.response.send_message(embed = embed)
+            logmsg = f"{context.user.name} ({context.user.id}) used /tag tag:report anonymously"
+            if public:
+                if anonymous:
+                    await context.response.send_message("sending...", ephemeral=True)
+                    await context.followup.send(embed=embed)
+                    await logMsg(context.guild, logmsg)
+                else:
+                    await context.response.send_message(embed = embed)
             else:
-                view = Tags().TagView(embed, timeout=60)
+                if anonymous:
+                    view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+                else:
+                    view = Tags().TagView(embed, timeout=60)
                 await context.response.send_message(f"", embed=embed, view=view, ephemeral=True)
                 if await view.wait():
                     await context.edit_original_response(view=view)
@@ -164,7 +173,7 @@ class Tags:
             await context.send(embed=embed)
 
     @staticmethod
-    async def send_customvc_info(itx: discord.Interaction, client: Bot, public=True):
+    async def send_customvc_info(itx: discord.Interaction, client: Bot, public, anonymous):
         collection = RinaDB["guildInfo"]
         query = {"guild_id": itx.guild.id}
         guild = collection.find_one(query)
@@ -184,16 +193,26 @@ class Tags:
                         f"limit of this channel with the {cmd_mention} command. When everyone leaves the "
                         f"channel, the channel is deleted automatically."
                         f"You can use {cmd_mention2} for additional features.")
+
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:report anonymously"
         if public:
-            await itx.response.send_message(embed=embed, ephemeral=False)
+            if anonymous:
+                await itx.response.send_message("sending...", ephemeral=True)
+                await itx.followup.send(embed=embed, ephemeral=False)
+                await logMsg(itx.guild, logmsg)
+            else:
+                await itx.response.send_message(embed=embed, ephemeral=False)
         else:
-            view = Tags().TagView(embed, timeout=60)
+            if anonymous:
+                view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+            else:
+                view = Tags().TagView(embed, timeout=60)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
     @staticmethod
-    async def send_triggerwarning_info(itx: discord.Interaction, public=True):
+    async def send_triggerwarning_info(itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=155, g=155, b=255), #bluer than baby blue ish. kinda light indigo
             title="Using trigger warnings correctly",
@@ -209,16 +228,25 @@ class Tags:
                         "dieting/weight loss, injections, self-harm, transmed/truscum points of view or "
                         "transphobic content.")
         # embed.set_footer(text=f"Triggered by {itx.user.name} ({itx.user.id})")
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:trigger warnings anonymously"
         if public:
-            await itx.response.send_message(embed=embed)
+            if anonymous:
+                await itx.response.send_message("sending...", ephemeral=True)
+                await itx.followup.send(embed=embed, ephemeral=False)
+                await logMsg(itx.guild, logmsg)
+            else:
+                await itx.response.send_message(embed=embed)
         else:
-            view = Tags().TagView(embed, timeout=60)
+            if anonymous:
+                view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+            else:
+                view = Tags().TagView(embed, timeout=60)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
     @staticmethod
-    async def send_toneindicator_info(itx: discord.Interaction, client: Bot, public=True):
+    async def send_toneindicator_info(itx: discord.Interaction, client: Bot, public, anonymous):
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=142, g=237, b=221), # tealish aqua
             title="When to use tone indicators?",
@@ -234,16 +262,26 @@ class Tags:
                         "example: \"/m\" can mean 'mad' or 'metaphor'. You can look up tone indicators by "
                         f"their tag or definition using {client.get_command_mention('toneindicator')}."
         )
+
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:tone indicators anonymously"
         if public:
-            await itx.response.send_message(embed=embed)
+            if anonymous:
+                await itx.response.send_message("sending...", ephemeral=True)
+                await itx.followup.send(embed=embed, ephemeral=False)
+                await logMsg(itx.guild, logmsg)
+            else:
+                await itx.response.send_message(embed=embed)
         else:
-            view = Tags().TagView(embed, timeout=60)
+            if anonymous:
+                view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+            else:
+                view = Tags().TagView(embed, timeout=60)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
     @staticmethod
-    async def send_trustedrole_info(itx: discord.Interaction, public=True):
+    async def send_trustedrole_info(itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=220,g=155,b=255), # magenta
             title="The trusted role (and selfies)",
@@ -255,16 +293,25 @@ class Tags:
                         "equivalent XP from voice channel usage. If you rejoin the server you can always "
                         "ask for the role back too!"
         )
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:trusted role anonymously"
         if public:
-            await itx.response.send_message(embed=embed)
+            if anonymous:
+                await itx.response.send_message("sending...", ephemeral=True)
+                await itx.followup.send(embed=embed, ephemeral=False)
+                await logMsg(itx.guild, logmsg)
+            else:
+                await itx.response.send_message(embed=embed)
         else:
-            view = Tags().TagView(embed, timeout=60)
+            if anonymous:
+                view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+            else:
+                view = Tags().TagView(embed, timeout=60)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
     @staticmethod
-    async def send_minimodding_info(itx: discord.Interaction, public=True):
+    async def send_minimodding_info(itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=255,g=115,b=162),  # bright slightly reddish pink
             title="Correcting staff or minimodding",
@@ -275,21 +322,27 @@ class Tags:
                         "harassment, and you could be warned."
         )
 
-        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:avoiding politics"
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:avoiding politics anonymously"
         if public:
-            await itx.response.send_message("Sending...", ephemeral=True)
-            await itx.followup.send(embed=embed)
-            await logMsg(itx.guild, logmsg)
+            if anonymous:
+                await itx.response.send_message("Sending...", ephemeral=True)
+                await itx.followup.send(embed=embed)
+                await logMsg(itx.guild, logmsg)
+            else:
+                await itx.response.send_message(embed=embed)
         else:
-            view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+            if anonymous:
+                view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+            else:
+                view = Tags().TagView(embed, timeout=60)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
     @staticmethod
-    async def send_avoidpolitics_info(itx: discord.Interaction, client: Bot, public=True):
+    async def send_avoidpolitics_info(itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=220,g=155,b=255), # magenta
+            color=discord.Colour.from_rgb(r=255,g=255,b=153), # yellow
             title="Please avoid political discussions!",
             description="A member has requested that we avoid political discussions in this chat. Please "
                         "respect their request and move on to a different topic. If you continue discussing "
@@ -300,16 +353,23 @@ class Tags:
         public_footer = f"Note: If you believe that this command was misused or abused, " \
                         f"please do not argue in this channel. Instead, open a mod ticket " \
                         f"and explain the situation there. Thank you."
-        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:avoiding politics"
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:avoiding politics anonymously"
         if public:
-            embed.set_footer(text=public_footer)
-            await itx.response.send_message("Sending...", ephemeral=True)
-            await itx.followup.send(embed=embed)
-            await logMsg(itx.guild, logmsg)
+            if anonymous:
+                embed.set_footer(text=public_footer)
+                await itx.response.send_message("sending...", ephemeral=True)
+                await itx.followup.send(embed=embed, ephemeral=False)
+                await logMsg(itx.guild, logmsg)
+            else:
+                await itx.response.send_message(embed=embed)
         else:
-            view = Tags().TagView(embed, timeout=60,
-                                  public_footer = public_footer + "\n",
-                                  logmsg = logmsg)
+            if anonymous:
+                view = Tags().TagView(embed, timeout=60,
+                                      public_footer = public_footer + "\n",
+                                      logmsg = logmsg)
+            else:
+                view = Tags().TagView(embed, timeout=60,
+                                      public_footer = f"\nTriggered by {itx.user.name} ({itx.user.id})")
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
@@ -626,9 +686,15 @@ class SearchAddons(commands.Cog):
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
     async def tag_autocomplete(self, _itx: discord.Interaction, current: str):
-        options = ["report", "customvc", "trigger warnings", "tone indicators",
-                   "trusted role", "minimodding or correcting staff",
-                   "avoiding politics"]
+        options = [
+            "avoiding politics",
+            "customvc",
+            "minimodding or correcting staff",
+            "report",
+            "tone indicators",
+            "trigger warnings",
+            "trusted role",
+        ]
         return [
             app_commands.Choice(name=term, value=term)
             for term in options if current.lower() in term
@@ -637,22 +703,23 @@ class SearchAddons(commands.Cog):
     @app_commands.command(name="tag", description="Look up something through a tag")
     @app_commands.describe(tag="What tag do you want more information about?")
     @app_commands.describe(public="Show everyone in chat? (default: no)")
+    @app_commands.describe(anonymous="Hide your name when sending the message publicly? (default: yes)")
     @app_commands.autocomplete(tag=tag_autocomplete)
-    async def tag(self, itx: discord.Interaction, tag: str, public: bool = False):
+    async def tag(self, itx: discord.Interaction, tag: str, public: bool = False, anonymous: bool = True):
         if tag == "report":
-            await Tags.send_report_info(itx, public=public)
+            await Tags.send_report_info(itx, public=public, anonymous=anonymous)
         elif tag == "customvc":
-            await Tags.send_customvc_info(itx, self.client, public=public)
+            await Tags.send_customvc_info(itx, self.client, public=public, anonymous=anonymous)
         elif tag == "trigger warnings":
-            await Tags.send_triggerwarning_info(itx, public=public)
+            await Tags.send_triggerwarning_info(itx, public=public, anonymous=anonymous)
         elif tag == "tone indicators":
-            await Tags.send_toneindicator_info(itx, self.client, public=public)
+            await Tags.send_toneindicator_info(itx, self.client, public=public, anonymous=anonymous)
         elif tag == "trusted role":
-            await Tags.send_trustedrole_info(itx, public=public)
+            await Tags.send_trustedrole_info(itx, public=public, anonymous=anonymous)
         elif tag == "minimodding or correcting staff":
-            await Tags.send_minimodding_info(itx, public=public)
+            await Tags.send_minimodding_info(itx, public=public, anonymous=anonymous)
         elif tag == "avoiding politics":
-            await Tags.send_avoidpolitics_info(itx, self.client, public=public)
+            await Tags.send_avoidpolitics_info(itx, public=public, anonymous=anonymous)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
