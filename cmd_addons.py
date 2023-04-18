@@ -107,16 +107,25 @@ Thank you in advance :)"""
 
 class Tags:
     class TagView(discord.ui.View):
-        def __init__(self, embed, timeout=None):
+        def __init__(self, embed: discord.Embed, timeout=None, public_footer=None):
             super().__init__()
+            if embed.footer.text is None:
+                self.footer = ""
+            else:
+                self.footer = embed.footer.text + "\n"
+
             self.value = None
             self.timeout = timeout
+            self.public_footer = public_footer
             self.embed = embed
 
         @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.primary)
         async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
             self.value = 1
-            self.embed.set_footer(text=f"Triggered by {itx.user.name} ({itx.user.id})")
+            if self.public_footer is None:
+                self.embed.set_footer(text=self.footer + f"Triggered by {itx.user.name} ({itx.user.id})")
+            else:
+                self.embed.set_footer(text=self.footer + self.public_footer + "\n" + f"Triggered by {itx.user.name} ({itx.user.id})")
             await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
             await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             self.stop()
@@ -269,6 +278,30 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
+    @staticmethod
+    async def send_avoidpolitics_info(itx: discord.Interaction, public=True):
+        embed = discord.Embed(
+            color=discord.Colour.from_rgb(r=220,g=155,b=255), # magenta
+            title="Please avoid political discussions!",
+            description="A member has requested that we avoid political discussions in this chat. Please "
+                        "respect their request and move on to a different topic. If you continue discussing "
+                        "politics, a moderator may need to take action and mute you. Thank you for your "
+                        "cooperation."
+        )
+        if public:
+            embed.set_footer(text="Note: If you believe that this command was misused or abused, "
+                                  "please do not argue in this channel. Instead, open a mod ticket "
+                                  "and explain the situation there. Thank you.")
+            await itx.response.send_message(embed=embed)
+        else:
+            view = Tags().TagView(embed, timeout=60,
+                                  public_footer="Note: If you believe that this command was misused or abused, "
+                                                "please do not argue in this channel. Instead, open a mod ticket "
+                                                "and explain the situation there. Thank you.\n")
+            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            if await view.wait():
+                await itx.edit_original_response(view=view)
+
 class SearchAddons(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
@@ -390,10 +423,10 @@ class SearchAddons(commands.Cog):
 
                 async def on_submit(self, itx: discord.Interaction):
                     self.value = 9  # failed; placeholder
-                    self.word = self.question_text.value
+                    self.word = self.question_text.value.lower()
                     for page_id in range(len(self.pages)):
-                        if self.word in self.pages[page_id]:
-                            self.page = int((page_id+1) / 2)
+                        if self.word == self.pages[page_id]:
+                            self.page = int(page_id / 2)
                             break
                     else:
                         await itx.response.send_message(
@@ -469,7 +502,7 @@ class SearchAddons(commands.Cog):
 
         result_page = pages[page]
         result_page2 = pages[page+1]
-        embed_title = f'Most-used {"user" if type==1 else "nick" if type==2 else "username and nick"}names leaderboard!'
+        embed_title = f'Most-used {"user" if mode==1 else "nick" if mode==2 else "usernames and nick"}names leaderboard!'
         embed = discord.Embed(color=8481900, title=embed_title)
         embed.add_field(name="Column 1",value=result_page)
         embed.add_field(name="Column 2",value=result_page2)
@@ -582,7 +615,8 @@ class SearchAddons(commands.Cog):
 
     async def tag_autocomplete(self, _itx: discord.Interaction, current: str):
         options = ["report", "customvc", "trigger warnings", "tone indicators",
-                   "trusted role", "minimodding or correcting staff"]
+                   "trusted role", "minimodding or correcting staff",
+                   "avoiding politics"]
         return [
             app_commands.Choice(name=term, value=term)
             for term in options if current.lower() in term
@@ -605,6 +639,8 @@ class SearchAddons(commands.Cog):
             await Tags.send_trustedrole_info(itx, public=public)
         elif tag == "minimodding or correcting staff":
             await Tags.send_minimodding_info(itx, public=public)
+        elif tag == "avoiding politics":
+            await Tags.send_avoidpolitics_info(itx, public=public)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
