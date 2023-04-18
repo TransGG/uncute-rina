@@ -194,7 +194,7 @@ class Tags:
                         f"channel, the channel is deleted automatically."
                         f"You can use {cmd_mention2} for additional features.")
 
-        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:report anonymously"
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:customvcs anonymously"
         if public:
             if anonymous:
                 await itx.response.send_message("sending...", ephemeral=True)
@@ -322,7 +322,7 @@ class Tags:
                         "harassment, and you could be warned."
         )
 
-        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:avoiding politics anonymously"
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:minimodding or correcting staff anonymously"
         if public:
             if anonymous:
                 await itx.response.send_message("Sending...", ephemeral=True)
