@@ -452,7 +452,7 @@ class CustomVcs(commands.Cog):
                 if type(ch) is not discord.TextChannel:
                     await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
                     return
-                collection.update_one(query, {"$set": {options[mode]: ch.id}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "12":
                 channel_ids = value.split(",")
                 blacklist = []
@@ -461,7 +461,7 @@ class CustomVcs(commands.Cog):
                     if channel is None:
                         return
                     blacklist.append(channel)
-                collection.update_one(query, {"$set": {options[mode]: blacklist}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: blacklist}}, upsert=True)
             elif option == "21":
                 value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
                 if value is None:
@@ -470,7 +470,7 @@ class CustomVcs(commands.Cog):
                 if type(ch) is not discord.VoiceChannel:
                     await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.VoiceChannel'>, got {type(ch)})", ephemeral=True)
                     return
-                collection.update_one(query, {"$set": {options[mode]: ch.id}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "22":
                 value = await to_int(value, "You have to give a numerical ID for the category you want to use!")
                 if value is None:
@@ -479,7 +479,7 @@ class CustomVcs(commands.Cog):
                 if type(ch) is not discord.CategoryChannel:
                     await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.CategoryChannel'>, got {type(ch)})", ephemeral=True)
                     return
-                collection.update_one(query, {"$set": {options[mode]: ch.id}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "23":
                 if value is not None:
                     value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
@@ -489,7 +489,7 @@ class CustomVcs(commands.Cog):
                     if type(ch) is not discord.TextChannel:
                         await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
                         return
-                    collection.update_one(query, {"$set": {options[mode]: ch.id}}, upsert=True)
+                    collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "31":
                 if value is not None:
                     value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
@@ -499,14 +499,14 @@ class CustomVcs(commands.Cog):
                     if type(ch) is not discord.TextChannel:
                         await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
                         return
-                    collection.update_one(query, {"$set": {options[mode]: ch.id}}, upsert=True)
+                    collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "32":
                 value = await to_int(value, "You need to give an integer value for your new minimum amount!")
                 if value is None:
                     return
                 if value < 1:
                     await itx.response.send_message("Your new value has to be at least 1!", ephemeral=True)
-                collection.update_one(query, {"$set": {options[mode]: value}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: value}}, upsert=True)
             elif option == "41":
                 value = await to_int(value, "You need to give a numerical ID for the channel you want to use!")
                 if value is None:
@@ -515,7 +515,7 @@ class CustomVcs(commands.Cog):
                 if not isinstance(user, discord.User):
                     await itx.response.send_message("The ID you gave wasn't for a valid user!", ephemeral=True)
                     return
-                collection.update_one(query, {"$set": {options[mode]: user.id}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: user.id}}, upsert=True)
             elif option == "42":
                 value = await to_int(value, "You need to give a numerical ID for the channel you want to use!")
                 if value is None:
@@ -524,7 +524,7 @@ class CustomVcs(commands.Cog):
                 if not isinstance(ch, discord.abc.Messageable):
                     await itx.response.send_message("The ID you gave wasn't for the type of channel I was looking for!", ephemeral=True)
                     return
-                collection.update_one(query, {"$set": {options[mode]: ch.id}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "43":
                 value = await to_int(value, "You need to give a numerical ID for the channel you want to use!")
                 if value is None:
@@ -533,7 +533,7 @@ class CustomVcs(commands.Cog):
                 if not isinstance(ch, discord.Role):
                     await itx.response.send_message("The ID you gave wasn't a role!", ephemeral=True)
                     return
-                collection.update_one(query, {"$set": {options[mode]: ch.id}}, upsert=True)
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             
             await itx.response.send_message(f"Edited value of '{option}' successfully.",ephemeral=True)
 
