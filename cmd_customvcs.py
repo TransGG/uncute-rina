@@ -433,7 +433,7 @@ class CustomVcs(commands.Cog):
             value = await self.client.get_guild_info(itx.guild, options[option])
             await itx.response.send_message("Here is the value for " + options[option] + " in this guild (" + str(itx.guild.id) + "):\n\n" +
                                             str(value), ephemeral=True)
-        if mode == 2:                
+        if mode == 2:
             query = {"guild_id": itx.guild_id}
             collection = RinaDB["guildInfo"]
             
@@ -508,7 +508,7 @@ class CustomVcs(commands.Cog):
                     await itx.response.send_message("Your new value has to be at least 1!", ephemeral=True)
                 collection.update_one(query, {"$set": {options[option]: value}}, upsert=True)
             elif option == "41":
-                value = await to_int(value, "You need to give a numerical ID for the channel you want to use!")
+                value = await to_int(value, "You need to give a numerical ID for the bot id you want to use!")
                 if value is None:
                     return
                 user = self.client.get_user(value)
@@ -526,7 +526,7 @@ class CustomVcs(commands.Cog):
                     return
                 collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "43":
-                value = await to_int(value, "You need to give a numerical ID for the channel you want to use!")
+                value = await to_int(value, "You need to give a numerical ID for the role you want to use!")
                 if value is None:
                     return
                 ch = itx.guild.get_role(value)
