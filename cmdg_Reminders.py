@@ -304,16 +304,17 @@ class BumpReminder(commands.GroupCog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if len(message.embeds) > 0:
-            if message.embeds[0].description.startswith("Bump done!"):
-                # collection = RinaDB["guildInfo"]
-                # query = {"guild_id": message.guild.id}
-                # guild_data = collection.find_one(query)
-                # bump_bot_id = guild_data["bumpBot"]
-                bump_bot_id = await self.client.get_guild_info(message.guild, "bumpBot")
+            if message.embeds[0].description is not None:
+                if message.embeds[0].description.startswith("Bump done!"):
+                    # collection = RinaDB["guildInfo"]
+                    # query = {"guild_id": message.guild.id}
+                    # guild_data = collection.find_one(query)
+                    # bump_bot_id = guild_data["bumpBot"]
+                    bump_bot_id = await self.client.get_guild_info(message.guild, "bumpBot")
 
-                if message.author.id == bump_bot_id:
-                    remindertime = datetime.now() + timedelta(hours=2)
-                    self.Reminder(self.client, message.guild, remindertime)
+                    if message.author.id == bump_bot_id:
+                        remindertime = datetime.now() + timedelta(hours=2)
+                        self.Reminder(self.client, message.guild, remindertime)
 
 
 async def setup(client):
