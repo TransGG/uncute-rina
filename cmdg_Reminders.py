@@ -296,7 +296,7 @@ class BumpReminder(commands.GroupCog):
             # bump_channel_id = guild["bumpChannel"]
             # bump_role_id = guild["bumpRole"]
             bump_channel_id, bump_role_id = await self.client.get_guild_info(self.guild, "bumpChannel", "bumpRole")
-            bump_channel = self.guild.get_channel(bump_channel_id)
+            bump_channel = await self.guild.fetch_channel(bump_channel_id)
             bump_role = self.guild.get_role(bump_role_id)
 
             await bump_channel.send(f"{bump_role.mention} The next bump is ready!", allowed_mentions=discord.AllowedMentions(roles=[bump_role]))

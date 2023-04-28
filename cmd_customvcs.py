@@ -535,7 +535,7 @@ class CustomVcs(commands.Cog):
                     return
                 collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             
-            await itx.response.send_message(f"Edited value of '{option}' successfully.",ephemeral=True)
+            await itx.response.send_message(f"Edited value of '{options[option]}' successfully.",ephemeral=True)
 
     vctable = app_commands.Group(name='vctable', description='Make your voice channels advanced!')
     # Owner   = Speaking perms
