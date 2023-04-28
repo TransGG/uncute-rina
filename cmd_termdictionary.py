@@ -113,14 +113,14 @@ class TermDictionary(commands.Cog):
                     result_str += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use {cmd_mention})"
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
                     cmd_mention = self.client.get_command_mention("dictionary")
-                    await logMsg(itx.guild,f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the {cmd_mention} command")
+                    await logMsg(itx.guild,f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the {cmd_mention} command")
             if len(result_str.split("\n")) > 3 and public:
                 public = False
                 result_str += "\nDidn't send your message as public cause it would be spammy, having this many results."
             if len(result_str) > 1999:
                 result_str = f"Your search ({term}) returned too many results (discord has a 2000-character message length D:). (Please ask staff to fix this (synonyms and stuff).)"
                 # debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
-                await logMsg(itx.guild,f"**!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
+                await logMsg(itx.guild,f":warning: **!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 2 or source == 4:
             response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term.lower().replace("/"," ").replace("%"," ")}').text
             data = json.loads(response_api)
@@ -133,7 +133,7 @@ class TermDictionary(commands.Cog):
                     cmd_mention_dict = self.client.get_command_mention("dictionary")
                     cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
                     await logMsg(itx.guild,
-                                 f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
+                                 f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
 
                     await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
                     return
@@ -269,7 +269,7 @@ class TermDictionary(commands.Cog):
                     ])
 
                 pages = []
-                pages_detailed: [int, str, str, str] = []
+                pages_detailed = []
                 page = 0
                 for result in results:
                     result_id = 0
@@ -283,8 +283,11 @@ class TermDictionary(commands.Cog):
                                                   definition])
                             part.append(f"`{result_id}`"+definition)
                             result_id += 1
+                        value = '\n'.join(part)
+                        if len(value) > 995: # limit to 1024 chars in Value field
+                            value = value[:995] + "... (shortened due to size)"
                         embed.add_field(name=result[1][meaning_index][0].capitalize(),
-                                        value='\n'.join(part)[:995]+"... (shortened due to size)", # limit to 1024 chars in Value field
+                                        value=value,
                                         inline=False)
                     if len(result[2]) > 0:
                         embed.add_field(name="Synonyms",
@@ -434,7 +437,7 @@ class TermDictionary(commands.Cog):
                 await itx.followup.send(result_str, ephemeral=True, suppress_embeds=True)
                 cmd_mention_dict = self.client.get_command_mention("dictionary")
                 cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
-                await logMsg(itx.guild, f"**!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
+                await logMsg(itx.guild, f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
                 return
             pages = []
             page = 0

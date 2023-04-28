@@ -112,18 +112,19 @@ class Starboard(commands.Cog):
                 f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
             return
 
-        collection = RinaDB["guildInfo"]
-        query = {"guild_id": message.guild.id}
-        guild = collection.find_one(query)
-        if guild is None:
-            # can't send logging message, because we have no clue what channel that's supposed to be Xd
-            debug("Not enough data is configured to work with the starboard. Please fix this with `/editguildinfo`!",color="red")
-            return
-        try:
-            _star_channel = guild["starboardChannel"]
-            star_minimum = guild["starboardCountMinimum"]
-        except KeyError:
-            raise KeyError("Not enough data is configured to do add an item to the starboard, because idk what channel i need to look in, and what minimum stars a message needs before it can be added to the starboard! Please fix this with `/editguildinfo`!")
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": message.guild.id}
+        # guild = collection.find_one(query)
+        # if guild is None:
+        #     # can't send logging message, because we have no clue what channel that's supposed to be Xd
+        #     debug("Not enough data is configured to work with the starboard. Please fix this with `/editguildinfo`!",color="red")
+        #     return
+        # try:
+        #     _star_channel = guild["starboardChannel"]
+        #     star_minimum = guild["starboardCountMinimum"]
+        # except KeyError:
+        #     raise KeyError("Not enough data is configured to do add an item to the starboard, because idk what channel i need to look in, and what minimum stars a message needs before it can be added to the starboard! Please fix this with `/editguildinfo`!")
+        _star_channel, star_minimum = await self.client.get_guild_info(message.guild, "starboardChannel", "starboardCountMinimum")
         star_channel = self.client.get_channel(_star_channel)
 
         if message.channel.id == star_channel.id:
@@ -233,17 +234,18 @@ class Starboard(commands.Cog):
         ch = self.client.get_channel(payload.channel_id)
         message = await ch.fetch_message(payload.message_id)
 
-        collection = RinaDB["guildInfo"]
-        query = {"guild_id": message.guild.id}
-        guild = collection.find_one(query)
-        if guild is None:
-            # can't send logging message, because we have no clue what channel that's supposed to be Xd
-            debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
-            return
-        try:
-            _star_channel = guild["starboardChannel"]
-        except KeyError:
-            raise KeyError("Not enough data is configured to .. remove a star from an item on the starboard because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": message.guild.id}
+        # guild = collection.find_one(query)
+        # if guild is None:
+        #     # can't send logging message, because we have no clue what channel that's supposed to be Xd
+        #     debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
+        #     return
+        # try:
+        #     _star_channel = guild["starboardChannel"]
+        # except KeyError:
+        #     raise KeyError("Not enough data is configured to .. remove a star from an item on the starboard because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
+        _star_channel = await self.client.get_guild_info(message.guild, "starboardChannel")
         star_channel = self.client.get_channel(_star_channel)
 
         if message.channel.id == star_channel.id:
@@ -261,17 +263,18 @@ class Starboard(commands.Cog):
                                 return
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, message_payload):
-        collection = RinaDB["guildInfo"]
-        query = {"guild_id": message_payload.guild_id}
-        guild = collection.find_one(query)
-        if guild is None:
-            debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
-            return
-        try:
-            _star_channel = guild["starboardChannel"]
-        except KeyError:
-            raise KeyError("Not enough data is configured to .. check starboard for a message matching the deleted message's ID, because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
+    async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": message_payload.guild_id}
+        # guild = collection.find_one(query)
+        # if guild is None:
+        #     debug("Not enough data is configured to work with the starboard! Please fix this with `/editguildinfo`!",color="red")
+        #     return
+        # try:
+        #     _star_channel = guild["starboardChannel"]
+        # except KeyError:
+        #     raise KeyError("Not enough data is configured to .. check starboard for a message matching the deleted message's ID, because idk what channel i need to look in! Please fix this with `/editguildinfo`!")
+        _star_channel = await self.client.get_guild_info(message_payload.guild_id, "starboardChannel")
         star_channel = self.client.get_channel(_star_channel)
 
         if message_payload.message_id in messageIdMarkedForDeletion: #global variable

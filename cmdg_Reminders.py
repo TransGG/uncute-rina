@@ -272,6 +272,50 @@ class Reminders(commands.GroupCog,name="reminder"):
             collection.delete_one(query)
         await itx.response.send_message("Successfully removed this reminder!",ephemeral=True)
 
+class BumpReminder(commands.GroupCog):
+    def __init__(self, client: Bot):
+        global RinaDB
+        RinaDB = client.RinaDB
+        self.client = client
+
+    class Reminder:
+        def __init__(self, client: Bot, guild: discord.Guild, remindertime):
+            self.client = client
+            self.guild = guild
+            self.remindertime = remindertime
+            sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
+
+        async def send_reminder(self):
+            # collection = RinaDB["guildInfo"]
+            # query = {"guild_id": self.guild.id}
+            # guild = collection.find_one(query)
+            # if guild is None:
+            #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",
+            #           color="red")
+            #     return
+            # bump_channel_id = guild["bumpChannel"]
+            # bump_role_id = guild["bumpRole"]
+            bump_channel_id, bump_role_id = await self.client.get_guild_info(self.guild, "bumpChannel", "bumpRole")
+            bump_channel = self.guild.get_channel(bump_channel_id)
+            bump_role = self.guild.get_role(bump_role_id)
+
+            await bump_channel.send(f"{bump_role.mention} The next bump is ready!", allowed_mentions=discord.AllowedMentions(roles=[bump_role]))
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if len(message.embeds) > 0:
+            if message.embeds[0].description.startswith("Bump done!"):
+                # collection = RinaDB["guildInfo"]
+                # query = {"guild_id": message.guild.id}
+                # guild_data = collection.find_one(query)
+                # bump_bot_id = guild_data["bumpBot"]
+                bump_bot_id = await self.client.get_guild_info(message.guild, "bumpBot")
+
+                if message.author.id == bump_bot_id:
+                    remindertime = datetime.now() + timedelta(hours=2)
+                    self.Reminder(self.client, message.guild, remindertime)
+
 
 async def setup(client):
     await client.add_cog(Reminders(client))
+    await client.add_cog(BumpReminder(client))

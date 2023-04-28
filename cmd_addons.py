@@ -139,7 +139,7 @@ class Tags:
             self.send_publicly.style = discord.ButtonStyle.gray
 
     @staticmethod
-    async def send_report_info(context: [discord.Interaction, discord.TextChannel], additional_info=None, public=False, anonymous=True):
+    async def send_report_info(context: discord.Interaction | discord.TextChannel, additional_info=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=255, g=66, b=0), #a more saturated red orange color
@@ -174,14 +174,15 @@ class Tags:
 
     @staticmethod
     async def send_customvc_info(itx: discord.Interaction, client: Bot, public, anonymous):
-        collection = RinaDB["guildInfo"]
-        query = {"guild_id": itx.guild.id}
-        guild = collection.find_one(query)
-        if guild is None:
-            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",
-                  color="red")
-            return
-        vc_hub = guild["vcHub"]
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": itx.guild.id}
+        # guild = collection.find_one(query)
+        # if guild is None:
+        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",
+        #           color="red")
+        #     return
+        # vc_hub = guild["vcHub"]
+        vc_hub = await client.get_guild_info(itx.guild, "vcHub")
 
         cmd_mention = client.get_command_mention('editvc')
         cmd_mention2 = client.get_command_mention('vctable about')
@@ -407,7 +408,7 @@ class SearchAddons(commands.Cog):
                 "she", "her",
                 "he", "him",
                 "they", "them",
-                "it", "its"
+                "it", "its",
             ]
             pronouns = []
             for pronounx in _pronouns:
@@ -497,7 +498,9 @@ class SearchAddons(commands.Cog):
                     self.value = 9  # failed; placeholder
                     self.word = self.question_text.value.lower()
                     for page_id in range(len(self.pages)):
-                        if self.word == self.pages[page_id]:
+                        # self.pages[page_id] returns ['15 nora\n13 rose\n9 brand\n8 george\n4 rina\n3 grace\n3 chroma\n2 eliza\n','1 cleo','_']
+                        # split at \n and " " to get [["15", "nora"], ["13", "rose"], ["9", "brand"], ["8", "george"]] and compare self.word with the names
+                        if self.word in [name.split(" ")[-1] for name in self.pages[page_id].split("\n")]:
                             self.page = int(page_id / 2)
                             break
                     else:
@@ -505,8 +508,10 @@ class SearchAddons(commands.Cog):
                             content=f"I couldn't find '{self.word}' in any of the pages! Perhaps nobody chose this name!",
                             ephemeral=True)
                         return
-                    result_page = self.pages[self.page * 2]
+                    result_page  = self.pages[self.page * 2]
                     result_page2 = self.pages[self.page * 2 + 1]
+                    result_page   = result_page.replace(f" {self.word}\n", f" **__{self.word}__**\n")
+                    result_page2 = result_page2.replace(f" {self.word}\n", f" **__{self.word}__**\n")
                     embed = discord.Embed(color=8481900, title=self.embed_title)
                     embed.add_field(name="Column 1", value=result_page)
                     embed.add_field(name="Column 2", value=result_page2)
@@ -549,6 +554,7 @@ class SearchAddons(commands.Cog):
                     result_page = self.pages[self.page*2]
                     result_page2 = self.pages[self.page*2+1]
                 except IndexError:
+                    self.page -= 1
                     await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
                     return
                 embed = discord.Embed(color=8481900, title=self.embed_title)
@@ -847,17 +853,19 @@ class OtherAddons(commands.Cog):
         if not isStaff(itx):
             await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
             return
-        collection = RinaDB["guildInfo"]
-        query = {"guild_id": itx.guild.id}
-        guild = collection.find_one(query)
-        if guild is None:
-            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
-            await itx.response.send_message("Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete",ephemeral=True)
-            return
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": itx.guild.id}
+        # guild = collection.find_one(query)
+        # if guild is None:
+        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
+        #     await itx.response.send_message("Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete",ephemeral=True)
+        #     return
+        vc_log = await self.client.get_guild_info(itx.guild, "vcLog", log=[
+            itx, "Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete"])
         try:
-            vcLog      = guild["vcLog"]
-            logChannel = itx.guild.get_channel(vcLog)
-            await logChannel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}", allowed_mentions=discord.AllowedMentions.none())
+            # vcLog      = guild["vcLog"]
+            log_channel = itx.guild.get_channel(vc_log)
+            await log_channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}", allowed_mentions=discord.AllowedMentions.none())
             text = text.replace("[[\\n]]","\n").replace("[[del]]","")
             await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions(everyone=False,users=True,roles=True,replied_user=True))
         except discord.Forbidden:
@@ -885,14 +893,15 @@ class OtherAddons(commands.Cog):
                 "fem_quotes": [
                     # "Was the sun always this hot? or is it because of you?",
                     # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
-                    "I bet you sweat glitter.",
+                    # "I bet you sweat glitter.",
                     "Your hair looks stunning!",
                     "Being around you is like being on a happy little vacation.",
                     "Good girll",
                     "Who's a good girl?? You are!!",
                     "Amazing! Perfect! Beautiful! How **does** she do it?!",
                     "I can tell that you are a very special and talented girl!",
-                    "Here, have this cute sticker!"
+                    "Here, have this cute sticker!",
+                    "Beep boop :zap: Oh no! my circuits overloaded! Her cuteness was too much for me to handle!",
                 ],
                 "masc_quotes": [
                     "You are the best man out there.",
@@ -904,6 +913,10 @@ class OtherAddons(commands.Cog):
                     "Who's a cool guy? You are!!",
                     "I can tell that you are a very special and talented guy!",
                     "You're such a gentleman!",
+                    "You always know how to make people feel welcome and included :D",
+                    "Your intelligence and knowledge never cease to amaze me :O",
+                    "Beep boop :zap: Oh no! my circuits overloaded! His aura was so strong that I couldn't generate a cool compliment!",
+                    
 
                 ],
                 "they_quotes": [
@@ -926,10 +939,14 @@ class OtherAddons(commands.Cog):
                     "You should be thanked more often. So thank you!",
                     "You are so easy to have a conversation with!",
                     "Ooh you look like a good candidate to give my pet blahaj to!",
-                    "Here, have a sticker!"
-
-
-
+                    "Here, have a sticker!",
+                    "You always know how to put a positive spin on things!",
+                    "You make the world a better place just by being in it",
+                    "Your strength and resilience is truly inspiring.",
+                    "You have a contagious positive attitude that lifts up those around you.",
+                    "Your positive energy is infectious and makes everyone feel welcomed!",
+                    "You have a great sense of style and always look so put together <3",
+                    "You are a truly unique and wonderful person!",
                 ]
             }
             type = {
@@ -1243,6 +1260,7 @@ class OtherAddons(commands.Cog):
     async def help(self, itx: discord.Interaction):
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
+{self.client.get_command_mention('add_poll_reactions')}: Add an up-/downvote emoji to a message (for voting)
 {self.client.get_command_mention('compliment')}: Rina can compliment others (matching their pronoun role)
 {self.client.get_command_mention('convert_unit')}: Convert a value from one to another! Distance, speed, currency, etc.
 {self.client.get_command_mention('dictionary')}: Search for an lgbtq+-related or dictionary term!
@@ -1382,6 +1400,90 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             await itx.response.send_message(f"Converting {mode} from {value} {from_unit} to {result} {options[to_unit][2]}", ephemeral=not public)
         else:
             await itx.response.send_message(f"Converting {mode} from {value} {from_unit} to {to_unit}: {result} {options[to_unit][2]}", ephemeral=not public)
+
+    @app_commands.command(name="add_poll_reactions", description="Make rina add an upvote/downvote emoji to a message")
+    @app_commands.describe(message_id="What message do you want to add the votes to?",
+                           upvote_emoji="What emoji do you want to react first?",
+                           downvote_emoji="What emoji do you want to react second?",
+                           neutral_emoji="Neutral emoji option (placed between the up/downvote)")
+    async def add_poll_reactions(self, itx: discord.Interaction, message_id: str,
+                                 upvote_emoji: str, downvote_emoji: str, neutral_emoji: str = None):
+        if neutral_emoji is None:
+            neutral_emoji = discord.utils.MISSING # neutral_emoji will be re-set to None if the input is not an emoji
+        errors = []
+        if message_id.isdecimal():
+            message_id = int(message_id)
+            try:
+                message = await itx.channel.fetch_message(message_id)
+            except discord.errors.NotFound:
+                errors.append("- I couldn't find a message with this ID!")
+            except discord.errors.Forbidden:
+                errors.append("- I'm not allowed to find a message in this channel!")
+            except discord.errors.HTTPException:
+                errors.append("- Fetching the message failed.")
+        else:
+            errors.append("- The message ID needs to be a number!")
+
+        def get_emoji(client: Bot, emoji_str: str):
+            if emoji_str is discord.utils.MISSING:
+                return None
+            elif emoji_str.isdecimal():
+                return client.get_emoji(int(emoji_str)) # returns None if not found
+            else:
+                emoji_partial = discord.PartialEmoji.from_str(emoji_str)
+                if emoji_partial is None or emoji_partial.is_unicode_emoji():
+                    # note: PartialEmoji.from_str turns "e" into <PartialEmoji name="e", id=None>
+                    #   this means .is_unicode_emoji will return True because id == None (and name != None?)
+                    #   so it might still raise a NotFound error
+                    return emoji_partial
+                emoji = client.get_emoji(emoji_partial.id)
+                if not emoji.is_usable():
+                    return None
+                return emoji
+
+        upvote_emoji = get_emoji(self.client, upvote_emoji)
+        if upvote_emoji is None:
+            errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
+
+        downvote_emoji = get_emoji(self.client, downvote_emoji)
+        if downvote_emoji is None:
+            errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
+
+        if neutral_emoji is not discord.utils.MISSING:
+            neutral_emoji = get_emoji(self.client, neutral_emoji)
+            if neutral_emoji is None:
+                errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
+
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": itx.guild.id}
+        # guild_data = collection.find_one(query)
+        # blacklisted_channels = guild_data["pollReactionsBlacklist"]
+        blacklisted_channels = await self.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
+        if itx.channel.id in blacklisted_channels:
+            errors.append("- :no_entry: You are not allowed to use this command in this channel!")
+
+        if errors:
+            await itx.response.send_message("Couldn't add poll reactions:\n" + '\n'.join(errors), ephemeral=True)
+            return
+
+        try:
+            await itx.response.send_message("Adding emojis...", ephemeral=True)
+            await message.add_reaction(upvote_emoji)
+            if neutral_emoji:
+                await message.add_reaction(neutral_emoji)
+            await message.add_reaction(downvote_emoji)
+            await itx.edit_original_response(content=":white_check_mark: Successfully added emojis")
+        except discord.errors.Forbidden:
+            await itx.edit_original_response(content=":no_entry: Couldn't add all poll reactions: Forbidden (maybe the user you're trying to add reactions to has blocked Rina)")
+        except discord.errors.NotFound:
+            await itx.edit_original_response(content=":no_entry: Couldn't add all poll reactions: (at least) one of the emojis was not a real emoji!")
+        except discord.errors.HTTPException as ex:
+            if ex.status == 400:
+                await itx.edit_original_response(content=":no_entry: Couldn't add all poll reactions: (at least) one of the emojis was not a real emoji!")
+            else:
+                await itx.edit_original_response(content=":warning: Adding emojis failed!")
+        cmd_mention = self.client.get_command_mention("add_poll_reactions")
+        await logMsg(itx.guild, f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))

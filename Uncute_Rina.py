@@ -100,6 +100,35 @@ else:
                                     # return f"</{command.name} {subgroup.name} {subcmdgroup.name}:{command.id}>"
             return "/"+_command
 
+        async def get_guild_info(self, guild_id: discord.Guild | int, *args: str, log: discord.Interaction | str = None):
+            if isinstance(guild_id, discord.Guild):
+                guild_id = guild_id.id
+            try:
+                collection = self.RinaDB["guildInfo"]
+                query = {"guild_id": guild_id}
+                guild_data = collection.find_one(query)
+                if guild_data is None:
+                    debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!", color="red")
+                    raise KeyError(str(guild_id) + " does not have data in the guildInfo database!")
+                if len(args) == 0:
+                    return guild_data
+                output = []
+                unavailable = []
+                for key in args:
+                    try:
+                        output.append(guild_data[key])
+                    except KeyError:
+                        unavailable.append(key)
+                if unavailable:
+                    raise KeyError("Guild " + str(guild_id) + " does not have data for: " + ', '.join(unavailable))
+                if len(output) == 1: # prevent outputting [1] (one item as list)
+                    return output[0]
+                return output
+            except KeyError:
+                if log is None:
+                    raise
+                await log[0].response.send_message(log[1])
+                raise
 
     debug(f"[#     ]: Loaded server settings" + " " * 30, color="green")
     debug(f"[#+    ]: Starting Bot...", color="light_blue", end='\r')
@@ -202,21 +231,25 @@ else:
 
     @client.event
     async def on_error(event, *_args, **_kwargs):
-        collection = RinaDB["guildInfo"]
         try:
-            logGuild = await client.fetch_guild(959551566388547676)
+            log_guild = await client.fetch_guild(959551566388547676)
         except discord.errors.NotFound:
             if testing_environment == 1:
-                logGuild = await client.fetch_guild(985931648094834798)
+                log_guild = await client.fetch_guild(985931648094834798)
             else:
-                logGuild = await client.fetch_guild(981615050664075404)
+                log_guild = await client.fetch_guild(981615050664075404)
 
-        query = {"guild_id": logGuild.id}
-        guild = collection.find_one(query)
-        if guild is None:
-            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
-            return
-        vcLog      = guild["vcLog"]
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": log_guild.id}
+        # guild = collection.find_one(query)
+        # if guild is None:
+        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
+        #     return
+        # vcLog      = guild["vcLog"]
+        try:
+            vcLog = await client.get_guild_info(log_guild, "vcLog")
+        except KeyError: # precaution to prevent infinite loops, I suppose
+            pass
         #message = args[0]
         msg = ""
         msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
@@ -226,7 +259,7 @@ else:
         # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
         # msg += '\n\n                   '.join([repr(i) for i in kwargs])
         msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
-        channel = await logGuild.fetch_channel(vcLog)
+        channel = await log_guild.fetch_channel(vcLog)
         embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
         await channel.send("<@262913789375021056>", embed=embed)
 
@@ -238,14 +271,13 @@ else:
             return
         await interaction.followup.send("Something went wrong!", ephemeral=True)
         import traceback  # , logging
-        collection = RinaDB["guildInfo"]
         try:
-            logGuild = await client.fetch_guild(959551566388547676)
+            log_guild = await client.fetch_guild(959551566388547676)
         except discord.errors.NotFound:
             if testing_environment == 1:
-                logGuild = await client.fetch_guild(985931648094834798)
+                log_guild = await client.fetch_guild(985931648094834798)
             else:
-                logGuild = await client.fetch_guild(981615050664075404)
+                log_guild = await client.fetch_guild(981615050664075404)
 
         #     try:
         #         client.logChannel = await client.fetch_channel(988118678962860032)
@@ -254,13 +286,17 @@ else:
         #             client.logChannel = await client.fetch_channel(986304081234624554)
         #         else:
         #             client.logChannel = await client.fetch_channel(1062396920187863111)
-
-        query = {"guild_id": logGuild.id}
-        guild = collection.find_one(query)
-        if guild is None:
-            debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!", color="red")
-            return
-        vcLog = guild["vcLog"]
+        # collection = RinaDB["guildInfo"]
+        # query = {"guild_id": log_guild.id}
+        # guild = collection.find_one(query)
+        # if guild is None:
+        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!", color="red")
+        #     return
+        # vcLog = guild["vcLog"]
+        try:
+            vcLog = await client.get_guild_info(log_guild, "vcLog")
+        except KeyError: # precaution I guess, lol
+            pass
         # message = args[0]
         msg = ""
         msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {error}\n\n"
@@ -270,7 +306,7 @@ else:
         # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
         # msg += '\n\n                   '.join([repr(i) for i in kwargs])
         msg = msg.replace("\\", "\\\\").replace("*", "\\*").replace("`", "\\`").replace("_", "\\_").replace("~~", "\\~\\~")
-        channel = await logGuild.fetch_channel(vcLog)
+        channel = await log_guild.fetch_channel(vcLog)
         embed = discord.Embed(color=discord.Colour.from_rgb(r=255, g=0, b=127), title='App Command Error log', description=msg)
         await channel.send("<@262913789375021056>", embed=embed)
         appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))

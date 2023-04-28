@@ -23,6 +23,7 @@ async def add_to_data(member, type):
 class MemberData(commands.Cog):
     def __init__(self, client: Bot):
         global asyncRinaDB
+        self.client = client
         asyncRinaDB = client.asyncRinaDB
 
     @commands.Cog.listener()
