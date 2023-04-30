@@ -8,20 +8,19 @@ sched.start()
 def parse_date(time_string, now):
     # - "next thursday at 3pm"
     # - "tomorrow"
-    # - "in 3 days"
-    # - "2d"
+    # + "in 3 days"
+    # + "2d"
     # - "2022-07-03"
-    # - "2022y4mo3days"
+    # + "2022y4mo3days"
     # - "<t:293847839273>"
-    numbers = ["0","1","2","3","4","5","6","7","8","9","."]
-    timedict = {
+    timeterms = {
         "y":["y","year","years"],
         "M":["mo","month","months"],
         "w":["w","week","weeks"],
         "d":["d","day","days"],
         "h":["h","hour","hours"],
         "m":["m","min","mins","minute","minutes"],
-        "s":["s","sec","second","seconds"]
+        "s":["s","sec", "secs","second","seconds"]
     }
 
     time_units = []
@@ -30,15 +29,12 @@ def parse_date(time_string, now):
     is_number = True
     def magic_date_split(index, low_index, number_index):
         try:
-            time = [int(time_string[low_index:number_index + 1])]
+            time = [float(time_string[low_index:number_index + 1])]
         except ValueError:
             raise ValueError(f"The value for your date/time has to be a number (0, 1, 2) not '{time_string[low_index:number_index + 1]}'")
         date = time_string[number_index + 1:index]
-        # print(time,date)
-        # print("          [",temp,"|",time,"]")
-        for unit in timedict:
-            # print(unit)
-            if date in timedict[unit]:
+        for unit in timeterms:
+            if date in timeterms[unit]:
                 time.append(unit)
                 break
         else:
@@ -46,7 +42,10 @@ def parse_date(time_string, now):
         return time
     index = 0 #for making my IDE happy
     for index in range(len(time_string)):
-        if time_string[index] in numbers:
+        # for index in "14days7hours": get index of the first number, the last number, and the last letter before the next number:
+        #    "1" to "<d" (until but not including "d") and "<7" -> so "1" to "4" and "d" to "s"
+        # then it converts "14" to a number and "days" to the timedict of "d", so you get [[14,'d'], [7,'h']]
+        if time_string[index] in "0123456789.":
             if not is_number:
                 time_units.append(magic_date_split(index, low_index, number_index))
                 low_index = index
@@ -54,48 +53,71 @@ def parse_date(time_string, now):
             is_number = True
         else:
             is_number = False
-    # temp = [timeString[low_index:number_index+1]]
-    # time = timeString[number_index+1:index+1]
-    # # print("          [",temp,"|",time,"]")
-    # for unit in timedict:
-    #     if time in timedict[unit]:
-    #         temp.append(unit)
-    #         break
     time_units.append(magic_date_split(index + 1, low_index, number_index))
 
-    _timedict = {
+    timedict = {
         "y":now.year,
         "M":now.month,
         "d":now.day-1,
         "h":now.hour,
         "m":now.minute,
         "s":now.second,
+        "f":0, # microseconds can only be set with "0.04s" eg.
         # now.day-1 for _timedict["d"] because later, datetime(day=...) starts with 1, and adds this value with
         # timedelta. This is required cause the datetime() doesn't let you set "0" for days. (cuz a month starts
         # at day 1)
     }
+    
+    # add values to each timedict key
     for unit in time_units:
         if unit[1] == "w":
-            _timedict["d"] += 7
+            timedict["d"] += 7*unit[0]
         else:
-            _timedict[unit[1]] += unit[0]
-    while _timedict["s"] >= 60:
-        _timedict["s"] -= 60
-        _timedict["m"] += 1
-    while _timedict["m"] >= 60:
-        _timedict["m"] -= 60
-        _timedict["h"] += 1
-    while _timedict["h"] >= 24:
-        _timedict["h"] -= 24
-        _timedict["d"] += 1
-    while _timedict["M"] > 12:
-        _timedict["M"] -= 12
-        _timedict["y"] += 1
-    if _timedict["y"] >= 3999 or _timedict["d"] >= 1500000:
+            timedict[unit[1]] += unit[0]
+    
+    # check non-whole numbers, and shift "0.2m" to 0.2*60 = 12 seconds
+    def decimals(time):
+        return time - int(time)
+    def is_whole(time):
+        return time - int(time) == 0
+    
+    if not is_whole(timedict["y"]):
+        timedict["M"] += decimals(timedict["y"]) * 12
+        timedict["y"] = int(timedict["y"])
+    if not is_whole(timedict["M"]):
+        timedict["d"] += decimals(timedict["M"]) * (365.2425 / 12)
+        timedict["M"] = int(timedict["M"])
+    if not is_whole(timedict["d"]):
+        timedict["h"] += decimals(timedict["d"]) * 24
+        timedict["d"] = int(timedict["d"])
+    if not is_whole(timedict["h"]):
+        timedict["m"] += decimals(timedict["h"]) * 60
+        timedict["h"] = int(timedict["h"])
+    if not is_whole(timedict["m"]):
+        timedict["s"] += decimals(timedict["m"]) * 60
+        timedict["m"] = int(timedict["m"])
+    if not is_whole(timedict["s"]):
+        timedict["f"] += decimals(timedict["s"]) * 1000000
+        timedict["s"] = int(timedict["s"])
+    
+    # check overflows
+    while timedict["s"] >= 60:
+        timedict["s"] -= 60
+        timedict["m"] += 1
+    while timedict["m"] >= 60:
+        timedict["m"] -= 60
+        timedict["h"] += 1
+    while timedict["h"] >= 24:
+        timedict["h"] -= 24
+        timedict["d"] += 1
+    while timedict["M"] > 12:
+        timedict["M"] -= 12
+        timedict["y"] += 1
+    if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
         raise ValueError("I don't think I can remind you in that long!")
-    distance = datetime(_timedict["y"],_timedict["M"],1,_timedict["h"],_timedict["m"],_timedict["s"], tzinfo=datetime.now().tzinfo)
+    distance = datetime(timedict["y"],timedict["M"],1,timedict["h"],timedict["m"],timedict["s"], tzinfo=datetime.now().tzinfo)
     # cause you cant have >31 days in a month, but if overflow is given, then let this timedelta calculate the new months/years
-    distance += timedelta(days=_timedict["d"])
+    distance += timedelta(days=timedict["d"])
 
     return distance
 
@@ -182,12 +204,23 @@ class Reminders(commands.GroupCog,name="reminder"):
         except KeyError:
             pass
 
-        now = datetime.now()
+        now = itx.created_at
         try:
             time = (" "+time).replace(",","").replace("and","").replace(" in ", "").replace(" ","").strip().lower()
             distance = parse_date(time, now)
         except ValueError as ex:
-            await itx.response.send_message(f"Couldn't make new reminder:\n  {str(ex)}\nFor now, you can only use a format like \"3mo5d\",\"2 hours, 3 mins\", \"3day4hour\", or \"4d 1m\"",ephemeral=True)
+            await itx.response.send_message(f"Couldn't make new reminder:\n  {str(ex)}\n"
+                                            "For now, you can only use a format like [number][letter]. Some examples:\n"
+                                            '  "3mo 0.5d", "in 2 hours, 3.5 mins", "1 year and 3 seconds", "3day4hour", "4d1m"\n'
+                                            "Words like \"in\" and \"and\" are ignored, so you can use those for readability if you'd like.\n"
+                                            '  year = y, year, years\n'
+                                            '  month = mo, month, months\n'
+                                            '  week = w, week, weeks\n'
+                                            '  day = d, day, days\n'
+                                            '  hour = h, hour, hours\n'
+                                            '  minute = m, min, mins, minute, minutes\n'
+                                            '  second = s, sec, secs, second, seconds',
+                                            ephemeral=True)
             return
         # if distance < now:
         #     itx.response.send_message("")
