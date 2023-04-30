@@ -40,7 +40,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.5".split(".")
+    fileVersion = "1.1.8.6".split(".")
     try:
         version = open("version.txt", "r").read().split(".")
     except FileNotFoundError:
@@ -74,6 +74,7 @@ else:
         startup_time = datetime.now() # used in /version
         RinaDB = RinaDB
         asyncRinaDB = asyncRinaDB
+        staff_server_id = 981730502987898960
 
         def get_command_mention(self, _command):
             args = _command.split(" ")+[None, None]
@@ -239,13 +240,6 @@ else:
             else:
                 log_guild = await client.fetch_guild(981615050664075404)
 
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": log_guild.id}
-        # guild = collection.find_one(query)
-        # if guild is None:
-        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
-        #     return
-        # vcLog      = guild["vcLog"]
         try:
             vcLog = await client.get_guild_info(log_guild, "vcLog")
         except KeyError: # precaution to prevent infinite loops, I suppose

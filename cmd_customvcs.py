@@ -13,21 +13,10 @@ class CustomVcs(commands.Cog):
         #  #General, #Private, #Quiet, and #Minecraft. Later, it also excludes channels starting with "〙"
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         global recently_renamed_vcs
-        member: discord.Member
-        before: discord.VoiceState
-        after: discord.VoiceState
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": member.guild.id}
-        # guild = collection.find_one(query)
-        # if guild is None:
-        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
-        #     return
-        # vcHub      = guild["vcHub"]
-        # vcLog      = guild["vcLog"]
-        # vcNoMic    = guild["vcNoMic"]
-        # vcCategory = guild["vcCategory"]
+        if member.guild.id == self.client.staff_server_id:
+            return
         vcHub, vcLog, vcNoMic, vcCategory = await self.client.get_guild_info(member.guild, "vcHub", "vcLog", "vcNoMic", "vcCategory")
         if before.channel is None:
             pass
@@ -124,17 +113,10 @@ class CustomVcs(commands.Cog):
         if not isVerified(itx):
             await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",ephemeral=True)
             return
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": itx.guild_id}
-        # guild = collection.find_one(query)
-        # if guild is None:
-        #     cmd_mention = self.client.get_command_mention("editguildinfo")
-        #     await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!",ephemeral=True)
-        #     return
-        # vcHub = guild["vcHub"]
-        # vcLog = guild["vcLog"]
-        # vcCategory = guild["vcCategory"]
-        vcHub, vcLog, vcCategory = await self.client.get_guild_info(itx.guild, "vcHub", "vcLog", "vcCategory")
+        
+        cmd_mention = self.client.get_command_mention("editguildinfo")
+        log = [itx, f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention} `mode:21`, `mode:22` or `mode:23`!"]
+        vcHub, vcLog, vcCategory = await self.client.get_guild_info(itx.guild, "vcHub", "vcLog", "vcCategory", log=log)
         warning = ""
 
         if itx.user.voice is None:
@@ -341,6 +323,7 @@ class CustomVcs(commands.Cog):
 
                 ["Starboard channel",                    "31"],
                 ["Mimimum required stars for starboard", "32"],
+                ["Starboard blacklisted channels",       "33"],
 
                 ["ID of the bump bot / DISBOARD bot",    "41"],
                 ["Channel that DISBOARD bumps in",       "42"],
@@ -392,6 +375,7 @@ class CustomVcs(commands.Cog):
 
             "31" : "starboardChannel",
             "32" : "starboardCountMinimum",
+            "33" : "starboardBlacklistedChannels",
 
             "41" : "bumpBot",
             "42" : "bumpChannel",
@@ -507,6 +491,15 @@ class CustomVcs(commands.Cog):
                 if value < 1:
                     await itx.response.send_message("Your new value has to be at least 1!", ephemeral=True)
                 collection.update_one(query, {"$set": {options[option]: value}}, upsert=True)
+            elif option == "33":
+                channel_ids = value.split(",")
+                blacklist = []
+                for channel_id in channel_ids:
+                    channel = await to_int(channel_id.strip(), "You need to give a list of integers, separated by a comma, for this new blacklist!")
+                    if channel is None:
+                        return
+                    blacklist.append(channel)
+                collection.update_one(query, {"$set": {options[option]: blacklist}}, upsert=True)
             elif option == "41":
                 value = await to_int(value, "You need to give a numerical ID for the bot id you want to use!")
                 if value is None:
@@ -548,21 +541,10 @@ class CustomVcs(commands.Cog):
     # Muted   = No speaking perms
 
     async def get_current_channel(self, itx: discord.Interaction, action: str, from_event: bool = None):
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": itx.guild_id}
-        # guild = collection.find_one(query)
-        # if guild is None:
-        #     if from_event:
-        #         return
-        #     cmd_mention = self.client.get_command_mention("editguildinfo")
-        #     await itx.response.send_message(f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!", ephemeral=True)
-        #     return
-        # vcHub = guild["vcHub"]
-        # vcCategory = guild["vcCategory"]
         log = None
         if not from_event:
             cmd_mention = self.client.get_command_mention("editguildinfo")
-            log = [itx, f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention}!"]
+            log = [itx, f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention} `mode:21` or `mode:22`!"]
         vcHub, vcCategory = await self.client.get_guild_info(itx.guild, "vcHub", "vcCategory", log=log)
 
         try:

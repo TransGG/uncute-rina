@@ -286,15 +286,6 @@ class BumpReminder(commands.GroupCog):
             sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
 
         async def send_reminder(self):
-            # collection = RinaDB["guildInfo"]
-            # query = {"guild_id": self.guild.id}
-            # guild = collection.find_one(query)
-            # if guild is None:
-            #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",
-            #           color="red")
-            #     return
-            # bump_channel_id = guild["bumpChannel"]
-            # bump_role_id = guild["bumpRole"]
             bump_channel_id, bump_role_id = await self.client.get_guild_info(self.guild, "bumpChannel", "bumpRole")
             bump_channel = await self.guild.fetch_channel(bump_channel_id)
             bump_role = self.guild.get_role(bump_role_id)

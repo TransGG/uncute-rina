@@ -174,14 +174,6 @@ class Tags:
 
     @staticmethod
     async def send_customvc_info(itx: discord.Interaction, client: Bot, public, anonymous):
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": itx.guild.id}
-        # guild = collection.find_one(query)
-        # if guild is None:
-        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",
-        #           color="red")
-        #     return
-        # vc_hub = guild["vcHub"]
         vc_hub = await client.get_guild_info(itx.guild, "vcHub")
 
         cmd_mention = client.get_command_mention('editvc')
@@ -853,15 +845,10 @@ class OtherAddons(commands.Cog):
         if not isStaff(itx):
             await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
             return
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": itx.guild.id}
-        # guild = collection.find_one(query)
-        # if guild is None:
-        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!",color="red")
-        #     await itx.response.send_message("Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete",ephemeral=True)
-        #     return
+        cmd_mention = self.client.get_command_mention("editguildinfo")
         vc_log = await self.client.get_guild_info(itx.guild, "vcLog", log=[
-            itx, "Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete"])
+            itx, "Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete\n"
+            f"Use {cmd_mention} `mode:11` to fix this!"])
         try:
             # vcLog      = guild["vcLog"]
             log_channel = itx.guild.get_channel(vc_log)
@@ -1256,8 +1243,7 @@ class OtherAddons(commands.Cog):
                     await itx.delete_original_response()
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
-    @app_commands.command(name="help", description="A help command to learn more about me!")
-    async def help(self, itx: discord.Interaction):
+    async def print_help_text(self, itx):
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 {self.client.get_command_mention('add_poll_reactions')}: Add an up-/downvote emoji to a message (for voting)
@@ -1285,6 +1271,14 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
 # You can also transfer your table ownership to another table member, after they joined your table: {self.client.get_command_mention('table newowner')}\
 # """
         await itx.response.send_message(out, ephemeral=True)
+
+    @app_commands.command(name="help", description="A help command to learn more about me!")
+    async def help(self, itx: discord.Interaction):
+        await self.print_help_text(itx)
+
+    @app_commands.command(name="commands", description="A help command to learn more about me!")
+    async def commands(self, itx: discord.Interaction):
+        await self.print_help_text(itx)
 
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
@@ -1454,13 +1448,10 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": itx.guild.id}
-        # guild_data = collection.find_one(query)
-        # blacklisted_channels = guild_data["pollReactionsBlacklist"]
-        blacklisted_channels = await self.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
-        if itx.channel.id in blacklisted_channels:
-            errors.append("- :no_entry: You are not allowed to use this command in this channel!")
+        if itx.guild.id != self.client.staff_server_id:
+            blacklisted_channels = await self.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
+            if itx.channel.id in blacklisted_channels:
+                errors.append("- :no_entry: You are not allowed to use this command in this channel!")
 
         if errors:
             await itx.response.send_message("Couldn't add poll reactions:\n" + '\n'.join(errors), ephemeral=True)
