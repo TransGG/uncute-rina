@@ -40,7 +40,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.7".split(".")
+    fileVersion = "1.1.8.8".split(".")
     try:
         version = open("version.txt", "r").read().split(".")
     except FileNotFoundError:
@@ -258,13 +258,29 @@ else:
         await channel.send("<@262913789375021056>", embed=embed)
 
     @client.tree.error
-    async def on_app_command_error(interaction, error):
+    async def on_app_command_error(itx: discord.Interaction, error):
         global appcommanderror_cooldown
         if int(mktime(datetime.now().timetuple())) - appcommanderror_cooldown < 60:
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if within 1 minute
             return
-        await interaction.followup.send("Something went wrong!", ephemeral=True)
-        import traceback  # , logging
+        
+        async def reply(itx, message):
+            if itx.response.is_done():
+                await itx.followup.send(message, ephemeral=True)
+            else:
+                await itx.response.send_message(message, ephemeral=True)
+        
+        print(repr(error), type(error))
+        print(error, str(error))
+        print(dir(error))
+
+        if isinstance(error, discord.app_commands.errors.CommandNotFound):
+            cmd_mention = client.get_command_mention("update")
+            await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask MysticMia#7612 if she typed {cmd_mention}!")
+        elif isinstance(error, discord.app_commands.errors.CommandSignatureMismatch):
+            await reply(itx, f"My oh my. This has only happened once, before. That time, it was because Mia used commands.GroupCog instead of commands.Cog. Hopefully that helps.")
+        else:
+            await reply(itx, "Something went wrong executing your command!", type(error))
         try:
             log_guild = await client.fetch_guild(959551566388547676)
         except discord.errors.NotFound:
@@ -280,13 +296,6 @@ else:
         #             client.logChannel = await client.fetch_channel(986304081234624554)
         #         else:
         #             client.logChannel = await client.fetch_channel(1062396920187863111)
-        # collection = RinaDB["guildInfo"]
-        # query = {"guild_id": log_guild.id}
-        # guild = collection.find_one(query)
-        # if guild is None:
-        #     debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!", color="red")
-        #     return
-        # vcLog = guild["vcLog"]
         try:
             vcLog = await client.get_guild_info(log_guild, "vcLog")
         except KeyError: # precaution I guess, lol

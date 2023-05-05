@@ -305,7 +305,7 @@ class Reminders(commands.GroupCog,name="reminder"):
             collection.delete_one(query)
         await itx.response.send_message("Successfully removed this reminder!",ephemeral=True)
 
-class BumpReminder(commands.GroupCog):
+class BumpReminder(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
