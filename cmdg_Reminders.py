@@ -115,6 +115,9 @@ def parse_date(time_string, now):
         timedict["y"] += 1
     if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
         raise ValueError("I don't think I can remind you in that long!")
+    
+    timedict = {i:int(timedict[i]) for i in timedict}
+
     distance = datetime(timedict["y"],timedict["M"],1,timedict["h"],timedict["m"],timedict["s"], tzinfo=datetime.now().tzinfo)
     # cause you cant have >31 days in a month, but if overflow is given, then let this timedelta calculate the new months/years
     distance += timedelta(days=timedict["d"])
@@ -303,7 +306,7 @@ class Reminders(commands.GroupCog,name="reminder"):
             collection.update_one(query, {"$set":{"reminders":db_data['reminders']}}, upsert=True)
         else:
             collection.delete_one(query)
-        await itx.response.send_message("Successfully removed this reminder!",ephemeral=True)
+        await itx.response.send_message(f"Successfully removed this reminder! You have {len(db_data['reminders'])} other reminders going.",ephemeral=True)
 
 class BumpReminder(commands.Cog):
     def __init__(self, client: Bot):

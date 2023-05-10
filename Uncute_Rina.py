@@ -40,7 +40,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.8".split(".")
+    fileVersion = "1.1.8.9".split(".")
     try:
         version = open("version.txt", "r").read().split(".")
     except FileNotFoundError:
@@ -75,6 +75,7 @@ else:
         RinaDB = RinaDB
         asyncRinaDB = asyncRinaDB
         staff_server_id = 981730502987898960
+        bot_owner: discord.User # for AllowedMentions in on_appcommand_error()
 
         def get_command_mention(self, _command):
             args = _command.split(" ")+[None, None]
@@ -128,11 +129,11 @@ else:
             except KeyError:
                 if log is None:
                     raise
-                await log[0].response.send_message(log[1])
+                await log[0].response.send_message(log[1], ephemeral=True)
                 raise
 
-    debug(f"[#     ]: Loaded server settings" + " " * 30, color="green")
-    debug(f"[#+    ]: Starting Bot...", color="light_blue", end='\r')
+    debug(f"[#      ]: Loaded bot" + " " * 30, color="green")
+    debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
     client = Bot(
             intents=intents,
             command_prefix="/!\"@:\\#", #unnecessary, but needs to be set so.. uh.. yeah. Unnecessary terminal warnings avoided.
@@ -144,7 +145,7 @@ else:
     # Client events begin
     @client.event
     async def on_ready():
-        debug(f"[######] Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
+        debug(f"[#######] Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
         await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
 
     @client.event
@@ -152,7 +153,7 @@ else:
         start = datetime.now()
 
         ## cache server settings into client, to prevent having to load settings for every extension
-        debug(f"[##    ]: Started Bot"+" "*30,color="green")
+        debug(f"[##     ]: Started Bot"+" "*30,color="green")
         ## activate the extensions/programs/code for slash commands
         extensions = [
             "cmd_addons",
@@ -170,13 +171,11 @@ else:
         ]
 
         for extID in range(len(extensions)):
-            debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Loading {extensions[extID]}"+" "*15,color="light_blue",end='\r')
+            debug(f"[{'#'*extID}+{' '*(len(extensions)-extID-1)}]: Loading {extensions[extID]}"+" "*15,color="light_blue",end='\r')
             await client.load_extension(extensions[extID])
-        debug(f"[###   ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
+        debug(f"[###    ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
 
-        ## activate the buttons in the table message
-        ## Disabled: it was never used. Will keep file in case of future projects
-        # debug(f"[##+   ]: Updating table message"+ " "*30,color="light_blue",end='\r')
+        debug(f"[###+   ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
         try:
             client.logChannel = await client.fetch_channel(988118678962860032)
         except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
@@ -184,8 +183,10 @@ else:
                 client.logChannel = await client.fetch_channel(986304081234624554)
             else:
                 client.logChannel = await client.fetch_channel(1062396920187863111)
+        client.bot_owner = await client.fetch_user(262913789375021056)#(await client.application_info()).owner
 
-        debug(f"[###+  ]: Restarting ongoing reminders"+" "*30,color="light_blue",end="\r")
+        debug(f"[####   ]: Loaded server settings",color="green")
+        debug(f"[####+  ]: Restarting ongoing reminders"+" "*30,color="light_blue",end="\r")
         collection = RinaDB["reminders"]
         query = {}
         db_data = collection.find(query)
@@ -197,12 +198,12 @@ else:
                     Reminders.Reminder(client, creationtime, remindertime, user['userID'], reminder['reminder'], user, continued=True)
             except KeyError:
                 pass
-        debug(f"[####  ]: Finished setting up reminders"+" "*30,color="green")
-        debug(f"[####+ ]: Caching bot's command names and their ids",color="light_blue",end='\r')
+        debug(f"[#####  ]: Finished setting up reminders"+" "*30,color="green")
+        debug(f"[#####+ ]: Caching bot's command names and their ids",color="light_blue",end='\r')
         commandList = await client.tree.fetch_commands()
         client.commandList = commandList
-        debug(f"[##### ]: Cached bot's command names and their ids"+" "*30,color="green")
-        debug(f"[#####+]: Starting..."+" "*30,color="light_blue",end='\r')
+        debug(f"[###### ]: Cached bot's command names and their ids"+" "*30,color="green")
+        debug(f"[######+]: Starting..."+" "*30,color="light_blue",end='\r')
 
         # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
         # await client.tree.sync()
@@ -255,7 +256,7 @@ else:
         msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
         channel = await log_guild.fetch_channel(vcLog)
         embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
-        await channel.send("<@262913789375021056>", embed=embed)
+        await channel.send(f"{client.bot_owner.mention}", embed=embed)
 
     @client.tree.error
     async def on_app_command_error(itx: discord.Interaction, error):
@@ -270,17 +271,23 @@ else:
             else:
                 await itx.response.send_message(message, ephemeral=True)
         
-        print(repr(error), type(error))
-        print(error, str(error))
-        print(dir(error))
-
         if isinstance(error, discord.app_commands.errors.CommandNotFound):
             cmd_mention = client.get_command_mention("update")
-            await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask MysticMia#7612 if she typed {cmd_mention}!")
+            await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask {client.bot_owner} if she typed {cmd_mention}!")
         elif isinstance(error, discord.app_commands.errors.CommandSignatureMismatch):
             await reply(itx, f"My oh my. This has only happened once, before. That time, it was because Mia used commands.GroupCog instead of commands.Cog. Hopefully that helps.")
         else:
-            await reply(itx, "Something went wrong executing your command!", type(error))
+            if hasattr(error, 'original'):
+                error_reply = "Error "
+                if hasattr(error.original, 'status'):
+                    error_reply += str(error.original.status)
+                    # if error.original.status == "403":
+                    #     await reply(itx, f"Error 403: It seems like I didn't have permissions for this action! If you believe this is an error, please message or ping {client.bot_owner}} :)")
+                if hasattr(error.original, 'code'):
+                    error_reply += "(" + str(error.original.code) + ")"
+                await reply(itx, error_reply + f". Please report the error and details to {client.bot_owner} ({client.bot_owner.mention}) by pinging her or sending her a DM")
+            else:
+                await reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
         try:
             log_guild = await client.fetch_guild(959551566388547676)
         except discord.errors.NotFound:
@@ -301,9 +308,21 @@ else:
         except KeyError: # precaution I guess, lol
             pass
         # message = args[0]
-        msg = ""
-        msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {error}\n\n"
+        msg = f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [APPCOMMAND ERROR]: {error}\n"
+        try:
+            msg += f"    Executor details: {itx.user} ({itx.user.id})"
+        except Exception as ex:
+            msg += f"    Executor details: couldn't get interaction details: " + repr(ex)
+            #   f"    command: {error.command}\n" + \
+            #   f"    arguments: {error.args}\n"
+        if hasattr(error, 'original'):
+            if hasattr(error.original, 'code'):
+                msg += f"    code: {error.original.code}\n"
+            if hasattr(error.original, 'status'):
+                msg += f"    original error: {error.original.status}: {error.original.text}\n\n"
+                    #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
+
         debug(f"{msg}", add_time=False)
 
         # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
@@ -311,7 +330,7 @@ else:
         msg = msg.replace("\\", "\\\\").replace("*", "\\*").replace("`", "\\`").replace("_", "\\_").replace("~~", "\\~\\~")
         channel = await log_guild.fetch_channel(vcLog)
         embed = discord.Embed(color=discord.Colour.from_rgb(r=255, g=0, b=127), title='App Command Error log', description=msg)
-        await channel.send("<@262913789375021056>", embed=embed)
+        await channel.send(f"{client.bot_owner.mention}", embed=embed, allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
         appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
 
     try:

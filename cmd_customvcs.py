@@ -329,7 +329,7 @@ class CustomVcs(commands.Cog):
                 ["Channel that DISBOARD bumps in",       "42"],
                 ["Role to ping when sending reminder",   "43"],
             ]
-            await asyncio.sleep(1)
+            # await asyncio.sleep(1)
             return [
                 app_commands.Choice(name=option[0], value=option[1])
                 for option in options if option[1].startswith(current)

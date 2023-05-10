@@ -840,10 +840,14 @@ class OtherAddons(commands.Cog):
                 await message.channel.send(f"I use slash commands! Use /command  and see what cool things might pop up! or try {cmd_mention}\nPS: If you're trying to call me cute: no, I'm not", delete_after=8)
 
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
-    @app_commands.describe(text="What will you make Rina repeat?")
-    async def say(self, itx: discord.Interaction, text: str):
+    @app_commands.describe(text="What will you make Rina repeat?",
+                           reply_to_interaction="Show who sent the message?")
+    async def say(self, itx: discord.Interaction, text: str, reply_to_interaction: bool = False):
         if not isStaff(itx):
             await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
+            return
+        if reply_to_interaction:
+            await itx.response.send_message(text, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             return
         cmd_mention = self.client.get_command_mention("editguildinfo")
         vc_log = await self.client.get_guild_info(itx.guild, "vcLog", log=[
@@ -861,12 +865,13 @@ class OtherAddons(commands.Cog):
         except:
             await itx.response.send_message("Oops. Something went wrong!",ephemeral=True)
             raise
+        #No longer necessary: this gets caught by the on_app_command_error() event in the main file.
         await itx.response.send_message("Successfully sent!", ephemeral=True)
 
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
-        # await itx.response.send_message("This command is currently disabled for now, since we're missing compliments. Feel free to suggest some, and ping @MysticMia#7612",ephemeral=True)
+        # await itx.response.send_message(f"This command is currently disabled for now, since we're missing compliments. Feel free to suggest some, and ping {self.client.bot_owner}",ephemeral=True)
         # return
         try:
             user: discord.Member # make IDE happy, i guess
@@ -1096,6 +1101,7 @@ class OtherAddons(commands.Cog):
                            mod="Do you want to add a modifier? (add 2 after rolling the dice)",
                            advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; 'help' for more")
     async def roll(self, itx: discord.Interaction, dice: int, faces: int, public: bool = False, mod: int = None, advanced: str = None):
+        hide = False
         if advanced is None:
             if dice < 1 or faces < 1:
                 await itx.response.send_message("You can't have negative dice/faces! Please give a number above 0",ephemeral=True)
@@ -1139,11 +1145,11 @@ class OtherAddons(commands.Cog):
                 if len(details) > 1500:
                     details = ""
                 elif len(details) > 300:
-                    public = False
+                    hide = True
                 out = out + "\n" + details
             elif len(out) > 300:
-                public = False
-            if public:
+                hide = True
+            if hide:
                 await itx.delete_original_response()
             await itx.followup.send(out,ephemeral=not public)
         else:
@@ -1235,11 +1241,11 @@ class OtherAddons(commands.Cog):
             if len(output) >= 1950:
                 output = "Your result was too long! I couldn't send it. Try making your rolls a bit smaller, perhaps by splitting it into multiple operations..."
             if len(output) >= 500:
-                public = False
+                hide = True
             try:
                 await itx.followup.send(output,ephemeral=not public)
             except discord.errors.NotFound:
-                if public:
+                if hide:
                     await itx.delete_original_response()
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 

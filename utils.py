@@ -29,7 +29,7 @@ def isAdmin(itx: discord.Interaction):
     role_ids = [981735525784358962]  # admin
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056 or len(set(role_ids).intersection(user_role_ids)) > 0
 
-def debug(text="", color="default", add_time=True, end=None, advanced=False):
+def debug(text="", color="default", add_time=True, end="\n", advanced=False):
     colors = {
         "default":"\033[0m",
         "black":"\033[30m",
@@ -113,10 +113,9 @@ def debug(text="", color="default", add_time=True, end=None, advanced=False):
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger()
     print = logger.info
-    if end is None:
-        print(f"{time}{text}{colors['default']}")
-    else:
-        print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
+    if end.endswith("\n"):
+        end = end[:-2]
+    print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
 
 #unused
 def thousandSpace(number, interval = 3, separator = " "):

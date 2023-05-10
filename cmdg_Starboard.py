@@ -112,6 +112,7 @@ class Starboard(commands.Cog):
                 f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
             return
 
+        # print(repr(message.guild.id), repr(self.client.staff_server_id), message.guild.id == self.client.staff_server_id)
         if message.guild.id == self.client.staff_server_id:
             return
         _star_channel, star_minimum, channel_blacklist = await self.client.get_guild_info(message.guild, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels")

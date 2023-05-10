@@ -72,7 +72,7 @@ class Pronouns(commands.Cog):
                 else:
                     nick = False
                 if current in member.name:
-                    name = member.name + "    #"+member.discriminator
+                    name = str(member)
                     results.append(app_commands.Choice(name=name, value=member.mention))
                 elif nick:
                     name = f"{member.nick}     ({member})"
@@ -293,7 +293,7 @@ class Pronouns(commands.Cog):
             collection.update_one(query, {"$set": {f"pronouns": pronouns}}, upsert=True)
             await itx.response.send_message(f"Removed `{pronoun}` successfully!", ephemeral=True)
         elif mode == 4:
-            await itx.response.send_message("Oops, I forgot to add anything for this command! Ask Mia how it works eheh... \n    MysticMia#7612",ephemeral=True)
+            await itx.response.send_message(f"Oops, I forgot to add anything for this command! Ask Mia how it works eheh... \n    {self.client.bot_owner}",ephemeral=True)
 
     async def pronouns_ctx_user(self, itx: discord.Interaction, user: discord.User):
         await self.get_pronouns(itx, user)

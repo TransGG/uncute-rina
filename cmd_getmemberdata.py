@@ -41,37 +41,42 @@ class MemberData(commands.Cog):
             await add_to_data(after, "verified")
 
     @app_commands.command(name="getmemberdata",description="See joined, left, and recently verified users in x days")
-    @app_commands.describe(period="Get data from [period] days ago",
+    @app_commands.describe(upper_bound="Get data from [period] days ago",
                            doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
-    async def get_member_data(self, itx: discord.Interaction, period: str, doubles: bool = False, hidden: bool = True):
+    async def get_member_data(self, itx: discord.Interaction, lower_bound: str, upper_bound: int = None, doubles: bool = False, public: bool = False):
         # if not isStaff(itx):
         #     await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True)
         #     return
+        current_time = mktime(datetime.now(timezone.utc).timetuple())
+        if upper_bound is None:
+            upper_bound = current_time # aka 0: 0 days from now
         try:
-            period = float(period)
-            if period <= 0:
+            lower_bound = float(lower_bound)
+            if lower_bound <= 0:
                 await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",ephemeral=True)
-                return
+                return  
             # if period < 0.035:
             #     await itx.response.send_message("Idk why but it seems to break when period is smaller than 0.0035, so better not use it.", ephemeral=True)
             #     return #todo: figure out why you can't fill in less than 0.0035: ValueError: All arrays must be of the same length
-            if period > 10958:
+            if lower_bound > 10958:
                 await itx.response.send_message("... I doubt you'll be needing to look 30 years into the past..",ephemeral=True)
+                return
+            if upper_bound > lower_bound:
+                await itx.response.send_message("Your upper bound can't be bigger (-> more days ago) than the lower bound!", ephemeral=True)
                 return
         except ValueError:
             await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",ephemeral=True)
             return
 
-        accuracy = period*2400 #divide graph into 36 sections
-        period *= 86400 # days to seconds
+        accuracy = lower_bound*2400 #divide graph into 36 sections
+        lower_bound *= 86400 # days to seconds
         # Get a list of people (in this server) that joined at certain times. Maybe round these to a certain factor (don't overstress the x-axis)
         # These certain times are in a period of "now" and "[period] seconds ago"
         totals = {}
         results = {}
         warning = ""
-        current_time = mktime(datetime.now(timezone.utc).timetuple())
-        min_time = int((current_time-period)/accuracy)*accuracy
-        max_time = int(current_time/accuracy)*accuracy
+        min_time = int((current_time-lower_bound)/accuracy)*accuracy
+        max_time = int((current_time-upper_bound)/accuracy)*accuracy
 
         collection = asyncRinaDB["data"]
         query = {"guild_id": itx.guild_id}
@@ -79,7 +84,7 @@ class MemberData(commands.Cog):
         if data is None:
             await itx.response.send_message("Not enough data is configured to do this action! Please hope someone joins sometime soon lol",ephemeral=True)
             return
-        await itx.response.defer(ephemeral=hidden)
+        await itx.response.defer(ephemeral = not public)
 
         for y in data:
             if type(data[y]) is not dict:
@@ -89,10 +94,11 @@ class MemberData(commands.Cog):
             for member in data[y]:
                 for time in data[y][member]:
                     #if the current time minus the amount of seconds in every day in the period since now, is still older than more recent joins, append it
-                    if current_time-period < time:
-                        column.append(time)
-                        if not doubles:
-                            break
+                    if current_time-lower_bound < time:
+                        if current_time-upper_bound > time:
+                            column.append(time)
+                            if not doubles:
+                                break
             totals[y] = len(column)
             for time in range(len(column)):
                 column[time] = int(column[time]/accuracy)*accuracy
@@ -137,7 +143,7 @@ class MemberData(commands.Cog):
                 return
             df = pd.DataFrame(data=d)
             fig, (ax1) = plt.subplots()#1, 1)
-            fig.suptitle(f"Member +/-/verif (r/g/b) in the past {period/86400} days")
+            fig.suptitle(f"Member +/-/verif (r/g/b) from {lower_bound/86400} to {upper_bound/86400} days ago")
             fig.tight_layout(pad=1.0)
             ax1.plot(df['time'], df["joined"], 'r')
             ax1.plot(df['time'], df["left"], 'g')
@@ -149,7 +155,7 @@ class MemberData(commands.Cog):
             ax1.set_ylabel(f"# of members ({re_text}. rejoins/-leaves/etc)")
 
             tick_loc = [i for i in df['time'][::3]]
-            if period/86400 <= 1:
+            if (lower_bound-upper_bound)/86400 <= 1:
                 tick_disp = [datetime.fromtimestamp(i).strftime('%H:%M') for i in tick_loc]
             else:
                 tick_disp = [datetime.fromtimestamp(i).strftime('%Y-%m-%dT%H:%M') for i in tick_loc]
@@ -169,7 +175,8 @@ class MemberData(commands.Cog):
             await itx.followup.send("You encountered an error! This is likely a ValueError, caused by a too small number. "
                                     "I still have to figure out why this happens, exactly. Probably some rounding error or something. "
                                     "Anyway, try a larger number, it might work better",ephemeral=True)
-        await itx.followup.send(f"In the past {period/86400} days, `{totals['joined']}` members joined, `{totals['left']}` left, and `{totals['verified']}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
+            raise
+        await itx.followup.send(f"From {lower_bound/86400} to {upper_bound/86400} days ago, `{totals['joined']}` members joined, `{totals['left']}` left, and `{totals['verified']}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
 
 async def setup(client):
     # client.add_command(getMemberData)
