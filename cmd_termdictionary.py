@@ -72,9 +72,10 @@ class TermDictionary(commands.Cog):
                            public="Do you want to share the search results with the rest of the channel? (True=yes)")
     @app_commands.choices(source=[
             discord.app_commands.Choice(name='Search from whichever has an answer', value=1),
-            discord.app_commands.Choice(name='Search from custom dictionary', value=3),
-            discord.app_commands.Choice(name='Search from en.pronouns.page', value=2),
-            discord.app_commands.Choice(name='Search from dictionaryapi.dev', value=5),
+            discord.app_commands.Choice(name='Search from custom dictionary', value=2),
+            discord.app_commands.Choice(name='Search from en.pronouns.page', value=4),
+            discord.app_commands.Choice(name='Search from dictionaryapi.dev', value=6),
+            discord.app_commands.Choice(name='Search from urbandictionary.com', value=8),
     ])
     @app_commands.autocomplete(term=dictionary_autocomplete)
     async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
@@ -86,7 +87,7 @@ class TermDictionary(commands.Cog):
         # test if mode has been left unset or if mode has been selected: decides whether or not to move to the online API search or not.
         result_str = ""  # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
         results: list[any]
-        if source == 1 or source == 3:
+        if source == 1 or source == 2:
             collection = RinaDB["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
@@ -106,14 +107,15 @@ class TermDictionary(commands.Cog):
                 # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
                 # Otherwise, it will return the 'not found' result of the term, and end the function.
                 if source == 1:
-                    source = 4
+                    source = 3
                 #public = False
                 else:
                     cmd_mention = self.client.get_command_mention("dictionary_staff define")
-                    result_str += f"No information found for '{term}'...\nIf you would like to add a term, message a staff member (to use {cmd_mention})"
+                    result_str += f"No information found for '{term}' in the custom dictionary.\nIf you would like to add a term, message a staff member (to use {cmd_mention})"
+                    public = False
                     # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the /dictionary command",color='light red')
-                    cmd_mention = self.client.get_command_mention("dictionary")
-                    await logMsg(itx.guild,f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the {cmd_mention} command")
+                    # cmd_mention = self.client.get_command_mention("dictionary")
+                    # await logMsg(itx.guild,f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary (specifically in here), but it yielded no results. Maybe we should add this term to the {cmd_mention} command")
             if len(result_str.split("\n")) > 3 and public:
                 public = False
                 result_str += "\nDidn't send your message as public cause it would be spammy, having this many results."
@@ -121,22 +123,15 @@ class TermDictionary(commands.Cog):
                 result_str = f"Your search ({term}) returned too many results (discord has a 2000-character message length D:). (Please ask staff to fix this (synonyms and stuff).)"
                 # debug(f"{itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters! Results:'\n"+', '.join(results),color="red")
                 await logMsg(itx.guild,f":warning: **!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary search ('{term}') gave back a result that was larger than 2000 characters!'")
-        if source == 2 or source == 4:
+        if source == 3 or source == 4:
             response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{term.lower().replace("/"," ").replace("%"," ")}').text
             data = json.loads(response_api)
             if len(data) == 0:
-                if source == 4:
-                    source = 6
+                if source == 3:
+                    source = 5
                 else:
-                    result_str = f"I didn't find any results for '{term}' online or in our fancy dictionary"
-                    # debug(f"{itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the /dictionary command (/define)",color='light red')
-                    cmd_mention_dict = self.client.get_command_mention("dictionary")
-                    cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
-                    await logMsg(itx.guild,
-                                 f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online (en.pronouns.page), but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
-
-                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
-                    return
+                    result_str = f"I didn't find any results for '{term}' on en.pronouns.page"
+                    public = False
             # if len(data) == 0:
             #     await itx.response.send_message(f"No results found for '{term}' on en.pronouns.page... :(",ephemeral=not public)
             #     return
@@ -226,11 +221,10 @@ class TermDictionary(commands.Cog):
             results = []
             if type(data) is dict:
                 if source == 5:
-                    result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
-                    await itx.response.send_message(result_str, ephemeral=True, suppress_embeds=True)
-                    return
-                if source == 6:
                     source = 7
+                else:
+                    result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
+                    public = False
             else:
                 await itx.response.defer(ephemeral=True)
                 for result in data:
@@ -427,18 +421,23 @@ class TermDictionary(commands.Cog):
                 if view.value in [None, 1, 2]:
                     await itx.edit_original_response(view=None)
                 return
-        if source == 7:
+        if source == 7 or source == 8:
             await itx.response.defer(ephemeral=True)
             response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={term.lower()}').text
             # who decided to put the output into a dictionary with a list named 'list'? {"list":[{},{},{}]}
             data = json.loads(response_api)['list']
             if len(data) == 0:
-                result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
-                await itx.followup.send(result_str, ephemeral=True, suppress_embeds=True)
-                cmd_mention_dict = self.client.get_command_mention("dictionary")
-                cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
-                await logMsg(itx.guild, f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
-                return
+                if source == 7:
+                    result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
+                    public = False
+                    cmd_mention_dict = self.client.get_command_mention("dictionary")
+                    cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
+                    await logMsg(itx.guild, f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
+                    return
+                else:
+                    result_str = f"I didn't find any results for '{term}' on urban dictionary"
+                    public = False
+                
             pages = []
             page = 0
             for result in data:

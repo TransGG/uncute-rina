@@ -528,9 +528,7 @@ class SearchAddons(commands.Cog):
                 # self.value = "previous"
                 self.page -= 1
                 if self.page < 0:
-                    self.page += 1
-                    await itx.response.send_message("This is the first page, you can't go to a previous page!",ephemeral=True)
-                    return
+                    self.page = len(self.pages)-1
                 result_page = self.pages[self.page*2]
                 result_page2 = self.pages[self.page*2+1]
                 embed = discord.Embed(color=8481900, title=self.embed_title)
@@ -542,23 +540,15 @@ class SearchAddons(commands.Cog):
             @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
             async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
                 self.page += 1
-                try:
-                    result_page = self.pages[self.page*2]
-                    result_page2 = self.pages[self.page*2+1]
-                except IndexError:
-                    self.page -= 1
-                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
-                    return
+                if self.page >= len(self.pages):
+                    self.page = 0
+                result_page = self.pages[self.page*2]
+                result_page2 = self.pages[self.page*2+1]
                 embed = discord.Embed(color=8481900, title=self.embed_title)
                 embed.add_field(name="Column 1",value=result_page)
                 embed.add_field(name="Column 2",value=result_page2)
                 embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
-                try:
-                    await itx.response.edit_message(embed=embed)
-                except discord.errors.HTTPException:
-                    # todo: I think discord.errors.HTTPException can be caught by already checking if embed field value is empty ('')
-                    self.page -= 1
-                    await itx.response.send_message("This is the last page, you can't go to a next page!",ephemeral=True)
+                await itx.response.edit_message(embed=embed)
 
             @discord.ui.button(label='Find my name', style=discord.ButtonStyle.blurple)
             async def find_name(self, itx: discord.Interaction, _button: discord.ui.Button):
