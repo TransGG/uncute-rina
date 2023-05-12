@@ -40,7 +40,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.10".split(".")
+    fileVersion = "1.1.8.11".split(".")
     try:
         version = open("version.txt", "r").read().split(".")
     except FileNotFoundError:
@@ -185,7 +185,7 @@ else:
                 client.logChannel = await client.fetch_channel(1062396920187863111)
         client.bot_owner = await client.fetch_user(262913789375021056)#(await client.application_info()).owner
 
-        debug(f"[####   ]: Loaded server settings",color="green")
+        debug(f"[####   ]: Loaded server settings"+" "*30,color="green")
         debug(f"[####+  ]: Restarting ongoing reminders"+" "*30,color="light_blue",end="\r")
         collection = RinaDB["reminders"]
         query = {}

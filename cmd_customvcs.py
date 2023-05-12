@@ -108,7 +108,9 @@ class CustomVcs(commands.Cog):
     @app_commands.command(name="editvc",description="Edit your voice channel name or user limit")
     @app_commands.describe(name="Give your voice channel a name!",
                            limit="Give your voice channel a user limit!")
-    async def editVc(self, itx: discord.Interaction, name: str = None, limit: int = None):
+    async def editVc(self, itx: discord.Interaction, 
+                     name: app_commands.Range[str,4,35] = None, 
+                     limit: app_commands.Range[int, 0, 99] = None):
         global recently_renamed_vcs
         if not isVerified(itx):
             await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",ephemeral=True)
@@ -163,22 +165,6 @@ class CustomVcs(commands.Cog):
                         if channel.category.id not in [vcCategory] or channel.id == vcHub:
                             await itx.response.send_message("You can't change that voice channel's name (not with this command, at least)!",ephemeral=True)
                             return
-                        if name is not None:
-                            if len(name) < 4:
-                                await itx.response.send_message("Make the voice channel name  at least 4 letters long, please. For readability",ephemeral=True)
-                                return
-                            if len(name) > 35:
-                                await itx.response.send_message("Please keep the voice channels under 35 characters. They get spammy (gets cut off/unreadable)",ephemeral=True)
-                                return
-                            if name == "Untitled voice chat":
-                                warning += "Are you really going to change it to that..\n"
-                        if limit is not None:
-                            if limit < 2 and limit != 0:
-                                await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2; or 0)",ephemeral=True)
-                                return
-                            if limit > 99:
-                                await itx.response.send_message("I can't set a limit above 99. Set the limit to 0 instead, for infinte members.",ephemeral=True)
-                                return
 
                         if channel.id in recently_renamed_vcs:
                             # if you have made 2 renames in the past 10 minutes already
@@ -225,7 +211,6 @@ class CustomVcs(commands.Cog):
 
                 await itx.response.send_modal(CustomVcStaffEditor())
                 return
-            # debug(f"{itx.user} tried to make a new vc channel but isn't connected to a voice channel",color="yellow")
             await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
             return
         channel = itx.user.voice.channel
@@ -236,12 +221,6 @@ class CustomVcs(commands.Cog):
             await itx.response.send_message("You can't change that voice channel's name!",ephemeral=True)
             return
         if name is not None:
-            if len(name) < 4:
-                await itx.response.send_message("Your voice channel name needs to be at least 4 letters long!",ephemeral=True)
-                return
-            if len(name) > 35:
-                await itx.response.send_message("Please don't make your voice channel name more than 35 letters long! (gets cut off/unreadable)",ephemeral=True)
-                return
             if name.startswith("〙"):
                 await itx.response.send_message("Due to the current layout, you can't change your channel to something starting with '〙'. Sorry for the inconvenience", ephemeral=True)
                 return
@@ -249,13 +228,6 @@ class CustomVcs(commands.Cog):
                 warning += "Are you really going to change it to that..\n"
             if len(itx.user.voice.channel.overwrites) > len(itx.user.voice.channel.category.overwrites): # if VcTable, add prefix
                 name = VcTable_prefix + name
-        if limit is not None:
-            if limit < 2 and limit != 0:
-                await itx.response.send_message("The user limit of your channel must be a positive amount of people... (at least 2; or 0)",ephemeral=True)
-                return
-            if limit > 99:
-                await itx.response.send_message("I don't think you need to prepare for that many people... (max 99, or 0 for infinite)\nIf you need to, message Mia to change the limit",ephemeral=True)
-                return
 
         if channel.id in recently_renamed_vcs:
             # if you have made 2 renames in the past 10 minutes already

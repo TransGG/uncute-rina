@@ -1090,18 +1090,12 @@ class OtherAddons(commands.Cog):
                            faces="How many sides does every die have?",
                            mod="Do you want to add a modifier? (add 2 after rolling the dice)",
                            advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; 'help' for more")
-    async def roll(self, itx: discord.Interaction, dice: int, faces: int, public: bool = False, mod: int = None, advanced: str = None):
+    async def roll(self, itx: discord.Interaction, 
+                   dice: app_commands.Range[int, 1, 999999],
+                   faces: app_commands.Range[int, 1, 999999], 
+                   public: bool = False, mod: int = None, advanced: str = None):
         hide = False
         if advanced is None:
-            if dice < 1 or faces < 1:
-                await itx.response.send_message("You can't have negative dice/faces! Please give a number above 0",ephemeral=True)
-                return
-            if dice >= 1000000:
-                await itx.response.send_message(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...",ephemeral=True)
-                return
-            if faces >= 1000000:
-                await itx.response.send_message(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...",ephemeral=True)
-                return
             await itx.response.defer(ephemeral=not public)
             rolls = []
             for die in range(dice):
