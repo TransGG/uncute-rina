@@ -135,16 +135,16 @@ class MemberData(commands.Cog):
         
         # make graph
         try:
-            try:
-                d = {
-                    "time": [i for i in results["joined"]],
-                    "joined":[results["joined"][i] for i in results["joined"]],
-                    "left":[results["left"][i] for i in results["left"]],
-                    "verified":[results["verified"][i] for i in results["verified"]]
-                }
-            except KeyError as ex:
-                await itx.followup.send(f"{ex} did not have data, thus could not make the graph.")
-                return
+            d = {
+                "time": [i for i in results["joined"]],
+            }
+            for y in results:
+                try:
+                    d[y]= [results[y][i] for i in results[y]]
+                except KeyError as ex:
+                    # await itx.followup.send(f"{ex} did not have data, thus could not make the graph.")
+                    # return
+                    continue
             df = pd.DataFrame(data=d)
             fig, (ax1) = plt.subplots()#1, 1)
             fig.suptitle(f"Member +/-/verif (r/g/b) from {lower_bound/86400} to {upper_bound/86400} days ago")
