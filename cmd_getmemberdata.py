@@ -47,9 +47,8 @@ class MemberData(commands.Cog):
         # if not isStaff(itx):
         #     await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True)
         #     return
-        current_time = mktime(datetime.now(timezone.utc).timetuple())
         if upper_bound is None:
-            upper_bound = current_time # aka 0: 0 days from now
+            upper_bound = 0 # 0 days from now
         try:
             lower_bound = float(lower_bound)
             if lower_bound <= 0:
@@ -68,13 +67,15 @@ class MemberData(commands.Cog):
             await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",ephemeral=True)
             return
 
-        accuracy = lower_bound*2400 #divide graph into 36 sections
+        accuracy = (lower_bound-upper_bound)*2400 #divide graph into 36 sections
         lower_bound *= 86400 # days to seconds
+        upper_bound *= 86400
         # Get a list of people (in this server) that joined at certain times. Maybe round these to a certain factor (don't overstress the x-axis)
         # These certain times are in a period of "now" and "[period] seconds ago"
         totals = {}
         results = {}
         warning = ""
+        current_time = mktime(datetime.now(timezone.utc).timetuple())
         min_time = int((current_time-lower_bound)/accuracy)*accuracy
         max_time = int((current_time-upper_bound)/accuracy)*accuracy
 
@@ -86,6 +87,7 @@ class MemberData(commands.Cog):
             return
         await itx.response.defer(ephemeral = not public)
 
+        # gather timestamps in timeframe, as well as the lowest and highest timestamps
         for y in data:
             if type(data[y]) is not dict:
                 continue
@@ -108,6 +110,7 @@ class MemberData(commands.Cog):
                     results[y][column[time]] = 1
             if len(column) == 0:
                 warning += f"\nThere were no '{y}' users found for this time period."
+                results[y] = {}
                 #debug(warning[1:],color="light purple")
             else:
                 time_list = sorted(column)
@@ -115,6 +118,8 @@ class MemberData(commands.Cog):
                     min_time = time_list[0]
                 if max_time < time_list[-1]:
                     max_time = time_list[-1]
+        
+        # if the lowest timestamps are lower than the lowest timestamp, then set all missing data to 0 (up until the graph has data)        
         min_time_db = min_time
         for y in data:
             if type(data[y]) is not dict:
@@ -124,12 +129,11 @@ class MemberData(commands.Cog):
                 if min_time not in results[y]:
                     results[y][min_time] = 0
                 min_time += accuracy
-        result = {}
-        for i in results:
-            result[i] = {}
-            for j in sorted(results[i]):
-                result[i][j] = results[i][j]
-            results[i] = result[i]
+        
+        for i in results: # sort data by key
+            results[i] = {timestamp: results[i][timestamp] for timestamp in sorted(results[i])}
+        
+        # make graph
         try:
             try:
                 d = {

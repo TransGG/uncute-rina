@@ -40,7 +40,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.11".split(".")
+    fileVersion = "1.1.8.12".split(".")
     try:
         version = open("version.txt", "r").read().split(".")
     except FileNotFoundError:
@@ -275,7 +275,7 @@ else:
             cmd_mention = client.get_command_mention("update")
             await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask {client.bot_owner} if she typed {cmd_mention}!")
         elif isinstance(error, discord.app_commands.errors.CommandSignatureMismatch):
-            await reply(itx, f"My oh my. This has only happened once, before. That time, it was because Mia used commands.GroupCog instead of commands.Cog. Hopefully that helps.")
+            await reply(itx, f"Error: CommandSignatureMismatch. Either Mia used GroupCog instead of Cog, or this command is out of date (try /update)")
         else:
             if hasattr(error, 'original'):
                 error_reply = "Error "

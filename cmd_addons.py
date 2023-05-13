@@ -79,7 +79,26 @@ conversion_rates = { # [default 0, incrementation]
         "UK ton"    : [0, 0.0009842065264486655],
         "Metric ton": [0, 0.001],
     },
-    "currency":currency_options
+    "currency":currency_options,
+    "time": {
+        # 365.2421896698-6.15359\cdot10^{-6}a-7.29\cdot10^{-10}a^{2}+2.64\cdot10^{-10}a^{3} where a is centuries of 36525 SI days
+        # 31556925.1 <- this will hold up for 3 years (until 2025-7-13T21:48:21.351744), after which it will be 31556925.0
+        # 31556925.0 will hold up for another 18 years (until 2044); after which it will be 31556924.9 for 19 years (2063)
+        "decenium"          : [0, 1/315569251.0, "dec"],
+        "year"              : [0, 1/31556925.1, "yr"],
+        "month"             : [0, 12/31556925.1, "mo"],
+        "week"              : [0, 1/604800, "wk"],
+        "day"               : [0, 1/86400, "d"],
+        "hour"              : [0, 1/3600, "hr"],
+        "minute"            : [0, 1/60, "min"],
+        "second"            : [0, 1, "sec"],
+        "millisecond"       : [0, 10**3, "ms"],
+        "microsecond"       : [0, 10**6, "μs"],
+        "shake"             : [0, 10**8, "shake"],
+        "nanosecond"        : [0, 10**9, "ns"],
+        "picosecond"        : [0, 10**12, "ps"],
+        "femtosecond"       : [0, 10**15, "fs"],
+    }
 }
 
 def generateOutput(responses, author):
@@ -1334,14 +1353,14 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
 
     @app_commands.command(name="convert_unit", description="Convert temperature or distance from imperial to metric etc.")
     @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Temperature (Fahrenheit, C, K, etc.)', value="temperature"),
-        discord.app_commands.Choice(name='Length (miles,km,inch)', value="length"),
-        discord.app_commands.Choice(name='Surface area (sq.ft., m^2)', value="surface area"),
-        discord.app_commands.Choice(name='Volume (m^3)', value="volume"),
-        discord.app_commands.Choice(name='Speed (mph, km/h, m/s, etc.)', value="speed"),
-        discord.app_commands.Choice(name='Weight (pounds, ounces, kg, gram, etc.)', value="weight"),
         discord.app_commands.Choice(name='Currency (USD, EUR, CAD, etc.)', value="currency"),
-        # discord.app_commands.Choice(name='Currency/money (USD, EUR, CAD)', value="currency"),
+        discord.app_commands.Choice(name='Length (miles,km,inch)', value="length"),
+        discord.app_commands.Choice(name='Speed (mph, km/h, m/s, etc.)', value="speed"),
+        discord.app_commands.Choice(name='Surface area (sq.ft., m^2)', value="surface area"),
+        discord.app_commands.Choice(name='Temperature (Fahrenheit, C, K, etc.)', value="temperature"),
+        discord.app_commands.Choice(name='Time (year, minute, sec, etc.)', value="time"),
+        discord.app_commands.Choice(name='Volume (m^3)', value="volume"),
+        discord.app_commands.Choice(name='Weight (pounds, ounces, kg, gram, etc.)', value="weight"),
     ])
     @app_commands.describe(mode="What category of unit do you want to convert",
                            from_unit="Which unit do you want to convert from?",
