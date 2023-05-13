@@ -149,9 +149,12 @@ class MemberData(commands.Cog):
             fig, (ax1) = plt.subplots()#1, 1)
             fig.suptitle(f"Member +/-/verif (r/g/b) from {lower_bound/86400} to {upper_bound/86400} days ago")
             fig.tight_layout(pad=1.0)
-            ax1.plot(df['time'], df["joined"], 'r')
-            ax1.plot(df['time'], df["left"], 'g')
-            ax1.plot(df['time'], df["verified"], 'b')
+            color_index = 0
+            for graph in df:
+                if graph == "time":
+                    continue
+                ax1.plot(df['time'], df[graph], "rgb"[color_index])
+                color_index += 1
             if doubles:
                 re_text = "exc"
             else:
