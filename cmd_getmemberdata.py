@@ -183,7 +183,20 @@ class MemberData(commands.Cog):
                                     "I still have to figure out why this happens, exactly. Probably some rounding error or something. "
                                     "Anyway, try a larger number, it might work better",ephemeral=True)
             raise
-        await itx.followup.send(f"From {lower_bound/86400} to {upper_bound/86400} days ago, `{totals['joined']}` members joined, `{totals['left']}` left, and `{totals['verified']}` were verified. (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
+        output = ""
+        try:
+            output += f"`{totals['joined']}` members joined, "
+        except:
+            pass
+        try:
+            output += f"`{totals['left']}` members left, "
+        except:
+            pass
+        try:
+            output += f"`{totals['verified']}` members were verified."
+        except:
+            pass
+        await itx.followup.send(f"From {lower_bound/86400} to {upper_bound/86400} days ago, {output} (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
 
 async def setup(client):
     # client.add_command(getMemberData)
