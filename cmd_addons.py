@@ -398,8 +398,7 @@ class SearchAddons(commands.Cog):
         discord.app_commands.Choice(name='Search most-used nicknames', value=2),
         discord.app_commands.Choice(name='Search nicks and usernames', value=3),
     ])
-    # @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
-    async def nameusage_gettop(self, itx: discord.Interaction, mode: int):#, mode: int, string: str):
+    async def nameusage_gettop(self, itx: discord.Interaction, mode: int):
         await itx.response.defer(ephemeral=True)
         sections = {}
         for member in itx.guild.members:
@@ -547,7 +546,7 @@ class SearchAddons(commands.Cog):
                 # self.value = "previous"
                 self.page -= 1
                 if self.page < 0:
-                    self.page = len(self.pages)-1
+                    self.page = int(len(self.pages)/2)-1
                 result_page = self.pages[self.page*2]
                 result_page2 = self.pages[self.page*2+1]
                 embed = discord.Embed(color=8481900, title=self.embed_title)
@@ -559,7 +558,7 @@ class SearchAddons(commands.Cog):
             @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
             async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
                 self.page += 1
-                if self.page >= len(self.pages):
+                if self.page >= int(len(self.pages)/2):
                     self.page = 0
                 result_page = self.pages[self.page*2]
                 result_page2 = self.pages[self.page*2+1]

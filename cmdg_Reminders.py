@@ -151,6 +151,13 @@ class Reminders(commands.GroupCog,name="reminder"):
                     return
                 sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
             else:
+                if self.remindertime < datetime.now():
+                    self.alert = "Your reminder date/time has passed already. Perhaps the bot was offline for a while; perhaps you just filled in a time in the past!\n"
+                    try:
+                        asyncio.get_event_loop().create_task(self.send_reminder())
+                    except RuntimeError:
+                        pass
+                    return
                 collection = RinaDB["reminders"]
                 reminderData = {
                     "creationtime":int(mktime(creationtime.timetuple())),
@@ -185,9 +192,10 @@ class Reminders(commands.GroupCog,name="reminder"):
                 collection.delete_one(query)
 
     @app_commands.command(name="remindme",description="Add a reminder for yourself!")
-    @app_commands.describe(time="When would you like me to remind you? (1d2h, 5 weeks, 1mo10d)",
+    @app_commands.describe(reminder_datetime="When would you like me to remind you? (1d2h, 5 weeks, 1mo10d)",
                            reminder="What would you like me to remind you of")
-    async def remindme(self, itx: discord.Interaction, time: str, reminder: str):
+    @app_commands.rename(reminder_datetime='time')
+    async def remindme(self, itx: discord.Interaction, reminder_datetime: str, reminder: str):
         if len(reminder) > 1500:
             await itx.response.send_message("Please keep reminder text below 1500 characters... Otherwise I can't send you a message about it!",ephemeral=True)
             return
@@ -209,22 +217,123 @@ class Reminders(commands.GroupCog,name="reminder"):
 
         now = itx.created_at
         try:
-            time = (" "+time).replace(",","").replace("and","").replace(" in ", "").replace(" ","").strip().lower()
-            distance = parse_date(time, now)
+            reminder_datetime = (" "+reminder_datetime).replace(",","").replace("and","").replace(" in ", "").replace(" ","").strip().lower()
+            distance = parse_date(reminder_datetime, now)
         except ValueError as ex:
-            await itx.response.send_message(f"Couldn't make new reminder:\n  {str(ex)}\n"
-                                            "For now, you can only use a format like [number][letter]. Some examples:\n"
-                                            '  "3mo 0.5d", "in 2 hours, 3.5 mins", "1 year and 3 seconds", "3day4hour", "4d1m"\n'
-                                            "Words like \"in\" and \"and\" are ignored, so you can use those for readability if you'd like.\n"
-                                            '  year = y, year, years\n'
-                                            '  month = mo, month, months\n'
-                                            '  week = w, week, weeks\n'
-                                            '  day = d, day, days\n'
-                                            '  hour = h, hour, hours\n'
-                                            '  minute = m, min, mins, minute, minutes\n'
-                                            '  second = s, sec, secs, second, seconds',
-                                            ephemeral=True)
-            return
+            if '-' not in reminder_datetime:
+                await itx.response.send_message(
+                    f"Couldn't make new reminder:\n> {str(ex)}\n"
+                    "You can only use a format like [number][letter], or yyyy-mm-ddThh:mm:ss+0000. Some examples:\n"
+                    '    "3mo 0.5d", "in 2 hours, 3.5 mins", "1 year and 3 seconds", "3day4hour", "4d1m", "2023-12-31T23:59+0100"\n'
+                    "Words like \"in\" and \"and\" are ignored, so you can use those for readability if you'd like.\n"
+                    '    year = y, year, years\n'
+                    '    month = mo, month, months\n'
+                    '    week = w, week, weeks\n'
+                    '    day = d, day, days\n'
+                    '    hour = h, hour, hours\n'
+                    '    minute = m, min, mins, minute, minutes\n'
+                    '    second = s, sec, secs, second, seconds\n',
+                    ephemeral=True)
+                return
+            
+            class TimeOfDaySelection(discord.ui.View):
+                class TimeOfDayButton(discord.ui.Button):
+                    def __init__(self, view: discord.ui.View, label: str, **kwargs):
+                        self.value = None
+                        self._label = label
+                        self._view = view
+                        self.return_interaction = None
+                        super().__init__(label=label, **kwargs)
+                    
+                    async def callback(self, interaction: discord.Interaction):
+                        self._view.value = self._label
+                        self._view.return_interaction = interaction
+                        self._view.stop()
+
+                def __init__(self, options, timeout=180):
+                    super().__init__()
+                    self.value: str = None
+                    self.return_interaction: discord.Interaction = None
+                    self.timeout = timeout
+
+                    for option in options:
+                        self.add_item(self.TimeOfDayButton(self, style=discord.ButtonStyle.green, label=option))
+
+            mode = 0
+            try:
+                # note: "t" here is lowercase because the reminder_datetime string gets lowercased..
+                if "t" in reminder_datetime:
+                    for char in reminder_datetime:
+                        if char not in "0123456789-t:+":
+                            raise ValueError(f"`{char}` cannot be used for a reminder date/time.")
+                    
+                    if reminder_datetime.count("t") > 1:
+                        raise ValueError(
+                            "You should only use 'T' once! Like so: 2023-12-31T23:59+0100. "
+                            "Notice that the date and time are separated by the 'T', and the timezone only by the '+' or '-' sign. Not an additional 'T'. :)")
+                    date, time = reminder_datetime.split("t")
+                    if time.count(":") not in [1,2]:
+                        raise ValueError("Incorrect time given! Please format the time as HH:MM:SS or HH:MM, like 23:59:59")
+                    if date.count("-") != 2:
+                        raise ValueError("Incorrect date given! Please format the date as YYYY-MM-DD, like 2023-12-31")
+                else:
+                    if reminder_datetime.count("-") != 2:
+                        raise ValueError("Incorrect date given! Please format the date as YYYY-MM-DD, like 2023-12-31")
+                try:
+                    if "t" not in reminder_datetime:
+                        mode = 2
+                    elif "-" in time or "+" in time:
+                        if time.count(":") == 2:
+                            mode = 0
+                        else:
+                            mode = 3
+                    else:
+                        # mode = 1
+                        raise ValueError("Because I don't know your timezone, I can't ensure it'll be sent at the right time. Please add the timezone like so '-0100' or '+0900'.")
+                    timestamp = datetime.strptime(reminder_datetime, 
+                        ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y-%m-%dt%H:%M%z"][mode]
+                    )
+                except ValueError:
+                    raise ValueError("Incorrect format given! Make sure you only fill in only numbers")
+                if mode == 0:
+                    distance = timestamp
+                if mode == 2:
+                    options = {
+                        "1":(timestamp-timedelta(hours=12)),
+                        "2":(timestamp-timedelta(hours=6)),
+                        "3":(timestamp),
+                        "4":(timestamp+timedelta(hours=6)),
+                        "5":(timestamp+timedelta(hours=12)),
+                        "6":(timestamp+timedelta(hours=18)),
+                        "7":(timestamp+timedelta(hours=24)),
+                    }
+                    query = f"Since I don't know what timezone you have, you can choose what time of day you want the reminder:"
+                    for option in options:
+                        query += f"\n  `{option}.` <t:{int(mktime(options[option].timetuple()))}:F>"
+                    view = TimeOfDaySelection(list(options))
+                    await itx.response.send_message(query, view = view, ephemeral=True)
+                    await view.wait()
+                    if view.value is None:
+                        await itx.edit_original_response(content="Reminder creation menu timed out.", view=None)
+                        return
+                    distance = options[view.value]
+                    itx = view.return_interaction
+                
+                # mode 0 is the datetime with timezone
+                # mode 2 is the date, without time or timezone
+                # mode 1 is time without timezone, which gets blocked: Without timezone, I don't know what time you want it
+
+            except ValueError as ex:
+                await itx.response.send_message(
+                    f"Couldn't make new reminder:\n> {str(ex)}\n\n"
+                    "You can make a reminder for days in advance, like so: \"4d12h\" or \"4day 12hours\" or \"in 3 minutes and 2 seconds\"\n" 
+                    "You can also use ISO8601 format, like '2023-12-31T23:59+0100', or just '2023-12-31'\n"
+                    "\n"
+                    "If you give a time but not a timezone, I don't want you to get reminded at the wrong time, so I'll say something went wrong.",
+                    ephemeral=True)
+                raise
+                return
+
         # if distance < now:
         #     itx.response.send_message("")
         # #todo

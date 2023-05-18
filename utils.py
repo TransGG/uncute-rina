@@ -132,7 +132,8 @@ def thousandSpace(number, interval = 3, separator = " "):
 
 
 async def logMsg(_guild, msg: str):
-    api_keys = json.loads(open("api_keys.json", "r").read())
+    with open("api_keys.json", "r") as f:
+        api_keys = json.loads(f.read())
     cluster = MongoClient(api_keys['MongoDB'])
     RinaDB = cluster["Rina"]
     collection = RinaDB["guildInfo"]

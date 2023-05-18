@@ -43,7 +43,7 @@ class MemberData(commands.Cog):
     @app_commands.command(name="getmemberdata",description="See joined, left, and recently verified users in x days")
     @app_commands.describe(upper_bound="Get data from [period] days ago",
                            doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
-    async def get_member_data(self, itx: discord.Interaction, lower_bound: str, upper_bound: int = None, doubles: bool = False, public: bool = False):
+    async def get_member_data(self, itx: discord.Interaction, lower_bound: str, upper_bound: str = None, doubles: bool = False, public: bool = False):
         # if not isStaff(itx):
         #     await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True)
         #     return
@@ -51,6 +51,7 @@ class MemberData(commands.Cog):
             upper_bound = 0 # 0 days from now
         try:
             lower_bound = float(lower_bound)
+            upper_bound = float(upper_bound)
             if lower_bound <= 0:
                 await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",ephemeral=True)
                 return  

@@ -9,7 +9,8 @@ else:
     debug(f"[#    ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
     # debug(f"[+     ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
     try:
-        api_keys = json.loads(open("api_keys.json","r").read())
+        with open("api_keys.json","r") as f:
+            api_keys = json.loads(f.read())
         tokens = {}
         TOKEN = api_keys['Discord']
         for key in ['MongoDB', 'Open Exchange Rates']:
@@ -40,9 +41,10 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.13.2222222222".split(".")
+    fileVersion = "1.1.8.14".split(".")
     try:
-        version = open("version.txt", "r").read().split(".")
+        with open("version.txt", "r") as f:
+            version = f.read().split(".")
     except FileNotFoundError:
         version = ["0"]*len(fileVersion)
     # if testing, which environment are you in?
@@ -55,7 +57,8 @@ else:
     else:
         version[-1] = str(int(version[-1])+1)
     version = '.'.join(version)
-    open("version.txt","w").write(f"{version}")
+    with open("version.txt","w") as f:
+        f.write(f"{version}")
     debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
