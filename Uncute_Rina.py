@@ -13,7 +13,7 @@ else:
             api_keys = json.loads(f.read())
         tokens = {}
         TOKEN = api_keys['Discord']
-        for key in ['MongoDB', 'Open Exchange Rates']:
+        for key in ['MongoDB', 'Open Exchange Rates', 'Wolfram Alpha']:
             # copy every other key to new dictionary to check if every key is in the file.
             tokens[key] = api_keys[key]
     except json.decoder.JSONDecodeError:
@@ -41,7 +41,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.16".split(".")
+    fileVersion = "1.1.8.17".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")

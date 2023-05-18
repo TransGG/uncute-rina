@@ -768,13 +768,27 @@ class SearchAddons(commands.Cog):
                         other_primary_outputs.append(subpod["plaintext"].replace("\n", "\n> "))
             if len(other_primary_outputs) > 0:
                 other_primary_outputs = '\n> '.join(other_primary_outputs)
-                other_results = "Other results:\n> " + other_primary_outputs
+                other_results = "\nOther results:\n> " + other_primary_outputs
             else:
                 other_results = ""
+            assumptions = []
+            for assumption in data.get("assumptions", []):
+                template = assumption["template"]
+                template = template.replace("${word}", assumption["word"])
+                for num in "0123456789":
+                    template = template.replace(num, "") #remove numbers so i can just replace {desc1} with {desc} one by one
+                for value in assumption["values"]:
+                    template = template.replace("${desc}",value["desc"], 1)
+                assumptions.append(template + "?")
+            if len(assumptions) > 0:
+                alternatives = "\nAssumptions:\n> " + '\n> '.join(assumptions)
+            else:
+                alternatives = ""
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
-                f"Result:\n> {output}\n" +
-                other_results, ephemeral=True)
+                f"Result:\n> {output}" +
+                other_results +
+                alternatives, ephemeral=True)
             return
         else:
             if data["error"]:
