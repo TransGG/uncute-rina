@@ -745,8 +745,9 @@ class SearchAddons(commands.Cog):
             await itx.response.send_message("Your query cannot contain an ampersand (&/and symbol)!", ephemeral=True)
             return
         query = query.replace("+", " plus ") # for some reason the + gets interpreted as a multiplication symbol?
+        api_key = self.client.api_tokens['Wolfram Alpha']
         data = requests.get(
-            f"http://api.wolframalpha.com/v2/query?appid=PY59X7-29RQTEV96X&input={query}&output=json").json()
+            f"http://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
         data = data["queryresult"]
         if data["success"]:
             interpreted_input = ""

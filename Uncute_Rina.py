@@ -41,7 +41,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.15".split(".")
+    fileVersion = "1.1.8.16".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
