@@ -626,6 +626,15 @@ class SearchAddons(commands.Cog):
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
     async def equaldex(self, itx: discord.Interaction, country_id: str):
+        illegal_characters = ""
+        for char in country_id:
+            if char not in "abcdefghijklmnopqrstuvwxyz":
+                if char not in illegal_characters:
+                    illegal_characters += char
+        if len(illegal_characters) > 1:
+            await itx.response.send_message(f"You can't use the following characters for country_id!\n> {illegal_characters}", ephemeral=True)
+            return
+        
         response_api = requests.get(
             f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true").text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
@@ -728,6 +737,69 @@ class SearchAddons(commands.Cog):
             await Tags.send_avoidpolitics_info(itx, public=public, anonymous=anonymous)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
+
+    @app_commands.command(name="math", description="Ask Wolfram Alpha a question")    
+    async def math(self, itx: discord.Interaction, query: str):
+        await itx.response.defer(ephemeral=True)
+        if "&" in query:
+            await itx.response.send_message("Your query cannot contain an ampersand (&/and symbol)!", ephemeral=True)
+            return
+        query = query.replace("+", " plus ") # for some reason the + gets interpreted as a multiplication symbol?
+        data = requests.get(
+            f"http://api.wolframalpha.com/v2/query?appid=PY59X7-29RQTEV96X&input={query}&output=json").json()
+        data = data["queryresult"]
+        if data["success"]:
+            interpreted_input = ""
+            output = ""
+            other_primary_outputs = []
+            for pod in data["pods"]:
+                subpods = []
+                if pod["id"] == "Input":
+                    for subpod in pod["subpods"]:
+                        subpods.append(subpod["plaintext"].replace("\n", "\n> "))
+                    interpreted_input = '\n> '.join(subpods)
+                if pod["id"] == "Result":
+                    for subpod in pod["subpods"]:
+                        subpods.append(subpod["plaintext"].replace("\n", "\n> "))
+                    output = '\n> '.join(subpods)
+                elif pod.get("primary", False):
+                    for subpod in pod["subpods"]:
+                        other_primary_outputs.append(subpod["plaintext"].replace("\n", "\n> "))
+            if len(other_primary_outputs) > 0:
+                other_primary_outputs = '\n> '.join(other_primary_outputs)
+                other_results = "Other results:\n> " + other_primary_outputs
+            else:
+                other_results = ""
+            await itx.followup.send(
+                f"Input\n> {interpreted_input}\n"
+                f"Result:\n> {output}\n" +
+                other_results, ephemeral=True)
+            return
+        else:
+            if data["error"]:
+                code = data["error"]["code"]
+                message = data["error"]["msg"]
+                await itx.followup.send(f"I'm sorry, but I wasn't able to give a response to that!\n"
+                                                f"> code: {code}\n"
+                                                f"> message: {message}", ephemeral=True)
+                return
+            if data.get("didyoumeans", False):
+                didyoumeans = {}
+                if type(data["didyoumeans"]) is list:
+                    for option in data["didyoumeans"]:
+                        didyoumeans[option["score"]] = option["val"]
+                else:
+                    didyoumeans[data["didyoumeans"]["score"]] = data["didyoumeans"]["val"]
+                options_sorted = sorted(didyoumeans.items(), key=lambda x: float(x[0]), reverse=True)
+                options = [value for _, value in options_sorted]
+                options_str = "\n> ".join(options)
+                await itx.followup.send(f"I'm sorry, but I wasn't able to give a response to that! However, here are some possible improvements to your prompt:\n"
+                                                f"> {options_str}", ephemeral=True)
+                return
+        
+        await itx.followup.send("debug; It seems you reached the end of the function without "
+                                "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
+
 
 class OtherAddons(commands.Cog):
     def __init__(self, client: Bot):

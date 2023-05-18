@@ -437,7 +437,7 @@ class TermDictionary(commands.Cog):
                 else:
                     result_str = f"I didn't find any results for '{term}' on urban dictionary"
                     public = False
-                
+                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
             pages = []
             page = 0
             for result in data:
