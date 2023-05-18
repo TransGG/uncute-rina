@@ -1,7 +1,10 @@
 from Uncute_Rina import *
 from import_modules import *
 
-sched = AsyncIOScheduler()
+logger = logging.getLogger("apscheduler")
+logger.setLevel(logging.WARNING)
+# remove annoying 'Scheduler started' message on sched.start()
+sched = AsyncIOScheduler(logger=logger)
 sched.start()
 
 

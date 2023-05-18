@@ -741,13 +741,30 @@ class SearchAddons(commands.Cog):
     @app_commands.command(name="math", description="Ask Wolfram Alpha a question")    
     async def math(self, itx: discord.Interaction, query: str):
         await itx.response.defer(ephemeral=True)
-        if "&" in query:
-            await itx.response.send_message("Your query cannot contain an ampersand (&/and symbol)!", ephemeral=True)
+        if query.lower() in ["help", "what is this", "what is this?"]:
+            await itx.followup.send(
+                "This is a math command that connects to the Wolfram Alpha website! "
+                "You can ask it math or science questions, and it will answer them for you! Kinda like an AI. "
+                "It uses scientific data. Here are some example queries:\n"
+                "- What is 9+10\n"
+                "- What is the derivative of 4x^2+3x+5\n"
+                "- What color is the sky?", ephemeral=True)
             return
-        query = query.replace("+", " plus ") # for some reason the + gets interpreted as a multiplication symbol?
+        if "&" in query:
+            await itx.response.send_message("Your query cannot contain an ampersand (&/and symbol)! (it can mess with the URL)", ephemeral=True)
+            return
+        if ";" in query:
+            await itx.response.send_message("A query with a semi-colon seems to ", ephemeral=True)
+            return
+        query = query.replace("+", " plus ") # plusses are interpreted as a spacebar in urls. In LaTeX, that can mean multiply
         api_key = self.client.api_tokens['Wolfram Alpha']
-        data = requests.get(
-            f"http://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
+        try:
+            data = requests.get(
+                f"http://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
+        except requests.exceptions.JSONDecodeError:
+            await itx.followup.send("Your input gave a malformed result! Perhaps it took too long to calculate...", ephemeral=True)
+            return
+        
         data = data["queryresult"]
         if data["success"]:
             interpreted_input = ""
@@ -757,38 +774,74 @@ class SearchAddons(commands.Cog):
                 subpods = []
                 if pod["id"] == "Input":
                     for subpod in pod["subpods"]:
-                        subpods.append(subpod["plaintext"].replace("\n", "\n> "))
+                        subpods.append(subpod["plaintext"].replace("\n", "\n>     "))
                     interpreted_input = '\n> '.join(subpods)
                 if pod["id"] == "Result":
                     for subpod in pod["subpods"]:
-                        subpods.append(subpod["plaintext"].replace("\n", "\n> "))
+                        subpods.append(subpod["plaintext"].replace("\n", "\n>     "))
                     output = '\n> '.join(subpods)
                 elif pod.get("primary", False):
                     for subpod in pod["subpods"]:
-                        other_primary_outputs.append(subpod["plaintext"].replace("\n", "\n> "))
+                        if len(subpod["plaintext"]) == 0:
+                            continue
+                        other_primary_outputs.append(subpod["plaintext"].replace("\n", "\n>     "))
+            if len(output) == 0 and len(other_primary_outputs) == 0:
+                # if there is no result and all other pods are 'primary: False'
+                for pod in data["pods"]:
+                    if pod["id"] not in ["Input", "Result"]:
+                        for subpod in pod["subpods"]:
+                            if len(subpod["plaintext"]) == 0:
+                                continue
+                            other_primary_outputs.append(subpod["plaintext"].replace("\n", "\n>     "))
             if len(other_primary_outputs) > 0:
                 other_primary_outputs = '\n> '.join(other_primary_outputs)
                 other_results = "\nOther results:\n> " + other_primary_outputs
             else:
                 other_results = ""
             assumptions = []
-            for assumption in data.get("assumptions", []):
-                template = assumption["template"]
-                template = template.replace("${word}", assumption["word"])
-                for num in "0123456789":
-                    template = template.replace(num, "") #remove numbers so i can just replace {desc1} with {desc} one by one
-                for value in assumption["values"]:
-                    template = template.replace("${desc}",value["desc"], 1)
-                assumptions.append(template + "?")
+            if "assumptions" in data:
+                if type(data["assumptions"]) is dict:
+                    # only 1 assumption, instead of a list. So just make a list of 1 assumption instead.
+                    data["assumptions"] = [data["assumptions"]]
+                for assumption in data.get("assumptions", []):
+                    assumption_data = {} # because Wolfram|Alpha is being annoyingly inconsistent.
+                    if "word" in assumption:
+                        assumption_data["${word}"] = assumption["word"]
+                    for value_index in range(len(assumption["values"])):
+                        assumption_data["${desc"+str(value_index + 1)+"}"] = assumption["values"][value_index]["desc"]
+                        try:
+                            assumption_data["${word"+str(value_index + 1)+"}"] = assumption["values"][value_index]["word"]
+                        except KeyError:
+                            pass # the "word" variable is only there sometimes. for some stupid reason.
+
+                    template: str = assumption["template"]
+                    for replacer in assumption_data:
+                        template = template.replace(replacer, assumption_data[replacer])
+                    if template.endswith("."):
+                        template = template[:-1]
+                    assumptions.append(template + "?")
             if len(assumptions) > 0:
                 alternatives = "\nAssumptions:\n> " + '\n> '.join(assumptions)
             else:
                 alternatives = ""
+            warnings = []
+            if "warnings" in data:
+                # not sure if multiple warnings will be stored into a list instead
+                warnings.append(data["warnings"]["text"])
+            if len(data.get("timedout", "")) > 0:
+                warnings.append("Timed out: " + data["timedout"].replace(",", ", "))
+            if len(data.get("timedoutpods", "")) > 0:
+                warnings.append("Timed out pods: " + data["timedout"].replace(",", ", "))
+            if len(warnings) > 0:
+                warnings = "\nWarnings:\n> " + '\n> '.join(warnings)
+            else:
+                warnings = ""
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
                 f"Result:\n> {output}" +
                 other_results +
-                alternatives, ephemeral=True)
+                alternatives +
+                warnings, ephemeral=True)
             return
         else:
             if data["error"]:
@@ -798,7 +851,7 @@ class SearchAddons(commands.Cog):
                                                 f"> code: {code}\n"
                                                 f"> message: {message}", ephemeral=True)
                 return
-            if data.get("didyoumeans", False):
+            elif "didyoumeans" in data:
                 didyoumeans = {}
                 if type(data["didyoumeans"]) is list:
                     for option in data["didyoumeans"]:
@@ -811,7 +864,25 @@ class SearchAddons(commands.Cog):
                 await itx.followup.send(f"I'm sorry, but I wasn't able to give a response to that! However, here are some possible improvements to your prompt:\n"
                                                 f"> {options_str}", ephemeral=True)
                 return
-        
+            elif "languagemsg" in data: # x does not support [language].
+                await itx.followup.send(f"Error:\n> {data['languagemsg']['english']}\n"
+                                        f"> {data['languagemsg']['other']}", ephemeral=True)
+                return
+            elif "futuretopic" in data: # x does not support [language].
+                await itx.followup.send(f"Error:\n> {data['futuretopic']['topic']}\n"
+                                        f"> {data['futuretopic']['msg']}", ephemeral=True)
+                return
+            # why aren't these in the documentation? cmon wolfram, please.
+            elif "tips" in data:
+                # not sure if this is put into a list if there are multiple.
+                await itx.followup.send(f"Error:\n> {data['tips']['text']}", ephemeral=True)
+                return
+            else:
+                # welp. Apparently you can get *no* info in the output as well!! UGHHHHH
+                await itx.followup.send("Error: No further info\n"
+                                        "It appears you filled in something for which I can't get extra feedback..\n"
+                                        "Feel free to report the situation to MysticMia#7612", ephemeral=True)
+                return
         await itx.followup.send("debug; It seems you reached the end of the function without "
                                 "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
 

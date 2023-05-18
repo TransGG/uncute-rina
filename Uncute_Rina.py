@@ -6,7 +6,7 @@ if __name__ != '__main__':
     class Bot(commands.Bot):
         pass
 else:
-    debug(f"[#    ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
+    debug(f"[#+   ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
     # debug(f"[+     ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
     try:
         with open("api_keys.json","r") as f:
@@ -21,13 +21,13 @@ else:
     except KeyError as ex:
         raise KeyError("Missing API key for: " + str(ex)).with_traceback(None)
     # mongoURI = open("mongo.txt","r").read()
-    debug(f"[##   ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
+    debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
     cluster = MongoClient(tokens['MongoDB'])
     RinaDB = cluster["Rina"]
     cluster = motor.AsyncIOMotorClient(tokens['MongoDB'])
     asyncRinaDB = cluster["Rina"]
     appcommanderror_cooldown = 0
-    debug(f"[###  ]: Loading version..." + " " * 30, color="light_blue", end='\r')
+    debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
     # Dependencies:
     #   server members intent,
     #   message content intent,
@@ -41,7 +41,7 @@ else:
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.17".split(".")
+    fileVersion = "1.1.8.18".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -137,6 +137,7 @@ else:
 
     debug(f"[#      ]: Loaded bot" + " " * 30, color="green")
     debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
+    discord.VoiceClient.warn_nacl = False   
     client = Bot(
             intents=intents,
             command_prefix="/!\"@:\\#", #unnecessary, but needs to be set so.. uh.. yeah. Unnecessary terminal warnings avoided.
@@ -337,7 +338,7 @@ else:
         appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
 
     try:
-        client.run(TOKEN)
+        client.run(TOKEN, log_level=logging.WARNING)
     except SystemExit:
         print("Exited the program forcefully using the kill switch")
 
