@@ -148,14 +148,18 @@ class MemberData(commands.Cog):
                     continue
             df = pd.DataFrame(data=d)
             fig, (ax1) = plt.subplots()#1, 1)
-            fig.suptitle(f"Member +/-/verif (r/g/b) from {lower_bound/86400} to {upper_bound/86400} days ago")
+            fig.suptitle(f"Member data from {lower_bound/86400} to {upper_bound/86400} days ago")
             fig.tight_layout(pad=1.0)
-            color_index = 0
+            color = {
+                "joined":"g",
+                "left":"r",
+                "verified":"b"
+            }
             for graph in df:
                 if graph == "time":
                     continue
-                ax1.plot(df['time'], df[graph], "rgb"[color_index])
-                color_index += 1
+                ax1.plot(df['time'], df[graph], color[graph], label=graph)
+            ax1.legend()
             if doubles:
                 re_text = "exc"
             else:

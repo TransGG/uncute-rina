@@ -356,10 +356,15 @@ class Tags:
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=255,g=255,b=153), # yellow
             title="Please avoid political discussions!",
-            description="A member has requested that we avoid political discussions in this chat. Please "
-                        "respect their request and move on to a different topic. If you continue discussing "
-                        "politics, a moderator may need to take action and mute you. Thank you for your "
-                        "cooperation."
+            description="A member has requested that we avoid political discussions in this chat, we kindly "
+                        "ask that you refrain from discussing politics in this chat to maintain a positive and "
+                        "uplifting environment for all members.\n"
+                        "Our community focuses on highlighting the positive aspects of the trans "
+                        "community. Political discussions often detract from this goal and create "
+                        "negative air and conflict among members.\n"
+                        "\n"
+                        "If you continue discussing politics, a moderator may need to take action and mute "
+                        "you. Thank you for your cooperation."
         )
 
         public_footer = f"Note: If you believe that this command was misused or abused, " \
@@ -753,9 +758,6 @@ class SearchAddons(commands.Cog):
         if "&" in query:
             await itx.response.send_message("Your query cannot contain an ampersand (&/and symbol)! (it can mess with the URL)", ephemeral=True)
             return
-        if ";" in query:
-            await itx.response.send_message("A query with a semi-colon seems to ", ephemeral=True)
-            return
         query = query.replace("+", " plus ") # plusses are interpreted as a spacebar in urls. In LaTeX, that can mean multiply
         api_key = self.client.api_tokens['Wolfram Alpha']
         try:
@@ -765,6 +767,21 @@ class SearchAddons(commands.Cog):
             await itx.followup.send("Your input gave a malformed result! Perhaps it took too long to calculate...", ephemeral=True)
             return
         
+        class SendPublic(discord.ui.View):
+            def __init__(self, client: Bot, timeout=180):
+                super().__init__()
+                self.value = None
+                self.client = client
+                self.timeout = timeout
+
+            @discord.ui.button(label='Send Publicly', style=discord.ButtonStyle.gray)
+            async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+                self.value = 1
+                await itx.response.edit_message(content="Sent successfully!")
+                cmd_mention = self.client.get_command_mention("math")
+                await itx.followup.send(f"**{itx.user.mention} shared a {cmd_mention} output:**\n" + itx.message.content, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+
+
         data = data["queryresult"]
         if data["success"]:
             interpreted_input = ""
@@ -836,12 +853,16 @@ class SearchAddons(commands.Cog):
                 warnings = "\nWarnings:\n> " + '\n> '.join(warnings)
             else:
                 warnings = ""
+            view = SendPublic(self.client)
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
                 f"Result:\n> {output}" +
                 other_results +
                 alternatives +
-                warnings, ephemeral=True)
+                warnings, view=view, ephemeral=True)
+            await view.wait()
+            if view.value is None:
+                await itx.edit_original_response(view=None)
             return
         else:
             if data["error"]:
@@ -1413,16 +1434,17 @@ class OtherAddons(commands.Cog):
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 {self.client.get_command_mention('add_poll_reactions')}: Add an up-/downvote emoji to a message (for voting)
+{self.client.get_command_mention('commands')} or {self.client.get_command_mention('help')}: See this help page
 {self.client.get_command_mention('compliment')}: Rina can compliment others (matching their pronoun role)
 {self.client.get_command_mention('convert_unit')}: Convert a value from one to another! Distance, speed, currency, etc.
 {self.client.get_command_mention('dictionary')}: Search for an lgbtq+-related or dictionary term!
 {self.client.get_command_mention('equaldex')}: See LGBTQ safety and rights in a country (with API)
-{self.client.get_command_mention('help')}: See this help page
+{self.client.get_command_mention('math')}: Ask Wolfram|Alpha for math or science help
 {self.client.get_command_mention('nameusage gettop')}: See how many people are using the same name
 {self.client.get_command_mention('pronouns')}: See someone's pronouns or edit your own
-{self.client.get_command_mention('qotw')}: Suggest a Question Of The Week to staff
-{self.client.get_command_mention('roll')}: Roll some dice with a random result
+{self.client.get_command_mention('qotw')} and {self.client.get_command_mention('developer_request')}: Suggest a Question Of The Week or Bot Suggestion to staff
 {self.client.get_command_mention('reminder reminders')}: Make or see your reminders
+{self.client.get_command_mention('roll')}: Roll some dice with a random result
 {self.client.get_command_mention('tag')}: Get information about some of the server's extra features
 {self.client.get_command_mention('todo')}: Make, add, or remove items from your to-do list
 {self.client.get_command_mention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)

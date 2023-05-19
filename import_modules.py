@@ -7,7 +7,7 @@ class PrintProgress:
         print(f"[{self.progress*'#'}+{(self.max-self.progress-1)*' '}] Importing modules:   {name}{' '*(50-len(name))}", end="\r")
         self.progress += 1
 
-progress = PrintProgress(23)
+progress = PrintProgress(22)
 progress.increment("datetime")
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
 program_start = datetime.now()
@@ -31,8 +31,8 @@ import re #use regex to remove pronouns from people's usernames, and split their
 #          and to remove API hyperlink definitions: {#Ace=asexual}
 progress.increment("requests")
 import requests # for getting the equality index of countries and to grab from en.pronouns.page api (search)
-progress.increment("aiohttp")
-import aiohttp
+# progress.increment("aiohttp")
+# import aiohttp
 progress.increment("warnings")
 import warnings #used to warn for invalid color thingy in the debug function; as well as for debug()
 progress.increment("pymongo")
