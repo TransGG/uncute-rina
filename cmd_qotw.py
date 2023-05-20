@@ -5,6 +5,8 @@ class QOTW(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
         self.client = client
+        self.qotw_channel_id = 1019706498609319969
+        self.dev_request_id = 982351285959413811
         RinaDB = client.RinaDB
 
     @app_commands.command(name="qotw",description="Suggest a question for the weekly queue!")
@@ -15,7 +17,7 @@ class QOTW(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            confirm_channel = self.client.get_channel(1019706498609319969)
+            confirm_channel = self.client.get_channel(self.qotw_channel_id)
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=33, g=33, b=33),
@@ -63,7 +65,7 @@ class QOTW(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            confirm_channel = self.client.get_channel(982351285959413811)
+            confirm_channel = self.client.get_channel(self.dev_request_id)
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=33, g=33, b=33),
@@ -102,6 +104,32 @@ class QOTW(commands.Cog):
         except: #something went wrong before so i wanna see if it happens again
             await itx.followup.send("Something went wrong!")
             raise
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.guild_id != self.client.staff_server_id:
+            return
+        if payload.channel_id != self.dev_request_id:
+            return
+        emoji_color_selection = {
+            "🔴": discord.Colour.from_rgb(r=255,g=100,b=100),
+            "🟡": discord.Colour.from_rgb(r=255,g=255,b=172),
+            "🟢": discord.Colour.from_rgb(r=100,g=255,b=100),
+            "🔵": discord.Colour.from_rgb(r=172,g=172,b=255)
+        }
+        if payload.emoji.name not in emoji_color_selection:
+            return
+        channel: discord.TextChannel = await self.client.fetch_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        if message.author.id != self.client.user.id:
+            return
+        if len(message.embeds) != 1:
+            return
+        embed = message.embeds[0]
+        embed.color = emoji_color_selection[payload.emoji.name]
+        await message.edit(embed=embed)
+        await message.remove_reaction(payload.emoji.name, payload.member)
+        
 
 async def setup(client):
     await client.add_cog(QOTW(client))
