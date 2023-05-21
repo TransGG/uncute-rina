@@ -3,7 +3,8 @@ from Uncute_Rina import *
 def isVerified(itx: discord.Interaction):
     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
     user_role_ids = [role.id for role in itx.user.roles]
-    role_ids = [959748411844874240]  # verified
+    role_ids = [959748411844874240,  # Transplace: Verified
+                1109907941454258257] # Transonance: Verified
     return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
 
 # def isVerifier(itx: discord.Interaction):
@@ -11,12 +12,18 @@ def isVerified(itx: discord.Interaction):
 #     return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
 
 def isStaff(itx: discord.Interaction):
+    # case sensitive lol
     roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Moderator [On-Leave]' , itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Trial Moderator' , itx.guild.roles),
-             discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles)]
+             discord.utils.find(lambda r: r.name == 'Sr. Mod' , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Sr. Mod [On-Leave]' , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Chat Mod'  , itx.guild.roles),
+             discord.utils.find(lambda r: r.name == 'Staff'  , itx.guild.roles)]
     user_role_ids = [role.id for role in itx.user.roles]
-    role_ids = [1069398630944997486,981735650971775077] #trial ; moderator
+    role_ids = [1069398630944997486,981735650971775077, #TransPlace: trial ; moderator
+                1108771208931049544] # Transonance: Staff
     return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
 
 def isAdmin(itx: discord.Interaction):
@@ -26,7 +33,7 @@ def isAdmin(itx: discord.Interaction):
              discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Owner'     , itx.guild.roles)]
     user_role_ids = [role.id for role in itx.user.roles]
-    role_ids = [981735525784358962]  # admin
+    role_ids = [981735525784358962]  # TransPlace: 
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056 or len(set(role_ids).intersection(user_role_ids)) > 0
 
 def debug(text="", color="default", add_time=True, end="\n", advanced=False):

@@ -293,9 +293,11 @@ class CustomVcs(commands.Cog):
                 ["CustomVC creation Category",           "22"],
                 ["CustomVC No-mic channel",              "23"],
 
-                ["Starboard channel",                    "31"],
-                ["Mimimum required stars for starboard", "32"],
-                ["Starboard blacklisted channels",       "33"],
+                ["Starboard emoji",                      "31"],
+                ["Starboard channel",                    "32"],
+                ["Minimum required stars for starboard", "33"],
+                ["Starboard blacklisted channels",       "34"],
+                ["Starboard downvote initiation value",  "35"],
 
                 ["ID of the bump bot / DISBOARD bot",    "41"],
                 ["Channel that DISBOARD bumps in",       "42"],
@@ -345,9 +347,11 @@ class CustomVcs(commands.Cog):
             "22" : "vcCategory",
             "23" : "vcNoMic",
 
-            "31" : "starboardChannel",
-            "32" : "starboardCountMinimum",
-            "33" : "starboardBlacklistedChannels",
+            "31" : "starboardEmoji",
+            "32" : "starboardChannel",
+            "33" : "starboardCountMinimum",
+            "34" : "starboardBlacklistedChannels",
+            "35" : "starboardDownvoteInitValue",
 
             "41" : "bumpBot",
             "42" : "bumpChannel",
@@ -376,8 +380,11 @@ class CustomVcs(commands.Cog):
                                                     "`23`: VC no-mic (Which channel should custom new)", ephemeral=True)
                 elif option == "03":
                     await itx.response.send_message("Starboard settings:\n" +
-                                                    "`31`: Starboard channel (which channel are starboard messages sent in?)\n" +
-                                                    "`32`: Star minimum (how many stars does a message need before it's added to the starboard?)", ephemeral=True)
+                                                    "`31`: Starboard emoji (what emoji can people add to add something to the starboard?)\n"
+                                                    "`32`: Starboard channel (which channel are starboard messages sent in?)\n" +
+                                                    "`33`: Star minimum (how many stars does a message need before it's added to the starboard?)\n"
+                                                    "`34`: Starboard blacklist (what channels' messages can't be starboarded? (list))"
+                                                    "`35`: Starboard downvote initiation value (how many total (up/down)votes must a message have before deleting it if its score is below 0?)", ephemeral=True)
                 elif option == "04":
                     await itx.response.send_message("Bumping-related settings:\n" +
                                                     "`41`: Bump bot: DISBOARD.org (Whose messages should I check for bump messages with embeds?)\n" +
@@ -448,6 +455,17 @@ class CustomVcs(commands.Cog):
                     collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "31":
                 if value is not None:
+                    value = await to_int(value, "You have to give a numerical ID for the emoji you want to use!")
+                    if value is None:
+                        return
+                    emoji = self.client.get_emoji(value)
+                    print(emoji)
+                    if type(emoji) is not discord.Emoji:
+                        await itx.response.send_message(f"The ID you gave wasn't an emoji! (i think) (or not one I can use)", ephemeral=True)
+                        return
+                    collection.update_one(query, {"$set": {options[option]: emoji.id}}, upsert=True)
+            elif option == "32":
+                if value is not None:
                     value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
                     if value is None:
                         return
@@ -456,14 +474,14 @@ class CustomVcs(commands.Cog):
                         await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
                         return
                     collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
-            elif option == "32":
+            elif option == "33":
                 value = await to_int(value, "You need to give an integer value for your new minimum amount!")
                 if value is None:
                     return
                 if value < 1:
                     await itx.response.send_message("Your new value has to be at least 1!", ephemeral=True)
                 collection.update_one(query, {"$set": {options[option]: value}}, upsert=True)
-            elif option == "33":
+            elif option == "34":
                 channel_ids = value.split(",")
                 blacklist = []
                 for channel_id in channel_ids:
@@ -472,6 +490,13 @@ class CustomVcs(commands.Cog):
                         return
                     blacklist.append(channel)
                 collection.update_one(query, {"$set": {options[option]: blacklist}}, upsert=True)
+            elif option == "35":
+                value = await to_int(value, "You need to give an integer value for your new minimum amount!")
+                if value is None:
+                    return
+                if value < 1:
+                    await itx.response.send_message("Your new value has to be at least 1!", ephemeral=True)
+                collection.update_one(query, {"$set": {options[option]: value}}, upsert=True)
             elif option == "41":
                 value = await to_int(value, "You need to give a numerical ID for the bot id you want to use!")
                 if value is None:

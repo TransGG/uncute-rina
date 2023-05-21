@@ -1,19 +1,15 @@
 from Uncute_Rina import *
 from import_modules import *
 
-starboard_emoji = "<:TPA_Trans_Starboard:992493515714068480>"#"<:upvote:989259317146439690>"
-starboard_emoji_id = int(starboard_emoji.split(":")[-1].replace(">",""))
-# starboard_emoji_id = 992493515714068480
-
 messageIdMarkedForDeletion = []
 
 class Starboard(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
-        self.client = client
+        self.client: Bot = client
         RinaDB = client.RinaDB
 
-    async def updateStat(self, star_message):
+    async def updateStat(self, star_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int):
         # find original message
         text = star_message.embeds[0].fields[0].value ## "[Jump!]({msgLink})"
         link = text.split("(")[1]
@@ -39,7 +35,7 @@ class Starboard(commands.Cog):
         # get message stars excluding Rina's
         for reaction in original_message.reactions:
             try:
-                if reaction.emoji.id == starboard_emoji_id:
+                if reaction.emoji.id == starboard_emoji.id:
                     star_stat_message += reaction.count
                     if reaction.me:
                         star_stat_message -= 1
@@ -50,7 +46,7 @@ class Starboard(commands.Cog):
         # get starboard stars excluding Rina's
         for reaction in star_message.reactions:
             try:
-                if reaction.emoji.id == starboard_emoji_id:
+                if reaction.emoji.id == starboard_emoji.id:
                     star_stat_starboard += reaction.count
                     if reaction.me:
                         star_stat_starboard -= 1
@@ -70,8 +66,9 @@ class Starboard(commands.Cog):
                     star_stat += 1
 
         #if more x'es than stars, and more than 15 reactions, remove message
-        if star_stat < 0 and reactionTotal > 10:
+        if star_stat < 0 and reactionTotal >= downvote_init_value:
             await logMsg(star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
+            messageIdMarkedForDeletion.append(star_message.id)
             await star_message.delete()
             return
 
@@ -93,7 +90,9 @@ class Starboard(commands.Cog):
         await star_message.edit(content=new_content, embeds=embeds)
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
+            payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels", "starboardEmoji", "starboardDownvoteInitValue")
         if payload.member.id == self.client.user.id or \
                 (payload.emoji.id != starboard_emoji_id and
                  payload.emoji.name != "❌"):
@@ -112,14 +111,15 @@ class Starboard(commands.Cog):
                 f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
             return
 
-        # print(repr(message.guild.id), repr(self.client.staff_server_id), message.guild.id == self.client.staff_server_id)
         if message.guild.id == self.client.staff_server_id:
             return
-        _star_channel, star_minimum, channel_blacklist = await self.client.get_guild_info(message.guild, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels")
+        
+        # print(repr(message.guild.id), repr(self.client.staff_server_id), message.guild.id == self.client.staff_server_id)
         star_channel = self.client.get_channel(_star_channel)
+        starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            await self.updateStat(message)
+            await self.updateStat(message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
@@ -133,7 +133,7 @@ class Starboard(commands.Cog):
                     async for star_message in star_channel.history(limit=200):
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await self.updateStat(star_message)
+                                await self.updateStat(star_message, starboard_emoji, downvote_init_value)
                                 return
                     return
                 elif reaction.count == star_minimum:
@@ -220,7 +220,8 @@ class Starboard(commands.Cog):
                     # add star reaction to original message to prevent message from being re-added to the starboard
 
     @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        _star_channel, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(payload.guild_id, "starboardChannel", "starboardEmoji", "starboardDownvoteInitValue")
         if payload.emoji.id != starboard_emoji_id and payload.emoji.name != "❌":
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
             return
@@ -230,32 +231,34 @@ class Starboard(commands.Cog):
 
         if message.guild.id == self.client.staff_server_id:
             return
-        _star_channel = await self.client.get_guild_info(message.guild, "starboardChannel")
+        
         star_channel = self.client.get_channel(_star_channel)
+        starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            await self.updateStat(message)
+            await self.updateStat(message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
-            if str(reaction.emoji) == starboard_emoji:
+            if reaction.emoji.id == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
                     async for star_message in star_channel.history(limit=500):
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await self.updateStat(star_message)
+                                await self.updateStat(star_message, starboard_emoji, downvote_init_value)
                                 return
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
         if message_payload.guild_id == self.client.staff_server_id:
             return
-        _star_channel = await self.client.get_guild_info(message_payload.guild_id, "starboardChannel")
+        _star_channel, starboard_emoji_id = await self.client.get_guild_info(message_payload.guild_id, "starboardChannel", "starboardEmoji")
         star_channel = self.client.get_channel(_star_channel)
+        starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message_payload.message_id in messageIdMarkedForDeletion: #global variable
-            # this prevents having two 'message deleted' logs
+            # this prevents having two 'message deleted' logs for manual deletion of starboard message
             messageIdMarkedForDeletion.remove(message_payload.message_id)
             return
         if message_payload.channel_id == star_channel.id:
@@ -276,6 +279,7 @@ class Starboard(commands.Cog):
                         except discord.NotFound:
                             msg_link = str(message_payload.message_id)+" (couldn't get jump link)"
                         await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) (original message was removed (this starboard message's linked id matched the removed message's)). Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
+                        messageIdMarkedForDeletion.append(star_message.id)
                         await star_message.delete()
                         return
 

@@ -787,6 +787,7 @@ class SearchAddons(commands.Cog):
             interpreted_input = ""
             output = ""
             other_primary_outputs = []
+            error_or_nodata = 0
             for pod in data["pods"]:
                 subpods = []
                 if pod["id"] == "Input":
@@ -795,26 +796,39 @@ class SearchAddons(commands.Cog):
                     interpreted_input = '\n> '.join(subpods)
                 if pod["id"] == "Result":
                     for subpod in pod["subpods"]:
+                        if subpod.get("nodata") or subpod.get("error"): # error or nodata == True
+                            error_or_nodata += 1
                         subpods.append(subpod["plaintext"].replace("\n", "\n>     "))
                     output = '\n> '.join(subpods)
                 elif pod.get("primary", False):
                     for subpod in pod["subpods"]:
                         if len(subpod["plaintext"]) == 0:
                             continue
+                        if subpod.get("nodata") or subpod.get("error"): # error or nodata == True
+                            error_or_nodata += 1
                         other_primary_outputs.append(subpod["plaintext"].replace("\n", "\n>     "))
             if len(output) == 0 and len(other_primary_outputs) == 0:
+                error_or_nodata = 0
                 # if there is no result and all other pods are 'primary: False'
                 for pod in data["pods"]:
                     if pod["id"] not in ["Input", "Result"]:
                         for subpod in pod["subpods"]:
                             if len(subpod["plaintext"]) == 0:
                                 continue
+                            if subpod.get("nodata") or subpod.get("error"): # error or nodata == True
+                                error_or_nodata += 1
                             other_primary_outputs.append(subpod["plaintext"].replace("\n", "\n>     "))
             if len(other_primary_outputs) > 0:
-                other_primary_outputs = '\n> '.join(other_primary_outputs)
-                other_results = "\nOther results:\n> " + other_primary_outputs
+                other_results = '\n> '.join(other_primary_outputs)
+                other_results = "\nOther results:\n> " + other_results
             else:
                 other_results = ""
+            if len(other_primary_outputs) + bool(len(output)) <= error_or_nodata:
+                # if there are more or an equal amount of errors as there are text entries
+                await itx.followup.send(f"There was no data for your answer!\n"
+                                        f"It seems all your answers had an error or were 'nodata entries', meaning "
+                                        f"you might need to try a different query to get an answer to your question!", ephemeral=True)
+                return
             assumptions = []
             if "assumptions" in data:
                 if type(data["assumptions"]) is dict:
@@ -897,6 +911,11 @@ class SearchAddons(commands.Cog):
             elif "tips" in data:
                 # not sure if this is put into a list if there are multiple.
                 await itx.followup.send(f"Error:\n> {data['tips']['text']}", ephemeral=True)
+                return
+            elif "examplepage" in data:
+                # not sure if this is put into a list if there are multiple.
+                await itx.followup.send(f"Here is an example page for the things you can do with {data['examplepage']['category']}:\n"
+                                        f"> {data['examplepage']['url']}", ephemeral=True)
                 return
             else:
                 # welp. Apparently you can get *no* info in the output as well!! UGHHHHH

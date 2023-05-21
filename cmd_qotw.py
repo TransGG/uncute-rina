@@ -80,6 +80,7 @@ class QOTW(commands.Cog):
             #make and join a thread under the question
             thread = await msg.create_thread(name=f"BotRQ-{question[:48]}")
             await thread.join()
+            question = question.replace("\\n", "\n")
             #send a plaintext version of the question, and copy a link to it
             copyable_version = await thread.send(f"{question}",allowed_mentions=discord.AllowedMentions.none())
             # edit the uncool embed to make it cool: Show question, link to plaintext, and upvotes/downvotes

@@ -34,14 +34,16 @@ else:
     #   permissions:
     #       send messages
     #       attach files (for image of the member joining graph thing)
-    #       read channel history (find previous Table messages from a specific channel afaik)
-    #       create and delete voice channels
-    #       move users between voice channels
-    #       manage roles (for adding/removing table roles)
+    #       read channel history (locate previous starboard message, for example)
+    #       move users between voice channels (custom vc)
+    #       # manage roles (for adding/removing table roles) (not used currently, i guess)
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
+    #           Create and Delete voice channels
+    #       use embeds (for starboard)
+    #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.1.8.20".split(".")
+    fileVersion = "1.2.0.0".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -105,7 +107,15 @@ else:
                                     # return f"</{command.name} {subgroup.name} {subcmdgroup.name}:{command.id}>"
             return "/"+_command
 
-        async def get_guild_info(self, guild_id: discord.Guild | int, *args: str, log: discord.Interaction | str = None):
+        async def get_guild_info(self, guild_id: discord.Guild | int, *args: str, log: list[discord.Interaction | str] | None = None):
+            """
+            Get a guild's server settings (from /editguildinfo, in cmd_customvcs)
+
+            ### Arguments:
+            guild_id: guild from which you want to get the guild info / settings
+            *args: settings (or multiple) that you want to fetch
+            log: (optional) a list of [discord.Interaction, error_message (string)], and will reply to the given interaction with the message
+            """
             if isinstance(guild_id, discord.Guild):
                 guild_id = guild_id.id
             try:
@@ -151,6 +161,7 @@ else:
     async def on_ready():
         debug(f"[#######] Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
         await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
+        hi
 
     @client.event
     async def setup_hook():
@@ -216,7 +227,7 @@ else:
     async def on_message(message):
         # kill switch, see cmd_addons for other on_message events.
         if message.author.id == 262913789375021056:
-            if message.content == ":kill now please okay u need to stop.":
+            if message.content == ":kill now please stop":
                 sys.exit(0)
 
     # Bot commands begin
@@ -258,6 +269,7 @@ else:
         # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
         # msg += '\n\n                   '.join([repr(i) for i in kwargs])
         msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
+        msg = "```" + msg + "```"
         channel = await log_guild.fetch_channel(vcLog)
         embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
         await channel.send(f"{client.bot_owner.mention}", embed=embed)
@@ -332,6 +344,7 @@ else:
         # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
         # msg += '\n\n                   '.join([repr(i) for i in kwargs])
         msg = msg.replace("\\", "\\\\").replace("*", "\\*").replace("`", "\\`").replace("_", "\\_").replace("~~", "\\~\\~")
+        msg = "```" + msg + "```"
         channel = await log_guild.fetch_channel(vcLog)
         embed = discord.Embed(color=discord.Colour.from_rgb(r=255, g=0, b=127), title='App Command Error log', description=msg)
         await channel.send(f"{client.bot_owner.mention}", embed=embed, allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))

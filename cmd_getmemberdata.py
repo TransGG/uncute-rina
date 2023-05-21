@@ -161,9 +161,9 @@ class MemberData(commands.Cog):
                 ax1.plot(df['time'], df[graph], color[graph], label=graph)
             ax1.legend()
             if doubles:
-                re_text = "exc"
-            else:
                 re_text = "inc"
+            else:
+                re_text = "exc"
             ax1.set_ylabel(f"# of members ({re_text}. rejoins/-leaves/etc)")
 
             tick_loc = [i for i in df['time'][::3]]
@@ -184,9 +184,7 @@ class MemberData(commands.Cog):
             fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
             plt.savefig('userJoins.png', dpi=300)
         except ValueError:
-            await itx.followup.send("You encountered an error! This is likely a ValueError, caused by a too small number. "
-                                    "I still have to figure out why this happens, exactly. Probably some rounding error or something. "
-                                    "Anyway, try a larger number, it might work better",ephemeral=True)
+            await itx.followup.send("You encountered a ValueError! Mia has been sent an error report to hopefully be able to fix it :)",ephemeral=True)
             raise
         output = ""
         try:
