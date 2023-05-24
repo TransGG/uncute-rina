@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.0.0".split(".")
+    fileVersion = "1.2.0.1".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -161,8 +161,7 @@ else:
     async def on_ready():
         debug(f"[#######] Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
         await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
-        hi
-
+        
     @client.event
     async def setup_hook():
         start = datetime.now()
@@ -246,33 +245,42 @@ else:
         client.commandList = commandList
         await itx.response.send_message("Updated commands")
 
-    @client.event
-    async def on_error(event, *_args, **_kwargs):
+    async def send_crash_message(error_type: str, traceback_text: str, error_source: str, color: discord.Colour):
+        """
+        Sends crash message to Rina's main logging channel
+
+        error_type: Is it an 'Error' or an 'AppCommand Error'
+        traceback_text: What is the traceback?
+        """
         try:
-            log_guild = await client.fetch_guild(959551566388547676)
+            log_guild: discord.Guild = await client.fetch_guild(959551566388547676)
         except discord.errors.NotFound:
             if testing_environment == 1:
-                log_guild = await client.fetch_guild(985931648094834798)
+                log_guild: discord.Guild = await client.fetch_guild(985931648094834798)
             else:
-                log_guild = await client.fetch_guild(981615050664075404)
-
+                log_guild: discord.Guild = await client.fetch_guild(981615050664075404)
+        
         try:
             vcLog = await client.get_guild_info(log_guild, "vcLog")
         except KeyError: # precaution to prevent infinite loops, I suppose
             pass
-        #message = args[0]
-        msg = ""
-        msg += f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [ERROR]: {event}\n\n"
-        msg += traceback.format_exc()
-        debug(f"{msg}",add_time=False)
+        
+        error_caps = error_type.upper()
+        debug_message = f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [{error_caps}]: {error_source}\n\n{traceback_text}\n"
+        debug(f"{debug_message}",add_time=False)
 
-        # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
-        # msg += '\n\n                   '.join([repr(i) for i in kwargs])
-        msg = msg.replace("\\","\\\\").replace("*","\\*").replace("`","\\`").replace("_","\\_").replace("~~","\\~\\~")
+        channel = await log_guild.fetch_channel(vcLog) #crashes if none
+        msg = debug_message.replace("``", "`` ")#("\\", "\\\\").replace("*", "\\*").replace("`", "\\`").replace("_", "\\_").replace("~~", "\\~\\~")
         msg = "```" + msg + "```"
-        channel = await log_guild.fetch_channel(vcLog)
-        embed = discord.Embed(color=discord.Colour.from_rgb(r=181, g=69, b=80), title='Error log', description=msg)
-        await channel.send(f"{client.bot_owner.mention}", embed=embed)
+        embed = discord.Embed(color=color, title = error_type +' Log', description=msg)
+        await channel.send(f"{client.bot_owner.mention}", embed=embed, allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
+
+    @client.event
+    async def on_error(event: str, *_args, **_kwargs):
+        # msg = '\n\n          '.join([repr(i) for i in args])+"\n\n"
+        # msg += '\n\n                   '.join([repr(i) for i in kwargs])
+        msg = traceback.format_exc()
+        await send_crash_message("Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
 
     @client.tree.error
     async def on_app_command_error(itx: discord.Interaction, error):
@@ -281,7 +289,7 @@ else:
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if within 1 minute
             return
         
-        async def reply(itx, message):
+        async def reply(itx: discord.Interaction, message: str):
             if itx.response.is_done():
                 await itx.followup.send(message, ephemeral=True)
             else:
@@ -304,31 +312,11 @@ else:
                 await reply(itx, error_reply + f". Please report the error and details to {client.bot_owner} ({client.bot_owner.mention}) by pinging her or sending her a DM")
             else:
                 await reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
-        try:
-            log_guild = await client.fetch_guild(959551566388547676)
-        except discord.errors.NotFound:
-            if testing_environment == 1:
-                log_guild = await client.fetch_guild(985931648094834798)
-            else:
-                log_guild = await client.fetch_guild(981615050664075404)
 
-        #     try:
-        #         client.logChannel = await client.fetch_channel(988118678962860032)
-        #     except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
-        #         if testing_environment == 1:
-        #             client.logChannel = await client.fetch_channel(986304081234624554)
-        #         else:
-        #             client.logChannel = await client.fetch_channel(1062396920187863111)
         try:
-            vcLog = await client.get_guild_info(log_guild, "vcLog")
-        except KeyError: # precaution I guess, lol
-            pass
-        # message = args[0]
-        msg = f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [APPCOMMAND ERROR]: {error}\n"
-        try:
-            msg += f"    Executor details: {itx.user} ({itx.user.id})"
+            msg = f"    Executor details: {itx.user} ({itx.user.id})\n"
         except Exception as ex:
-            msg += f"    Executor details: couldn't get interaction details: " + repr(ex)
+            msg = f"    Executor details: couldn't get interaction details: {repr(ex)}\n"
             #   f"    command: {error.command}\n" + \
             #   f"    arguments: {error.args}\n"
         if hasattr(error, 'original'):
@@ -338,16 +326,7 @@ else:
                 msg += f"    original error: {error.original.status}: {error.original.text}\n\n"
                     #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
-
-        debug(f"{msg}", add_time=False)
-
-        # msg += '\n\n          '.join([repr(i) for i in args])+"\n\n"
-        # msg += '\n\n                   '.join([repr(i) for i in kwargs])
-        msg = msg.replace("\\", "\\\\").replace("*", "\\*").replace("`", "\\`").replace("_", "\\_").replace("~~", "\\~\\~")
-        msg = "```" + msg + "```"
-        channel = await log_guild.fetch_channel(vcLog)
-        embed = discord.Embed(color=discord.Colour.from_rgb(r=255, g=0, b=127), title='App Command Error log', description=msg)
-        await channel.send(f"{client.bot_owner.mention}", embed=embed, allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
+        await send_crash_message("AppCommand Error", msg, itx.command.name, discord.Colour.from_rgb(r=255, g=121, b=77))
         appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
 
     try:

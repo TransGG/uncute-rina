@@ -30,42 +30,34 @@ class Starboard(commands.Cog):
             await star_message.delete()
             return
 
-        star_stat_message = 0
+        star_reacters = []
         reactionTotal = 0
-        # get message stars excluding Rina's
+        # get message's starboard-reacters
         for reaction in original_message.reactions:
-            try:
+            if reaction.is_custom_emoji():
                 if reaction.emoji.id == starboard_emoji.id:
-                    star_stat_message += reaction.count
-                    if reaction.me:
-                        star_stat_message -= 1
-            except AttributeError: #is not a custom emoji
-                pass
+                    async for user in reaction.users():
+                        if user.id not in star_reacters:
+                            star_reacters.append(user.id)
 
-        star_stat_starboard = 0
-        # get starboard stars excluding Rina's
+        # get starboard's starboard-reacters
         for reaction in star_message.reactions:
-            try:
+            if reaction.is_custom_emoji():
                 if reaction.emoji.id == starboard_emoji.id:
-                    star_stat_starboard += reaction.count
-                    if reaction.me:
-                        star_stat_starboard -= 1
-            except AttributeError: #is not a custom emoji
-                pass
-
-        if star_stat_starboard > star_stat_message:
-            star_stat = star_stat_starboard
-        else:
-            star_stat = star_stat_message
+                    async for user in reaction.users():
+                        if user.id not in star_reacters:
+                            star_reacters.append(user.id)
+            
+        star_stat = len(star_reacters)
+        if self.client.user.id in star_reacters:
+            star_stat -= 1
 
         for reaction in star_message.reactions:
             if reaction.emoji == '❌':
-                reactionTotal = star_stat + reaction.count - 1 # stars (exc. rina) + x'es - rina's x
-                star_stat -= reaction.count
-                if reaction.me:
-                    star_stat += 1
+                reactionTotal = star_stat + reaction.count - reaction.me # stars (exc. rina) + x'es - rina's x
+                star_stat -= reaction.count - reaction.me
 
-        #if more x'es than stars, and more than 15 reactions, remove message
+        #if more x'es than stars, and more than [15] reactions, remove message
         if star_stat < 0 and reactionTotal >= downvote_init_value:
             await logMsg(star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
             messageIdMarkedForDeletion.append(star_message.id)
@@ -91,6 +83,8 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.guild_id == self.client.staff_server_id:
+            return
         _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
             payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels", "starboardEmoji", "starboardDownvoteInitValue")
         if payload.member.id == self.client.user.id or \
@@ -111,8 +105,6 @@ class Starboard(commands.Cog):
                 f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
             return
 
-        if message.guild.id == self.client.staff_server_id:
-            return
         
         # print(repr(message.guild.id), repr(self.client.staff_server_id), message.guild.id == self.client.staff_server_id)
         star_channel = self.client.get_channel(_star_channel)
@@ -221,6 +213,8 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        if payload.guild_id == self.client.staff_server_id:
+            return
         _star_channel, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(payload.guild_id, "starboardChannel", "starboardEmoji", "starboardDownvoteInitValue")
         if payload.emoji.id != starboard_emoji_id and payload.emoji.name != "❌":
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
@@ -229,8 +223,6 @@ class Starboard(commands.Cog):
         ch = self.client.get_channel(payload.channel_id)
         message = await ch.fetch_message(payload.message_id)
 
-        if message.guild.id == self.client.staff_server_id:
-            return
         
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)

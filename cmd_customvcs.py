@@ -359,38 +359,38 @@ class CustomVcs(commands.Cog):
         }
 
         if option not in options:
-                await itx.response.send_message("Your mode has to be a number. Type one of the autocomplete suggestions to " +
-                                               "figure out which number/ID you need.", ephemeral=True)
-                return
+            await itx.response.send_message("Your mode has to be a number. Type one of the autocomplete suggestions to " +
+                                            "figure out which number/ID you need.", ephemeral=True)
+            return
         if option.startswith("0"):
-                if option == "01":
-                    await itx.response.send_message("Main server settings:\n" +
-                                                    "`11`: Log (What channel does Rina log to?). This includes the following:\n" +
-                                                    "        Starting Rina\n"+
-                                                    "        Custom voice channel creations/deletions, renames and user-limiting on these, and /vctable,\n" +
-                                                    "        Starboard creations, deletions (both manual ('delete message') and automatic ('score:-1'))\n" +
-                                                    "        Staff actions (dictionary commands, /say, public anonymous /tag commands, /delete_week_selfies, \n" +
-                                                    "        Warnings (starboard ':x:' used on a deleted message, adding a reaction to someone that blocked rina)\n" +
-                                                    "        Errors (crashes in a command, missing guild_info data, etc.)\n" +
-                                                    "`12`: Poll reactions blacklist (Which channels can /add_poll_reactions not be used in?)", ephemeral=True)
-                elif option == "02":
-                    await itx.response.send_message("Custom Voice Channels:\n" +
-                                                    "`21`: VC Hub (Which channel should people join to create a new Custom voice channel (CustomVC)?)\n" +
-                                                    "`22`: VC category (Which category are Custom voice channels created in?)\n" +
-                                                    "`23`: VC no-mic (Which channel should custom new)", ephemeral=True)
-                elif option == "03":
-                    await itx.response.send_message("Starboard settings:\n" +
-                                                    "`31`: Starboard emoji (what emoji can people add to add something to the starboard?)\n"
-                                                    "`32`: Starboard channel (which channel are starboard messages sent in?)\n" +
-                                                    "`33`: Star minimum (how many stars does a message need before it's added to the starboard?)\n"
-                                                    "`34`: Starboard blacklist (what channels' messages can't be starboarded? (list))"
-                                                    "`35`: Starboard downvote initiation value (how many total (up/down)votes must a message have before deleting it if its score is below 0?)", ephemeral=True)
-                elif option == "04":
-                    await itx.response.send_message("Bumping-related settings:\n" +
-                                                    "`41`: Bump bot: DISBOARD.org (Whose messages should I check for bump messages with embeds?)\n" +
-                                                    "`42`: Bump channel (Which channel should be checked for messages by the DISBOARD bot?)\n" +
-                                                    "`43`: Bump role (Which role should be pinged when 2 hours have passed?)", ephemeral=True)
-                return
+            if option == "01":
+                await itx.response.send_message("Main server settings:\n" +
+                                                "`11`: Log (What channel does Rina log to?). This includes the following:\n" +
+                                                "        Starting Rina\n"+
+                                                "        Custom voice channel creations/deletions, renames and user-limiting on these, and /vctable,\n" +
+                                                "        Starboard creations, deletions (both manual ('delete message') and automatic ('score:-1'))\n" +
+                                                "        Staff actions (dictionary commands, /say, public anonymous /tag commands, /delete_week_selfies, \n" +
+                                                "        Warnings (starboard ':x:' used on a deleted message, adding a reaction to someone that blocked rina)\n" +
+                                                "        Errors (crashes in a command, missing guild_info data, etc.)\n" +
+                                                "`12`: Poll reactions blacklist (Which channels can /add_poll_reactions not be used in?)", ephemeral=True)
+            elif option == "02":
+                await itx.response.send_message("Custom Voice Channels:\n" +
+                                                "`21`: VC Hub (Which channel should people join to create a new Custom voice channel (CustomVC)?)\n" +
+                                                "`22`: VC category (Which category are Custom voice channels created in?)\n" +
+                                                "`23`: VC no-mic (Which channel should custom new)", ephemeral=True)
+            elif option == "03":
+                await itx.response.send_message("Starboard settings:\n" +
+                                                "`31`: Starboard emoji (what emoji can people add to add something to the starboard?)\n"
+                                                "`32`: Starboard channel (which channel are starboard messages sent in?)\n" +
+                                                "`33`: Star minimum (how many stars does a message need before it's added to the starboard?)\n"
+                                                "`34`: Starboard blacklist (what channels' messages can't be starboarded? (list))\n"
+                                                "`35`: Starboard downvote initiation value (how many total (up/down)votes must a message have before deleting it if its score is below 0?)", ephemeral=True)
+            elif option == "04":
+                await itx.response.send_message("Bumping-related settings:\n" +
+                                                "`41`: Bump bot: DISBOARD.org (Whose messages should I check for bump messages with embeds?)\n" +
+                                                "`42`: Bump channel (Which channel should be checked for messages by the DISBOARD bot?)\n" +
+                                                "`43`: Bump role (Which role should be pinged when 2 hours have passed?)", ephemeral=True)
+            return
 
         if mode == 1:
             value = await self.client.get_guild_info(itx.guild, options[option])
@@ -528,12 +528,7 @@ class CustomVcs(commands.Cog):
             await itx.response.send_message(f"Edited value of '{options[option]}' successfully.",ephemeral=True)
 
     vctable = app_commands.Group(name='vctable', description='Make your voice channels advanced!')
-    # Owner   = Speaking perms
-    # Speaker = Connection perms
-    # Muted   = No speaking perms
-
-    #update
-    # Owner   = Connection perms
+    # Owner   = Connection perms (and speaking perms)
     # Speaker = Speaking perms
     # Muted   = No speaking perms
 
@@ -623,14 +618,13 @@ class CustomVcs(commands.Cog):
             recently_renamed_vcs[channel.id] = []
 
         await itx.response.defer(ephemeral=True)
-        owner_present = False
+        # if owner present: already VcTable -> stop
         for target in channel.overwrites:
             if channel.overwrites[target].connect and target not in channel.category.overwrites:
-                owner_present = True
-        if owner_present:
-            cmd_mention = self.client.get_command_mention("vctable owner")
-            await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to see who the owners of this table are!", ephemeral=True)
-            return
+                cmd_mention = self.client.get_command_mention("vctable owner")
+                await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to see who the owners of this table are!", ephemeral=True)
+                return
+        
         for owner_id in added_owners:
             owner = itx.guild.get_member(int(owner_id))
             await channel.set_permissions(owner, overwrite=discord.PermissionOverwrite(connect=True,speak=True), reason="VcTable created: set as owner")
@@ -638,7 +632,7 @@ class CustomVcs(commands.Cog):
         cmd_mention = self.client.get_command_mention("vctable about")
         await channel.send(f"CustomVC converted to VcTable\n"
                            f"Use {cmd_mention} to learn more!\n"
-                           f"Made {owner_taglist} a VcTable Owner"
+                           f"Made {owner_taglist} a VcTable Owner\n"
                            f"**:warning: If someone is breaking the rules, TELL A MOD** (don't try to moderate a vc yourself)",allowed_mentions=discord.AllowedMentions.none())
         await logMsg(itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
         recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
@@ -739,7 +733,7 @@ class CustomVcs(commands.Cog):
                     warning += f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}"
             except KeyError:
                 pass
-            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=True,camera=True), reason="VcTable edited: set as speaker")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=True), reason="VcTable edited: set as speaker")
             await channel.send(f"{itx.user.mention} made {user.mention} a speaker", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully made {user.mention} a speaker."+warning, ephemeral=True)
             if user in channel.members:
@@ -817,7 +811,7 @@ class CustomVcs(commands.Cog):
             if isStaff(Interaction(itx.guild, user)):
                 await itx.response.send_message("You can't mute staff members! If you have an issue with staff, make a ticket or DM an admin!",ephemeral=True)
                 return
-            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=False), reason="VcTable edited: muted participant")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=False, stream=False), reason="VcTable edited: muted participant")
             await channel.send(f"{itx.user.mention} muted {user.mention}", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully muted {user.mention}."+warning, ephemeral=True)
             if user in channel.members:
@@ -834,7 +828,7 @@ class CustomVcs(commands.Cog):
             except KeyError:
                 await itx.response.send_message(f"This user is already unmuted! Let people be silent if they wanna be >:(", ephemeral=True)
                 return
-            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=None), reason="VcTable edited: unmuted participant")
+            await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=None, stream=None), reason="VcTable edited: unmuted participant")
             await channel.send(f"{itx.user.mention} unmuted {user.mention}", allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully unmuted {user.mention}.", ephemeral=True)
             if user in channel.members:
@@ -847,8 +841,6 @@ class CustomVcs(commands.Cog):
             muted = []
             for target in channel.overwrites:  # key in dictionary
                 if channel.overwrites[target].speak is False: # if they have no speaking perms = muted
-                    # NOTE: expression CAN'T be simplified: it can return None and "not None" returns True as well.
-                    # we only want it to execute this code if speaking perms = False. And not if it is None/unset (rip IDE)
                     if isinstance(target, discord.Member):
                         muted.append(target.mention)
             await itx.response.send_message("Here is a list of this VcTable's muted participants:\n  " + ', '.join(muted), ephemeral=True)

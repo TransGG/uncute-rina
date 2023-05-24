@@ -125,6 +125,18 @@ Thank you in advance :)"""
     return output
 
 class Tags:
+    hsv_color_list = { #in h    s    v
+        "report"      : [ 16, 100, 100],
+        "customvc"    : [ 84,  55, 100],
+        "trigger"     : [240,  40, 100],
+        "tone"        : [170,  40, 100],
+        "trusted"     : [280,  40, 100],
+        "selfies"     : [120,  40, 100],
+        "minimodding" : [340,  55, 100],
+        "politics"    : [ 60,  40, 100],
+        "topicchange" : [205,  40, 100],
+    }
+    colours = {k: discord.Colour.from_hsv(v[0]/360, v[1]/100, v[2]/100) for k, v in hsv_color_list.items()}
     class TagView(discord.ui.View):
         def __init__(self, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None):
             super().__init__()
@@ -157,11 +169,10 @@ class Tags:
             self.send_publicly.disabled = True
             self.send_publicly.style = discord.ButtonStyle.gray
 
-    @staticmethod
-    async def send_report_info(context: discord.Interaction | discord.TextChannel, additional_info=None, public=False, anonymous=True):
+    async def send_report_info(self, context: discord.Interaction | discord.TextChannel, additional_info=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=255, g=66, b=0), #a more saturated red orange color
+            color=self.colours["report"], #a more saturated red orange color
             title='Reporting a message or scenario',
             description="Hi there! If anyone is making you uncomfortable, or you want to "
                         "report or prevent a rule-breaking situation, you can `Right Click "
@@ -191,14 +202,13 @@ class Tags:
                 embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
             await context.send(embed=embed)
 
-    @staticmethod
-    async def send_customvc_info(itx: discord.Interaction, client: Bot, public, anonymous):
+    async def send_customvc_info(self, itx: discord.Interaction, client: Bot, public, anonymous):
         vc_hub = await client.get_guild_info(itx.guild, "vcHub")
 
         cmd_mention = client.get_command_mention('editvc')
         cmd_mention2 = client.get_command_mention('vctable about')
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=200, g=255, b=120), # greenish lime-colored
+            color=self.colours["customvc"], # greenish lime-colored
             title="TransPlace's custom voice channels (vc)",
             description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You "
                         f"are then moved to this channel automatically. You can change the name and user "
@@ -223,10 +233,9 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
-    @staticmethod
-    async def send_triggerwarning_info(itx: discord.Interaction, public, anonymous):
+    async def send_triggerwarning_info(self, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=155, g=155, b=255), #bluer than baby blue ish. kinda light indigo
+            color=self.colours["trigger"], #bluer than baby blue ish. kinda light indigo
             title="Using trigger warnings correctly",
             description="Content or trigger warnings (CW and TW for short) are notices placed before a "
                         "(section of) text to warn the reader of potential traumatic triggers in it. Often, "
@@ -257,10 +266,9 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
-    @staticmethod
-    async def send_toneindicator_info(itx: discord.Interaction, client: Bot, public, anonymous):
+    async def send_toneindicator_info(self, itx: discord.Interaction, client: Bot, public, anonymous):
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=142, g=237, b=221), # tealish aqua
+            color=self.colours["tone"], # tealish aqua
             title="When to use tone indicators?",
             description="Tone indicators are a useful tool to clarify the meaning of a message.\n"
                         "Occasionally, people reading your comment may not be certain about the tone of "
@@ -292,13 +300,12 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
-    @staticmethod
-    async def send_trustedrole_info(itx: discord.Interaction, public, anonymous):
+    async def send_trustedrole_info(self, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=220,g=155,b=255), # magenta
+            color=self.colours["trusted"], # magenta
             title="The trusted role (and selfies)",
             description="The trusted role is the role we use to add an extra layer of protection to some "
-                        "aspects of our community. Currently, this involves the selfie channel, but may be "
+                        "aspects of our community. Currently, this involves the selfies channel, but may be "
                         "expanded to other channels in future.\n"
                         "\n"
                         "You can obtain the trusted role by sending 500 messages or after gaining the "
@@ -322,10 +329,38 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
-    @staticmethod
-    async def send_minimodding_info(itx: discord.Interaction, public, anonymous):
+    async def send_selfies_info(self, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=255,g=115,b=162),  # bright slightly reddish pink
+            color=self.colours["selfies"], # magenta
+            title="The trusted role (and selfies)",
+            description="For your own and other's safety, the selfies channel is hidden behind the "
+                        "trusted role. This role is granted automatically when you've been active in "
+                        "the server for long enough. We grant the role after 500 messages or 9 hours "
+                        "in VC or a combination of both.\n"
+                        "\n"
+                        "The selfies channel automatically deletes all messages after 7 days to ensure "
+                        "the privacy and safety of our members."
+        )
+        logmsg = f"{itx.user.name} ({itx.user.id}) used /tag tag:trusted role anonymously"
+        if public:
+            if anonymous:
+                await itx.response.send_message("sending...", ephemeral=True)
+                await itx.followup.send(embed=embed, ephemeral=False)
+                await logMsg(itx.guild, logmsg)
+            else:
+                await itx.response.send_message(embed=embed)
+        else:
+            if anonymous:
+                view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+            else:
+                view = Tags().TagView(embed, timeout=60)
+            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            if await view.wait():
+                await itx.edit_original_response(view=view)
+
+    async def send_minimodding_info(self, itx: discord.Interaction, public, anonymous):
+        embed = discord.Embed(
+            color=self.colours["minimodding"],  # bright slightly reddish pink
             title="Correcting staff or minimodding",
             description="If you have any input on how members of staff operate, please open a ticket to "
                         "properly discuss."
@@ -351,10 +386,9 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
-    @staticmethod
-    async def send_avoidpolitics_info(itx: discord.Interaction, public, anonymous):
+    async def send_avoidpolitics_info(self, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=255,g=255,b=153), # yellow
+            color=self.colours["politics"], # yellow
             title="Please avoid political discussions!",
             description="A member has requested that we avoid political discussions in this chat, we kindly "
                         "ask that you refrain from discussing politics in this chat to maintain a positive and "
@@ -390,6 +424,15 @@ class Tags:
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
+
+    async def send_chat_topic_change_request(self, itx:discord.Interaction, public, anonymous):
+        embed = discord.Embed(
+            color=self.colours["topicchange"],
+            title="Please change chat topic",
+            description="A community member has requested a change of topic as the current one is making them "
+                        "uncomfortable. Please refrain from continuing the current line of discussion and find "
+                        "a new topic."
+        )
 
 class SearchAddons(commands.Cog):
     def __init__(self, client: Bot):
@@ -708,9 +751,11 @@ class SearchAddons(commands.Cog):
     async def tag_autocomplete(self, _itx: discord.Interaction, current: str):
         options = [
             "avoiding politics",
+            "please change chat topic",
             "customvc",
             "minimodding or correcting staff",
             "report",
+            "selfies channel info",
             "tone indicators",
             "trigger warnings",
             "trusted role",
@@ -727,19 +772,23 @@ class SearchAddons(commands.Cog):
     @app_commands.autocomplete(tag=tag_autocomplete)
     async def tag(self, itx: discord.Interaction, tag: str, public: bool = False, anonymous: bool = True):
         if tag == "report":
-            await Tags.send_report_info(itx, public=public, anonymous=anonymous)
+            await Tags().send_report_info(itx, public=public, anonymous=anonymous)
         elif tag == "customvc":
-            await Tags.send_customvc_info(itx, self.client, public=public, anonymous=anonymous)
+            await Tags().send_customvc_info(itx, self.client, public=public, anonymous=anonymous)
         elif tag == "trigger warnings":
-            await Tags.send_triggerwarning_info(itx, public=public, anonymous=anonymous)
+            await Tags().send_triggerwarning_info(itx, public=public, anonymous=anonymous)
         elif tag == "tone indicators":
-            await Tags.send_toneindicator_info(itx, self.client, public=public, anonymous=anonymous)
+            await Tags().send_toneindicator_info(itx, self.client, public=public, anonymous=anonymous)
         elif tag == "trusted role":
-            await Tags.send_trustedrole_info(itx, public=public, anonymous=anonymous)
+            await Tags().send_trustedrole_info(itx, public=public, anonymous=anonymous)
+        elif tag == "selfies channel info":
+            await Tags().send_selfies_info(itx, public=public, anonymous=anonymous)
         elif tag == "minimodding or correcting staff":
-            await Tags.send_minimodding_info(itx, public=public, anonymous=anonymous)
+            await Tags().send_minimodding_info(itx, public=public, anonymous=anonymous)
         elif tag == "avoiding politics":
-            await Tags.send_avoidpolitics_info(itx, public=public, anonymous=anonymous)
+            await Tags().send_avoidpolitics_info(itx, public=public, anonymous=anonymous)
+        elif tag == "please change chat topic":
+            await Tags().send_chat_topic_change_request(itx, public=public, anonymous=anonymous)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
@@ -1638,6 +1687,8 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                     #   so it might still raise a NotFound error
                     return emoji_partial
                 emoji = client.get_emoji(emoji_partial.id)
+                if None:
+                    return None
                 if not emoji.is_usable():
                     return None
                 return emoji

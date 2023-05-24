@@ -429,88 +429,89 @@ class TermDictionary(commands.Cog):
             if len(data) == 0:
                 if source == 7:
                     result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
-                    public = False
                     cmd_mention_dict = self.client.get_command_mention("dictionary")
                     cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
                     await logMsg(itx.guild, f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for '{term}' in the terminology dictionary and online, but there were no results. Maybe we should add this term to the {cmd_mention_dict} command ({cmd_mention_def})")
-                    return
                 else:
                     result_str = f"I didn't find any results for '{term}' on urban dictionary"
-                    public = False
-                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
-            pages = []
-            page = 0
-            for result in data:
-                embed = discord.Embed(color=8481900,
-                                      title=f"__{result['word'].capitalize()}__",
-                                      description=result['definition'],
-                                      url=result['permalink'])
-                post_date = int(mktime(
-                                datetime.strptime(
-                                    result['written_on'][:-1], # "2009-03-04T01:16:08.000Z" ([:-1] to remove Z at end)
-                                    "%Y-%m-%dT%H:%M:%S.%f"
-                                ).timetuple()
-                ))
-                warning = ""
-                if len(result['example']) > 800:
-                    warning = "... (shortened due to size)"
-                embed.add_field(name="Example",
-                                value=f"{result['example'][:800]}{warning}\n\n"
-                                      f"{result['thumbs_up']}:thumbsup: :thumbsdown: {result['thumbs_down']}\n"
-                                      f"Sent by {result['author']} on <t:{post_date}:d> at <t:{post_date}:T> (<t:{post_date}:R>)",
-                                inline=False)
-                pages.append(embed)
+                public=False
+            else:
+                pages = []
+                page = 0
+                for result in data:
+                    embed = discord.Embed(color=8481900,
+                                          title=f"__{result['word'].capitalize()}__",
+                                          description=result['definition'],
+                                          url=result['permalink'])
+                    post_date = int(mktime(
+                        datetime.strptime(
+                            result['written_on'][:-1], # "2009-03-04T01:16:08.000Z" ([:-1] to remove Z at end)
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ).timetuple()
+                    ))
+                    warning = ""
+                    if len(result['example']) > 800:
+                          warning = "... (shortened due to size)"
+                    embed.add_field(name="Example",
+                                    value=f"{result['example'][:800]}{warning}\n\n"
+                                          f"{result['thumbs_up']}:thumbsup: :thumbsdown: {result['thumbs_down']}\n"
+                                          f"Sent by {result['author']} on <t:{post_date}:d> at <t:{post_date}:T> (<t:{post_date}:R>)",
+                                    inline=False)
+                    pages.append(embed)
 
-            class Pages(discord.ui.View):
-                def __init__(self, pages, timeout=None):
-                    super().__init__()
-                    self.value = None
-                    self.timeout = timeout
-                    self.page = 0
-                    self.pages = pages
+                class Pages(discord.ui.View):
+                    def __init__(self, pages, timeout=None):
+                        super().__init__()
+                        self.value = None
+                        self.timeout = timeout
+                        self.page = 0
+                        self.pages = pages
 
-                @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-                async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    # self.value = "previous"
-                    self.page -= 1
-                    if self.page < 0:
-                        self.page += 1
-                        await itx.response.send_message("This is the first page, you can't go to a previous page!",
-                                                        ephemeral=True)
-                        return
-                    embed = self.pages[self.page]
-                    embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
-                    await itx.response.edit_message(embed=embed)
-
-                @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-                async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.page += 1
-                    try:
-                        embed = self.pages[self.page]
-                    except IndexError:
-                        await itx.response.send_message("This is the last page, you can't go to a next page!",
-                                                        ephemeral=True)
-                        return
-                    embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
-                    try:
-                        await itx.response.edit_message(embed=embed)
-                    except discord.errors.HTTPException:
+                    @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
+                    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+                        # self.value = "previous"
                         self.page -= 1
-                        await itx.response.send_message("This is the last page, you can't go to a next page!",
-                                                        ephemeral=True)
+                        if self.page < 0:
+                            self.page += 1
+                            await itx.response.send_message("This is the first page, you can't go to a previous page!",
+                                                            ephemeral=True)
+                            return
+                        embed = self.pages[self.page]
+                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+                        await itx.response.edit_message(embed=embed)
 
-            embed = pages[page]
-            embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
-            view = Pages(pages, timeout=90)
-            await itx.followup.send(f"I found the following `{len(pages)}` results on urbandictionary.com: ",
-                                    embed=embed, view=view, ephemeral=True)
-            await view.wait()
-            if view.value in [None, 1, 2]:
-                await itx.edit_original_response(view=None)
-            return
+                    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+                    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+                        self.page += 1
+                        try:
+                            embed = self.pages[self.page]
+                        except IndexError:
+                            await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                                            ephemeral=True)
+                            return
+                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+                        try:
+                            await itx.response.edit_message(embed=embed)
+                        except discord.errors.HTTPException:
+                            self.page -= 1
+                            await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                                            ephemeral=True)
+
+                embed = pages[page]
+                embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
+                view = Pages(pages, timeout=90)
+                await itx.followup.send(f"I found the following `{len(pages)}` results on urbandictionary.com: ",
+                                        embed=embed, view=view, ephemeral=True)
+                await view.wait()
+                if view.value in [None, 1, 2]:
+                    await itx.edit_original_response(view=None)
+                return
 
         assert len(result_str) > 0
-        await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
+        if itx.response.is_done():
+            await itx.followup.send(result_str, ephemeral=not public, suppress_embeds=True)
+        else:
+            await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
 
