@@ -62,16 +62,16 @@ class Pronouns(commands.Cog):
             await itx.response.send_message(f"This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use {cmd_mention} `mode:Add` `argument:<pronoun>`\nThey might also have pronouns mentioned in their About Me.. I can't see that sadly, so you'd have to check yourself.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         else:
             await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n" + '\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
-
+    
     async def pronoun_autocomplete(self, itx: discord.Interaction, current: str):
         if itx.namespace.mode == 1:
             results = []
             for member in itx.guild.members:
                 if member.nick is not None:
-                    nick = current in member.nick
+                    nick = current.lower() in member.nick.lower()
                 else:
                     nick = False
-                if current in member.name:
+                if current.lower() in member.name.lower():
                     name = str(member)
                     results.append(app_commands.Choice(name=name, value=member.mention))
                 elif nick:
@@ -100,17 +100,17 @@ class Pronouns(commands.Cog):
                     "Hee/hee"
                 ]
                 results = []
-                sections = current.split("/")
+                sections = current.lower().split("/")
                 if len(sections) < 2:
                     suggestions = part_loose
                     for x in part:
                         for y in part:
                             suggestions.append(x+"/"+y)
                     for suggestion in suggestions:
-                        if current in suggestion:
+                        if current.lower() in suggestion.lower():
                             results.append(suggestion)
                 for pronoun_part in part_loose:
-                    if current in pronoun_part:
+                    if current.lower() in pronoun_part.lower():
                         results.append(pronoun_part)
                 for pronoun_part in part:
                     if sections[-1].lower() in pronoun_part.lower():
@@ -133,7 +133,7 @@ class Pronouns(commands.Cog):
         if itx.namespace.mode == 3:
             staff_overwrite = False
             data = None
-            if isStaff(itx) and " |" in current:
+            if is_staff(itx) and " |" in current:
                 sections = current.split(" |")
                 if len(sections) == 2:
                     try:
@@ -261,7 +261,7 @@ class Pronouns(commands.Cog):
             pronoun = argument
             pronouns = data['pronouns']
             if pronoun not in pronouns:
-                if isStaff(itx):
+                if is_staff(itx):
                     # made possible with the annoying user '27', alt of Error, trying to break the bot :\
                     try:
                         member_id, pronoun = pronoun.split(" | ", 1)

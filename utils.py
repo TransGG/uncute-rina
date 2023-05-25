@@ -1,17 +1,41 @@
 from Uncute_Rina import *
 
-def isVerified(itx: discord.Interaction):
+def is_verified(itx: discord.Interaction):
+    """
+    Check if someone is verified
+
+    ### Parameters:
+    itx: :class:`discord.Interaction`
+        interaction with itx.guild.roles and itx.user.roles
+    
+    ### Returns
+    `bool` is_verified
+    """
+    if itx.guild is None:
+        return False
     roles = [discord.utils.find(lambda r: r.name == 'Verified', itx.guild.roles)]
     user_role_ids = [role.id for role in itx.user.roles]
     role_ids = [959748411844874240,  # Transplace: Verified
                 1109907941454258257] # Transonance: Verified
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isStaff(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
+    return len(set(roles).intersection(itx.user.roles)) > 0 or is_staff(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
 
 # def isVerifier(itx: discord.Interaction):
 #     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
-#     return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx)
+#     return len(set(roles).intersection(itx.user.roles)) > 0 or is_admin(itx)
 
-def isStaff(itx: discord.Interaction):
+def is_staff(itx: discord.Interaction):
+    """
+    Check if someone is staff
+
+    ### Parameters:
+    itx: :class:`discord.Interaction`
+        interaction with itx.guild.roles and itx.user.roles
+    
+    ### Returns
+    `bool` is_staff
+    """
+    if itx.guild is None:
+        return False
     # case sensitive lol
     roles = [discord.utils.find(lambda r: r.name == 'Core Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Moderator' , itx.guild.roles),
@@ -24,9 +48,21 @@ def isStaff(itx: discord.Interaction):
     user_role_ids = [role.id for role in itx.user.roles]
     role_ids = [1069398630944997486,981735650971775077, #TransPlace: trial ; moderator
                 1108771208931049544] # Transonance: Staff
-    return len(set(roles).intersection(itx.user.roles)) > 0 or isAdmin(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
+    return len(set(roles).intersection(itx.user.roles)) > 0 or is_admin(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
 
-def isAdmin(itx: discord.Interaction):
+def is_admin(itx: discord.Interaction):
+    """
+    Check if someone is an admin
+
+    ### Parameters:
+    itx: :class:`discord.Interaction`
+        interaction with itx.guild.roles and itx.user
+    
+    ### Returns
+    `bool` is_admin
+    """
+    if itx.guild is None:
+        return False
     roles = [discord.utils.find(lambda r: r.name == 'Full Admin', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Head Staff', itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Admins'    , itx.guild.roles),
@@ -37,6 +73,22 @@ def isAdmin(itx: discord.Interaction):
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056 or len(set(role_ids).intersection(user_role_ids)) > 0
 
 def debug(text="", color="default", add_time=True, end="\n", advanced=False):
+    """
+    Log a message to the console
+
+    ### Parameters:
+    text: :class:`str`
+        The message you want to send to the console
+    color (optional): :class:`str`
+        The color you want to give your message ('red' for example)
+    add_time (optional): :class:`bool`
+        If you want to start the message with a '[23:59:59.000001] [INFO]:'
+    end (optional): :class:`str`
+        What to end the end of the message with (similar to print(end=''))
+    advanced (optional) :class:`bool`
+        Whether to interpret `text` as advanced text (like minecraft in-chat colors). Replaces "&4" to red, "&l" to bold, etc. and "&&4" to a red background.
+    """
+
     colors = {
         "default":"\033[0m",
         "black":"\033[30m",
@@ -103,8 +155,8 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False):
             while "&"+_detColor in text:
                 _text = text
                 text = text.replace("m&"+_detColor,";"+detailColor[_detColor]+"m",1)
-                if text == text:
-                    text = text.replace("&"+_detColor,"["+detailColor[_detColor]+"m",1)
+                if _text == text:
+                    text = text.replace("&"+_detColor,"\033["+detailColor[_detColor]+"m",1)
         color = "default"
     else:
         try:
@@ -125,7 +177,10 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False):
     print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
 
 #unused
-def thousandSpace(number, interval = 3, separator = " "):
+def thousand_space(number, interval = 3, separator = " "):
+    """
+    Just use `f"{number:,}"` :|
+    """
     decimals = []
     if type(number) is int or type(number) is float:
         number = str(number)
@@ -138,19 +193,22 @@ def thousandSpace(number, interval = 3, separator = " "):
     return number+decimals
 
 
-async def logMsg(_guild, msg: str):
-    with open("api_keys.json", "r") as f:
-        api_keys = json.loads(f.read())
-    cluster = MongoClient(api_keys['MongoDB'])
-    RinaDB = cluster["Rina"]
-    collection = RinaDB["guildInfo"]
-    query = {"guild_id": _guild.id}
-    guild = collection.find(query)
+async def log_to_guild(client: Bot, guild: discord.Guild, msg: str):
+    """
+    Log a message to a guild's logging channel (vcLog)
+
+    ### Parameters
+    --------------
+    client: :class:`Uncute_Rina.Bot`
+        The bot class with `client.get_command_info()`
+    guild: :class:`discord.Guild`
+        Guild of the logging channel
+    msg: :class:`str`
+        Message you want to send to this logging channel
+    """
     try:
-        guild = guild[0]
-        vcLog = guild["vcLog"]
-        logChannel = _guild.get_channel(vcLog)
-        return await logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
-    except (IndexError, AttributeError):
-        debug("Not enough data is configured to log a message in the logging channel! Please fix this with `/editguildinfo`!",color="red")
-        return
+        log_channel_id = client.get_guild_info(guild, "vcLog")
+    except KeyError:
+        return # already gets debugged in get_guild_info
+    log_channel = guild.get_channel(log_channel_id)
+    return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())

@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.0.3".split(".")
+    fileVersion = "1.2.0.4".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -124,9 +124,21 @@ else:
             Get a guild's server settings (from /editguildinfo, in cmd_customvcs)
 
             ### Arguments:
-            guild_id: guild from which you want to get the guild info / settings
-            *args: settings (or multiple) that you want to fetch
-            log: (optional) a list of [discord.Interaction, error_message (string)], and will reply to the given interaction with the message
+            --------------
+            guild_id: :class:`discord.Guild` or :class:`int`
+                guild or id from which you want to get the guild info / settings
+            *args: :class:`str`
+                settings (or multiple) that you want to fetch
+            log (optional): :class:`list[discord.Interaction, str]`
+                A list of [itx, error_message], and will reply this error message to the given interaction if there's a KeyError.
+
+            ### Returns:
+            ------------
+            `any` (whichever is given in the database)
+
+            ### Raises:
+            -----------
+            `KeyError` if guild does not have (the requested) data. It debug()s this already.
             """
             if isinstance(guild_id, discord.Guild):
                 guild_id = guild_id.id
@@ -245,7 +257,7 @@ else:
 
     @client.tree.command(name="version",description="Get bot version")
     async def botVersion(itx: discord.Interaction):
-        public = isStaff(itx)
+        public = is_staff(itx)
         # get most recently pushed's version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/Uncute_Rina.py").text
         latest_version = latest_rina.split("fileVersion = \"", 1)[1].split("\".split(\".\")", 1)[0]
@@ -260,7 +272,7 @@ else:
 
     @client.tree.command(name="update",description="Update slash-commands")
     async def updateCmds(itx: discord.Interaction):
-        if not isStaff(itx):
+        if not is_staff(itx):
             await itx.response.send_message("Only Staff can update the slash commands (to prevent ratelimiting)", ephemeral=True)
             return
         await client.tree.sync()
@@ -270,25 +282,40 @@ else:
     # Bot commands end
     # Crash event handling
 
-    async def send_crash_message(error_type: str, traceback_text: str, error_source: str, color: discord.Colour):
+    async def send_crash_message(error_type: str, traceback_text: str, error_source: str, color: discord.Colour, itx: discord.Interaction=None):
         """
         Sends crash message to Rina's main logging channel
 
-        error_type: Is it an 'Error' or an 'AppCommand Error'
-        traceback_text: What is the traceback?
+        ### Parameters
+        error_type: :class:`str`
+            Is it an 'Error' or an 'AppCommand Error'
+        traceback_text: :class:`str`
+            What is the traceback?
+        error_source: :class:`str`
+            Name of the error source, displayed at the top of the message. Think of event or command.
+        color: :class:`discord.Colour`
+            Color of the discord embed
+        itx (optional): :class:`discord.Interaction`
+            Interaction with a potential guild. This might allow Rina to send the crash log to that guild instead
         """
+
+        log_guild: discord.Guild
         try:
-            log_guild: discord.Guild = await client.fetch_guild(959551566388547676)
-        except discord.errors.NotFound:
-            if testing_environment == 1:
-                log_guild: discord.Guild = await client.fetch_guild(985931648094834798)
-            else:
-                log_guild: discord.Guild = await client.fetch_guild(981615050664075404)
-        
-        try:
-            vcLog = await client.get_guild_info(log_guild, "vcLog")
-        except KeyError: # precaution to prevent infinite loops, I suppose
-            pass
+            log_guild = itx.guild
+            vcLog = await client.get_guild_info(itx.guild, "vcLog")
+        except (AttributeError, KeyError): # no guild settings, or itx -> 'NoneType' has no attribute '.guild'
+            try:
+                log_guild = await client.fetch_guild(959551566388547676)
+            except discord.errors.NotFound:
+                if testing_environment == 1:
+                    log_guild = await client.fetch_guild(985931648094834798)
+                else:
+                    log_guild = await client.fetch_guild(981615050664075404)
+
+            try:
+                vcLog = await client.get_guild_info(log_guild, "vcLog")
+            except KeyError:
+                return # prevent infinite logging loops, i guess
         
         error_caps = error_type.upper()
         debug_message = f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [{error_caps}]: {error_source}\n\n{traceback_text}\n"
@@ -351,7 +378,7 @@ else:
                 msg += f"    original error: {error.original.status}: {error.original.text}\n\n"
                     #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
-        await send_crash_message("AppCommand Error", msg, f"</{itx.command.name}:{itx.data.get('id')}>", discord.Colour.from_rgb(r=255, g=121, b=77))
+        await send_crash_message("AppCommand Error", msg, f"</{itx.command.name}:{itx.data.get('id')}>", discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
         appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
 
     try:

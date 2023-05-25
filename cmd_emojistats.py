@@ -26,6 +26,7 @@ class EmojiStats(commands.Cog):
     def __init__(self, client: Bot):
         global asyncRinaDB
         asyncRinaDB = client.asyncRinaDB
+        self.client = client
 
     emojistats = app_commands.Group(name='emojistats', description='Get information about emoji usage in messages and reactions')
 
@@ -35,7 +36,6 @@ class EmojiStats(commands.Cog):
             return
         emojis = []
         start_index = 0
-        loop_catcher = 0
         animated = None
         while True:
             emoji = re.search("<a?:[a-zA-Z_0-9]+:[0-9]+>", message.content[start_index:])
@@ -48,11 +48,6 @@ class EmojiStats(commands.Cog):
             if not any(id in emojiList for emojiList in emojis):
                 emojis.append([id,name])
             start_index += emoji.span()[1] # (11,29) for example
-            loop_catcher += 1
-            if loop_catcher > 50:
-                await logMsg(message.guild, "<@262913789375021056> @MysticMia#7612 <@280885861984239617> @Cleo#1003 WARNING INFINITE LOOP in on_message of cmd_emojistats cog! Broken it with a `return`! Figure out the situation with Cleo!" +
-                             f"\nLook at https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}")
-                return
 
 
         for emoji in emojis:
@@ -68,7 +63,7 @@ class EmojiStats(commands.Cog):
     @app_commands.describe(emoji="Emoji you want to get data of")
     async def get_emoji_data(self, itx: discord.Interaction, emoji: str):
         # for testing purposes, for now.
-        if not isStaff(itx):
+        if not is_staff(itx):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
 
@@ -119,7 +114,7 @@ class EmojiStats(commands.Cog):
         discord.app_commands.Choice(name='Both', value=3)
     ])
     async def get_unused_emojis(self,itx: discord.Interaction, hidden: bool = True, max_results:int = 10, min_used:int = 1, min_msg:int = 1, min_react:int = 1, animated:int = 3):
-        if not isStaff(itx):
+        if not is_staff(itx):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
         await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)",ephemeral=hidden)
@@ -164,7 +159,7 @@ class EmojiStats(commands.Cog):
     @emojistats.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def get_emoji_top_10(self, itx: discord.Interaction):
         # for testing purposes, for now.
-        if not isStaff(itx):
+        if not is_staff(itx):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
 

@@ -25,7 +25,7 @@ class Starboard(commands.Cog):
             original_message = await ch.fetch_message(message_id)
         except discord.NotFound:
             # if original message removed, remove starboard message
-            await logMsg(star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
+            await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
             messageIdMarkedForDeletion.append(star_message.id)
             await star_message.delete()
             return
@@ -59,7 +59,7 @@ class Starboard(commands.Cog):
 
         #if more x'es than stars, and more than [15] reactions, remove message
         if star_stat < 0 and reactionTotal >= downvote_init_value:
-            await logMsg(star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
+            await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
             messageIdMarkedForDeletion.append(star_message.id)
             await star_message.delete()
             return
@@ -98,8 +98,8 @@ class Starboard(commands.Cog):
             ch = self.client.get_channel(payload.channel_id)
             message = await ch.fetch_message(payload.message_id)
         except discord.errors.NotFound:
-            await logMsg(
-                self.client.get_guild(payload.guild_id),
+            await log_to_guild(
+                self.client, self.client.get_guild(payload.guild_id),
                 f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) or message {payload.message_id}!\n'
                 f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}\n'
                 f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
@@ -142,7 +142,8 @@ class Starboard(commands.Cog):
                     except discord.errors.Forbidden:
                         # If "Reaction blocked", then maybe message author blocked Rina.
                         # Thus, I can't track if Rina added it to starboard already or not.
-                        await logMsg(self.client.get_guild(payload.guild_id), f'**:warning: Warning: **Couldn\'t add starboard emoji to {message.jump_url}. They might have blocked Rina...')
+                        await log_to_guild(self.client, self.client.get_guild(payload.guild_id), 
+                                     f'**:warning: Warning: **Couldn\'t add starboard emoji to {message.jump_url}. They might have blocked Rina...')
                         return
 
                     msgLink = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
@@ -165,7 +166,6 @@ class Starboard(commands.Cog):
                     )
                     embed_list = []
                     for attachment in message.attachments:
-                        print(repr(attachment.content_type), type(attachment.content_type))
                         try:
                             if attachment.content_type.split("/")[0] == "image": #is image or GIF
                                 if len(embed_list) == 0:
@@ -205,7 +205,9 @@ class Starboard(commands.Cog):
                             embeds=embed_list,
                             allowed_mentions=discord.AllowedMentions.none(),
                         )
-                    await logMsg(star_channel.guild, f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}. Content: \"\"\"{message.content}\"\"\" and attachments: {[x.url for x in message.attachments]}")
+                    await log_to_guild(self.client, star_channel.guild, 
+                                 f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}. "
+                                 f"Content: \"\"\"{message.content}\"\"\" and attachments: {[x.url for x in message.attachments]}")
                     # add new starboard msg
                     await msg.add_reaction(starboard_emoji)
                     await msg.add_reaction("❌")
@@ -255,7 +257,9 @@ class Starboard(commands.Cog):
             return
         if message_payload.channel_id == star_channel.id:
             # check if the deleted message is a starboard message; if so, log it at starboard message deletion
-            await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message was removed (from {message_payload.message_id}) (Starboard message was deleted manually).")
+            await log_to_guild(self.client, star_channel.guild, 
+                         f"{starboard_emoji} :x: Starboard message was removed (from {message_payload.message_id}) "
+                         f"(Starboard message was deleted manually).")
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
@@ -270,7 +274,10 @@ class Starboard(commands.Cog):
                             msg_link = str(message_payload.message_id)+"  |  "+(await self.client.get_channel(message_payload.channel_id).fetch_message(message_payload.message_id)).jump_url
                         except discord.NotFound:
                             msg_link = str(message_payload.message_id)+" (couldn't get jump link)"
-                        await logMsg(star_channel.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) (original message was removed (this starboard message's linked id matched the removed message's)). Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
+                        await log_to_guild(self.client, star_channel.guild, 
+                                     f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "
+                                     f"(original message was removed (this starboard message's linked id matched the removed message's)). "
+                                     f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
                         messageIdMarkedForDeletion.append(star_message.id)
                         await star_message.delete()
                         return

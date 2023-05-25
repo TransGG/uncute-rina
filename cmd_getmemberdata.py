@@ -44,7 +44,7 @@ class MemberData(commands.Cog):
     @app_commands.describe(upper_bound="Get data from [period] days ago",
                            doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
     async def get_member_data(self, itx: discord.Interaction, lower_bound: str, upper_bound: str = None, doubles: bool = False, public: bool = False):
-        # if not isStaff(itx):
+        # if not is_staff(itx):
         #     await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True)
         #     return
         if upper_bound is None:

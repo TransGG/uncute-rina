@@ -139,7 +139,7 @@ class Tags:
     colours = {k: discord.Colour.from_hsv(v[0]/360, v[1]/100, v[2]/100) for k, v in hsv_color_list.items()}
     
     class TagView(discord.ui.View):
-        def __init__(self, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None):
+        def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None):
             super().__init__()
             if embed.footer.text is None:
                 self.footer = ""
@@ -147,6 +147,7 @@ class Tags:
                 self.footer = embed.footer.text + "\n"
 
             self.value = None
+            self.client = client
             self.timeout = timeout
             self.public_footer = public_footer
             self.embed = embed
@@ -163,7 +164,7 @@ class Tags:
             await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
             await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             if self.value == 2 and self.logmsg is not None:
-                await logMsg(itx.guild, self.logmsg)
+                await log_to_guild(self.client, itx.guild, self.logmsg)
             self.stop()
 
         def on_timeout(self):
@@ -182,14 +183,14 @@ class Tags:
                 await itx.response.send_message("sending...", ephemeral=True)
                 await itx.followup.send(embed=embed, ephemeral=False)
                 cmd_mention = client.get_command_mention("tag")
-                await logMsg(itx.guild, logmsg)
+                await log_to_guild(client, itx.guild, logmsg)
             else:
                 await itx.response.send_message(embed=embed)
         else:
             if anonymous:
-                view = Tags().TagView(embed, timeout=60, public_footer="", logmsg=logmsg)
+                view = Tags().TagView(client, embed, timeout=60, public_footer="", logmsg=logmsg)
             else:
-                view = Tags().TagView(embed, timeout=60)
+                view = Tags().TagView(client, embed, timeout=60)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
@@ -912,7 +913,7 @@ class OtherAddons(commands.Cog):
                 try:
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
                 except discord.errors.HTTPException:
-                    await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. They might have blocked Rina...')
+                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. They might have blocked Rina...')
                     try:
                         await message.add_reaction("☺") # relaxed
                     except discord.errors.Forbidden:
@@ -932,7 +933,7 @@ class OtherAddons(commands.Cog):
                 try:
                     await message.add_reaction("<:this:960916817801535528>")
                 except:
-                    await logMsg(message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
+                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
                     raise
             elif "cutie" in msg or "cute" in msg:
                 responses = [
@@ -987,7 +988,7 @@ class OtherAddons(commands.Cog):
     @app_commands.describe(text="What will you make Rina repeat?",
                            reply_to_interaction="Show who sent the message?")
     async def say(self, itx: discord.Interaction, text: str, reply_to_interaction: bool = False):
-        if not isStaff(itx):
+        if not is_staff(itx):
             await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
             return
         if reply_to_interaction:
@@ -1439,7 +1440,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
         global selfies_delete_week_command_cooldown
-        if not isStaff(itx):
+        if not is_staff(itx):
             await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
             return
         time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
@@ -1452,7 +1453,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         output = "Attempting deletion...\n"
         await itx.response.send_message(output+"...", ephemeral=True)
         try:
-            await logMsg(itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
+            await log_to_guild(self.client, itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
 
             message_delete_count = 0
             async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
@@ -1463,7 +1464,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                             def __init__(self, member: discord.Member):
                                 self.user = member
                                 self.guild = member.guild
-                        if isStaff(Interaction(message.author)): # nested to save having to look through function 1000 times
+                        if is_staff(Interaction(message.author)): # nested to save having to look through function 1000 times
                             continue
                     await message.delete()
                     # print("----Deleted---- ["+str(message.created_at)+f"] {message.author}: {message.content}")
@@ -1632,7 +1633,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             else:
                 await itx.edit_original_response(content=":warning: Adding emojis failed!")
         cmd_mention = self.client.get_command_mention("add_poll_reactions")
-        await logMsg(itx.guild, f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
+        await log_to_guild(self.client, itx.guild, f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))

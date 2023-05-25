@@ -112,7 +112,7 @@ class CustomVcs(commands.Cog):
                      name: app_commands.Range[str,4,35] = None, 
                      limit: app_commands.Range[int, 0, 99] = None):
         global recently_renamed_vcs
-        if not isVerified(itx):
+        if not is_verified(itx):
             await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",ephemeral=True)
             return
         
@@ -122,7 +122,7 @@ class CustomVcs(commands.Cog):
         warning = ""
 
         if itx.user.voice is None:
-            if isStaff(itx):
+            if is_staff(itx):
                 class CustomVcStaffEditor(discord.ui.Modal, title='Edit a custom vc\'s channel'):
                     channel_id = discord.ui.TextInput(label='Channel Id', placeholder="Which channel do you want to edit")#, required=True)
                     name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False)
@@ -276,7 +276,7 @@ class CustomVcs(commands.Cog):
             await logChannel.send("Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {oldName} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
 
     async def edit_guild_info_autocomplete(self, itx: discord.Interaction, current: str):
-        if not isAdmin(itx):
+        if not is_admin(itx):
             return [app_commands.Choice(name="Only admins can use this command!", value="No permission")]
 
         if current.startswith("1") or current.startswith("2") or current.startswith("3") or current.startswith("4"):
@@ -330,7 +330,7 @@ class CustomVcs(commands.Cog):
     ])
     @app_commands.autocomplete(option=edit_guild_info_autocomplete)
     async def edit_guild_info(self, itx: discord.Interaction, mode: int, option: str, value: str):
-        if not isAdmin(itx):
+        if not is_admin(itx):
             await itx.response.send_message("You don't have sufficient permissions to execute this command! (don't want you to break the bot ofc.)",ephemeral=True)
             return
         
@@ -634,7 +634,7 @@ class CustomVcs(commands.Cog):
                            f"Use {cmd_mention} to learn more!\n"
                            f"Made {owner_taglist} a VcTable Owner\n"
                            f"**:warning: If someone is breaking the rules, TELL A MOD** (don't try to moderate a vc yourself)",allowed_mentions=discord.AllowedMentions.none())
-        await logMsg(itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
+        await log_to_guild(self.client, itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
         recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
         try:
             await channel.edit(name=VcTable_prefix+channel.name)
@@ -842,7 +842,7 @@ class CustomVcs(commands.Cog):
                 def __init__(self,guild, user):
                     self.user = user
                     self.guild = guild
-            if isStaff(Interaction(itx.guild, user)):
+            if is_staff(Interaction(itx.guild, user)):
                 await itx.response.send_message("You can't mute staff members! If you have an issue with staff, make a ticket or DM an admin!",ephemeral=True)
                 return
             await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=False, stream=False), reason="VcTable edited: muted participant")

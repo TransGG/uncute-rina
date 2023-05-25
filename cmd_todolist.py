@@ -41,10 +41,10 @@ class TodoList(commands.Cog):
         elif mode == 2: # Remove item from to-do list
             if todo is None:
                 cmd_mention = self.client.get_command_mention("todo")
-                await itx.response.send_message(f"Removing todo's with this command is done with IDs. You can see "
-                                                f"your current list of todo's using {cmd_mention} `mode:Check`. This "
-                                                f"list will start every todo-list item with a number. This is the id. "
-                                                f"This number can be filled in in the `todo: ` argument to remove it.", ephemeral=True)
+                await itx.response.send_message(f"Removing todo's with this command is done with IDs. You can see your current list "
+                                                f"of todo's using {cmd_mention} `mode:Check`. \n"
+                                                f"This list will start every todo-list item with a number. This is the ID you're "
+                                                f"looking for. This number can be filled into the `todo: ` argument to remove it.", ephemeral=True)
                 return
             try:
                 todo = int(todo)
