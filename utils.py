@@ -33,7 +33,7 @@ def isAdmin(itx: discord.Interaction):
              discord.utils.find(lambda r: r.name == 'Admin'     , itx.guild.roles),
              discord.utils.find(lambda r: r.name == 'Owner'     , itx.guild.roles)]
     user_role_ids = [role.id for role in itx.user.roles]
-    role_ids = [981735525784358962]  # TransPlace: 
+    role_ids = [981735525784358962]  # TransPlace: Admin
     return len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056 or len(set(role_ids).intersection(user_role_ids)) > 0
 
 def debug(text="", color="default", add_time=True, end="\n", advanced=False):
