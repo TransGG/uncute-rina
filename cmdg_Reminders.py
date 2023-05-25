@@ -180,7 +180,10 @@ class Reminders(commands.GroupCog,name="reminder"):
         async def send_reminder(self):
             user = await self.client.fetch_user(self.userID)
             creationtime = int(mktime(self.creationtime.timetuple()))
-            await user.send(f"{self.alert}On <t:{creationtime}:F>, you asked to be reminded of \"{self.reminder}.\"")
+            try:
+                await user.send(f"{self.alert}On <t:{creationtime}:F>, you asked to be reminded of \"{self.reminder}.\"")
+            except discord.errors.Forbidden:
+                pass # I guess this user has no servers in common with Rina anymore. Sucks for them.
             collection = self.client.RinaDB["reminders"]
             query = {"userID": self.userID}
             db_data = collection.find_one(query)

@@ -182,7 +182,7 @@ class Pronouns(commands.Cog):
     ])
     @app_commands.autocomplete(argument=pronoun_autocomplete)
     async def pronouns_command(self, itx: discord.Interaction, mode: int, argument: str = None):
-        if mode == 1:
+        if mode == 1: # Check
             if argument is not None:
                 user = argument
                 for i in "<@>":
@@ -194,13 +194,13 @@ class Pronouns(commands.Cog):
                     return
                 user = itx.guild.get_member(user_id)
                 if user is None:
-                    user = self.client.get_user(user_id)
+                    user = itx.client.get_user(user_id)
                     if user is None:
                         await itx.response.send_message("I couldn't find a user with that ID! Did you mention the right person? Perhaps they're not in the server anymore", ephemeral=True)
             else:
                 user = itx.user
             await self.get_pronouns(itx, user)
-        elif mode == 2:
+        elif mode == 2: # Add
             if argument is None:
                 await itx.response.send_message("You can add pronouns here. For example, \"she/her\", or \":Alex\". For more information about pronouns, "
                                         "or if you want to try out your own pronouns, check out <https://en.pronouns.page/pronouns>",ephemeral=True)
@@ -242,7 +242,7 @@ class Pronouns(commands.Cog):
             await itx.response.send_message(
                 warning + f"Successfully added `{pronoun}`. Use {cmd_mention} `mode:Check` to see your custom pronouns, and use {cmd_mention} `mode:Remove` `argument:pronoun` to remove one",
                 ephemeral=True)
-        elif mode == 3:
+        elif mode == 3: # Remove
             collection = RinaDB["members"]
             query = {"member_id": itx.user.id}
             data = collection.find_one(query)
@@ -285,15 +285,27 @@ class Pronouns(commands.Cog):
                 else:
                     cmd_mention = self.client.get_command_mention("pronouns")
                     await itx.response.send_message(
-                        f"You haven't added this pronoun yet, so I can't really remove it either! Use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one, or `{cmd_mention} mode:Check` to see what pronouns you have added",
+                        f"You haven't added this pronoun yet, so I can't really remove it either! Use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one, or {cmd_mention} `mode:Check` to see what pronouns you have added",
                         ephemeral=True)
                     return
             else:
                 pronouns.remove(pronoun)
             collection.update_one(query, {"$set": {f"pronouns": pronouns}}, upsert=True)
             await itx.response.send_message(f"Removed `{pronoun}` successfully!", ephemeral=True)
-        elif mode == 4:
-            await itx.response.send_message(f"Oops, I forgot to add anything for this command! Ask Mia how it works eheh... \n    {self.client.bot_owner}",ephemeral=True)
+        elif mode == 4: # help
+            cmd_mention = self.client.get_command_mention("pronouns")
+            await itx.response.send_message(f"There are multiple ways to get a user's pronouns. The simplest of all is clicking their role. "
+                                            f"However, sometimes the selection of roles is not enough to tell others your pronouns. In that "
+                                            f"case, you can use {cmd_mention} `mode:Check` to see their pronouns.\n"
+                                            f"\n"
+                                            f"When adding a pronoun (using {cmd_mention} `mode:Add`), it will autocomplete potential pronoun "
+                                            f"combinations.\n"
+                                            f"Removing added pronouns (using {cmd_mention} `mode:Remove`) is made easy by the autocompletion "
+                                            f"of your already-added pronouns.\n"
+                                            f"\n"
+                                            f"You can also use the context menu buttons on users or messages to see the message author's "
+                                            f"pronouns. You can find these by right-clicking the message or user, hover over 'Apps', and "
+                                            f"click 'Pronouns'.", ephemeral=True)
 
     async def pronouns_ctx_user(self, itx: discord.Interaction, user: discord.User):
         await self.get_pronouns(itx, user)

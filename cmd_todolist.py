@@ -15,8 +15,15 @@ class TodoList(commands.Cog):
         discord.app_commands.Choice(name='Remove to-do', value=2),
         discord.app_commands.Choice(name='Check', value=3)
     ])
-    async def todo(self, itx: discord.Interaction, mode: int, todo: str):
+    async def todo(self, itx: discord.Interaction, mode: int, todo: str = None):
         if mode == 1: # Add item to to-do list
+            if todo is None:
+                cmd_mention = self.client.get_command_mention("todo")
+                await itx.response.send_message(f"This command lets you add items to your to-do list!\n"
+                                                f"Type whatever you still plan to do in the `todo: ` argument, "
+                                                f"and then you can see your current to-do list with {cmd_mention} "
+                                                f"`mode:Check`!", ephemeral=True)
+                return
             if len(todo) > 500:
                 itx.response.send_message("I.. don't think having such a big to-do message is gonna be very helpful..",ephemeral=True)
                 return
@@ -32,6 +39,13 @@ class TodoList(commands.Cog):
             await itx.response.send_message(f"Successfully added an item to your to-do list! ({len(list)} item{'s'*(len(list)!=1)} in your to-do list now)",ephemeral=True)
 
         elif mode == 2: # Remove item from to-do list
+            if todo is None:
+                cmd_mention = self.client.get_command_mention("todo")
+                await itx.response.send_message(f"Removing todo's with this command is done with IDs. You can see "
+                                                f"your current list of todo's using {cmd_mention} `mode:Check`. This "
+                                                f"list will start every todo-list item with a number. This is the id. "
+                                                f"This number can be filled in in the `todo: ` argument to remove it.", ephemeral=True)
+                return
             try:
                 todo = int(todo)
             except ValueError:

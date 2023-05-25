@@ -102,6 +102,7 @@ class MemberData(commands.Cog):
                             column.append(time)
                             if not doubles:
                                 break
+            await asyncio.sleep(0.1) # allow heartbeat or recognising other commands
             totals[y] = len(column)
             for time in range(len(column)):
                 column[time] = int(column[time]/accuracy)*accuracy
@@ -109,6 +110,7 @@ class MemberData(commands.Cog):
                     results[y][column[time]] += 1
                 else:
                     results[y][column[time]] = 1
+            await asyncio.sleep(0.1) # allow heartbeat or recognising other commands
             if len(column) == 0:
                 warning += f"\nThere were no '{y}' users found for this time period."
                 results[y] = {}
@@ -134,6 +136,8 @@ class MemberData(commands.Cog):
         for i in results: # sort data by key
             results[i] = {timestamp: results[i][timestamp] for timestamp in sorted(results[i])}
         
+        await asyncio.sleep(0.1) # allow heartbeat or recognising other commands
+
         # make graph
         try:
             d = {

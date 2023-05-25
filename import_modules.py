@@ -4,7 +4,7 @@ class PrintProgress:
         self.max = max
 
     def increment(self, name):
-        print(f"[{self.progress*'#'}+{(self.max-self.progress-1)*' '}] Importing modules:   {name}{' '*(50-len(name))}", end="\033[F")
+        print(f"[{self.progress*'#'}+{(self.max-self.progress-1)*' '}] Importing modules:   {name}{' '*(50-len(name))}\033[F")
         self.progress += 1
 
 progress = PrintProgress(22)

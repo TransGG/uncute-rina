@@ -411,7 +411,7 @@ class CustomVcs(commands.Cog):
                 value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
                 if value is None:
                     return
-                ch = self.client.get_channel(value)
+                ch = itx.client.get_channel(value)
                 if type(ch) is not discord.TextChannel:
                     await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
                     return
@@ -429,7 +429,7 @@ class CustomVcs(commands.Cog):
                 value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
                 if value is None:
                     return
-                ch = self.client.get_channel(value)
+                ch = itx.client.get_channel(value)
                 if type(ch) is not discord.VoiceChannel:
                     await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.VoiceChannel'>, got {type(ch)})", ephemeral=True)
                     return
@@ -438,7 +438,7 @@ class CustomVcs(commands.Cog):
                 value = await to_int(value, "You have to give a numerical ID for the category you want to use!")
                 if value is None:
                     return
-                ch = self.client.get_channel(value)
+                ch = itx.client.get_channel(value)
                 if type(ch) is not discord.CategoryChannel:
                     await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.CategoryChannel'>, got {type(ch)})", ephemeral=True)
                     return
@@ -448,7 +448,7 @@ class CustomVcs(commands.Cog):
                     value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
                     if value is None:
                         return
-                    ch = self.client.get_channel(value)
+                    ch = itx.client.get_channel(value)
                     if type(ch) is not discord.TextChannel:
                         await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
                         return
@@ -458,7 +458,7 @@ class CustomVcs(commands.Cog):
                     value = await to_int(value, "You have to give a numerical ID for the emoji you want to use!")
                     if value is None:
                         return
-                    emoji = self.client.get_emoji(value)
+                    emoji = itx.client.get_emoji(value)
                     print(emoji)
                     if type(emoji) is not discord.Emoji:
                         await itx.response.send_message(f"The ID you gave wasn't an emoji! (i think) (or not one I can use)", ephemeral=True)
@@ -469,7 +469,7 @@ class CustomVcs(commands.Cog):
                     value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
                     if value is None:
                         return
-                    ch = self.client.get_channel(value)
+                    ch = itx.client.get_channel(value)
                     if type(ch) is not discord.TextChannel:
                         await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
                         return
@@ -501,7 +501,7 @@ class CustomVcs(commands.Cog):
                 value = await to_int(value, "You need to give a numerical ID for the bot id you want to use!")
                 if value is None:
                     return
-                user = self.client.get_user(value)
+                user = itx.client.get_user(value)
                 if not isinstance(user, discord.User):
                     await itx.response.send_message("The ID you gave wasn't for a valid user!", ephemeral=True)
                     return
@@ -510,7 +510,7 @@ class CustomVcs(commands.Cog):
                 value = await to_int(value, "You need to give a numerical ID for the channel you want to use!")
                 if value is None:
                     return
-                ch = self.client.get_channel(value)
+                ch = itx.client.get_channel(value)
                 if not isinstance(ch, discord.abc.Messageable):
                     await itx.response.send_message("The ID you gave wasn't for the type of channel I was looking for!", ephemeral=True)
                     return
@@ -649,7 +649,7 @@ class CustomVcs(commands.Cog):
         discord.app_commands.Choice(name='Remove owner', value=2),
         discord.app_commands.Choice(name='Check owners', value=3)
     ])
-    async def edit_vctable_owners(self, itx: discord.Interaction, mode: int, user: discord.Member):
+    async def edit_vctable_owners(self, itx: discord.Interaction, mode: int, user: discord.Member = None):
         if itx.user == user and mode != 3:
             if mode == 1:
                 await itx.response.send_message("You can't set yourself as owner!", ephemeral=True)
@@ -667,6 +667,13 @@ class CustomVcs(commands.Cog):
             channel = await self.get_channel_if_owner(itx, "add owner")
             if channel is None:
                 return
+            if user is None:
+                cmd_mention = self.client.get_command_mention("vctable authorizedonly")
+                await itx.response.send_message(f"You can add an owner to your VcTable using this command."
+                                                f"Owners have the ability to add speakers, mute, add other owners, "
+                                                f" disband a vctable, or whitelist speaking. Give this to people you believe "
+                                                f"can help you with this.",ephemeral=True)
+                return
             try:
                 if channel.overwrites[user].connect:
                     await itx.response.send_message(f"This user is already an owner!", ephemeral=True)
@@ -682,6 +689,13 @@ class CustomVcs(commands.Cog):
         if mode == 2:  # remove
             channel = await self.get_channel_if_owner(itx, "remove owner")
             if channel is None:
+                return
+            if user is None:
+                cmd_mention = self.client.get_command_mention("vctable owner")
+                await itx.response.send_message(f"Removing owners is usually a bad sign.. Do not hesitate to make a "
+                                                f"ticket for staff if there's something wrong.\n"
+                                                f"Anyway. You can check current owners with {cmd_mention} `mode:Check`. "
+                                                f"Then mention a user you want to delete in the `user: ` argument.", ephemeral=True)
                 return
             try:
                 if channel.overwrites[user].connect is not True: # if False or None
@@ -711,7 +725,7 @@ class CustomVcs(commands.Cog):
         discord.app_commands.Choice(name='Remove speaker', value=2),
         discord.app_commands.Choice(name='Check speakers', value=3)
     ])
-    async def edit_vctable_speakers(self, itx: discord.Interaction, mode: int, user: discord.Member):
+    async def edit_vctable_speakers(self, itx: discord.Interaction, mode: int, user: discord.Member = None):
         if itx.user == user and mode != 3:
             await itx.response.send_message("You can't edit your own speaking permissions!", ephemeral=True)
             return
@@ -719,6 +733,13 @@ class CustomVcs(commands.Cog):
         if mode == 1:  # add
             channel = await self.get_channel_if_owner(itx, "add speaker")
             if channel is None:
+                return
+            if user is None:
+                await itx.response.send_message(f"You can add a speaker to your VcTable using this command."
+                                                    f"Using {cmd_mention}, you can let only those you've selected "
+                                                    f"be able to talk in your voice channel. This can be useful if "
+                                                    f"you want an on-topic convo or podcast with a select group of "
+                                                    f"people :)",ephemeral=True)
                 return
             try:
                 warning = "\nThis user was muted before. Making them a speaker removed their mute." if channel.overwrites[user].speak is False else ""
@@ -742,6 +763,14 @@ class CustomVcs(commands.Cog):
         if mode == 2:  # remove
             channel = await self.get_channel_if_owner(itx, "remove speaker")
             if channel is None:
+                return
+            if user is None:
+                cmd_mention = self.client.get_command_mention("vctable owner")
+                cmd_mention2 = self.client.get_command_mention("vctable speaker")
+                await itx.response.send_message(f"You can remove speakers with this command. This only works if "
+                                                f"the user you're trying to remove is not already a VcTable owner "
+                                                f"(you'll need to use {cmd_mention} `mode:Remove owner` first).\n"
+                                                f"To see current VcTable speakers, use {cmd_mention2} `mode:Check`.", ephemeral=True)
                 return
             try:
                 if channel.overwrites[user].speak is not True:
@@ -784,7 +813,7 @@ class CustomVcs(commands.Cog):
         discord.app_commands.Choice(name='Unmute participant', value=2),
         discord.app_commands.Choice(name='Check muted participants', value=3)
     ])
-    async def edit_vctable_muted_participants(self, itx: discord.Interaction, mode: int, user: discord.Member):
+    async def edit_vctable_muted_participants(self, itx: discord.Interaction, mode: int, user: discord.Member = None):
         if itx.user == user and mode != 3:
             await itx.response.send_message("You can't " + "un"*(mode == 2) + "mute yourself!", ephemeral=True)
             return
@@ -792,6 +821,11 @@ class CustomVcs(commands.Cog):
         if mode == 1:  # mute
             channel = await self.get_channel_if_owner(itx, "mute participant")
             if channel is None:
+                return
+            if user is None:
+                await itx.response.send_message("Muting someone is usually a bad sign... Don't hesitate to open "
+                                                "a ticket with staff if there's something going on.\n"
+                                                "Anyway. Mention a user in the `user: ` argument to mute that person.", ephemeral=True)
                 return
             try:
                 warning = "\nThis user was a speaker before. Muting them overwrote this permissions and removed their speaker permissions" if channel.overwrites[user].speak else ""
@@ -820,6 +854,12 @@ class CustomVcs(commands.Cog):
         if mode == 2:  # unmute
             channel = await self.get_channel_if_owner(itx, "unmute participant")
             if channel is None:
+                return
+            if user is None:
+                cmd_mention = self.client.get_command_mention("vctable mute")
+                await itx.response.send_message(f"This command lets you unmute a previously-muted person. "
+                                                f"To see which people are muted, use {cmd_mention} `mode:Check`\n"
+                                                f"Then simply mention this user in the `user: ` argument.", ephemeral=True)
                 return
             try:
                 if channel.overwrites[user].speak is not False: # if True or None

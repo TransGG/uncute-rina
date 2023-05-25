@@ -17,7 +17,7 @@ class QOTW(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            confirm_channel = self.client.get_channel(self.qotw_channel_id)
+            confirm_channel = itx.client.get_channel(self.qotw_channel_id)
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=33, g=33, b=33),
@@ -65,7 +65,7 @@ class QOTW(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            confirm_channel = self.client.get_channel(self.dev_request_id)
+            confirm_channel = itx.client.get_channel(self.dev_request_id)
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=33, g=33, b=33),

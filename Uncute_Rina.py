@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.0.2".split(".")
+    fileVersion = "1.2.0.3".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -81,9 +81,21 @@ else:
         asyncRinaDB = asyncRinaDB
         staff_server_id = 981730502987898960
         bot_owner: discord.User # for AllowedMentions in on_appcommand_error()
+        def get_command_mention(self, command_string: str):
+            """
+            Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
 
-        def get_command_mention(self, _command):
-            args = _command.split(" ")+[None, None]
+            ### Parameters
+            --------------
+            command_string:  :class:`str`
+                Command you want to convert into a mention (without slash in front of it)
+            ### Returns
+            -----------
+            command mention: :class:`str`
+                The command mention, or input if not found
+            """
+
+            args = command_string.split(" ")+[None, None]
             command_name, subcommand, subcommand_group = args[0:3]
             # returns one of the following:
             # </COMMAND:COMMAND_ID>
@@ -105,7 +117,7 @@ else:
                                 if subcmdgroup.name == subcommand_group:
                                     return subcmdgroup.mention
                                     # return f"</{command.name} {subgroup.name} {subcmdgroup.name}:{command.id}>"
-            return "/"+_command
+            return "/"+command_string
 
         async def get_guild_info(self, guild_id: discord.Guild | int, *args: str, log: list[discord.Interaction | str] | None = None):
             """
@@ -225,7 +237,7 @@ else:
     @client.event
     async def on_message(message):
         # kill switch, see cmd_addons for other on_message events.
-        if message.author.id == 262913789375021056:
+        if message.author.id == client.bot_owner.id:
             if message.content == ":kill now please stop":
                 sys.exit(0)
 
@@ -233,7 +245,18 @@ else:
 
     @client.tree.command(name="version",description="Get bot version")
     async def botVersion(itx: discord.Interaction):
-        await itx.response.send_message(f"Bot is currently running on v{version} (started at {client.startup_time.strftime('%Y-%m-%dT%H:%M:%S.%f')})")
+        public = isStaff(itx)
+        # get most recently pushed's version
+        latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/Uncute_Rina.py").text
+        latest_version = latest_rina.split("fileVersion = \"", 1)[1].split("\".split(\".\")", 1)[0]
+        for i in range(len(latest_version.split("."))):
+            if int(latest_version.split(".")[i]) > int(version.split(".")[i]):
+                await itx.response.send_message(f"Bot is currently running on v{version} (latest: v{latest_version})\n(started at {client.startup_time.strftime('%Y-%m-%dT%H:%M:%S.%f')})",
+                                                ephemeral=not public)
+                return
+        else:
+            await itx.response.send_message(f"Bot is currently running on v{version} (latest)\n(started at {client.startup_time.strftime('%Y-%m-%dT%H:%M:%S.%f')})",
+                                            ephemeral=not public)
 
     @client.tree.command(name="update",description="Update slash-commands")
     async def updateCmds(itx: discord.Interaction):
@@ -241,9 +264,11 @@ else:
             await itx.response.send_message("Only Staff can update the slash commands (to prevent ratelimiting)", ephemeral=True)
             return
         await client.tree.sync()
-        commandList = await client.tree.fetch_commands()
-        client.commandList = commandList
+        client.commandList = await client.tree.fetch_commands()
         await itx.response.send_message("Updated commands")
+
+    # Bot commands end
+    # Crash event handling
 
     async def send_crash_message(error_type: str, traceback_text: str, error_source: str, color: discord.Colour):
         """
@@ -326,7 +351,7 @@ else:
                 msg += f"    original error: {error.original.status}: {error.original.text}\n\n"
                     #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
-        await send_crash_message("AppCommand Error", msg, itx.command.name, discord.Colour.from_rgb(r=255, g=121, b=77))
+        await send_crash_message("AppCommand Error", msg, f"</{itx.command.name}:{itx.data.get('id')}>", discord.Colour.from_rgb(r=255, g=121, b=77))
         appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
 
     try:
@@ -338,3 +363,4 @@ else:
 # - Translator
 # - (Unisex) compliment quotes
 # - Add error catch for when dictionaryapi.com is down
+# - make more three-in-one commands have optional arguments, explaining what to do if you don't fill in the optional argument
