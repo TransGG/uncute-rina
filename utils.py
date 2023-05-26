@@ -207,8 +207,15 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str):
         Message you want to send to this logging channel
     """
     try:
-        log_channel_id = client.get_guild_info(guild, "vcLog")
+        log_channel_id = await client.get_guild_info(guild, "vcLog")
     except KeyError:
-        return # already gets debugged in get_guild_info
+        msg = "__**THIS MESSAGE CAUSES THE CRASH BELOW**__\n"+msg
+        client.logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+        raise
     log_channel = guild.get_channel(log_channel_id)
+    if log_channel is None:
+        debug("Exception in log_channel:\n"
+              "    guild: "+repr(guild)+"\n"
+              "    log_channel_id: "+str(log_channel_id),color="orange")
+        return
     return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())

@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.0.4".split(".")
+    fileVersion = "1.2.0.5".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -138,8 +138,10 @@ else:
 
             ### Raises:
             -----------
-            `KeyError` if guild does not have (the requested) data. It debug()s this already.
+            `KeyError` if guild is None, does not have data, or not the requested data.
             """
+            if guild_id is None:
+                raise KeyError(f"'{guild_id}' is not a valid guild or id!")
             if isinstance(guild_id, discord.Guild):
                 guild_id = guild_id.id
             try:
@@ -147,7 +149,6 @@ else:
                 query = {"guild_id": guild_id}
                 guild_data = collection.find_one(query)
                 if guild_data is None:
-                    debug("Not enough data is configured to do this action! Please fix this with `/editguildinfo`!", color="red")
                     raise KeyError(str(guild_id) + " does not have data in the guildInfo database!")
                 if len(args) == 0:
                     return guild_data

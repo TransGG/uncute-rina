@@ -6,6 +6,8 @@ class Pronouns(commands.Cog):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client
+
+        # setting ContextMenu here, because apparently you can't use that decorator in classes..?
         self.ctx_menu_user = app_commands.ContextMenu(
             name='Pronouns',
             callback=self.pronouns_ctx_user,

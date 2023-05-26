@@ -173,6 +173,7 @@ class Tags:
 
     async def tag_message(self, tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool, 
                           embed: discord.Embed, public_footer: bool = False):
+        cmd_mention = client.get_command_mention("tag")
         logmsg = f"{itx.user.name} ({itx.user.id}) used {cmd_mention} `tag:{tag_name}` anonymously"
         if public:
             if anonymous:
@@ -195,7 +196,7 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
-    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, _client, additional_info: None | list[str, int]=None, public=False, anonymous=True):
+    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
         embed = discord.Embed(
             color=self.colours["report"], #a more saturated red orange color
@@ -207,7 +208,7 @@ class Tags:
                         "member.")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):
-            await self.tag_message(tag_name, context, public, anonymous, embed)
+            await self.tag_message(tag_name, context, client, public, anonymous, embed)
         else:
             if additional_info is not None:
                 embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
@@ -226,9 +227,9 @@ class Tags:
                         f"limit of this channel with the {cmd_mention} command. When everyone leaves the "
                         f"channel, the channel is deleted automatically."
                         f"You can use {cmd_mention2} for additional features.")
-        await self.tag_message(tag_name, itx, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
-    async def send_triggerwarning_info(self, tag_name: str, itx: discord.Interaction, _client, public, anonymous):
+    async def send_triggerwarning_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
             color=self.colours["trigger warnings"], #bluer than baby blue ish. kinda light indigo
             title="Using trigger warnings correctly",
@@ -243,7 +244,7 @@ class Tags:
                         "Some potential triggers include (TW: triggers): abuse, bugs/spiders, death, "
                         "dieting/weight loss, injections, self-harm, transmed/truscum points of view or "
                         "transphobic content.")
-        await self.tag_message(tag_name, itx, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
     async def send_toneindicator_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         embed = discord.Embed(
@@ -261,9 +262,9 @@ class Tags:
                         "example: \"/m\" can mean 'mad' or 'metaphor'. You can look up tone indicators by "
                         f"their tag or definition using {client.get_command_mention('toneindicator')}."
         )
-        await self.tag_message(tag_name, itx, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
-    async def send_trustedrole_info(self, tag_name: str, itx: discord.Interaction, _client, public, anonymous):
+    async def send_trustedrole_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
             color=self.colours["trusted role"], # magenta
             title="The trusted role (and selfies)",
@@ -275,9 +276,9 @@ class Tags:
                         "equivalent XP from voice channel usage. If you rejoin the server you can always "
                         "ask for the role back too!"
         )
-        await self.tag_message(tag_name, itx, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
-    async def send_selfies_info(self, tag_name: str, itx: discord.Interaction, _client, public, anonymous):
+    async def send_selfies_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
             color=self.colours["selfies"], # magenta
             title="Selfies and the #selfies channel",
@@ -289,9 +290,9 @@ class Tags:
                         "The selfies channel automatically deletes all messages after 7 days to ensure "
                         "the privacy and safety of our members."
         )
-        await self.tag_message(tag_name, itx, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
-    async def send_minimodding_info(self, tag_name: str, itx: discord.Interaction, _client, public, anonymous):
+    async def send_minimodding_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
             color=self.colours["minimodding or correcting staff"],  # bright slightly reddish pink
             title="Correcting staff or minimodding",
@@ -301,9 +302,9 @@ class Tags:
                         "Please do not interfere with moderator actions, as it can make situations worse. It can be seen as "
                         "harassment, and you could be warned."
         )
-        await self.tag_message(tag_name, itx, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
         
-    async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, _client, public, anonymous):
+    async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
             color=self.colours["avoiding politics"], # yellow
             title="Please avoid political discussions!",
@@ -317,9 +318,9 @@ class Tags:
                         "If you continue discussing politics, a moderator may need to take action and mute "
                         "you. Thank you for your cooperation."
         )
-        await self.tag_message(tag_name, itx, public, anonymous, embed, public_footer=True)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
 
-    async def send_chat_topic_change_request(self, tag_name: str, itx:discord.Interaction,  _client,public, anonymous):
+    async def send_chat_topic_change_request(self, tag_name: str, itx:discord.Interaction,  client,public, anonymous):
         embed = discord.Embed(
             color=self.colours["please change topic"],
             title="Please change chat topic",
@@ -327,7 +328,7 @@ class Tags:
                         "uncomfortable. Please refrain from continuing the current line of discussion and find "
                         "a new topic."
         )
-        await self.tag_message(tag_name, itx, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
 class SearchAddons(commands.Cog):
     def __init__(self, client: Bot):
@@ -679,7 +680,7 @@ class SearchAddons(commands.Cog):
             "please change chat topic" : t.send_chat_topic_change_request,
         }
         if tag in tag_functions:
-            await tag_functions[tag](itx, self.client, public=public, anonymous=anonymous)
+            await tag_functions[tag](tag, itx, self.client, public=public, anonymous=anonymous)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
 
@@ -923,7 +924,7 @@ class OtherAddons(commands.Cog):
             if staff_role_mention in message.content:
                 time_now = int(mktime(datetime.now().timetuple())) # get time in unix
                 if time_now - report_message_reminder_unix > 900: # 15 minutes
-                    await Tags().send_report_info(message.channel, additional_info=[message.author.name, message.author.id])
+                    await Tags().send_report_info("report", message.channel, self.client, additional_info=[message.author.name, message.author.id])
                     report_message_reminder_unix = time_now
                     break
 
@@ -1016,8 +1017,7 @@ class OtherAddons(commands.Cog):
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
-        # await itx.response.send_message(f"This command is currently disabled for now, since we're missing compliments. Feel free to suggest some, and ping {self.client.bot_owner}",ephemeral=True)
-        # return
+        # discord.User because discord.Member gets errors.TransformerError in DMs (dunno why i'm accounting for that..)
         try:
             user: discord.Member # make IDE happy, i guess
             userroles = user.roles[:]

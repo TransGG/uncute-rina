@@ -8,7 +8,7 @@ sched = AsyncIOScheduler(logger=logger)
 sched.start()
 
 
-def parse_date(time_string, now):
+def parse_date(time_string, now: datetime):
     # - "next thursday at 3pm"
     # - "tomorrow"
     # + "in 3 days"
@@ -120,8 +120,8 @@ def parse_date(time_string, now):
         raise ValueError("I don't think I can remind you in that long!")
     
     timedict = {i:int(timedict[i]) for i in timedict}
-
-    distance = datetime(timedict["y"],timedict["M"],1,timedict["h"],timedict["m"],timedict["s"], tzinfo=datetime.now().tzinfo)
+    
+    distance = datetime(timedict["y"],timedict["M"],1,timedict["h"],timedict["m"],timedict["s"])
     # cause you cant have >31 days in a month, but if overflow is given, then let this timedelta calculate the new months/years
     distance += timedelta(days=timedict["d"])
 
@@ -221,7 +221,8 @@ class Reminders(commands.GroupCog,name="reminder"):
         except KeyError:
             pass
 
-        now = itx.created_at
+        _now = itx.created_at # utc
+        now = _now.astimezone(tz=datetime.now().tzinfo)
         try:
             reminder_datetime = (" "+reminder_datetime).replace(",","").replace("and","").replace(" in ", "").replace(" ","").strip().lower()
             distance = parse_date(reminder_datetime, now)
@@ -337,7 +338,6 @@ class Reminders(commands.GroupCog,name="reminder"):
                     "\n"
                     "If you give a time but not a timezone, I don't want you to get reminded at the wrong time, so I'll say something went wrong.",
                     ephemeral=True)
-                raise
                 return
 
         # if distance < now:

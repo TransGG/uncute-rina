@@ -83,7 +83,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id == self.client.staff_server_id:
+        if payload.guild_id in [None, self.client.staff_server_id]:
             return
         _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
             payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels", "starboardEmoji", "starboardDownvoteInitValue")
@@ -215,7 +215,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id == self.client.staff_server_id:
+        if payload.guild_id in [None, self.client.staff_server_id]:
             return
         _star_channel, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(payload.guild_id, "starboardChannel", "starboardEmoji", "starboardDownvoteInitValue")
         if payload.emoji.id != starboard_emoji_id and payload.emoji.name != "❌":
@@ -245,7 +245,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
-        if message_payload.guild_id == self.client.staff_server_id:
+        if message_payload.guild_id in [None, self.client.staff_server_id]:
             return
         _star_channel, starboard_emoji_id = await self.client.get_guild_info(message_payload.guild_id, "starboardChannel", "starboardEmoji")
         star_channel = self.client.get_channel(_star_channel)
