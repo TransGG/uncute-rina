@@ -60,22 +60,20 @@ class EmojiStats(commands.Cog):
             await add_to_data(str(reaction.emoji.id), reaction.emoji.name, "reaction", reaction.emoji.animated)
 
     @emojistats.command(name="getemojidata",description="Get emoji usage data from an ID!")
-    @app_commands.describe(emoji="Emoji you want to get data of")
-    async def get_emoji_data(self, itx: discord.Interaction, emoji: str):
+    @app_commands.rename(emoji_name="emoji")
+    @app_commands.describe(emoji_name="Emoji you want to get data of")
+    async def get_emoji_data(self, itx: discord.Interaction, emoji_name: str):
         # for testing purposes, for now.
         if not is_staff(itx):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
 
-        if ":" in emoji:
-            emoji = emoji.split(":")[2][:-1]
-        emoji_id = emoji
-        for x in emoji_id:
-            try:
-                int(x)
-            except ValueError:
-                await itx.response.send_message("You need to fill in the ID of the emoji. This ID can't contain other characters. Only numbers.",ephemeral=True)
-                return
+        if ":" in emoji_name:
+            emoji_name = emoji_name.split(":")[2][:-1]
+        emoji_id = emoji_name
+        if not emoji_id.isdecimal():
+            await itx.response.send_message("You need to fill in the ID of the emoji. This ID can't contain other characters. Only numbers.",ephemeral=True)
+            return
 
         collection = asyncRinaDB["emojistats"]
         query = {"id": emoji_id}

@@ -470,10 +470,7 @@ class TermDictionary(commands.Cog):
                         # self.value = "previous"
                         self.page -= 1
                         if self.page < 0:
-                            self.page += 1
-                            await itx.response.send_message("This is the first page, you can't go to a previous page!",
-                                                            ephemeral=True)
-                            return
+                            self.page = len(self.pages)-1
                         embed = self.pages[self.page]
                         embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
                         await itx.response.edit_message(embed=embed)
@@ -481,12 +478,8 @@ class TermDictionary(commands.Cog):
                     @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
                     async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
                         self.page += 1
-                        try:
-                            embed = self.pages[self.page]
-                        except IndexError:
-                            await itx.response.send_message("This is the last page, you can't go to a next page!",
-                                                            ephemeral=True)
-                            return
+                        if self.page >= (len(self.pages)-1):
+                            self.page = 0
                         embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
                         try:
                             await itx.response.edit_message(embed=embed)
@@ -513,7 +506,7 @@ class TermDictionary(commands.Cog):
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
 
-    @admin.command(name="define",description="Add a dictionary entry for a word!")                                            #
+    @admin.command(name="define",description="Add a dictionary entry for a word!")
     @app_commands.describe(term="This is the main word for the dictionary entry: Egg, Hormone Replacement Therapy (HRT), (case sens.)",
                            definition="Give this term a definition",
                            synonyms="Add synonyms (SEPARATE WITH \", \")")

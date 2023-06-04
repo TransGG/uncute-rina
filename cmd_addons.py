@@ -167,7 +167,7 @@ class Tags:
                 await log_to_guild(self.client, itx.guild, self.logmsg)
             self.stop()
 
-        def on_timeout(self):
+        async def on_timeout(self):
             self.send_publicly.disabled = True
             self.send_publicly.style = discord.ButtonStyle.gray
 
@@ -647,9 +647,9 @@ class SearchAddons(commands.Cog):
     async def tag_autocomplete(self, _itx: discord.Interaction, current: str):
         options = [
             "avoiding politics",
-            "please change chat topic",
             "customvc",
             "minimodding or correcting staff",
+            "please change chat topic",
             "report",
             "selfies channel info",
             "tone indicators",

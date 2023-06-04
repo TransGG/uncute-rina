@@ -13,7 +13,6 @@ class ToneIndicator(commands.Cog):
     ])
     async def toneindicator(self, itx: discord.Interaction, mode: int, string: str, public: bool = False):
         tone_indicators = {
-            #
             "excited" : ["/!","/exc"],
             "alterous" : ["/a","/ars"],
             "affectionate" : ["/a","/aff"],

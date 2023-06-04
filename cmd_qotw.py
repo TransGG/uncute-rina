@@ -56,12 +56,14 @@ class QOTW(commands.Cog):
             await itx.followup.send("Something went wrong!")
             raise
 
+
     @app_commands.command(name="developer_request",description="Suggest a bot idea to the TransPlace developers!")
     @app_commands.describe(question="What idea would you like to share?")
     async def developer_request(self, itx: discord.Interaction, question: str):
         if len(question) > 1500:
             await itx.response.send_message("Your suggestion won't fit! Please make your suggestion shorter. "
                                             "If you have a special request, you could make a ticket too (in #contact-staff)",ephemeral=True)
+            return
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
@@ -118,7 +120,7 @@ class QOTW(commands.Cog):
             "🟢": discord.Colour.from_rgb(r=100,g=255,b=100),
             "🔵": discord.Colour.from_rgb(r=172,g=172,b=255)
         }
-        if payload.emoji.name not in emoji_color_selection:
+        if getattr(payload.emoji, "name", None) not in emoji_color_selection:
             return
         channel: discord.TextChannel = await self.client.fetch_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
@@ -130,7 +132,9 @@ class QOTW(commands.Cog):
         embed.color = emoji_color_selection[payload.emoji.name]
         await message.edit(embed=embed)
         await message.remove_reaction(payload.emoji.name, payload.member)
-        
+
+
+
 
 async def setup(client):
     await client.add_cog(QOTW(client))

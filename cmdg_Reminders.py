@@ -433,7 +433,7 @@ class BumpReminder(commands.Cog):
         def __init__(self, client: Bot, guild: discord.Guild, remindertime):
             self.client = client
             self.guild = guild
-            self.remindertime = remindertime
+            self.remindertime = remindertime - timedelta(seconds=1.5)
             sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
 
         async def send_reminder(self):

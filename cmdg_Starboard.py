@@ -35,7 +35,7 @@ class Starboard(commands.Cog):
         # get message's starboard-reacters
         for reaction in original_message.reactions:
             if reaction.is_custom_emoji():
-                if reaction.emoji.id == starboard_emoji.id:
+                if getattr(reaction.emoji, "id", None) == starboard_emoji.id:
                     async for user in reaction.users():
                         if user.id not in star_reacters:
                             star_reacters.append(user.id)
@@ -43,11 +43,11 @@ class Starboard(commands.Cog):
         # get starboard's starboard-reacters
         for reaction in star_message.reactions:
             if reaction.is_custom_emoji():
-                if reaction.emoji.id == starboard_emoji.id:
+                if getattr(reaction.emoji, "id", None) == starboard_emoji.id:
                     async for user in reaction.users():
                         if user.id not in star_reacters:
                             star_reacters.append(user.id)
-            
+
         star_stat = len(star_reacters)
         if self.client.user.id in star_reacters:
             star_stat -= 1
@@ -88,8 +88,8 @@ class Starboard(commands.Cog):
         _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
             payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels", "starboardEmoji", "starboardDownvoteInitValue")
         if payload.member.id == self.client.user.id or \
-                (payload.emoji.id != starboard_emoji_id and
-                 payload.emoji.name != "❌"):
+                (getattr(payload.emoji, "id",   None) != starboard_emoji_id and
+                 getattr(payload.emoji, "name", None) != "❌"):
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
             return
 
@@ -115,11 +115,7 @@ class Starboard(commands.Cog):
             return
 
         for reaction in message.reactions:
-            try:
-                reaction.emoji.id
-            except AttributeError:
-                return
-            if reaction.emoji.id == starboard_emoji_id:
+            if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
                     async for star_message in star_channel.history(limit=200):
@@ -218,7 +214,8 @@ class Starboard(commands.Cog):
         if payload.guild_id in [None, self.client.staff_server_id]:
             return
         _star_channel, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(payload.guild_id, "starboardChannel", "starboardEmoji", "starboardDownvoteInitValue")
-        if payload.emoji.id != starboard_emoji_id and payload.emoji.name != "❌":
+        if getattr(payload.emoji, "id", None) != starboard_emoji_id and \
+            getattr(payload.emoji, "name", None) != "❌":
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
             return
         #get the message id from payload.message_id through the channel (with payload.channel_id) (oof lengthy process)
@@ -234,7 +231,7 @@ class Starboard(commands.Cog):
             return
 
         for reaction in message.reactions:
-            if reaction.emoji.id == starboard_emoji_id:
+            if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
                     async for star_message in star_channel.history(limit=500):
