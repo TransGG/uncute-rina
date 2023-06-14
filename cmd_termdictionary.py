@@ -1,6 +1,8 @@
 from Uncute_Rina import *
 from import_modules import *
 
+del_separators_table = str.maketrans({" ":"", "-":"", "_":""})
+
 class TermDictionary(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -11,9 +13,9 @@ class TermDictionary(commands.Cog):
     async def dictionary_autocomplete(self, itx: discord.Interaction, current: str):
         def simplify(q):
             if type(q) is str:
-                return q.lower().replace(" ","").replace("-","").replace("_","")
+                return q.lower().translate(del_separators_table)
             if type(q) is list:
-                return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
+                return [text.lower().translate(del_separators_table) for text in q]
         terms = []
         if current == '':
             return []
@@ -81,9 +83,9 @@ class TermDictionary(commands.Cog):
     async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
         def simplify(q):
             if type(q) is str:
-                return q.lower().replace(" ","").replace("-","").replace("_","")
+                return q.lower().translate(del_separators_table)
             if type(q) is list:
-                return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
+                return [text.lower().translate(del_separators_table) for text in q]
         # test if mode has been left unset or if mode has been selected: decides whether or not to move to the online API search or not.
         result_str = ""  # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
         results: list[any]
@@ -516,9 +518,9 @@ class TermDictionary(commands.Cog):
             return
         def simplify(q):
             if type(q) is str:
-                return q.lower().replace(" ","").replace("-","").replace("_","")
+                return q.lower().translate(del_separators_table)
             if type(q) is list:
-                return [text.lower().replace(" ","").replace("-","").replace("_","") for text in q]
+                return [text.lower().translate(del_separators_table) for text in q]
         # Test if this term is already defined in this dictionary.
         collection = RinaDB["termDictionary"]
         query = {"term": term}
@@ -569,7 +571,7 @@ class TermDictionary(commands.Cog):
         await log_to_guild(self.client, itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed the dictionary definition of '{term}' to '{definition}'")
         await itx.response.send_message(f"Successfully redefined '{term}'", ephemeral=True)
 
-    @admin.command(name="undefine",description="Add a dictionary entry for a word!")
+    @admin.command(name="undefine",description="Remove a dictionary entry for a word!")
     @app_commands.describe(term="What word do you need to undefine (case sensitive). Example: Egg, Hormone Replacement Therapy (HRT), etc")
     async def undefine(self, itx: discord.Interaction, term: str):
         if not is_staff(itx):
@@ -590,7 +592,7 @@ class TermDictionary(commands.Cog):
     @admin.command(name="editsynonym",description="Add a synonym to a previously defined word")
     @app_commands.describe(term="This is the main word for the dictionary entry (case sens.): Egg, Hormone Transfer Therapy, etc",
                            mode="Add or remove a synonym?",
-                           synonym="Which synonym to remove?")
+                           synonym="Which synonym to add/remove?")
     @app_commands.choices(mode=[
             discord.app_commands.Choice(name='Add a synonym', value=1),
             discord.app_commands.Choice(name='Remove a synonym', value=2),

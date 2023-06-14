@@ -583,7 +583,12 @@ class SearchAddons(commands.Cog):
             f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true").text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
         # it also has some <br \/>\r\n strings in there for some reason..? so uh
-        response_api = response_api.replace(r"<br \/>\r\n", r"\n").replace("<pre>","").replace("</pre>","")
+        jsonizing_table = str.maketrans({
+            r"<br \/>\r\n":r"\n",
+            "<pre>":"",
+            "</pre>":""
+        })
+        response_api = response_api.translate(jsonizing_table)
         data = json.loads(response_api)
         if "error" in data:
             if country_id.lower() == "uk":
