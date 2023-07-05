@@ -235,7 +235,7 @@ class Tags:
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
 class TagFunctions(commands.Cog):
-    async def __init__(self, client):
+    def __init__(self, client):
         self.client = client
 
     async def tag_autocomplete(self, _: discord.Interaction, current: str):
@@ -323,4 +323,3 @@ class TagFunctions(commands.Cog):
 
 async def setup(client):
     await client.add_cog(TagFunctions(client))
-    
