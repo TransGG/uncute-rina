@@ -303,14 +303,17 @@ class TagFunctions(commands.Cog):
             await itx.response.send_message("You can't remove that role!", ephemeral=True)
             return
 
-        role_id = role_options[role_name][1]
+        role_id = role_options[role_name.lower()][1]
         try:
             for role in itx.user.roles:
                 if role.id == role_id:
                     await itx.user.remove_roles(role, reason="Removed by user using /remove-role")
+                    await itx.response.send_message("Successfully removed role!", ephemeral=True)
                     return
         except discord.Forbidden:
-            await itx.response.send_message("I couldn't remove this role! (Forbidden)")
+            await itx.response.send_message("I couldn't remove this role! (Forbidden)", ephemeral=True)
+            return
+        
             
 
 
