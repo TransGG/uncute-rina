@@ -235,6 +235,9 @@ class Tags:
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
 class TagFunctions(commands.Cog):
+    async def __init__(self, client):
+        self.client = client
+
     async def tag_autocomplete(self, _: discord.Interaction, current: str):
         options = [
             "avoiding politics",
@@ -286,10 +289,13 @@ class TagFunctions(commands.Cog):
             if role.name in role_options:
                 if current.lower() in role.name.lower():
                     options.append(role.name)
-        return [
-            app_commands.Choice(name=role, value=role)
-            for role in options
-        ][:15] or [app_commands.Choice(name="You don't have any roles to remove!", value=0)]
+        if options:
+            return [
+                app_commands.Choice(name=role, value=role)
+                for role in options
+            ][:15]
+        else:
+            return[app_commands.Choice(name="You don't have any roles to remove!", value="none")]
 
     @app_commands.command(name="remove-role", description="Remove one of your agreement roles")
     @app_commands.describe(role_name="The name of the role to remove")
@@ -314,12 +320,7 @@ class TagFunctions(commands.Cog):
             await itx.response.send_message("I couldn't remove this role! (Forbidden)", ephemeral=True)
             return
         
-            
-
-
-
-
-
 
 async def setup(client):
     await client.add_cog(TagFunctions(client))
+    
