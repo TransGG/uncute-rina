@@ -217,3 +217,32 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str):
               "    log_channel_id: "+str(log_channel_id),color="orange")
         return
     return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+
+async def executed_in_dms(itx: discord.Interaction = None, 
+                          message: discord.Message = None,
+                          channel: discord.DMChannel    | discord.GroupChannel | discord.TextChannel |
+                                   discord.StageChannel | discord.VoiceChannel | discord.Thread      = None):
+    """
+    Make a command guild-only by telling people in DMs that they can't use the command
+
+    ### Parameters:
+    itx: :class:`discord.Interaction` (used for interactions)
+        The interaction to check if it was used in a server - and to reply to
+    message: :class:`discord.Message` (used for events)
+        The message to check if it was used in a server
+    channel: DMChannel or Guild channel
+        The channel to check if it was used in a server
+
+    ### Returns:
+    :class:`bool` if command was executed in DMs (for 'if ... : continue')
+    """
+    assert len([i for i in [itx, message, channel] if i is not None]) == 1, ValueError("Give an itx, message, or channel, not multiple!")
+    id_object: discord.Message | discord.Interaction | discord.TextChannel = next(i for i in [itx, message, channel] if i is not None)
+    if id_object.server_id is None:
+        if type(id_object) == discord.Message:
+            # Technically you could check if `channel` is DMChannel, but server_id==None should catch this too.
+            await id_object.channel.send("This command is unavailable in DMs", ephemeral=True)
+            return True
+        await id_object.send("This command is unavailable in DMs", ephemeral=True)
+        return True
+    return False

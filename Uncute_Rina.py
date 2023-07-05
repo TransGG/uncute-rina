@@ -36,14 +36,14 @@ else:
     #       attach files (for image of the member joining graph thing)
     #       read channel history (locate previous starboard message, for example)
     #       move users between voice channels (custom vc)
-    #       # manage roles (for adding/removing table roles) (not used currently, i guess)
+    #       manage roles (for removing NPA and NVA roles)
     #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
     #           Create and Delete voice channels
     #       use embeds (for starboard)
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.0.7".split(".")
+    fileVersion = "1.2.1.0".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -201,6 +201,7 @@ else:
             "cmd_getmemberdata",
             "cmd_pronouns",
             "cmd_qotw",
+            "cmd_tags",
             "cmd_termdictionary",
             "cmd_todolist",
             "cmd_toneindicator",

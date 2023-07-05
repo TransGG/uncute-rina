@@ -7,7 +7,7 @@ class QOTW(commands.Cog):
         self.client = client
         self.qotw_channel_id = 1019706498609319969
         self.dev_request_id = 982351285959413811
-        self.watchoutdoubts_id = 1046086282377429083#989638606433968159
+        self.watchoutdoubts_id = 989638606433968159
         RinaDB = client.RinaDB
 
         # setting ContextMenu here, because apparently you can't use that decorator in classes..?

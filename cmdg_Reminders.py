@@ -302,7 +302,7 @@ class Reminders(commands.GroupCog,name="reminder"):
                     )
                 except ValueError:
                     raise ValueError("Incorrect format given! Make sure you only fill in only numbers")
-                if mode == 0:
+                if mode in [0,3]:
                     distance = timestamp
                 if mode == 2:
                     options = {
@@ -326,8 +326,9 @@ class Reminders(commands.GroupCog,name="reminder"):
                     distance = options[view.value]
                     itx = view.return_interaction
                 
-                # mode 0 is the datetime with timezone
+                # mode 0 is the date with time up to seconds and timezone
                 # mode 2 is the date, without time or timezone
+                # mode 3 is the date with time up to minutes and timezone
                 # mode 1 is time without timezone, which gets blocked: Without timezone, I don't know what time you want it
 
             except ValueError as ex:

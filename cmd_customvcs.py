@@ -412,8 +412,8 @@ class CustomVcs(commands.Cog):
                 if value is None:
                     return
                 ch = itx.client.get_channel(value)
-                if type(ch) is not discord.TextChannel:
-                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
+                if not isinstance(ch, discord.abc.Messageable):
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Needs to be a channel I can message in; got {type(ch)})", ephemeral=True)
                     return
                 collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "12":
@@ -444,36 +444,33 @@ class CustomVcs(commands.Cog):
                     return
                 collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "23":
-                if value is not None:
-                    value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
-                    if value is None:
-                        return
-                    ch = itx.client.get_channel(value)
-                    if type(ch) is not discord.TextChannel:
-                        await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
-                        return
-                    collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
+                value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
+                if value is None:
+                    return
+                ch = itx.client.get_channel(value)
+                if type(ch) is not discord.TextChannel:
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "31":
-                if value is not None:
-                    value = await to_int(value, "You have to give a numerical ID for the emoji you want to use!")
-                    if value is None:
-                        return
-                    emoji = itx.client.get_emoji(value)
-                    print(emoji)
-                    if type(emoji) is not discord.Emoji:
-                        await itx.response.send_message(f"The ID you gave wasn't an emoji! (i think) (or not one I can use)", ephemeral=True)
-                        return
-                    collection.update_one(query, {"$set": {options[option]: emoji.id}}, upsert=True)
+                value = await to_int(value, "You have to give a numerical ID for the emoji you want to use!")
+                if value is None:
+                    return
+                emoji = itx.client.get_emoji(value)
+                print(emoji)
+                if type(emoji) is not discord.Emoji:
+                    await itx.response.send_message(f"The ID you gave wasn't an emoji! (i think) (or not one I can use)", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {options[option]: emoji.id}}, upsert=True)
             elif option == "32":
-                if value is not None:
-                    value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
-                    if value is None:
-                        return
-                    ch = itx.client.get_channel(value)
-                    if type(ch) is not discord.TextChannel:
-                        await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>, got {type(ch)})", ephemeral=True)
-                        return
-                    collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
+                value = await to_int(value, "You have to give a numerical ID for the channel you want to use!")
+                if value is None:
+                    return
+                ch = itx.client.get_channel(value)
+                if not isinstance(ch, discord.TextChannel):
+                    await itx.response.send_message(f"The ID you gave wasn't for the type of channel I was looking for! (Need <class 'discord.TextChannel'>; got {type(ch)})", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "33":
                 value = await to_int(value, "You need to give an integer value for your new minimum amount!")
                 if value is None:
@@ -585,16 +582,16 @@ class CustomVcs(commands.Cog):
             mention: str = mention.strip()
             if not (mention[0:2] == "<@" and mention[-1] == ">"):
                 warning = f"Note: You didn't give a good list of VcTable owners, so I only added you. To make more people owner, use {cmd_mention}."
-                added_owners = [itx.user.id]
+                added_owners = [str(itx.user.id)]
                 break
             for char in mention[2:-1]:
                 if char not in "0123456789":
                     warning = f"Note: You didn't give a good list of VcTable owners, so I only added you. To make more people owner, use {cmd_mention}."
-                    added_owners = [itx.user.id]
+                    added_owners = [str(itx.user.id)]
                     break
             added_owners.append(mention)
         else:
-            owner_list = [itx.user.id] + [int(mention.strip()[2:-1]) for mention in added_owners]
+            owner_list = [str(itx.user.id)] + [int(mention.strip()[2:-1]) for mention in added_owners]
             added_owners = []
             for owner_id in owner_list:
                 if owner_id not in added_owners:

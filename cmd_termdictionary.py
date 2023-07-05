@@ -212,6 +212,7 @@ class TermDictionary(commands.Cog):
     Here is a link for expanded info on each term: <https://en.pronouns.page/dictionary/terminology#{term.lower()}>"
                 #print(response_api.status_code)
         if source == 5 or source == 6:
+            await itx.response.defer(ephemeral=True)
             response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{term.lower().replace("/","%2F")}').text
             try:
                 data: any = json.loads(response_api)
@@ -225,7 +226,6 @@ class TermDictionary(commands.Cog):
                     result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
                     public = False
             else:
-                await itx.response.defer(ephemeral=True)
                 for result in data:
                     meanings = []
                     synonyms = []
@@ -422,7 +422,8 @@ class TermDictionary(commands.Cog):
                     await itx.edit_original_response(view=None)
                 return
         if source == 7 or source == 8:
-            await itx.response.defer(ephemeral=True)
+            if not itx.response.is_done():
+                await itx.response.defer(ephemeral=True)
             response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={term.lower()}').text
             # who decided to put the output into a dictionary with a list named 'list'? {"list":[{},{},{}]}
             data = json.loads(response_api)['list']
