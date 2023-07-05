@@ -292,7 +292,7 @@ class TagFunctions(commands.Cog):
         ][:15] or [app_commands.Choice(name="You don't have any roles to remove!", value=0)]
 
     @app_commands.command(name="remove-role", description="Remove one of your agreement roles")
-    @app_commands.describe(anonymous="The name of the role to remove")
+    @app_commands.describe(role_name="The name of the role to remove")
     @app_commands.autocomplete(tag=role_autocomplete)
     async def remove_role(self, itx: discord.Interaction, role_name: str):
         role_options = {
