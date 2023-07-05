@@ -293,7 +293,7 @@ class TagFunctions(commands.Cog):
 
     @app_commands.command(name="remove-role", description="Remove one of your agreement roles")
     @app_commands.describe(role_name="The name of the role to remove")
-    @app_commands.autocomplete(tag=role_autocomplete)
+    @app_commands.autocomplete(role_name=role_autocomplete)
     async def remove_role(self, itx: discord.Interaction, role_name: str):
         role_options = {
             "npa":["NPA", 1126160553145020460],
