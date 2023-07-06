@@ -16,8 +16,8 @@ colours = {k: discord.Colour.from_hsv(v[0]/360, v[1]/100, v[2]/100) for k, v in 
 
 class Tags:
     def __init__(self):
-        no_politics_channel_id = 0
-        no_venting_channel_id = 0
+        self.no_politics_channel_id = 1126163144134361238
+        self.no_venting_channel_id = 1126163020620513340
 
     class TagView(discord.ui.View):
         def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None):
