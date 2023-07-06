@@ -217,7 +217,7 @@ class Tags:
                         "Our community focuses on highlighting the positive aspects of the trans "
                         "community. Political discussions often detract from this goal and create "
                         "negative air and conflict among members.\n"
-                        f"Check out <#{self.no_politics_channel}. If you can't see this, use {cmd_mention} role:NPA"
+                        f"Check out <#{self.no_politics_channel_id}. If you can't see this, use {cmd_mention} role:NPA"
                         "\n"
                         "If you continue discussing politics, a moderator may need to take action and mute "
                         "you. Thank you for your cooperation."
