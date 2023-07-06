@@ -147,7 +147,7 @@ class QOTW(commands.Cog):
         await message.remove_reaction(payload.emoji.name, payload.member)
 
 
-    async def add_to_watchlist(self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None):
+    async def add_to_watchlist(self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None, warning=""):
         if not is_staff(itx):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
@@ -240,7 +240,7 @@ class QOTW(commands.Cog):
         # embed.set_footer(text=f"")
 
         await msg.edit(embed=embed)
-        await itx.followup.send("Successfully added user to watchlist.",ephemeral=True)
+        await itx.followup.send(warning+":white_check_mark: Successfully added user to watchlist.",ephemeral=True)
 
     class WatchlistReason(discord.ui.Modal):
         def __init__(self, parent, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
@@ -265,8 +265,15 @@ class QOTW(commands.Cog):
 
     @app_commands.command(name="watchlist",description="Add a user to the watchlist.")
     @app_commands.describe(user="User to add", reason="Reason for adding", message_id="Message to add to reason")
-    async def watchlist(self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None):
-        await self.add_to_watchlist(itx, user, reason, message_id)
+    async def watchlist(self, itx: discord.Interaction, user: discord.User, reason: str = "", message_id: str = None):
+        try:
+            user = await app_commands.transformers.MemberTransformer().transform(itx, user)
+            warning = ""
+        except app_commands.errors.TransformerError:
+            warning = "This user is not in this server! Either they left or got banned, or you executed this in a server they're not in.\n" + \
+                      "If they got banned, there's no reason to look out for them anymore ;)\n" + \
+                      "It's also easier to mention them if you run it in the main server. Anyway,\n\n"
+        await self.add_to_watchlist(itx, user, reason, message_id, warning=warning)
 
     async def watchlist_ctx_user(self, itx, user: discord.User):
         if not is_staff(itx): # is already checked in the main command, but saves people's time
