@@ -1,6 +1,6 @@
 from Uncute_Rina import *
 
-def is_verified(itx: discord.Interaction):
+def is_verified(itx: discord.Interaction) -> bool:
     """
     Check if someone is verified
 
@@ -23,7 +23,7 @@ def is_verified(itx: discord.Interaction):
 #     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
 #     return len(set(roles).intersection(itx.user.roles)) > 0 or is_admin(itx)
 
-def is_staff(itx: discord.Interaction):
+def is_staff(itx: discord.Interaction) -> bool:
     """
     Check if someone is staff
 
@@ -47,7 +47,7 @@ def is_staff(itx: discord.Interaction):
                 1108771208931049544] # Transonance: Staff
     return len(set(roles).intersection(itx.user.roles)) > 0 or is_admin(itx) or len(set(role_ids).intersection(user_role_ids)) > 0
 
-def is_admin(itx: discord.Interaction):
+def is_admin(itx: discord.Interaction) -> bool:
     """
     Check if someone is an admin
 
@@ -70,7 +70,7 @@ def is_admin(itx: discord.Interaction):
     has_admin = itx.permissions.administrator
     return has_admin or len(set(roles).intersection(itx.user.roles)) > 0 or itx.user.id == 262913789375021056 or len(set(role_ids).intersection(user_role_ids)) > 0
 
-def debug(text="", color="default", add_time=True, end="\n", advanced=False):
+def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> None:
     """
     Log a message to the console
 
@@ -175,7 +175,7 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False):
     print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
 
 #unused
-def thousand_space(number, interval = 3, separator = " "):
+def thousand_space(number, interval = 3, separator = " ") -> str:
     """
     Just use `f"{number:,}"` :|
     """
@@ -191,7 +191,7 @@ def thousand_space(number, interval = 3, separator = " "):
     return number+decimals
 
 
-async def log_to_guild(client: Bot, guild: discord.Guild, msg: str):
+async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | discord.Message:
     """
     Log a message to a guild's logging channel (vcLog)
 
@@ -203,6 +203,15 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str):
         Guild of the logging channel
     msg: :class:`str`
         Message you want to send to this logging channel
+
+    ### Raises
+    ----------
+    :class:`KeyError` if client.vcLog channel is undefined.
+        Note: It still outputs the given messge to console and to the client's default log channel.
+    
+    ### Returns
+    -----------
+    :class:`discord.Message` if client.vcLog channel is defined
     """
     try:
         log_channel_id = await client.get_guild_info(guild, "vcLog")
@@ -221,7 +230,7 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str):
 async def executed_in_dms(itx: discord.Interaction = None, 
                           message: discord.Message = None,
                           channel: discord.DMChannel    | discord.GroupChannel | discord.TextChannel |
-                                   discord.StageChannel | discord.VoiceChannel | discord.Thread      = None):
+                                   discord.StageChannel | discord.VoiceChannel | discord.Thread      = None) -> bool:
     """
     Make a command guild-only by telling people in DMs that they can't use the command
 

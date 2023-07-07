@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.1.5".split(".")
+    fileVersion = "1.2.1.6".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -265,11 +265,11 @@ else:
         latest_version = latest_rina.split("fileVersion = \"", 1)[1].split("\".split(\".\")", 1)[0]
         for i in range(len(latest_version.split("."))):
             if int(latest_version.split(".")[i]) > int(version.split(".")[i]):
-                await itx.response.send_message(f"Bot is currently running on v{version} (latest: v{latest_version})\n(started at {client.startup_time.strftime('%Y-%m-%dT%H:%M:%S.%f')})",
+                await itx.response.send_message(f"Bot is currently running on v{version} (latest: v{latest_version})\n(started at {client.startup_time.astimezone(timezone.utc).isoformat()})", #.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
                                                 ephemeral=not public)
                 return
         else:
-            await itx.response.send_message(f"Bot is currently running on v{version} (latest)\n(started at {client.startup_time.strftime('%Y-%m-%dT%H:%M:%S.%f')})",
+            await itx.response.send_message(f"Bot is currently running on v{version} (latest)\n(started at {client.startup_time.astimezone(timezone.utc).isoformat()})",#.strftime('%Y-%m-%dT%H:%M:%S.%f')
                                             ephemeral=not public)
 
     @client.tree.command(name="update",description="Update slash-commands")
