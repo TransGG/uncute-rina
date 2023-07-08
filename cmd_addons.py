@@ -637,7 +637,8 @@ class OtherAddons(commands.Cog):
     async def on_message(self, message):
         global report_message_reminder_unix
         try: # mention targeted user if added to mod-ticket with /add target:@user
-            if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
+            # message.channel.category.id
+            if getattr(getattr(message.channel,"category"),"id") in [995330645901455380, 995330667665707108, 1086349703182041089]:
                 print("embeds:", len(message.embeds), "| message.author.id:", message.author.id)
                 if message.author.id == 557628352828014614 and len(message.embeds) == 1:
                     # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
