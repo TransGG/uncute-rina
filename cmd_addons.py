@@ -648,7 +648,8 @@ class OtherAddons(commands.Cog):
                     print(f'{components[1]} {components[2]} {components[3]} == "added to ticket"', f"{components[1]} {components[2]} {components[3]}" == "added to ticket")
                     if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
                         await message.channel.send("Obligatory ping to notify newly added user: " + components[0], allowed_mentions=discord.AllowedMentions.all())
-        except AttributeError:
+        except (AttributeError, discord.errors.ClientException):
+            # apparently discord raises ClientException: Parent channel not found, instead of attribute error
             pass
 
         if message.author.bot:
