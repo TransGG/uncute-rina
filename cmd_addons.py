@@ -638,7 +638,7 @@ class OtherAddons(commands.Cog):
         global report_message_reminder_unix
         try: # mention targeted user if added to mod-ticket with /add target:@user
             # message.channel.category.id
-            if getattr(getattr(message.channel,"category"),"id") in [995330645901455380, 995330667665707108, 1086349703182041089]:
+            if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
                 print("embeds:", len(message.embeds), "| message.author.id:", message.author.id)
                 if message.author.id == 557628352828014614 and len(message.embeds) == 1:
                     # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
@@ -763,6 +763,8 @@ class OtherAddons(commands.Cog):
         try:
             # vcLog      = guild["vcLog"]
             log_channel = itx.guild.get_channel(vc_log)
+            if log_channel is None:
+                log_channel = itx.guild.get_thread(vc_log)
             await log_channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}", allowed_mentions=discord.AllowedMentions.none())
             text = text.replace("[[\\n]]","\n").replace("[[del]]","")
             await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions(everyone=False,users=True,roles=True,replied_user=True))

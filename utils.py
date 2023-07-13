@@ -61,10 +61,10 @@ def is_admin(itx: discord.Interaction) -> bool:
     if itx.guild is None:
         return False
     roles = [discord.utils.find(lambda r: r.name.lower() == 'full admin', itx.guild.roles),
-             discord.utils.find(lambda r: r.name.lower() == 'head staff', itx.guild.roles),
+             discord.utils.find(lambda r: 'head staff' in r.name.lower(), itx.guild.roles),
              discord.utils.find(lambda r: r.name.lower() == 'admins'    , itx.guild.roles),
              discord.utils.find(lambda r: r.name.lower() == 'admin'     , itx.guild.roles),
-             discord.utils.find(lambda r: r.name.lower() == 'owner'     , itx.guild.roles)]
+             discord.utils.find(lambda r: r.name.lower() == 'owner'     , itx.guild.roles)] 
     user_role_ids = [role.id for role in itx.user.roles]
     role_ids = [981735525784358962]  # TransPlace: Admin
     has_admin = itx.permissions.administrator
@@ -220,6 +220,8 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
         await client.logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
         raise
     log_channel = guild.get_channel(log_channel_id)
+    if log_channel is None:
+        log_channel = guild.get_thread(log_channel_id)
     if log_channel is None:
         debug("Exception in log_channel:\n"
               "    guild: "+repr(guild)+"\n"

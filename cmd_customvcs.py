@@ -40,9 +40,13 @@ class CustomVcs(commands.Cog):
                     await before.channel.delete()
                 except discord.errors.NotFound:
                     logChannel = member.guild.get_channel(vcLog)
+                    if log_channel is None:
+                        log_channel = member.guild.get_thread(vcLog)
                     await logChannel.send(f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, but it **could not be deleted!.**", allowed_mentions=discord.AllowedMentions.none())
                     raise
                 logChannel = member.guild.get_channel(vcLog)
+                if log_channel is None:
+                    log_channel = member.guild.get_thread(vcLog)
                 await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
 
             elif len(before.channel.overwrites) > len(before.channel.category.overwrites):  # if VcTable, reset ownership; and all owners leave: reset all perms
@@ -81,6 +85,8 @@ class CustomVcs(commands.Cog):
                     nomicChannel = member.guild.get_channel(vcNoMic)
                     await nomicChannel.send(f"COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY", allowed_mentions=discord.AllowedMentions.none())
                     logChannel = member.guild.get_channel(vcLog)
+                    if log_channel is None:
+                        log_channel = member.guild.get_thread(vcLog)
                     await logChannel.send(f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)", allowed_mentions=discord.AllowedMentions.none())
                     raise
                 try:
@@ -184,6 +190,8 @@ class CustomVcs(commands.Cog):
                             recently_renamed_vcs[channel.id] = []
                         limit_info = ""
                         logChannel = itx.guild.get_channel(vcLog)
+                        if log_channel is None:
+                            log_channel = itx.guild.get_thread(vcLog)
                         old_name = channel.name
                         old_limit = channel.user_limit
                         try:
@@ -250,6 +258,8 @@ class CustomVcs(commands.Cog):
             recently_renamed_vcs[channel.id] = []
         limitInfo = ""
         logChannel = itx.guild.get_channel(vcLog)
+        if log_channel is None:
+            log_channel = itx.guild.get_thread(vcLog)
         oldName = channel.name
         oldLimit = channel.user_limit
         try:
