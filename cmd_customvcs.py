@@ -39,15 +39,15 @@ class CustomVcs(commands.Cog):
                 try:
                     await before.channel.delete()
                 except discord.errors.NotFound:
-                    logChannel = member.guild.get_channel(vcLog)
+                    log_channel = member.guild.get_channel(vcLog)
                     if log_channel is None:
                         log_channel = member.guild.get_thread(vcLog)
-                    await logChannel.send(f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, but it **could not be deleted!.**", allowed_mentions=discord.AllowedMentions.none())
+                    await log_channel.send(f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, but it **could not be deleted!.**", allowed_mentions=discord.AllowedMentions.none())
                     raise
-                logChannel = member.guild.get_channel(vcLog)
+                log_channel = member.guild.get_channel(vcLog)
                 if log_channel is None:
                     log_channel = member.guild.get_thread(vcLog)
-                await logChannel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
+                await log_channel.send(f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.", allowed_mentions=discord.AllowedMentions.none())
 
             elif len(before.channel.overwrites) > len(before.channel.category.overwrites):  # if VcTable, reset ownership; and all owners leave: reset all perms
                 reset_vctable = True #check if no owners left --> all members in the voice channel aren't owner
@@ -84,10 +84,10 @@ class CustomVcs(commands.Cog):
                 except discord.errors.HTTPException:
                     nomicChannel = member.guild.get_channel(vcNoMic)
                     await nomicChannel.send(f"COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY", allowed_mentions=discord.AllowedMentions.none())
-                    logChannel = member.guild.get_channel(vcLog)
+                    log_channel = member.guild.get_channel(vcLog)
                     if log_channel is None:
                         log_channel = member.guild.get_thread(vcLog)
-                    await logChannel.send(f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)", allowed_mentions=discord.AllowedMentions.none())
+                    await log_channel.send(f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)", allowed_mentions=discord.AllowedMentions.none())
                     raise
                 try:
                     await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
@@ -102,13 +102,13 @@ class CustomVcs(commands.Cog):
                         # no need to delete vc if they are kicked out of the channel, cause then the next event will notice that they left the channel.
                     except:
                         await vc.delete()
-                    await self.client.logChannel.send(content=warning,allowed_mentions=discord.AllowedMentions.none())
+                    await self.client.log_channel.send(content=warning,allowed_mentions=discord.AllowedMentions.none())
                     raise
                     # pass
                 nomicChannel = member.guild.get_channel(vcNoMic)
                 cmd_mention = self.client.get_command_mention("editvc")
                 await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", delete_after=120, allowed_mentions=discord.AllowedMentions.none())
-                await self.client.logChannel.send(content=warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
+                await self.client.log_channel.send(content=warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
 
 
     @app_commands.command(name="editvc",description="Edit your voice channel name or user limit")
@@ -189,7 +189,7 @@ class CustomVcs(commands.Cog):
                             # create and continue command
                             recently_renamed_vcs[channel.id] = []
                         limit_info = ""
-                        logChannel = itx.guild.get_channel(vcLog)
+                        log_channel = itx.guild.get_channel(vcLog)
                         if log_channel is None:
                             log_channel = itx.guild.get_thread(vcLog)
                         old_name = channel.name
@@ -200,22 +200,22 @@ class CustomVcs(commands.Cog):
                                     await itx.response.send_message("You can edit a channel with this command. Set a value for the name or the maximum user limit.", ephemeral=True)
                                 else:
                                     await channel.edit(reason=f"Staff: Voice channel renamed from \"{channel.name}\" to \"{name}\"{limit_info}", name=name)
-                                    await logChannel.send(f"Staff: Voice channel ({channel.id}) renamed from \"{old_name}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})", allowed_mentions=discord.AllowedMentions.none())
+                                    await log_channel.send(f"Staff: Voice channel ({channel.id}) renamed from \"{old_name}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})", allowed_mentions=discord.AllowedMentions.none())
                                     await itx.response.send_message(warning+f"Staff: Voice channel successfully renamed to \"{name}\"", ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
                                 recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
                             else:
                                 if name is None:
                                     await channel.edit(reason=f"Staff: Voice channel limit edited from \"{old_limit}\" to \"{limit}\"", user_limit=limit)
-                                    await logChannel.send(f"Staff: Voice channel \"{old_name}\" ({channel.id}) edited the user limit from  \"{old_limit}\" to \"{limit}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limit_info}", allowed_mentions=discord.AllowedMentions.none())
+                                    await log_channel.send(f"Staff: Voice channel \"{old_name}\" ({channel.id}) edited the user limit from  \"{old_limit}\" to \"{limit}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limit_info}", allowed_mentions=discord.AllowedMentions.none())
                                     await itx.response.send_message(warning+f"Staff: Voice channel user limit for \"{old_name}\" successfully edited from \"{old_limit}\" to \"{limit}\"", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
                                 else:
                                     await channel.edit(reason=f"Staff: Voice channel edited from name: \"{channel.name}\" to \"{name}\" and user limit from: \"{limit}\" to \"{old_limit}\"", user_limit=limit,name=name)
-                                    await logChannel.send(f"Staff: {itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{old_name}\" to \"{name}\" and user limit from \"{old_limit}\" to \"{limit}\"{limit_info}", allowed_mentions=discord.AllowedMentions.none())
+                                    await log_channel.send(f"Staff: {itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{old_name}\" to \"{name}\" and user limit from \"{old_limit}\" to \"{limit}\"{limit_info}", allowed_mentions=discord.AllowedMentions.none())
                                     await itx.response.send_message(warning+f"Staff: Voice channel name and user limit successfully edited.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
                                     recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
                         except discord.errors.HTTPException as ex:
                             ex_message = repr(ex).split("(", 1)[1][1:-2]
-                            await logChannel.send("Staff: Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {old_name} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
+                            await log_channel.send("Staff: Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {old_name} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
 
                 await itx.response.send_modal(CustomVcStaffEditor())
                 return
@@ -257,7 +257,7 @@ class CustomVcs(commands.Cog):
             # create and continue command
             recently_renamed_vcs[channel.id] = []
         limitInfo = ""
-        logChannel = itx.guild.get_channel(vcLog)
+        log_channel = itx.guild.get_channel(vcLog)
         if log_channel is None:
             log_channel = itx.guild.get_thread(vcLog)
         oldName = channel.name
@@ -268,22 +268,22 @@ class CustomVcs(commands.Cog):
                     await itx.response.send_message("You can edit your channel with this command. Set a value for the name or the maximum user limit.", ephemeral=True)
                 else:
                     await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", name=name)
-                    await logChannel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})", allowed_mentions=discord.AllowedMentions.none())
+                    await log_channel.send(f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})", allowed_mentions=discord.AllowedMentions.none())
                     await itx.response.send_message(warning+f"Voice channel successfully renamed to \"{name}\"", ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
                 recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
             else:
                 if name is None:
                     await channel.edit(reason=f"Voice channel limit edited from \"{oldLimit}\" to \"{limit}\"", user_limit=limit)
-                    await logChannel.send(f"Voice channel \"{oldName}\" ({channel.id}) edited the user limit from  \"{oldLimit}\" to \"{limit}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
+                    await log_channel.send(f"Voice channel \"{oldName}\" ({channel.id}) edited the user limit from  \"{oldLimit}\" to \"{limit}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}", allowed_mentions=discord.AllowedMentions.none())
                     await itx.response.send_message(warning+f"Voice channel user limit for \"{oldName}\" successfully edited from \"{oldLimit}\" to \"{limit}\"", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
                 else:
                     await channel.edit(reason=f"Voice channel edited from name: \"{channel.name}\" to \"{name}\" and user limit from: \"{limit}\" to \"{oldLimit}\"", user_limit=limit,name=name)
-                    await logChannel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{oldName}\" to \"{name}\" and user limit from \"{oldLimit}\" to \"{limit}\"{limitInfo}", allowed_mentions=discord.AllowedMentions.none())
+                    await log_channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{oldName}\" to \"{name}\" and user limit from \"{oldLimit}\" to \"{limit}\"{limitInfo}", allowed_mentions=discord.AllowedMentions.none())
                     await itx.response.send_message(warning+f"Voice channel name and user limit successfully edited.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
                     recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
-            await logChannel.send("Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {oldName} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
+            await log_channel.send("Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {oldName} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
 
     async def edit_guild_info_autocomplete(self, itx: discord.Interaction, current: str):
         if not is_admin(itx):

@@ -217,7 +217,7 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
         log_channel_id = await client.get_guild_info(guild, "vcLog")
     except KeyError:
         msg = "__**THIS MESSAGE CAUSES THE CRASH BELOW**__\n"+msg
-        await client.logChannel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+        await client.log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
         raise
     log_channel = guild.get_channel(log_channel_id)
     if log_channel is None:

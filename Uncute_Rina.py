@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.1.9".split(".")
+    fileVersion = "1.2.2.0".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -74,7 +74,7 @@ else:
             super().__init__(*args, **kwargs)
 
         commandList: list[discord.app_commands.AppCommand]
-        logChannel: discord.TextChannel
+        log_channel: discord.TextChannel
         api_tokens = tokens
         startup_time = datetime.now() # used in /version
         RinaDB = RinaDB
@@ -185,7 +185,7 @@ else:
     @client.event
     async def on_ready():
         debug(f"[#######] Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
-        await client.logChannel.send(f":white_check_mark: **Started Rina** in version {version}")
+        await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
         
     @client.event
     async def setup_hook():
@@ -217,12 +217,12 @@ else:
 
         debug(f"[###+   ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
         try:
-            client.logChannel = await client.fetch_channel(988118678962860032)
+            client.log_channel = await client.fetch_channel(988118678962860032)
         except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
             if testing_environment == 1:
-                client.logChannel = await client.fetch_channel(986304081234624554)
+                client.log_channel = await client.fetch_channel(986304081234624554)
             else:
-                client.logChannel = await client.fetch_channel(1062396920187863111)
+                client.log_channel = await client.fetch_channel(1062396920187863111)
         client.bot_owner = await client.fetch_user(262913789375021056)#(await client.application_info()).owner
 
         debug(f"[####   ]: Loaded server settings"+" "*30,color="green")
