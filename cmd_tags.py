@@ -1,6 +1,8 @@
 from Uncute_Rina import *
 from import_modules import *
 
+report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
+
 hsv_color_list = { #in h    s    v
     "report"                          : [ 16, 100, 100],
     "customvcs"                       : [ 84,  55, 100],
@@ -237,6 +239,16 @@ class Tags:
 class TagFunctions(commands.Cog):
     def __init__(self, client):
         self.client = client
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        for staff_role_mention in ["<@&981735650971775077>", "<@&1012954384142966807>", "<@&981735525784358962>"]:
+            if staff_role_mention in message.content:
+                time_now = int(mktime(datetime.now().timetuple())) # get time in unix
+                if time_now - report_message_reminder_unix > 900: # 15 minutes
+                    await Tags().send_report_info("report", message.channel, self.client, additional_info=[message.author.name, message.author.id])
+                    report_message_reminder_unix = time_now
+                    break
 
     async def tag_autocomplete(self, _: discord.Interaction, current: str):
         options = [

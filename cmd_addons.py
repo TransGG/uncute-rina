@@ -1,7 +1,6 @@
 from Uncute_Rina import *
 from import_modules import *
 
-report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 selfies_delete_week_command_cooldown = 0
 
 currency_options = {
@@ -680,14 +679,6 @@ class OtherAddons(commands.Cog):
                         await message.add_reaction("☺") # relaxed
                     except discord.errors.Forbidden:
                         pass
-
-        for staff_role_mention in ["<@&981735650971775077>", "<@&1012954384142966807>", "<@&981735525784358962>"]:
-            if staff_role_mention in message.content:
-                time_now = int(mktime(datetime.now().timetuple())) # get time in unix
-                if time_now - report_message_reminder_unix > 900: # 15 minutes
-                    await Tags().send_report_info("report", message.channel, self.client, additional_info=[message.author.name, message.author.id])
-                    report_message_reminder_unix = time_now
-                    break
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
