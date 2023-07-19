@@ -631,10 +631,9 @@ class OtherAddons(commands.Cog):
         self.client = client
         RinaDB = client.RinaDB
         self.headpatWait = 0
-
+        
     @commands.Cog.listener()
     async def on_message(self, message):
-        global report_message_reminder_unix
         try: # mention targeted user if added to mod-ticket with /add target:@user
             # message.channel.category.id
             if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
@@ -1361,7 +1360,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
-        if itx.guild.id != self.client.staff_server_id:
+        if itx.guild.id != self.client.custom_ids["staff_server"]:
             blacklisted_channels = await self.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
             if itx.channel.id in blacklisted_channels:
                 errors.append("- :no_entry: You are not allowed to use this command in this channel!")

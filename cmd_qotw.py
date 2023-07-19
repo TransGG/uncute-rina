@@ -5,9 +5,6 @@ class QOTW(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
         self.client = client
-        self.qotw_channel_id = 1019706498609319969
-        self.dev_request_id = 982351285959413811
-        self.watchoutdoubts_id = 989638606433968159
         RinaDB = client.RinaDB
 
         # setting ContextMenu here, because apparently you can't use that decorator in classes..?
@@ -30,7 +27,7 @@ class QOTW(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            confirm_channel = itx.client.get_channel(self.qotw_channel_id)
+            confirm_channel = itx.client.get_channel(self.client.custom_ids["staff_qotw_channel"])
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=33, g=33, b=33),
@@ -80,7 +77,7 @@ class QOTW(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            confirm_channel = itx.client.get_channel(self.dev_request_id)
+            confirm_channel = itx.client.get_channel(self.client.custom_ids["staff_dev_request"])
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=33, g=33, b=33),
@@ -123,9 +120,9 @@ class QOTW(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id != self.client.staff_server_id:
+        if payload.guild_id != self.client.custom_ids["staff_server"]:
             return
-        if payload.channel_id != self.dev_request_id:
+        if payload.channel_id != self.client.custom_ids["staff_dev_request"]:
             return
         emoji_color_selection = {
             "🔴": discord.Colour.from_rgb(r=255,g=100,b=100),
@@ -173,7 +170,7 @@ class QOTW(commands.Cog):
         
         await itx.response.defer(ephemeral=True)
         # get channel of where this message has to be sent
-        doubts_channel = itx.client.get_channel(self.watchoutdoubts_id)
+        doubts_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         # get message that supports the report / report reason
         if message_id is None:
             mentioned_msg_info = ""
@@ -289,6 +286,44 @@ class QOTW(commands.Cog):
         watchlist_reason_modal = self.WatchlistReason(self, "Add user to watchlist using message", message.author, message, 300)
         await itx.response.send_modal(watchlist_reason_modal)
         
+    async def on_message(self, message: discord.Message):
+        if message.guild.id != self.client.custom_ids["staff_server"]:
+            return
+        if message.author.id == self.client.custom_ids["badeline_bot"]:
+            try:
+                if message.category.id != self.client.custom_ids["staff_logs_category"]: # use ID in actual program
+                    return
+            except discord.errors.ClientException:
+                return
+            if type(message.channel) is discord.Thread: # ignore the #rules channel with its threads
+                return
+            reported_user_id, punish_rule, punish_reason, private_notes = [None]*4
+            for embed in message.embeds:
+                for field in embed.fields:
+                    if field.name.lower() == "user":
+                        reported_user_id = field.value.split("`")[1]
+                        if reported_user_id.isdecimal():
+                            reported_user_id = int(reported_user_id)
+                            break
+                        else:
+                            raise Exception("User id was not an id!")
+                    if field.name.lower() == "rule":
+                        punish_rule = field.value.split("`")[1]
+                    if field.name.lower() == "reason":
+                        punish_reason = field.value.split("`")[1]
+                    if field.name.lower() == "private notes":
+                        private_notes = field.value.split("`")[1]
+            # action_name = message.channel.name
+
+            watch_channel = client.get_channel(self.client.custom_ids["staff_watch_channel"])
+            for thread in watch_channel.threads:
+                async for starter_message in thread.history(limit=1, oldest_first=True):
+                    if starter_message.embeds[0].author.url.split("/")[3] == reported_user_id:
+                        await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
+                                            f"Rule {punish_rule}\n" * bool(punish_rule) +
+                                            f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
+                                            f"Private notes:\n> {private_notes}" * bool(private_notes))
+                        return
 
 async def setup(client):
     await client.add_cog(QOTW(client))

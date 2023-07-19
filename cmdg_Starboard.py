@@ -106,7 +106,7 @@ class Starboard(commands.Cog):
             return
 
         
-        # print(repr(message.guild.id), repr(self.client.staff_server_id), message.guild.id == self.client.staff_server_id)
+        # print(repr(message.guild.id), repr(self.client.custom_ids["staff_server"]), message.guild.id == self.client.custom_ids["staff_server"])
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
@@ -201,9 +201,9 @@ class Starboard(commands.Cog):
                             embeds=embed_list,
                             allowed_mentions=discord.AllowedMentions.none(),
                         )
-                    await log_to_guild(self.client, star_channel.guild, 
+                    await log_to_guild(self.client, star_channel.guild,
                                  f"{starboard_emoji} Starboard message {msg.jump_url} was created from {message.jump_url}. "
-                                 f"Content: \"\"\"{message.content}\"\"\" and attachments: {[x.url for x in message.attachments]}")
+                                 f"Content: \"\"\"{message.content[:1000]}\"\"\" and attachments: {[x.url for x in message.attachments]}")
                     # add new starboard msg
                     await msg.add_reaction(starboard_emoji)
                     await msg.add_reaction("❌")
@@ -211,7 +211,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id in [None, self.client.staff_server_id]:
+        if payload.guild_id in [None, self.client.custom_ids["staff_server"]]:
             return
         _star_channel, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(payload.guild_id, "starboardChannel", "starboardEmoji", "starboardDownvoteInitValue")
         if getattr(payload.emoji, "id", None) != starboard_emoji_id and \
@@ -242,7 +242,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
-        if message_payload.guild_id in [None, self.client.staff_server_id]:
+        if message_payload.guild_id in [None, self.client.custom_ids["staff_server"]]:
             return
         _star_channel, starboard_emoji_id = await self.client.get_guild_info(message_payload.guild_id, "starboardChannel", "starboardEmoji")
         star_channel = self.client.get_channel(_star_channel)
