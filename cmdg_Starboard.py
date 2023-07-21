@@ -83,7 +83,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id in [None, self.client.staff_server_id]:
+        if payload.guild_id in [None, self.client.custom_ids["staff_server"]]:
             return
         _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
             payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels", "starboardEmoji", "starboardDownvoteInitValue")
