@@ -111,7 +111,8 @@ class Starboard(commands.Cog):
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            await self.updateStat(message, starboard_emoji, downvote_init_value)
+            if len(message.embeds) > 1:
+                await self.updateStat(message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
