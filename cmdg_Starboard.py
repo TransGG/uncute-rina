@@ -122,7 +122,8 @@ class Starboard(commands.Cog):
                     async for star_message in star_channel.history(limit=200):
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await self.updateStat(star_message, starboard_emoji, downvote_init_value)
+                                if len(star_message.embeds) > 1:
+                                    await self.updateStat(star_message, starboard_emoji, downvote_init_value)
                                 return
                     return
                 elif reaction.count == star_minimum:
