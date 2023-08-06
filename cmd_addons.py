@@ -732,7 +732,16 @@ class OtherAddons(commands.Cog):
                 if respond == "BAD!":
                     await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
                 await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
-            elif "can i have pats" in msg:
+            elif any([x in msg for x in [
+                "can i have pat",
+                "can i have headpat",
+                "can you pat",
+                "can u pat",
+                "please pat",
+                "pls pat",
+                "please headpat",
+                "pls headpat"
+            ]]):
                 try:
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
                 except discord.errors.HTTPException:
