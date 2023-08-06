@@ -733,6 +733,8 @@ class OtherAddons(commands.Cog):
                     await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
                 await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
             elif any([x in msg for x in [
+                "can i have a pat",
+                "can i have a headpat",
                 "can i have pat",
                 "can i have headpat",
                 "can you pat",

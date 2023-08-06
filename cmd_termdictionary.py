@@ -360,7 +360,7 @@ class TermDictionary(commands.Cog):
                     @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
                     async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
                         self.page += 1
-                        if self.page >= (len(self.pages)-1):
+                        if self.page >= (len(self.pages)):
                             self.page = 0
                         embed = self.pages[self.page]
                         embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
@@ -472,7 +472,7 @@ class TermDictionary(commands.Cog):
                     @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
                     async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
                         self.page += 1
-                        if self.page >= (len(self.pages)-1):
+                        if self.page >= (len(self.pages)):
                             self.page = 0
                         embed = self.pages[self.page]
                         embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
