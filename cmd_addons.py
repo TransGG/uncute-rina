@@ -732,6 +732,14 @@ class OtherAddons(commands.Cog):
                 if respond == "BAD!":
                     await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
                 await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
+            elif "can i have pats" in msg:
+                try:
+                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
+                except discord.errors.HTTPException:
+                    try:
+                        await message.channel.send("Unfortunately I can't give you a headpat (for some reason), so have this instead:\n<:TPF_02_Pat:968285920421875744>")
+                    except discord.errors.Forbidden:
+                        pass
             else:
                 cmd_mention = self.client.get_command_mention("help")
                 await message.channel.send(f"I use slash commands! Use /command  and see what cool things might pop up! or try {cmd_mention}\nPS: If you're trying to call me cute: no, I'm not", delete_after=8)
