@@ -376,12 +376,13 @@ class SearchAddons(commands.Cog):
             f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true").text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
         # it also has some <br \/>\r\n strings in there for some reason..? so uh
-        jsonizing_table = str.maketrans({
+        jsonizing_table = {
             r"<br \/>\r\n":r"\n",
             "<pre>":"",
-            "</pre>":""
-        })
-        response_api = response_api.translate(jsonizing_table)
+             "</pre>":""
+        }
+        for key in jsonizing_table:
+            response_api = response_api.replace(key, jsonizing_table[key])
         data = json.loads(response_api)
         if "error" in data:
             if country_id.lower() == "uk":
@@ -738,11 +739,17 @@ class OtherAddons(commands.Cog):
                 "can i have pat",
                 "can i have headpat",
                 "can you pat",
+                "can you headpat",
                 "can u pat",
+                "can u headpat",
                 "please pat",
                 "pls pat",
                 "please headpat",
-                "pls headpat"
+                "pls headpat",
+                "i want a pat",
+                "i want a headpat",
+                "i want pat",
+                "i want headpat"
             ]]):
                 try:
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
