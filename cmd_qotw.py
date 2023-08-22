@@ -331,19 +331,8 @@ class QOTW(commands.Cog):
 
         watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
-            try:
-                starter_message = await thread.fetch_message(thread.id)
-                debug("\n   thread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+str(bool(starter_message.embeds))+"\nthread id: "+str(thread.id)+" - msg id: "+str(starter_message.id)+"\nauthor id: "+str(starter_message.author))
-                for embed in starter_message.embeds:
-                    dict = embed.to_dict()
-                    if "author" in dict:
-                        debug("embed author: "+dict["author"])
-                    else:
-                        debug("embed: "+dict)
-            except:
-                debug("can't get message from the thread.id", color="red")
-
-            async for starter_message in thread.history(limit=2, oldest_first=True):
+            async for starter_message in thread.history(limit=1, oldest_first=True):
+                starter_message = thread.fetch_message(starter_message.id) # re-fetch to see if discord gives an embed for the message now
                 debug("\n   thread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+str(bool(starter_message.embeds))+"\nthread id: "+str(thread.id)+" - msg id: "+str(starter_message.id)+"\nauthor id: "+str(starter_message.author))
                 for embed in starter_message.embeds:
                     dict = embed.to_dict()
