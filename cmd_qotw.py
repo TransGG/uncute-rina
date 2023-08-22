@@ -143,6 +143,9 @@ class QOTW(commands.Cog):
         await message.edit(embed=embed)
         await message.remove_reaction(payload.emoji.name, payload.member)
 
+    ####################
+    # Watch out doubts #
+    ####################
 
     async def add_to_watchlist(self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None, warning=""):
         if not is_staff(itx):
@@ -150,6 +153,10 @@ class QOTW(commands.Cog):
             return
         
         allow_different_report_author = False
+        # different report author = different message author than the reported user, 
+        #   used in case you want to report someone but want to use someone else's 
+        #   message as evidence or context.
+
         if message_id is None:
             pass
         elif message_id.isdecimal(): # required cuz discord client doesn't let you fill in message IDs as ints; too large
@@ -166,6 +173,7 @@ class QOTW(commands.Cog):
         if len(reason) > 2000: #embed has higher limits (?)
             await itx.response.send_message("Your watchlist reason won't fit! Please make your reason shorter. "
                                             "You can also expand your reason / add details in the thread",ephemeral=True)
+            await itx.response.send_message("Given reason:\n"+reason[:1950]+"...", ephemeral=True) # because i'm nice
             return
         
         await itx.response.defer(ephemeral=True)
@@ -177,23 +185,23 @@ class QOTW(commands.Cog):
         else:
             try:
                 reported_message = await itx.channel.fetch_message(message_id)
-                if reported_message.author.id != user.id and not allow_different_report_author:
-                    await itx.followup.send(f":warning: The given message didn't match the mentioned user!\n"
-                                            f"(message author: {reported_message.author}, mentioned user: {user})\n"
-                                            f"If you want to use this message anyway, add \" | overwrite\" after the message id\n"
-                                            f"(example: \"1817305029878989603 | overwrite\")")
-                    return
-                mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url})\n> {reported_message.content}\n"
-                if allow_different_report_author:
-                    mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url}) (message " \
-                                         f"by {reported_message.author.mention})\n> {reported_message.content}\n"
-                if reported_message.attachments:
-                    mentioned_msg_info += f"(:newspaper: Contains {len(reported_message.attachments)} attachments)\n"
             except:
                 await itx.followup.send("Couldn't fetch message from message_id. Perhaps you copied the wrong ID, "
                                         "were in another channel than the one in which the message was sent, or I don't "
                                         "have access to this current channel?")
                 raise
+            if reported_message.author.id != user.id and not allow_different_report_author:
+                await itx.followup.send(f":warning: The given message didn't match the mentioned user!\n"
+                                        f"(message author: {reported_message.author}, mentioned user: {user})\n"
+                                        f"If you want to use this message anyway, add \" | overwrite\" after the message id\n"
+                                        f"(example: \"1817305029878989603 | overwrite\")")
+                return
+            mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url})\n> {reported_message.content}\n"
+            if allow_different_report_author:
+                mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url}) (message " \
+                                        f"by {reported_message.author.mention})\n> {reported_message.content}\n"
+            if reported_message.attachments:
+                mentioned_msg_info += f"(:newspaper: Contains {len(reported_message.attachments)} attachments)\n"
         
         # make and send uncool embed for the loading period while it sends the copyable version
         embed = discord.Embed(
@@ -212,15 +220,15 @@ class QOTW(commands.Cog):
         if message_id is not None:
             if allow_different_report_author:
                 a = await thread.send(f"Reported user: {user.mention} (`{user.id}`) (mentioned message author below)",allowed_mentions=discord.AllowedMentions.none())
-            b = await thread.send(f"{reported_message.author.mention} (`{reported_message.author.id}`) - {reported_message.jump_url}",allowed_mentions=discord.AllowedMentions.none())
+            b = await thread.send(f"Reported message: {reported_message.author.mention} (`{reported_message.author.id}`) - {reported_message.jump_url}",allowed_mentions=discord.AllowedMentions.none())
             await thread.send(f"> {reported_message.content}",allowed_mentions=discord.AllowedMentions.none())
             
             if allow_different_report_author:
                 copyable_version = a
             elif not reason:
                 copyable_version = b
-        if message_id is None and reason == "":
-            copyable_version = await thread.send(f"{user.mention} (`{user.id}`)",allowed_mentions=discord.AllowedMentions.none())
+        else:
+            copyable_version = await thread.send(f"Reported user: {user.mention} (`{user.id}`)",allowed_mentions=discord.AllowedMentions.none())
         
         # edit the uncool embed to make it cool: Show reason, link to report message (if provided), link to plaintext
         embed = discord.Embed(
@@ -289,41 +297,43 @@ class QOTW(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.guild.id != self.client.custom_ids["staff_server"]:
             return
-        if message.author.id == self.client.custom_ids["badeline_bot"]:
-            try:
-                if message.category.id != self.client.custom_ids["staff_logs_category"]: # use ID in actual program
+        if message.author.id != self.client.custom_ids["badeline_bot"]:
+            return
+        try:
+            if message.category.id != self.client.custom_ids["staff_logs_category"]:
+                return
+        except discord.errors.ClientException:
+            return
+        if type(message.channel) is discord.Thread: # ignore the #rules channel with its threads
+            return
+        
+        reported_user_id, punish_rule, punish_reason, private_notes = [None]*4
+        for embed in message.embeds:
+            for field in embed.fields:
+                if field.name.lower() == "user":
+                    reported_user_id = field.value.split("`")[1]
+                    if reported_user_id.isdecimal():
+                        reported_user_id = int(reported_user_id)
+                        break
+                    else:
+                        raise Exception("User id was not an id!")
+                if field.name.lower() == "rule":
+                    punish_rule = field.value.split("`")[1]
+                if field.name.lower() == "reason":
+                    punish_reason = field.value.split("`")[1]
+                if field.name.lower() == "private notes":
+                    private_notes = field.value.split("`")[1]
+        # action_name = message.channel.name
+    
+        watch_channel = client.get_channel(self.client.custom_ids["staff_watch_channel"])
+        for thread in watch_channel.threads:
+            async for starter_message in thread.history(limit=1, oldest_first=True):
+                if starter_message.embeds[0].author.url.split("/")[3] == reported_user_id:
+                    await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
+                                        f"Rule {punish_rule}\n" * bool(punish_rule) +
+                                        f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
+                                        f"Private notes:\n> {private_notes}" * bool(private_notes))
                     return
-            except discord.errors.ClientException:
-                return
-            if type(message.channel) is discord.Thread: # ignore the #rules channel with its threads
-                return
-            reported_user_id, punish_rule, punish_reason, private_notes = [None]*4
-            for embed in message.embeds:
-                for field in embed.fields:
-                    if field.name.lower() == "user":
-                        reported_user_id = field.value.split("`")[1]
-                        if reported_user_id.isdecimal():
-                            reported_user_id = int(reported_user_id)
-                            break
-                        else:
-                            raise Exception("User id was not an id!")
-                    if field.name.lower() == "rule":
-                        punish_rule = field.value.split("`")[1]
-                    if field.name.lower() == "reason":
-                        punish_reason = field.value.split("`")[1]
-                    if field.name.lower() == "private notes":
-                        private_notes = field.value.split("`")[1]
-            # action_name = message.channel.name
-
-            watch_channel = client.get_channel(self.client.custom_ids["staff_watch_channel"])
-            for thread in watch_channel.threads:
-                async for starter_message in thread.history(limit=1, oldest_first=True):
-                    if starter_message.embeds[0].author.url.split("/")[3] == reported_user_id:
-                        await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
-                                            f"Rule {punish_rule}\n" * bool(punish_rule) +
-                                            f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
-                                            f"Private notes:\n> {private_notes}" * bool(private_notes))
-                        return
 
 async def setup(client):
     await client.add_cog(QOTW(client))

@@ -778,10 +778,7 @@ class OtherAddons(commands.Cog):
             f"Use {cmd_mention} `mode:11` to fix this!"])
         try:
             # vcLog      = guild["vcLog"]
-            log_channel = itx.guild.get_channel(vc_log)
-            if log_channel is None:
-                log_channel = itx.guild.get_thread(vc_log)
-            await log_channel.send(f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}", allowed_mentions=discord.AllowedMentions.none())
+            await log_to_guild(self.client, itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}")
             text = text.replace("[[\\n]]","\n").replace("[[del]]","")
             await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions(everyone=False,users=True,roles=True,replied_user=True))
         except discord.Forbidden:
