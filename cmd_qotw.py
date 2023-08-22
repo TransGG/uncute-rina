@@ -306,6 +306,10 @@ class QOTW(commands.Cog):
             return
         if type(message.channel) is discord.Thread: # ignore the #rules channel with its threads
             return
+        debug("message sent by Badeline in the staff server, logs category:")
+        debug(message)
+        for embed in message.embeds:
+            debug(embed.to_dict)
         
         reported_user_id, punish_rule, punish_reason, private_notes = [None]*4
         for embed in message.embeds:
@@ -324,7 +328,7 @@ class QOTW(commands.Cog):
                 if field.name.lower() == "private notes":
                     private_notes = field.value.split("`")[1]
         # action_name = message.channel.name
-    
+
         watch_channel = client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
             async for starter_message in thread.history(limit=1, oldest_first=True):
