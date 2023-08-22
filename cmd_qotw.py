@@ -322,11 +322,11 @@ class QOTW(commands.Cog):
                     else:
                         raise Exception("User id was not an id!")
                 if field.name.lower() == "rule":
-                    punish_rule = field.value.split("`")[1]
+                    punish_rule = field.value
                 if field.name.lower() == "reason":
-                    punish_reason = field.value.split("`")[1]
+                    punish_reason = field.value
                 if field.name.lower() == "private notes":
-                    private_notes = field.value.split("`")[1]
+                    private_notes = field.value
         # action_name = message.channel.name
 
         watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
