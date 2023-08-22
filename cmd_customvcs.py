@@ -105,9 +105,9 @@ class CustomVcs(commands.Cog):
                     await self.client.log_channel.send(content=warning,allowed_mentions=discord.AllowedMentions.none())
                     raise
                     # pass
-                nomicChannel = member.guild.get_channel(vcNoMic)
+                # nomicChannel = member.guild.get_channel(vcNoMic)
                 cmd_mention = self.client.get_command_mention("editvc")
-                await nomicChannel.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", delete_after=120, allowed_mentions=discord.AllowedMentions.none())
+                await vc.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
                 await self.client.log_channel.send(content=warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).", allowed_mentions=discord.AllowedMentions.none())
 
 

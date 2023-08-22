@@ -13,6 +13,7 @@ hsv_color_list = { #in h    s    v
     "minimodding or correcting staff" : [340,  55, 100],
     "avoiding politics"               : [ 60,  40, 100],
     "please change topic"             : [205,  40, 100],
+    "conversing effectively"          : [315,  40, 100],
 }
 colours = {k: discord.Colour.from_hsv(v[0]/360, v[1]/100, v[2]/100) for k, v in hsv_color_list.items()}
 
@@ -236,6 +237,21 @@ class Tags:
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
+    async def send_conversing_effectively_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
+        embed = discord.Embed(
+            color=colours["conversing effectively"],
+            title="Conversing effectively",
+            description="When you have a question and hope to find the answer quickly, don't start with just "
+                        "\"hi\", but instead also immediately ask the question. That way, you don't have to wait "
+                        "for a response twice.\n"
+                        "\n"
+                        "Your first question shouldn't be \"Can I ask something?\" or \"Are there any [subject] "
+                        "experts around?\", but rather something like: \"How do I do [problem] with [subject] and "
+                        "[other relevant info]?\""
+        )
+        embed.set_footer(text="More info: https://www.nohello.net/, https://dontasktoask.com/")
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+
 class TagFunctions(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -262,6 +278,7 @@ class TagFunctions(commands.Cog):
             "tone indicators",
             "trigger warnings",
             "trusted role",
+            "conversing effectively"
         ]
         return [
             app_commands.Choice(name=term, value=term)
@@ -285,6 +302,7 @@ class TagFunctions(commands.Cog):
             "minimodding or correcting staff" : t.send_minimodding_info,
             "avoiding politics" : t.send_avoidpolitics_info,
             "please change chat topic" : t.send_chat_topic_change_request,
+            "conversing effectively" : t.send_conversing_effectively_info,
         }
         if tag in tag_functions:
             await tag_functions[tag](tag, itx, self.client, public=public, anonymous=anonymous)
