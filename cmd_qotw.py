@@ -224,6 +224,17 @@ class QOTW(commands.Cog):
                     break
             except (IndexError, AttributeError):
                 pass
+        else:
+            async for thread in watch_channel.archived_threads(limit=None):
+                starter_message = await thread.parent.fetch_message(thread.id)
+                try:
+                    if starter_message.embeds[0].author.url.split("/")[3] == str(user.id):
+                        already_on_watchlist = True
+                        starter_message_maybe = starter_message
+                        thread_maybe = thread
+                        break
+                except (IndexError, AttributeError):
+                    pass
 
         if not already_on_watchlist:
             msg = await watch_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
@@ -374,6 +385,20 @@ class QOTW(commands.Cog):
                                     f"Private notes:\n> {private_notes}" * bool(private_notes), 
                                   allowed_mentions=discord.AllowedMentions.none())
                 return
+        else:
+            async for thread in watch_channel.archived_threads(limit=None):
+                starter_message = await thread.parent.fetch_message(thread.id)
+                if len(starter_message.embeds) == 0:
+                    continue
+                #   0       1          2                     3
+                # https:  /  /  warned.username  /  262913789375021056  /
+                if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
+                    await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
+                                        f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
+                                        f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
+                                        f"Private notes:\n> {private_notes}" * bool(private_notes), 
+                                    allowed_mentions=discord.AllowedMentions.none())
+                    return
 
     @app_commands.command(name="send_fake_log_embed",description="make a user report (fake).")
     @app_commands.describe(target="User to add", reason="Reason for adding", rule="rule to punish for", private_notes="private notes to include")
