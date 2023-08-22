@@ -307,13 +307,10 @@ class QOTW(commands.Cog):
             return
         if type(message.channel) is discord.Thread: # ignore the #rules channel with its threads
             return
-        debug("4) message sent in a non-thread 'staff logs category' channel in the staff server:")
-        debug(message)
-        for embed in message.embeds:
-            debug(embed.to_dict())
         
-        reported_user_id, punish_rule, punish_reason, private_notes = [None]*4
         for embed in message.embeds:
+            reported_user_id = None
+            fields = {"rule":None, "reason":None, "private notes":None}
             for field in embed.fields:
                 if field.name.lower() == "user":
                     reported_user_id = field.value.split("`")[1]
@@ -321,34 +318,69 @@ class QOTW(commands.Cog):
                         reported_user_id = int(reported_user_id)
                     else:
                         raise Exception("User id was not an id!")
-                if field.name.lower() == "rule":
-                    punish_rule = field.value
-                if field.name.lower() == "reason":
-                    punish_reason = field.value
-                if field.name.lower() == "private notes":
-                    private_notes = field.value
+                    
+                if field.name.lower() in fields:
+                    print(repr(field.value))
+                    if field.value.startswith(">>> "):
+                        fields[field.name.lower()] = field.value[4:].replace("\n", "\n> ")
+                    else: 
+                        fields[field.name.lower()] = field.value.replace("\n", "\n> ")
+
+                # if field.name.lower() == "rule":
+                #     punish_rule = field.value
+                #     if punish_rule.startswith(">>> "):
+                #         punish_rule = punish_rule[4:]
+                # if field.name.lower() == "reason":
+                #     punish_reason = field.value
+                #     if punish_reason.startswith(">>> "):
+                #         punish_reason = punish_reason[4:]
+                # if field.name.lower() == "private notes":
+                #     private_notes = field.value
+                #     if private_notes.startswith(">>> "):
+                #         private_notes = private_notes[4:]
+            punish_rule = fields["rule"]
+            punish_reason = fields["reason"]
+            private_notes = fields["private notes"]
         # action_name = message.channel.name
 
         watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
-            async for starter_message in thread.history(limit=1, oldest_first=True):
-                starter_message = await thread.fetch_message(starter_message.id) # re-fetch to see if discord gives an embed for the message now
-                debug("\n   thread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+str(bool(starter_message.embeds))+"\nthread id: "+str(thread.id)+" - msg id: "+str(starter_message.id)+"\nauthor id: "+str(starter_message.author))
-                for embed in starter_message.embeds:
-                    dict = embed.to_dict()
-                    if "author" in dict:
-                        debug("embed author: "+dict["author"])
-                    else:
-                        debug("embed: "+dict)
+            # async for starter_message in thread.history(limit=1, oldest_first=True):
+            #     starter_message = await thread.fetch_message(starter_message.id) # re-fetch to see if discord gives an embed for the message now
+            #     debug("\n   thread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+str(bool(starter_message.embeds))+"\nthread id: "+str(thread.id)+" - msg id: "+str(starter_message.id)+"\nauthor id: "+str(starter_message.author))
+            #     for embed in starter_message.embeds:
+            #         dict = embed.to_dict()
+            #         if "author" in dict:
+            #             debug("embed author: "+dict["author"])
+            #         else:
+            #             debug("embed: "+dict)
 
-                if len(starter_message.embeds) == 0:
-                    continue
-                if starter_message.embeds[0].author.url.split("/")[3] == reported_user_id:
-                    await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
-                                        f"Rule {punish_rule}\n" * bool(punish_rule) +
-                                        f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
-                                        f"Private notes:\n> {private_notes}" * bool(private_notes))
-                    return
+            #     if len(starter_message.embeds) == 0:
+            #         continue
+            starter_message = await thread.parent.fetch_message(thread.id)
+            # https:  /  /  warned.username  /  262913789375021056  /
+            if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
+                await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
+                                    f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
+                                    f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
+                                    f"Private notes:\n> {private_notes}" * bool(private_notes), 
+                                  allowed_mentions=discord.AllowedMentions.none())
+                return
+
+    @app_commands.command(name="send_fake_log_embed",description="make a user report (fake).")
+    @app_commands.describe(target="User to add", reason="Reason for adding", rule="rule to punish for", private_notes="private notes to include")
+    async def send_fake_log_embed(self, itx: discord.Interaction, target: discord.User, reason: str = "", rule: str = None, private_notes: str = ""):
+        embed = discord.Embed(title="did a log thing for x", color=16705372)
+        embed.add_field(name="User",value = f"{target.mention} (`{target.id}`)", inline=True)
+        embed.add_field(name="Moderator",value = f"{itx.user.mention}", inline=True)
+        embed.add_field(name="\u200b",value = f"\u200b", inline=False)
+        embed.add_field(name="Rule",value = f">>> {rule}", inline=True)
+        embed.add_field(name="\u200b",value = f"\u200b", inline=False)
+        embed.add_field(name="Reason",value = f">>> {reason}")
+        embed.add_field(name="\u200b",value = f"\u200b", inline=False)
+        embed.add_field(name="Private Notes",value = f">>> {private_notes}")
+        await self.client.get_channel(1143642283577725009).send(embed=embed)
+
 
 async def setup(client):
     await client.add_cog(QOTW(client))
