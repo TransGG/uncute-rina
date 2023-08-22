@@ -319,7 +319,6 @@ class QOTW(commands.Cog):
                     reported_user_id = field.value.split("`")[1]
                     if reported_user_id.isdecimal():
                         reported_user_id = int(reported_user_id)
-                        break
                     else:
                         raise Exception("User id was not an id!")
                 if field.name.lower() == "rule":
@@ -333,6 +332,8 @@ class QOTW(commands.Cog):
         watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
             async for starter_message in thread.history(limit=1, oldest_first=True):
+                if len(starter_message.embeds) == 0:
+                    continue
                 if starter_message.embeds[0].author.url.split("/")[3] == reported_user_id:
                     await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
                                         f"Rule {punish_rule}\n" * bool(punish_rule) +
