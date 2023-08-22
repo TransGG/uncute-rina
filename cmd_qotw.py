@@ -333,7 +333,7 @@ class QOTW(commands.Cog):
         for thread in watch_channel.threads:
             async for starter_message in thread.history(limit=1, oldest_first=True):
                 
-                debug("\nthread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+bool(starter_message.embeds))
+                debug("\nthread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+str(bool(starter_message.embeds)))
                 for embed in starter_message.embeds:
                     dict = embed.to_dict()
                     if "author" in dict:
