@@ -332,6 +332,15 @@ class QOTW(commands.Cog):
         watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
             async for starter_message in thread.history(limit=1, oldest_first=True):
+                
+                debug("\nthread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+bool(starter_message.embeds))
+                for embed in starter_message.embeds:
+                    dict = embed.to_dict()
+                    if "author" in dict:
+                        debug("embed author: "+dict["author"])
+                    else:
+                        debug("embed: "+dict)
+
                 if len(starter_message.embeds) == 0:
                     continue
                 if starter_message.embeds[0].author.url.split("/")[3] == reported_user_id:
