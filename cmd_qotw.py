@@ -310,7 +310,7 @@ class QOTW(commands.Cog):
         debug("4) message sent in a non-thread 'staff logs category' channel in the staff server:")
         debug(message)
         for embed in message.embeds:
-            debug(embed.to_dict)
+            debug(embed.to_dict())
         
         reported_user_id, punish_rule, punish_reason, private_notes = [None]*4
         for embed in message.embeds:
@@ -330,7 +330,7 @@ class QOTW(commands.Cog):
                     private_notes = field.value.split("`")[1]
         # action_name = message.channel.name
 
-        watch_channel = client.get_channel(self.client.custom_ids["staff_watch_channel"])
+        watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
             async for starter_message in thread.history(limit=1, oldest_first=True):
                 if starter_message.embeds[0].author.url.split("/")[3] == reported_user_id:
