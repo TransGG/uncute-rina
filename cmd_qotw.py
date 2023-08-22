@@ -178,7 +178,7 @@ class QOTW(commands.Cog):
         
         await itx.response.defer(ephemeral=True)
         # get channel of where this message has to be sent
-        doubts_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
+        watch_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         # get message that supports the report / report reason
         if message_id is None:
             mentioned_msg_info = ""
@@ -202,21 +202,42 @@ class QOTW(commands.Cog):
                                         f"by {reported_message.author.mention})\n> {reported_message.content}\n"
             if reported_message.attachments:
                 mentioned_msg_info += f"(:newspaper: Contains {len(reported_message.attachments)} attachments)\n"
-        
+
         # make and send uncool embed for the loading period while it sends the copyable version
         embed = discord.Embed(
                 color=discord.Colour.from_rgb(r=33, g=33, b=33),
                 description=f"Loading suggestion...", #{message.content}
             )
-        msg = await doubts_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
-        # make and join a thread under the reason
-        thread = await msg.create_thread(name=f"Watch-{(str(user)+'-'+reason)[:48]}")
-        await thread.join()
+        
+        already_on_watchlist = False
+        thread_maybe = None
+        starter_message_maybe = None
+        for thread in watch_channel.threads:
+            starter_message = await thread.parent.fetch_message(thread.id)
+            try:
+                # index: 0    1         2                   3          4
+                #     https: / / warned.username / 262913789375021056 /
+                if starter_message.embeds[0].author.url.split("/")[3] == str(user.id):
+                    already_on_watchlist = True
+                    starter_message_maybe = starter_message
+                    thread_maybe = thread
+                    break
+            except (IndexError, AttributeError):
+                pass
+
+        if not already_on_watchlist:
+            msg = await watch_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
+            # make and join a thread under the reason
+            thread = await msg.create_thread(name=f"Watch-{(str(user)+'-'+str(user.id))}")
+            await thread.join()
+        else:
+            msg = starter_message_maybe
+            thread = thread_maybe
+            await msg.reply(content=f"Someone added {user.mention} (`{user.id}`) to the watchlist.\n"
+                                    f"Since they were already on this list, here's a reply to the original thread."
+                                    f"May this serve as a warning for this user.", allowed_mentions=discord.AllowedMentions.none())
 
         #send a plaintext version of the reason, and copy a link to it
-        reason = reason.replace("\\n", "\n")
-        if reason:
-            copyable_version = await thread.send(f"{reason}",allowed_mentions=discord.AllowedMentions.none())
         if message_id is not None:
             if allow_different_report_author:
                 a = await thread.send(f"Reported user: {user.mention} (`{user.id}`) (mentioned message author below)",allowed_mentions=discord.AllowedMentions.none())
@@ -230,22 +251,30 @@ class QOTW(commands.Cog):
         else:
             copyable_version = await thread.send(f"Reported user: {user.mention} (`{user.id}`)",allowed_mentions=discord.AllowedMentions.none())
         
-        # edit the uncool embed to make it cool: Show reason, link to report message (if provided), link to plaintext
-        embed = discord.Embed(
-                color=discord.Colour.from_rgb(r=0, g=0, b=0),
-                title=f'',
-                description=f"{reason}{mentioned_msg_info}\n\n[Jump to plain version]({copyable_version.jump_url})",
-                timestamp=datetime.now()
-            )
-        embed.set_author(
-                name=f"{user} - {user.display_name}",
-                url=f"https://warned.username/{user.id}/",
-                icon_url=user.display_avatar.url
-        )
-        # embed.set_footer(text=f"")
+        reason = reason.replace("\\n", "\n")
+        if reason:
+            copyable_version = await thread.send(f"Reason: {reason}",allowed_mentions=discord.AllowedMentions.none())
 
-        await msg.edit(embed=embed)
-        await itx.followup.send(warning+":white_check_mark: Successfully added user to watchlist.",ephemeral=True)
+        if not already_on_watchlist:
+            # edit the uncool embed to make it cool: Show reason, link to report message (if provided), link to plaintext
+            embed = discord.Embed(
+                    color=discord.Colour.from_rgb(r=0, g=0, b=0),
+                    title=f'',
+                    description=f"{reason}{mentioned_msg_info}\n\n[Jump to plain version]({copyable_version.jump_url})",
+                    timestamp=datetime.now()
+                )
+            embed.set_author(
+                    name=f"{user} - {user.display_name}",
+                    url=f"https://warned.username/{user.id}/",
+                    icon_url=user.display_avatar.url
+            )
+            # embed.set_footer(text=f"")
+            await msg.edit(embed=embed)
+            await itx.followup.send(warning+":white_check_mark: Successfully added user to watchlist.",ephemeral=True)
+        else:
+            await itx.followup.send(warning+":white_check_mark: Successfully added your watchlist reason."
+                                    "\nNote: They were already added to the watch list, so instead I added "
+                                    "the message to the already-existing thread for this user. :thumbsup:",ephemeral=True)
 
     class WatchlistReason(discord.ui.Modal):
         def __init__(self, parent, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
@@ -296,7 +325,7 @@ class QOTW(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.guild.id != self.client.custom_ids["staff_server"]:
+        if not message.guild or message.guild.id != self.client.custom_ids["staff_server"]:
             return
         if message.author.id != self.client.custom_ids["badeline_bot"]:
             return
@@ -326,18 +355,6 @@ class QOTW(commands.Cog):
                     else: 
                         fields[field.name.lower()] = field.value.replace("\n", "\n> ")
 
-                # if field.name.lower() == "rule":
-                #     punish_rule = field.value
-                #     if punish_rule.startswith(">>> "):
-                #         punish_rule = punish_rule[4:]
-                # if field.name.lower() == "reason":
-                #     punish_reason = field.value
-                #     if punish_reason.startswith(">>> "):
-                #         punish_reason = punish_reason[4:]
-                # if field.name.lower() == "private notes":
-                #     private_notes = field.value
-                #     if private_notes.startswith(">>> "):
-                #         private_notes = private_notes[4:]
             punish_rule = fields["rule"]
             punish_reason = fields["reason"]
             private_notes = fields["private notes"]
@@ -345,19 +362,10 @@ class QOTW(commands.Cog):
 
         watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
-            # async for starter_message in thread.history(limit=1, oldest_first=True):
-            #     starter_message = await thread.fetch_message(starter_message.id) # re-fetch to see if discord gives an embed for the message now
-            #     debug("\n   thread: "+thread.name+"\nstarter message: "+starter_message.content+"\nembeds: "+str(bool(starter_message.embeds))+"\nthread id: "+str(thread.id)+" - msg id: "+str(starter_message.id)+"\nauthor id: "+str(starter_message.author))
-            #     for embed in starter_message.embeds:
-            #         dict = embed.to_dict()
-            #         if "author" in dict:
-            #             debug("embed author: "+dict["author"])
-            #         else:
-            #             debug("embed: "+dict)
-
-            #     if len(starter_message.embeds) == 0:
-            #         continue
             starter_message = await thread.parent.fetch_message(thread.id)
+            if len(starter_message.embeds) == 0:
+                continue
+            #   0       1          2                     3
             # https:  /  /  warned.username  /  262913789375021056  /
             if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
                 await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
