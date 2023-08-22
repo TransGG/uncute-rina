@@ -294,19 +294,20 @@ class QOTW(commands.Cog):
         watchlist_reason_modal = self.WatchlistReason(self, "Add user to watchlist using message", message.author, message, 300)
         await itx.response.send_modal(watchlist_reason_modal)
         
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.guild.id != self.client.custom_ids["staff_server"]:
             return
         if message.author.id != self.client.custom_ids["badeline_bot"]:
             return
         try:
-            if message.category.id != self.client.custom_ids["staff_logs_category"]:
+            if message.channel.category.id != self.client.custom_ids["staff_logs_category"]:
                 return
         except discord.errors.ClientException:
             return
         if type(message.channel) is discord.Thread: # ignore the #rules channel with its threads
             return
-        debug("message sent by Badeline in the staff server, logs category:")
+        debug("4) message sent in a non-thread 'staff logs category' channel in the staff server:")
         debug(message)
         for embed in message.embeds:
             debug(embed.to_dict)
