@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.4.3".split(".")
+    fileVersion = "1.2.4.4".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -86,6 +86,7 @@ else:
             "staff_watch_channel": 989638606433968159,
             "badeline_bot": 981710253311811614,
             "staff_logs_category": 1025456987049312297,
+            "staff_reports_channel": 981730694202023946,
         }
         # custom_ids = {
         #     "staff_server": 985931648094834798,

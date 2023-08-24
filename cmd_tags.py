@@ -86,9 +86,11 @@ class Tags:
                                             f"please do not argue in this channel. Instead, open a mod ticket " 
                                             f"and explain the situation there. Thank you.")
                 await itx.response.send_message("sending...", ephemeral=True)
-                await itx.followup.send(embed=embed, ephemeral=False)
-                cmd_mention = client.get_command_mention("tag")
+                msg = await itx.followup.send(embed=embed, ephemeral=False, wait=True)
                 await log_to_guild(client, itx.guild, logmsg)
+                staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
+                                                         f"[Jump to the tag message]({msg.jump_url})")
             else:
                 await itx.response.send_message(embed=embed)
         else:
@@ -113,7 +115,7 @@ class Tags:
                         "member.")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):
-            await self.tag_message(tag_name, context, client, public, anonymous, embed)
+            await self.tag_message(tag_name, context, client, public, anonymous, embed, public_footer=True)
         else:
             if additional_info is not None:
                 embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
@@ -149,7 +151,7 @@ class Tags:
                         "Some potential triggers include (TW: triggers): abuse, bugs/spiders, death, "
                         "dieting/weight loss, injections, self-harm, transmed/truscum points of view or "
                         "transphobic content.")
-        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
 
     async def send_toneindicator_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         embed = discord.Embed(
@@ -207,7 +209,7 @@ class Tags:
                         "Please do not interfere with moderator actions, as it can make situations worse. It can be seen as "
                         "harassment, and you could be warned."
         )
-        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
         
     async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         cmd_mention = client.get_command_mention("remove-role")
@@ -235,7 +237,7 @@ class Tags:
                         "uncomfortable. Please refrain from continuing the current line of discussion and find "
                         "a new topic."
         )
-        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
 
     async def send_conversing_effectively_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
