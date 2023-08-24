@@ -754,7 +754,15 @@ class OtherAddons(commands.Cog):
                 "i want a pat",
                 "i want a headpat",
                 "i want pat",
-                "i want headpat"
+                "i want headpat",
+                "pats please",
+                "headpats please",
+                "pats pls",
+                "headpats pls",
+                "pat pls",
+                "headpat pls",
+                "pat please",
+                "headpat please"
             ]]):
                 try:
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait

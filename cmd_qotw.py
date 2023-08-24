@@ -242,11 +242,18 @@ class QOTW(commands.Cog):
             thread = await msg.create_thread(name=f"Watch-{(str(user)+'-'+str(user.id))}", auto_archive_duration=10080)
             await thread.join()
             # await thread.send("<@&986022587756871711>", silent=True) # silent messages don't work for this
-            # await thread.send("<@&986022587756871711>", allowed_mentions=discord.AllowedMentions.none())
+            joiner_msg = await thread.send("user-mention placeholder")
+            await joiner_msg.edit(content=f"<@&{self.client.custom_ids['active_staff_role']}>")
+            # targets = [] # potential workaround for the function above
             # async for user in thread.guild.fetch_members(limit=None):
             #     for role in user.roles:
             #         if role.id in [996802301283020890, 1086348907530965022, 986022587756871711]:
-            #             await thread.add_user(user)
+            #             targets.append(user.id)
+            #             break
+            #     if len(targets) > 50:
+            #         await joiner_msg.edit(content="<@&996802301283020890>")
+            #         targets = []
+            await joiner_msg.delete()
         else:
             msg = starter_message_maybe
             thread = thread_maybe
@@ -366,7 +373,6 @@ class QOTW(commands.Cog):
                         raise Exception("User id was not an id!")
                     
                 if field.name.lower() in fields:
-                    print(repr(field.value))
                     if field.value.startswith(">>> "):
                         fields[field.name.lower()] = field.value[4:].replace("\n", "\n> ")
                     else: 
@@ -406,19 +412,19 @@ class QOTW(commands.Cog):
                                     allowed_mentions=discord.AllowedMentions.none())
                     return
 
-    @app_commands.command(name="send_fake_log_embed",description="make a user report (fake).")
-    @app_commands.describe(target="User to add", reason="Reason for adding", rule="rule to punish for", private_notes="private notes to include")
-    async def send_fake_log_embed(self, itx: discord.Interaction, target: discord.User, reason: str = "", rule: str = None, private_notes: str = ""):
-        embed = discord.Embed(title="did a log thing for x", color=16705372)
-        embed.add_field(name="User",value = f"{target.mention} (`{target.id}`)", inline=True)
-        embed.add_field(name="Moderator",value = f"{itx.user.mention}", inline=True)
-        embed.add_field(name="\u200b",value = f"\u200b", inline=False)
-        embed.add_field(name="Rule",value = f">>> {rule}", inline=True)
-        embed.add_field(name="\u200b",value = f"\u200b", inline=False)
-        embed.add_field(name="Reason",value = f">>> {reason}")
-        embed.add_field(name="\u200b",value = f"\u200b", inline=False)
-        embed.add_field(name="Private Notes",value = f">>> {private_notes}")
-        await self.client.get_channel(1143642283577725009).send(embed=embed)
+    # @app_commands.command(name="send_fake_log_embed",description="make a user report (fake).")
+    # @app_commands.describe(target="User to add", reason="Reason for adding", rule="rule to punish for", private_notes="private notes to include")
+    # async def send_fake_log_embed(self, itx: discord.Interaction, target: discord.User, reason: str = "", rule: str = None, private_notes: str = ""):
+    #     embed = discord.Embed(title="did a log thing for x", color=16705372)
+    #     embed.add_field(name="User",value = f"{target.mention} (`{target.id}`)", inline=True)
+    #     embed.add_field(name="Moderator",value = f"{itx.user.mention}", inline=True)
+    #     embed.add_field(name="\u200b",value = f"\u200b", inline=False)
+    #     embed.add_field(name="Rule",value = f">>> {rule}", inline=True)
+    #     embed.add_field(name="\u200b",value = f"\u200b", inline=False)
+    #     embed.add_field(name="Reason",value = f">>> {reason}")
+    #     embed.add_field(name="\u200b",value = f"\u200b", inline=False)
+    #     embed.add_field(name="Private Notes",value = f">>> {private_notes}")
+    #     await self.client.get_channel(1143642283577725009).send(embed=embed)
 
 
 async def setup(client):

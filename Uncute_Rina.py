@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.4.6".split(".")
+    fileVersion = "1.2.4.7".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -87,6 +87,7 @@ else:
             "badeline_bot": 981710253311811614,
             "staff_logs_category": 1025456987049312297,
             "staff_reports_channel": 981730694202023946,
+            "active_staff_role": 996802301283020890,
         }
         # custom_ids = {
         #     "staff_server": 985931648094834798,
@@ -95,6 +96,8 @@ else:
         #     "staff_watch_channel": 1143642388670202086,
         #     "badeline_bot": 979057304752254976,
         #     "staff_logs_category": 1143642220231131156,
+        #     "staff_reports_channel": 981730694202023946,
+        #     "active_staff_role": 986022587756871711
         # }
         bot_owner: discord.User # for AllowedMentions in on_appcommand_error()
         def get_command_mention(self, command_string: str):
