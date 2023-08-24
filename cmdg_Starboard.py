@@ -111,7 +111,7 @@ class Starboard(commands.Cog):
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            if len(message.embeds) > 1:
+            if len(message.embeds) > 0:
                 await self.updateStat(message, starboard_emoji, downvote_init_value)
             return
 
@@ -119,11 +119,10 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    async for star_message in star_channel.history(limit=200):
+                    async for star_message in star_channel.history(limit=500):
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                if len(star_message.embeds) > 1:
-                                    await self.updateStat(star_message, starboard_emoji, downvote_init_value)
+                                await self.updateStat(star_message, starboard_emoji, downvote_init_value)
                                 return
                     return
                 elif reaction.count == star_minimum:
@@ -229,7 +228,8 @@ class Starboard(commands.Cog):
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            await self.updateStat(message, starboard_emoji, downvote_init_value)
+            if len(message.embeds) > 0:
+                await self.updateStat(message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:

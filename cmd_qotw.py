@@ -206,7 +206,7 @@ class QOTW(commands.Cog):
         # make and send uncool embed for the loading period while it sends the copyable version
         embed = discord.Embed(
                 color=discord.Colour.from_rgb(r=33, g=33, b=33),
-                description=f"Loading suggestion...", #{message.content}
+                description=f"Loading WANTED entry...", #{message.content}
             )
         
         already_on_watchlist = False
@@ -239,20 +239,26 @@ class QOTW(commands.Cog):
         if not already_on_watchlist:
             msg = await watch_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
             # make and join a thread under the reason
-            thread = await msg.create_thread(name=f"Watch-{(str(user)+'-'+str(user.id))}")
+            thread = await msg.create_thread(name=f"Watch-{(str(user)+'-'+str(user.id))}", auto_archive_duration=10080)
             await thread.join()
+            # await thread.send("<@&986022587756871711>", silent=True) # silent messages don't work for this
+            # await thread.send("<@&986022587756871711>", allowed_mentions=discord.AllowedMentions.none())
+            # async for user in thread.guild.fetch_members(limit=None):
+            #     for role in user.roles:
+            #         if role.id in [996802301283020890, 1086348907530965022, 986022587756871711]:
+            #             await thread.add_user(user)
         else:
             msg = starter_message_maybe
             thread = thread_maybe
             await msg.reply(content=f"Someone added {user.mention} (`{user.id}`) to the watchlist.\n"
-                                    f"Since they were already on this list, here's a reply to the original thread."
+                                    f"Since they were already on this list, here's a reply to the original thread.\n"
                                     f"May this serve as a warning for this user.", allowed_mentions=discord.AllowedMentions.none())
 
         #send a plaintext version of the reason, and copy a link to it
         if message_id is not None:
             if allow_different_report_author:
-                a = await thread.send(f"Reported user: {user.mention} (`{user.id}`) (mentioned message author below)",allowed_mentions=discord.AllowedMentions.none())
-            b = await thread.send(f"Reported message: {reported_message.author.mention} (`{reported_message.author.id}`) - {reported_message.jump_url}",allowed_mentions=discord.AllowedMentions.none())
+                a = await thread.send(f"Reported user: {user.mention} (`{user.id}`) (mentioned message author below)", allowed_mentions=discord.AllowedMentions.none())
+            b = await thread.send(f"Reported message: {reported_message.author.mention} (`{reported_message.author.id}`) - {reported_message.jump_url}", allowed_mentions=discord.AllowedMentions.none())
             await thread.send(f"> {reported_message.content}",allowed_mentions=discord.AllowedMentions.none())
             
             if allow_different_report_author:
