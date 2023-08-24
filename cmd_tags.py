@@ -23,7 +23,7 @@ class Tags:
         self.no_venting_channel_id = 1126163020620513340
 
     class TagView(discord.ui.View):
-        def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None):
+        def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
             super().__init__()
             if embed.footer.text is None:
                 self.footer = ""
@@ -36,6 +36,7 @@ class Tags:
             self.public_footer = public_footer
             self.embed = embed
             self.logmsg = logmsg
+            self.tag_name = tag_name
 
         @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.primary)
         async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
@@ -43,12 +44,19 @@ class Tags:
             if self.public_footer is None:
                 self.public_footer = f"Triggered by {itx.user.name} ({itx.user.id})"
             else:
+                self.public_footer = f"Note: If you believe that this command was misused or abused, " + \
+                                     f"please do not argue in this channel. Instead, open a mod ticket " + \
+                                     f"and explain the situation there. Thank you."
                 self.value = 2
             self.embed.set_footer(text=self.footer + self.public_footer)
             await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
-            await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+            msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
             if self.value == 2 and self.logmsg is not None:
                 await log_to_guild(self.client, itx.guild, self.logmsg)
+                cmd_mention = client.get_command_mention("tag")
+                staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
+                                                         f"[Jump to the tag message]({msg.jump_url})")
             self.stop()
 
         async def on_timeout(self):
@@ -95,9 +103,9 @@ class Tags:
                 await itx.response.send_message(embed=embed)
         else:
             if anonymous:
-                view = Tags().TagView(client, embed, timeout=60, public_footer="", logmsg=logmsg)
+                view = Tags().TagView(client, embed, timeout=60, public_footer=public_footer, logmsg=logmsg, tag_name=tag_name)
             else:
-                view = Tags().TagView(client, embed, timeout=60)
+                view = Tags().TagView(client, embed, timeout=60, tag_name=tag_name)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
