@@ -558,7 +558,12 @@ class SearchAddons(commands.Cog):
             warnings = []
             if "warnings" in data:
                 # not sure if multiple warnings will be stored into a list instead
-                warnings.append(data["warnings"]["text"])
+                # Edit: Turns out they do.
+                if type(data["warnings"]) is list:
+                    for warning in data["warnings"]:
+                        warnings.append(warning["text"])
+                else:
+                    warnings.append(data["warnings"]["text"])
             if len(data.get("timedout", "")) > 0:
                 warnings.append("Timed out: " + data["timedout"].replace(",", ", "))
             if len(data.get("timedoutpods", "")) > 0:
