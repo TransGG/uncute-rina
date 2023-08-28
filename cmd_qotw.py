@@ -391,7 +391,7 @@ class QOTW(commands.Cog):
             #   0       1          2                     3
             # https:  /  /  warned.username  /  262913789375021056  /
             if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
-                await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
+                await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
                                     f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
                                     f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
                                     f"Private notes:\n> {private_notes}" * bool(private_notes), 
@@ -405,7 +405,7 @@ class QOTW(commands.Cog):
                 #   0       1          2                     3
                 # https:  /  /  warned.username  /  262913789375021056  /
                 if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
-                    await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an infraction in {message.channel.mention}:\n" +
+                    await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
                                         f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
                                         f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
                                         f"Private notes:\n> {private_notes}" * bool(private_notes), 
