@@ -97,6 +97,7 @@ class ToneIndicator(commands.Cog):
             "non-sexual intent" : ["/nsx","/nx","/nsxs"],
             "non-serious / not serious" : ["/nsrs"],
             "not a serious question" : ["/nsrsq"],
+            "not trying to be rude" : ["/nttbr"],
             "not yelling" : ["/ny"],
             "observation" : ["/ob"],
             "off topic" : ["/ot"],
