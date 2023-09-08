@@ -180,7 +180,7 @@ class QOTW(commands.Cog):
         await itx.response.send_message("Adding user to watchlist...\n\n"
                                         "Please wait while rina checks if this user has been added to the watch list before. \n"
                                         "This may take a minute. (feel free to not add them to the watch list again, for that "
-                                        "might make a duplicate thread for the user, :)")
+                                        "might make a duplicate thread for the user, :)", ephemeral=True)
         # get channel of where this message has to be sent
         watch_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         # get message that supports the report / report reason

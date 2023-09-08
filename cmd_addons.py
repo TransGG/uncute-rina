@@ -891,11 +891,20 @@ class OtherAddons(commands.Cog):
 
             collection = RinaDB["complimentblacklist"]
             query = {"user": user.id}
+            search: dict[str,int|list] = collection.find_one(query)
+            blacklist: list = []
+            if search is not None:
+                try:
+                    blacklist += search["list"]
+                except KeyError:
+                    pass
+            query = {"user": itx.user.id}
             search = collection.find_one(query)
-            if search is None:
-                blacklist = []
-            else:
-                blacklist = search["list"]
+            if search is not None:
+                try:
+                    blacklist += search["personal_list"]
+                except KeyError:
+                    pass
             for string in blacklist:
                 dec = 0
                 for x in range(len(quotes[type])):
@@ -903,7 +912,7 @@ class OtherAddons(commands.Cog):
                         del quotes[type][x-dec]
                         dec += 1
             if len(quotes[type]) == 0:
-                quotes[type].append("No compliment quotes could be given... This person seems to have blacklisted every quote.")
+                quotes[type].append("No compliment quotes could be given... You and/or this person have blacklisted every quote.")
 
             base = f"{itx.user.mention} complimented {user.mention}!\n"
             if itx.response.is_done():
@@ -969,18 +978,32 @@ class OtherAddons(commands.Cog):
         await confirm_gender()
 
     @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
+    @app_commands.choices(location=[
+        discord.app_commands.Choice(name='When complimenting someone else', value=1),
+        discord.app_commands.Choice(name='When I\'m being complimented by others', value=2)
+    ])
     @app_commands.choices(mode=[
         discord.app_commands.Choice(name='Add a string to your compliments blacklist', value=1),
         discord.app_commands.Choice(name='Remove a string from your compliments blacklist', value=2),
         discord.app_commands.Choice(name='Check your blacklisted strings', value=3)
     ])
-    @app_commands.describe(string="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
-    async def complimentblacklist(self, itx: discord.Interaction, mode: int, string: str = None):
+    @app_commands.describe(
+        location="Blacklist when giving compliments / when receiving compliments from others",
+        string  ="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
+    async def complimentblacklist(self, itx: discord.Interaction, location: int, mode: int, string: str = None):
+        if location == 1:
+            db_location = "personal_list"
+        elif location == 2:
+            db_location = "list"
+        else:
+            raise NotImplementedError("This shouldn't happen.")
+        print(db_location)
         if mode == 1: # add an item to the blacklist
             if string is None:
                 await itx.response.send_message("With this command, you can blacklist a section of text in compliments. "
                                                 "For example, if you don't like being called 'Good girl', you can "
                                                 "blacklist this compliment by blacklisting 'good' or 'girl'. \n"
+                                                "Or if you don't like hugging people, you can blacklist 'hug'.\n"
                                                 "Note: it's case sensitive", ephemeral=True)
                 return
             if len(string) > 150:
@@ -992,9 +1015,9 @@ class OtherAddons(commands.Cog):
             if search is None:
                 blacklist = []
             else:
-                blacklist = search['list']
+                blacklist = search.get(db_location, [])
             blacklist.append(string)
-            collection.update_one(query, {"$set":{f"list":blacklist}}, upsert=True)
+            collection.update_one(query, {"$set":{db_location:blacklist}}, upsert=True)
             await itx.response.send_message(f"Successfully added {repr(string)} to your blacklist. ({len(blacklist)} item{'s'*(len(blacklist)!=1)} in your blacklist now)",ephemeral=True)
 
         elif mode == 2: # Remove item from black list
@@ -1013,7 +1036,7 @@ class OtherAddons(commands.Cog):
             if search is None:
                 await itx.response.send_message("There are no items on your blacklist, so you can't remove any either...",ephemeral=True)
                 return
-            blacklist = search["list"]
+            blacklist = search.get(db_location, [])
 
             try:
                 del blacklist[string]
@@ -1021,17 +1044,17 @@ class OtherAddons(commands.Cog):
                 cmd_mention = self.client.get_command_mention("complimentblacklist")
                 await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention} `mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
                 return
-            collection.update_one(query, {"$set":{f"list":blacklist}}, upsert=True)
-            await itx.response.send_message(f"Successfully removed '{string}' from your blacklist. Your blacklist now contains {len(blacklist)} string{'s'*(len(blacklist)!=1)}.", ephemeral=True)
+            collection.update_one(query, {"$set":{db_location:blacklist}}, upsert=True)
+            await itx.response.send_message(f"Successfully removed `{string}` from your blacklist. Your blacklist now contains {len(blacklist)} string{'s'*(len(blacklist)!=1)}.", ephemeral=True)
         
         elif mode == 3: # check
             collection = RinaDB["complimentblacklist"]
             query = {"user": itx.user.id}
-            search = collection.find_one(query)
+            search: dict[str,int|list] = collection.find_one(query)
             if search is None:
                 await itx.response.send_message("There are no strings in your blacklist, so.. nothing to list here....",ephemeral=True)
                 return
-            blacklist = search["list"]
+            blacklist = search.get(db_location, [])
             length = len(blacklist)
 
             ans = []
