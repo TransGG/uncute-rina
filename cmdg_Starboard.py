@@ -29,6 +29,10 @@ class Starboard(commands.Cog):
             messageIdMarkedForDeletion.append(star_message.id)
             await star_message.delete()
             return
+        except discord.errors.Forbidden:
+            await log_to_guild(self.client, star_message.guild, f":warning: Couldn't update starboard message [{star_message.id}]({star_message.jump_url}) because "
+                                                                f"I don't have permission to fetch the original message from this channel ({ch.mention})!")
+            return
 
         star_reacters = []
         reactionTotal = 0

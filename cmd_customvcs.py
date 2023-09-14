@@ -81,7 +81,8 @@ class CustomVcs(commands.Cog):
                     await log_to_guild(self.client, member.guild, f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)")
                     raise
                 try:
-                    await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
+                    await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.") 
+                    await vc.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
                     for customVC in vcCategory_for_vc.voice_channels:
                         if customVC.id == vcHub or customVC.id == vc.id:
                             continue
@@ -98,7 +99,6 @@ class CustomVcs(commands.Cog):
                     # pass
                 # nomicChannel = member.guild.get_channel(vcNoMic)
                 cmd_mention = self.client.get_command_mention("editvc")
-                await vc.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
                 await log_to_guild(self.client, member.guild, warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).")
 
 

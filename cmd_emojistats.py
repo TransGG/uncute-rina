@@ -102,16 +102,16 @@ class EmojiStats(commands.Cog):
     @emojistats.command(name="getunusedemojis",description="Get the least-used emojis")
     @app_commands.describe(hidden="Do you want everyone in this channel to be able to see this result?",
                            max_results="How many emojis do you want to retrieve at most? (may return fewer)",
-                           min_used="Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 1)",
-                           min_msg="Up to how many times may the emoji have been used in a message? (default: 1)",
-                           min_react="Up to how many times may the emoj have been used as a reaction? (default: 1)",
+                           used_max="Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 5)",
+                           msg_max="Up to how many times may the emoji have been used in a message? (default: 5)",
+                           react_max="Up to how many times may the emoj have been used as a reaction? (default: 5)",
                            animated="Are you looking for animated emojis or static emojis")
     @app_commands.choices(animated=[
         discord.app_commands.Choice(name='Animated emojis', value=1),
         discord.app_commands.Choice(name='Static/Image emojis', value=2),
         discord.app_commands.Choice(name='Both', value=3)
     ])
-    async def get_unused_emojis(self,itx: discord.Interaction, hidden: bool = True, max_results:int = 10, min_used:int = 1, min_msg:int = 1, min_react:int = 1, animated:int = 3):
+    async def get_unused_emojis(self,itx: discord.Interaction, hidden: bool = True, max_results:int = 10, used_max:int = 5, msg_max:int = 5, react_max:int = 5, animated:int = 3):
         if not is_staff(itx):
             await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
             return
@@ -119,12 +119,12 @@ class EmojiStats(commands.Cog):
 
         if max_results > 50:
             max_results = 50
-        if min_used < 0:
-            min_used = 0
-        if min_msg < 0:
-            min_msg = 0
-        if min_react < 0:
-            min_react = 0
+        if used_max < 0:
+            used_max = 0
+        if msg_max < 0:
+            msg_max = 0
+        if react_max < 0:
+            react_max = 0
 
         unused_emojis = []
         for emoji in itx.guild.emojis:
@@ -142,7 +142,7 @@ class EmojiStats(commands.Cog):
 
             msg_used = emojidata.get('messageUsedCount',0)
             reaction_used = emojidata.get('reactionUsedCount',0)
-            if (msg_used + reaction_used <= min_used) and (msg_used <= min_msg) and (reaction_used <= min_react):
+            if (msg_used + reaction_used <= used_max) and (msg_used <= msg_max) and (reaction_used <= react_max):
                 unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> ({msg_used},{reaction_used})")
 
             if len(unused_emojis) > max_results:
