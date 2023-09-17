@@ -73,6 +73,7 @@ class CustomVcs(commands.Cog):
                 warning = ""
                 vcCategory_for_vc = after.channel.category
                 vcCategory_for_vc.id = vcCategory
+                cmd_mention = self.client.get_command_mention("editvc")
                 try:
                     vc = await vcCategory_for_vc.create_voice_channel(default_name,position=after.channel.position+1)
                 except discord.errors.HTTPException:
@@ -98,7 +99,6 @@ class CustomVcs(commands.Cog):
                     raise
                     # pass
                 # nomicChannel = member.guild.get_channel(vcNoMic)
-                cmd_mention = self.client.get_command_mention("editvc")
                 await log_to_guild(self.client, member.guild, warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).")
 
 
