@@ -278,10 +278,11 @@ class QOTW(commands.Cog):
                 copyable_version = b
         else:
             copyable_version = await thread.send(f"Reported user: {user.mention} (`{user.id}`)",allowed_mentions=discord.AllowedMentions.none())
+        await thread.send(f"Reported by: {itx.user.mention} (`{itx.user.id}`)", allowed_mentions=discord.AllowedMentions.none())
         
         reason = reason.replace("\\n", "\n")
         if reason:
-            copyable_version = await thread.send(f"Reason: {reason}",allowed_mentions=discord.AllowedMentions.none())
+            await thread.send(f"Reason: {reason}",allowed_mentions=discord.AllowedMentions.none())
 
         if not already_on_watchlist:
             # edit the uncool embed to make it cool: Show reason, link to report message (if provided), link to plaintext
