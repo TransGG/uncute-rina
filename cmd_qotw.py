@@ -393,6 +393,51 @@ class QOTW(commands.Cog):
             starter_message = await thread.parent.fetch_message(thread.id)
             if len(starter_message.embeds) == 0:
                 continue
+            if starter_message.embeds[0].author.url is None and starter_message.embeds[0].timestamp is None:
+                # attempt to fix the embed message
+                reason: str = ""
+                reason_details_link: str = None
+                reported_user: discord.User = None
+                reported_message_link: str = None
+                reported_message_text: str = None
+
+                async for message in thread.history(limit=10, oldest_first=True):
+                    if message.author.id == client.user.id:
+                        if message.content.startswith("Reported user: ") or message.content.startswith("Reported message: "):
+                            user_id_start_index = message.content.index("`")
+                            user_id_end_index = message.content.index("`", user_id_start_index+1)
+                            user_id = int(message.content[user_id_start_index:user_id_end_index].replace("`", ""))
+                            reported_user = client.get_user(user_id)
+                        if message.content.startswith("Reported message: "):
+                            message_link_start_index = message.content.index("https://discord.com/channels/")
+                            reported_message_link = message.content[message_link_start_index:]
+                        if message.content.startswith("> "):
+                            reported_message_text = message.content[2:]
+                        if message.content.startswith("Reason: "):
+                            reason = message.content[7:].strip()
+                            reported_details_link = message.jump_url
+
+                if reported_message_link is not None:
+                    reason += f"\n\n[Reported message]({reported_message_link})"
+                if reported_message_text is not None:
+                    reason += f"\n> {reported_message_text}\n"
+                if reason_details_link is not None:
+                    reaspon += f"\n\n[Jump to plain version]({reason_details_link})"
+
+                embed = discord.Embed(
+                    color=discord.Colour.from_rgb(r=0, g=0, b=0),
+                    title=f'',
+                    description=f"{reason}",
+                    timestamp=starter_message.created_at
+                )
+                embed.set_author(
+                        name=f"{reported_user.name} - {reported_user.display_name}",
+                        url=f"https://warned.username/{reported_user.id}/",
+                        icon_url=reported_user.display_avatar.url
+                )
+                await starter_message.edit(embed=embed)
+
+
             #   0       1          2                     3
             # https:  /  /  warned.username  /  262913789375021056  /
             if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
