@@ -402,12 +402,12 @@ class QOTW(commands.Cog):
                 reported_message_text: str = None
 
                 async for message in thread.history(limit=10, oldest_first=True):
-                    if message.author.id == client.user.id:
+                    if message.author.id == self.client.user.id:
                         if message.content.startswith("Reported user: ") or message.content.startswith("Reported message: "):
                             user_id_start_index = message.content.index("`")
                             user_id_end_index = message.content.index("`", user_id_start_index+1)
                             user_id = int(message.content[user_id_start_index:user_id_end_index].replace("`", ""))
-                            reported_user = client.get_user(user_id)
+                            reported_user = self.client.get_user(user_id)
                         if message.content.startswith("Reported message: "):
                             message_link_start_index = message.content.index("https://discord.com/channels/")
                             reported_message_link = message.content[message_link_start_index:]
