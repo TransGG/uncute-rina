@@ -276,13 +276,17 @@ class QOTW(commands.Cog):
                 copyable_version = a
             elif not reason:
                 copyable_version = b
+            else:
+                copyable_version = None
         else:
             copyable_version = await thread.send(f"Reported user: {user.mention} (`{user.id}`)",allowed_mentions=discord.AllowedMentions.none())
         await thread.send(f"Reported by: {itx.user.mention} (`{itx.user.id}`)", allowed_mentions=discord.AllowedMentions.none())
         
         reason = reason.replace("\\n", "\n")
         if reason:
-            await thread.send(f"Reason: {reason}",allowed_mentions=discord.AllowedMentions.none())
+            c = await thread.send(f"Reason: {reason}",allowed_mentions=discord.AllowedMentions.none())
+            if copyable_version is None:
+                copyable_version = c
 
         if not already_on_watchlist:
             # edit the uncool embed to make it cool: Show reason, link to report message (if provided), link to plaintext
@@ -427,7 +431,7 @@ class QOTW(commands.Cog):
                 embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=0, g=0, b=0),
                     title=f'',
-                    description=f"{reason}",
+                    description=f"{reason}\n\n[Jump to plain version]({reported_details_link})",
                     timestamp=starter_message.created_at
                 )
                 embed.set_author(
@@ -436,6 +440,7 @@ class QOTW(commands.Cog):
                         icon_url=reported_user.display_avatar.url
                 )
                 await starter_message.edit(embed=embed)
+                starter_message.embeds[0] = embed
 
 
             #   0       1          2                     3
