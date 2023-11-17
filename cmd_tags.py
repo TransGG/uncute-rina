@@ -269,7 +269,15 @@ class TagFunctions(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         global report_message_reminder_unix
-        for staff_role_mention in ["<@&981735650971775077>", "<@&1012954384142966807>", "<@&981735525784358962>"]:
+        for staff_role_mention in ["<@&981735650971775077>",  # transplace moderator
+                                   "<@&1012954384142966807>", # transplace sr. mod
+                                   "<@&981735525784358962>",  # transplace admin
+                                   "<@&1109905190372524132>", # transonance admin
+                                   "<@&1108771208931049544>", # transonance staff
+                                   "<@&1087014898418061363>", # enbyplace moderator
+                                   "<@&1087014898418061365>", # enbyplace sr. mod
+                                   "<@&1087014898418061367>", # enbyplace admin
+                                   ]:
             if staff_role_mention in message.content:
                 time_now = int(mktime(datetime.now().timetuple())) # get time in unix
                 if time_now - report_message_reminder_unix > 900: # 15 minutes

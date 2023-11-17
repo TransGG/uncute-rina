@@ -32,7 +32,11 @@ class MemberData(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        await add_to_data(member, "left")
+        role = discord.utils.find(lambda r: r.name == 'Verified', member.guild.roles)
+        if role in member.roles:
+            await add_to_data(member, "left verified")
+        else:
+            await add_to_data(member, "left unverified")
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -156,7 +160,9 @@ class MemberData(commands.Cog):
             fig.tight_layout(pad=1.0)
             color = {
                 "joined":"g",
-                "left":"r",
+                "left":"r", # backwards compatability
+                "left verified":"r",
+                "left unverified":"m",
                 "verified":"b"
             }
             for graph in df:
@@ -195,8 +201,16 @@ class MemberData(commands.Cog):
             output += f"`{totals['joined']}` members joined, "
         except:
             pass
-        try:
+        try: # backwards compatability
             output += f"`{totals['left']}` members left, "
+        except:
+            pass
+        try:
+            output += f"`{totals['left verified']}` members left after being verified, "
+        except:
+            pass
+        try:
+            output += f"`{totals['left unverified']}` members left while unverified, "
         except:
             pass
         try:
