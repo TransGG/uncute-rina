@@ -133,8 +133,13 @@ class MemberData(commands.Cog):
                 continue
             min_time = min_time_db
             while min_time <= max_time:
-                if min_time not in results[y]:
-                    results[y][min_time] = 0
+                if min_time not in results[y]: # remove the '0' line from before tracking verifiedness of people after leaving
+                    if ((min_time > 1700225500 and y == "left") or  # backwards compatability
+                            (min_time < 1700225000 and y == "left verified") or
+                            (min_time < 1700225000 and y == "left unverified")):
+                        results[y][min_time] = None
+                    else:
+                        results[y][min_time] = 0
                 min_time += accuracy
         
         for i in results: # sort data by key
