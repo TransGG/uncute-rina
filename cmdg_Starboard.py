@@ -96,14 +96,15 @@ class Starboard(commands.Cog):
         )
         await star_message.edit(content=new_content, embeds=embeds)
 
-    async def getStarboardMessages(star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
-        if not busy_re_storing_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - starboardMessageIDsContentRefreshTimestamp > 100: # refresh once every 100 seconds
+    async def getStarboardMessages(self, star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
+        global busy_re_storing_starboard_messages, tempStarboardMessages, starboardMessagesContentRefreshTimestamp
+        if not busy_re_storing_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - starboardMessagesContentRefreshTimestamp > 100: # refresh once every 100 seconds
             busy_re_storing_starboard_messages = True
             messages: list[discord.Message] = []
             async for star_message in star_channel.history(limit=1000):
                 messages.append(star_message)
             tempStarboardMessages = messages
-            starboardMessageIDsContentRefreshTimestamp = mktime(datetime.now(timezone.utc).timetuple())
+            starboardMessagesContentRefreshTimestamp = mktime(datetime.now(timezone.utc).timetuple())
             busy_re_storing_starboard_messages = False
         while busy_re_storing_starboard_messages:
             # wait until not busy anymore
@@ -149,7 +150,8 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    for star_message in self.getStarboardMessages(star_channel):
+                    starboard_messages = await self.getStarboardMessages(star_channel)
+                    for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
                                 await self.updateStat(star_message, starboard_emoji, downvote_init_value)
@@ -267,7 +269,8 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    for star_message in self.getStarboardMessages(star_channel):
+                    starboard_messages = await self.getStarboardMessages(star_channel)
+                    for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
                                 await self.updateStat(star_message, starboard_emoji, downvote_init_value)
@@ -293,7 +296,8 @@ class Starboard(commands.Cog):
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
-            for star_message in self.getStarboardMessages(star_channel):
+            starboard_messages = await self.getStarboardMessages(star_channel)
+            for star_message in starboard_messages:
                 for embed in star_message.embeds:
                     if embed.footer.text == str(message_payload.message_id):
                         try:
