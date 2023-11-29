@@ -63,11 +63,6 @@ class EmojiStats(commands.Cog):
     @app_commands.rename(emoji_name="emoji")
     @app_commands.describe(emoji_name="Emoji you want to get data of")
     async def get_emoji_data(self, itx: discord.Interaction, emoji_name: str):
-        # for testing purposes, for now.
-        if not is_staff(itx):
-            await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
-            return
-
         if ":" in emoji_name:
             emoji_name = emoji_name.split(":")[2][:-1]
         emoji_id = emoji_name
@@ -113,7 +108,7 @@ class EmojiStats(commands.Cog):
     ])
     async def get_unused_emojis(self,itx: discord.Interaction, hidden: bool = True, max_results:int = 10, used_max:int = 5, msg_max:int = 5, react_max:int = 5, animated:int = 3):
         if not is_staff(itx):
-            await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
+            await itx.response.send_message("Due to the amount of database calls required, perhaps it's better not to make this publicly available. You can make use of /getemojidata and /getemojitop10 though :D", ephemeral=True)
             return
         await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)",ephemeral=hidden)
 
@@ -156,11 +151,6 @@ class EmojiStats(commands.Cog):
 
     @emojistats.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def get_emoji_top_10(self, itx: discord.Interaction):
-        # for testing purposes, for now.
-        if not is_staff(itx):
-            await itx.response.send_message("You currently can't do this. It's in a testing process.", ephemeral=True)
-            return
-
         collection = asyncRinaDB["emojistats"]
         output = ""
         for type in ["messageUsedCount","reactionUsedCount"]:

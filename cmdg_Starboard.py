@@ -2,6 +2,9 @@ from Uncute_Rina import *
 from import_modules import *
 
 messageIdMarkedForDeletion = []
+starboardMessagesContentRefreshTimestamp = 0
+tempStarboardMessages: list[discord.Message] = []
+busy_re_storing_starboard_messages = False
 
 class Starboard(commands.Cog):
     def __init__(self, client: Bot):
@@ -28,6 +31,10 @@ class Starboard(commands.Cog):
             await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
             messageIdMarkedForDeletion.append(star_message.id)
             await star_message.delete()
+            for i in range(len(tempStarboardMessages)):
+                if tempStarboardMessages[i].id == star_message.id:
+                    del tempStarboardMessages[i]
+                    break
             return
         except discord.errors.Forbidden:
             await log_to_guild(self.client, star_message.guild, f":warning: Couldn't update starboard message [{star_message.id}]({star_message.jump_url}) because "
@@ -66,6 +73,10 @@ class Starboard(commands.Cog):
             await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
             messageIdMarkedForDeletion.append(star_message.id)
             await star_message.delete()
+            for i in range(len(tempStarboardMessages)):
+                if tempStarboardMessages[i].id == star_message.id:
+                    del tempStarboardMessages[i]
+                    break
             return
 
         # update message to new star value
@@ -84,6 +95,21 @@ class Starboard(commands.Cog):
             icon_url=original_message.author.display_avatar.url
         )
         await star_message.edit(content=new_content, embeds=embeds)
+
+    async def getStarboardMessages(star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
+        if not busy_re_storing_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - starboardMessageIDsContentRefreshTimestamp > 100: # refresh once every 100 seconds
+            busy_re_storing_starboard_messages = True
+            messages: list[discord.Message] = []
+            async for star_message in star_channel.history(limit=1000):
+                messages.append(star_message)
+            tempStarboardMessages = messages
+            starboardMessageIDsContentRefreshTimestamp = mktime(datetime.now(timezone.utc).timetuple())
+            busy_re_storing_starboard_messages = False
+        while busy_re_storing_starboard_messages:
+            # wait until not busy anymore
+            asyncio.sleep(1)
+        return tempStarboardMessages
+
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
@@ -123,7 +149,7 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    async for star_message in star_channel.history(limit=500):
+                    for star_message in self.getStarboardMessages(star_channel):
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
                                 await self.updateStat(star_message, starboard_emoji, downvote_init_value)
@@ -212,6 +238,7 @@ class Starboard(commands.Cog):
                     # add new starboard msg
                     await msg.add_reaction(starboard_emoji)
                     await msg.add_reaction("❌")
+                    tempStarboardMessages.append(msg)
                     # add star reaction to original message to prevent message from being re-added to the starboard
 
     @commands.Cog.listener()
@@ -240,7 +267,7 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    async for star_message in star_channel.history(limit=500):
+                    for star_message in self.getStarboardMessages(star_channel):
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
                                 await self.updateStat(star_message, starboard_emoji, downvote_init_value)
@@ -266,7 +293,7 @@ class Starboard(commands.Cog):
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
-            async for star_message in star_channel.history(limit=300):
+            for star_message in self.getStarboardMessages(star_channel):
                 for embed in star_message.embeds:
                     if embed.footer.text == str(message_payload.message_id):
                         try:
@@ -283,6 +310,10 @@ class Starboard(commands.Cog):
                                      f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
                         messageIdMarkedForDeletion.append(star_message.id)
                         await star_message.delete()
+                        for i in range(len(tempStarboardMessages)):
+                            if tempStarboardMessages[i].id == star_message.id:
+                                del tempStarboardMessages[i]
+                                break
                         return
 
 async def setup(client):
