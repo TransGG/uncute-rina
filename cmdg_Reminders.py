@@ -1,13 +1,6 @@
 from Uncute_Rina import *
 from import_modules import *
 
-logger = logging.getLogger("apscheduler")
-logger.setLevel(logging.WARNING)
-# remove annoying 'Scheduler started' message on sched.start()
-sched = AsyncIOScheduler(logger=logger)
-sched.start()
-
-
 def parse_date(time_string, now: datetime):
     # - "next thursday at 3pm"
     # - "tomorrow"
@@ -152,7 +145,7 @@ class Reminders(commands.GroupCog,name="reminder"):
                     except RuntimeError:
                         pass
                     return
-                sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
+                client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
             else:
                 if self.remindertime < datetime.now():
                     self.alert = "Your reminder date/time has passed already. Perhaps the bot was offline for a while; perhaps you just filled in a time in the past!\n"
@@ -175,7 +168,7 @@ class Reminders(commands.GroupCog,name="reminder"):
                 query = {"userID": userID}
                 collection.update_one(query, {"$set":{"reminders":userReminders}}, upsert=True)
                 # print(f"added job for {self.remindertime} and it's currently {self.creationtime}")
-                sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
+                client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
 
         async def send_reminder(self):
             user = await self.client.fetch_user(self.userID)
@@ -435,7 +428,7 @@ class BumpReminder(commands.Cog):
             self.client = client
             self.guild = guild
             self.remindertime = remindertime - timedelta(seconds=1.5)
-            sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
+            client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
 
         async def send_reminder(self):
             bump_channel_id, bump_role_id = await self.client.get_guild_info(self.guild, "bumpChannel", "bumpRole")

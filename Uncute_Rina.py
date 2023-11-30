@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.4.20".split(".")
+    fileVersion = "1.2.5.0".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -100,6 +100,8 @@ else:
         #     "active_staff_role": 986022587756871711
         # }
         bot_owner: discord.User # for AllowedMentions in on_appcommand_error()
+        reminder_scheduler: AsyncIOScheduler # for Reminders
+        
         def get_command_mention(self, command_string: str):
             """
             Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
@@ -209,6 +211,11 @@ else:
     @client.event
     async def setup_hook():
         start = datetime.now()
+        logger = logging.getLogger("apscheduler")
+        logger.setLevel(logging.WARNING)
+        # remove annoying 'Scheduler started' message on sched.start()
+        client.sched = AsyncIOScheduler(logger=logger)
+        client.sched.start()
 
         ## cache server settings into client, to prevent having to load settings for every extension
         debug(f"[##     ]: Started Bot"+" "*30,color="green")
