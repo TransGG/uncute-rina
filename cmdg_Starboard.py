@@ -108,7 +108,7 @@ class Starboard(commands.Cog):
             busy_re_storing_starboard_messages = False
         while busy_re_storing_starboard_messages:
             # wait until not busy anymore
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
         return tempStarboardMessages
 
 

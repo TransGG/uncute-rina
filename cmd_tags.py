@@ -53,8 +53,8 @@ class Tags:
             msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
             if self.value == 2 and self.logmsg is not None:
                 await log_to_guild(self.client, itx.guild, self.logmsg)
-                cmd_mention = client.get_command_mention("tag")
-                staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                cmd_mention = self.client.get_command_mention("tag")
+                staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
                 await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
                                                          f"[Jump to the tag message]({msg.jump_url})")
             self.stop()
