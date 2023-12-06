@@ -1279,7 +1279,9 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                         if is_staff(Interaction(message.author)): # nested to save having to look through function 1000 times
                             continue
                     await message.delete()
-                    await asyncio.sleep(0.8) # to lower rate-limiting errors.. not based on any observations...
+                    #await asyncio.sleep(0.8) # to lower rate-limiting errors.. not based on any observations...
+                    # update: might be fixed after lowering the required API calls for starboards upon deleting these messages.
+
                     # print("----Deleted---- ["+str(message.created_at)+f"] {message.author}: {message.content}")
                     message_delete_count += 1
                     if message_delete_count % 50 == 0:

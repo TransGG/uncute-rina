@@ -379,11 +379,17 @@ class QOTW(commands.Cog):
                     if reported_user_id.isdecimal():
                         reported_user_id = int(reported_user_id)
                     else:
-                        raise Exception("User id was not an id!")
+                        reported_user_id = field.value.split(">",1)[0].split("@")[1] # from "%<@x>%", take "x"
+                        if reported_user_id.isdecimal():
+                            reported_user_id = int(reported_user_id)
+                        else:
+                            raise Exception("User id was not an id!")
                     
                 if field.name.lower() in fields:
                     if field.value.startswith(">>> "):
                         fields[field.name.lower()] = field.value[4:].replace("\n", "\n> ")
+                    elif field.value.startswith("> "):
+                        pass # already has the desired format.
                     else: 
                         fields[field.name.lower()] = field.value.replace("\n", "\n> ")
 
