@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.5.2".split(".")
+    fileVersion = "1.2.5.3".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -250,6 +250,7 @@ else:
             else:
                 client.log_channel = await client.fetch_channel(1062396920187863111)
         client.bot_owner = await client.fetch_user(262913789375021056)#(await client.application_info()).owner
+        #                   can't use the commented out code because Rina is owned by someone else in the main server than the dev server (=not me).
 
         debug(f"[####   ]: Loaded server settings"+" "*30,color="green")
         debug(f"[####+  ]: Restarting ongoing reminders"+" "*30,color="light_blue",end="\r")
@@ -275,11 +276,23 @@ else:
         # await client.tree.sync()
 
     @client.event
-    async def on_message(message):
-        # kill switch, see cmd_addons for other on_message events.
+    async def on_message(message: discord.Message):
+        # kill switch, see cmd_addons for other on_message events. (and a few other extensions)
         if message.author.id == client.bot_owner.id:
-            if message.content == ":kill now please stop":
+            cool_keys = [
+                ":restart",
+                ":sudo restart",
+                ":sudo reboot",
+                ":sudo shutdown",
+            ]
+            if message.content == ":kill now please stop" or any([message.content.startswith(item) for item in cool_keys]):
                 sys.exit(0)
+                # quitting the program also 
+        # this will only run if it hasn't already quit, of course
+        if message.content.startswith(":sudo "): 
+            await message.reply("Cleo.CommandManager.InsufficientPermissionError: Could not run command: No permission\nTryin to be part of the cool kids? Try reading this:\n1 4M 4 V3RY C001 K16!")
+        elif message.content.lower().startswith("i am a very cool kid"):
+            await message.send("Yes. Yes you are.")
 
     # Bot commands begin
 

@@ -1,8 +1,6 @@
 from Uncute_Rina import *
 from import_modules import *
 
-selfies_delete_week_command_cooldown = 0
-
 currency_options = {
     code: 0 for code in "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,"
                         "CHF,CLF,CLP,CNH,CNY,COP,CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,GGP,GHS,GIP,GMD,GNF,"
@@ -1251,48 +1249,55 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
 
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
+        # This funcion largely copies the built-in channel.purge() function with a check, but is more fancy by offering a sort of progress update every 50-100 messages :D
         global selfies_delete_week_command_cooldown
         if not is_staff(itx):
             await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
             return
         time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
-        if time_now - selfies_delete_week_command_cooldown < 86400:  # 1 day
-            await itx.response.send_message("This command has already been used yesterday! Please give it some time and prevent ratelimiting.", ephemeral=True)
-            return
         if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
             await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
             return
+        
         output = "Attempting deletion...\n"
+        class Interaction:
+            def __init__(self, member: discord.Member):
+                self.user = member
+                self.guild = member.guild
+
         await itx.response.send_message(output+"...", ephemeral=True)
         try:
             await log_to_guild(self.client, itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
-
-            message_delete_count = 0
+            message_delete_count: int = 0
+            queued_message_deletions: list[discord.Message] = []
+            feedback_output_count_status: int = 0 # current ephemeral message's count content (status of deleting messages)
             async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
                 message_date = int(mktime(message.created_at.timetuple()))
-                if time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
-                    if "[info]" in message.content.lower():
-                        class Interaction:
-                            def __init__(self, member: discord.Member):
-                                self.user = member
-                                self.guild = member.guild
-                        if is_staff(Interaction(message.author)): # nested to save having to look through function 1000 times
-                            continue
-                    await message.delete()
-                    #await asyncio.sleep(0.8) # to lower rate-limiting errors.. not based on any observations...
-                    # update: might be fixed after lowering the required API calls for starboards upon deleting these messages.
-
-                    # print("----Deleted---- ["+str(message.created_at)+f"] {message.author}: {message.content}")
+                if time_now-message_date > 14*86400:
                     message_delete_count += 1
-                    if message_delete_count % 50 == 0:
+                    await message.delete()
+                elif time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
+                    if "[info]" in message.content.lower():
+                        if is_staff(Interaction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
+                            continue
+                    queued_message_deletions.append(message)
+                    message_delete_count += 1
+                    if message_delete_count - feedback_output_count_status >= 50:
+                        feedback_output_count_status = message_delete_count
                         try:
                             await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
                         except discord.errors.HTTPException:
                             pass # ephemeral message timed out or something..
-                    continue
-                # print("++++Not deleted++++ ["+str(message.created_at)+f"] {message.author}: {message.content}")
 
-            selfies_delete_week_command_cooldown = time_now
+                if len(queued_message_deletions) >= 100:
+                    message_delete_count += len(queued_message_deletions[:100])
+                    await itx.channel.delete_messages(queued_message_deletions[:100], reason="Delete selfies older than 7 days") # can only bluk delete up to 100 msgs
+                    queued_message_deletions = queued_message_deletions[:100]
+
+            if queued_message_deletions:
+                message_delete_count += len(queued_message_deletions) # count remaining messages
+                await itx.channel.delete_messages(queued_message_deletions, reason="Delete selfies older than 7 days") # delete last few messages
+
             await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
         except:
             await itx.followup.send("Something went wrong!")

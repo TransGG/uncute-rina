@@ -830,7 +830,7 @@ class CustomVcs(commands.Cog):
             except KeyError:
                 warning = ""
 
-            class Interaction:
+            class Interaction: # need new class- can't edit itx.user cause it's used later to mention who muted the target user.
                 def __init__(self,guild, user):
                     self.user = user
                     self.guild = guild
