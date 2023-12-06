@@ -286,7 +286,7 @@ else:
                 ":sudo shutdown",
             ]
             if message.content == ":kill now please stop" or any([message.content.startswith(item) for item in cool_keys]):
-                message.add_reaction(":arrows_counterclockwise:")
+                await message.add_reaction(":arrows_counterclockwise:")
                 sys.exit(0)
                 # quitting the program also 
         # this will only run if it hasn't already quit, of course
