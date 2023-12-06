@@ -286,13 +286,13 @@ else:
                 ":sudo shutdown",
             ]
             if message.content == ":kill now please stop" or any([message.content.startswith(item) for item in cool_keys]):
-                await message.add_reaction(":arrows_counterclockwise:")
+                await message.add_reaction("🔄")
                 sys.exit(0)
                 # quitting the program also 
         # this will only run if it hasn't already quit, of course
         if message.content.startswith(":sudo "): 
             await message.reply("Cleo.CommandManager.InsufficientPermissionError: Could not run command: No permission\nTryin to be part of the cool kids? Try reading this:\n1 4M 4 V3RY C001 K16!")
-            message.add_reaction(":warning:")
+            message.add_reaction("⚠")
         elif message.content.lower().startswith("i am a very cool kid"):
             await message.send("Yes. Yes you are.")
 
