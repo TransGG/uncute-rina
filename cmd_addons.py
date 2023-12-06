@@ -1065,7 +1065,7 @@ class OtherAddons(commands.Cog):
     @app_commands.describe(dice="How many dice do you want to roll?",
                            faces="How many sides does every die have?",
                            mod="Do you want to add a modifier? (add 2 after rolling the dice)",
-                           advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; 'help' for more")
+                           advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; 'help' for more") # TODO: actually add 'help' command
     async def roll(self, itx: discord.Interaction, 
                    dice: app_commands.Range[int, 1, 999999],
                    faces: app_commands.Range[int, 1, 999999], 

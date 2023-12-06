@@ -379,6 +379,8 @@ class QOTW(commands.Cog):
                     if reported_user_id.isdecimal():
                         reported_user_id = int(reported_user_id)
                     else:
+                        if field.value.startswith("> "):
+                            field.value = field.value[2:] # remove the 'quote' md
                         reported_user_id = field.value.split(">",1)[0].split("@")[1] # from "%<@x>%", take "x"
                         if reported_user_id.isdecimal():
                             reported_user_id = int(reported_user_id)
