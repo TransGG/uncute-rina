@@ -294,7 +294,7 @@ else:
             await message.reply("Cleo.CommandManager.InsufficientPermissionError: Could not run command: No permission\nTryin to be part of the cool kids? Try reading this:\n1 4M 4 V3RY C001 K16!")
             await message.add_reaction("⚠")
         elif message.content.lower().startswith("i am a very cool kid"):
-            await message.send("Yes. Yes you are.")
+            await message.channel.send("Yes. Yes you are.")
 
     # Bot commands begin
 
