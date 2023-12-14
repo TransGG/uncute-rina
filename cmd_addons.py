@@ -1273,7 +1273,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             feedback_output_count_status: int = 0 # current ephemeral message's count content (status of deleting messages)
             async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
                 message_date = int(mktime(message.created_at.timetuple()))
-                if time_now-message_date > 14*86400:
+                if time_now-message_date > 14*86400: # 14 days, too old to remove by bulk
                     message_delete_count += 1
                     await message.delete()
                 elif time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
@@ -1281,7 +1281,6 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                         if is_staff(Interaction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
                             continue
                     queued_message_deletions.append(message)
-                    message_delete_count += 1
                     if message_delete_count - feedback_output_count_status >= 50:
                         feedback_output_count_status = message_delete_count
                         try:
@@ -1290,9 +1289,9 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                             pass # ephemeral message timed out or something..
 
                 if len(queued_message_deletions) >= 100:
-                    message_delete_count += len(queued_message_deletions[:100])
+                    message_delete_count += len(queued_message_deletions[:100])s
                     await itx.channel.delete_messages(queued_message_deletions[:100], reason="Delete selfies older than 7 days") # can only bluk delete up to 100 msgs
-                    queued_message_deletions = queued_message_deletions[:100]
+                    queued_message_deletions = queued_message_deletions[100:]
 
             if queued_message_deletions:
                 message_delete_count += len(queued_message_deletions) # count remaining messages
