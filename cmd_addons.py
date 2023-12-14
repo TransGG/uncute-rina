@@ -1289,7 +1289,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                             pass # ephemeral message timed out or something..
 
                 if len(queued_message_deletions) >= 100:
-                    message_delete_count += len(queued_message_deletions[:100])s
+                    message_delete_count += len(queued_message_deletions[:100])
                     await itx.channel.delete_messages(queued_message_deletions[:100], reason="Delete selfies older than 7 days") # can only bluk delete up to 100 msgs
                     queued_message_deletions = queued_message_deletions[100:]
 
