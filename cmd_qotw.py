@@ -402,7 +402,12 @@ class QOTW(commands.Cog):
 
         watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         for thread in watch_channel.threads:
-            starter_message = await thread.parent.fetch_message(thread.id)
+            try:
+                starter_message = await thread.parent.fetch_message(thread.id)
+            except discord.errors.NotFound:
+                # someone removed the message that the thread belongs to, without deleting the thread.
+                await log_to_guild(self.client, message.guild, ":octagonal_sign: :bangbang: Someone removed a watchlist message without deleting its matching thread!")
+                return
             if len(starter_message.embeds) == 0:
                 continue
             if starter_message.embeds[0].author.url is None and starter_message.embeds[0].timestamp is None:

@@ -7,7 +7,7 @@ class PrintProgress:
         print(f"[{self.progress*'#'}+{(self.max-self.progress-1)*' '}] Importing modules:   {name}{' '*(50-len(name))}\033[F")
         self.progress += 1
 
-progress = PrintProgress(22)
+progress = PrintProgress(24)
 progress.increment("datetime")
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
 program_start = datetime.now()
@@ -47,6 +47,8 @@ import asyncio # lets rina take small pauses while getting emojis from MongoDB t
 # apparently letting it run asynchronously might prevent a lot of missing heartbeats when adding data on data-editing events
 progress.increment("matplotlib/pyplot")
 import matplotlib.pyplot as plt
+progress.increment("matplotlib/dates")
+import matplotlib.dates as md
 progress.increment("pandas")
 import pandas as pd
 progress.increment("apscheduler/schedulers/asyncio/AsyncIOScheduler")
@@ -55,6 +57,8 @@ progress.increment("traceback")
 import traceback
 progress.increment("logging")
 import logging
+progress.increment("math/ceil")
+from math import ceil
 progress.increment("utils")
 from utils import *
 progress.increment("reminders")

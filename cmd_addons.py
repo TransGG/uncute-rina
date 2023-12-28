@@ -1282,7 +1282,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
                             continue
                     queued_message_deletions.append(message)
                     if message_delete_count - feedback_output_count_status >= 50:
-                        feedback_output_count_status = message_delete_count
+                        feedback_output_count_status = message_delete_count - message_delete_count % 10 # round to 10s
                         try:
                             await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
                         except discord.errors.HTTPException:

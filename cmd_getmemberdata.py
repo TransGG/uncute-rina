@@ -69,10 +69,10 @@ class MemberData(commands.Cog):
                 await itx.response.send_message("Your upper bound can't be bigger (-> more days ago) than the lower bound!", ephemeral=True)
                 return
         except ValueError:
-            await itx.response.send_message("Your period has to be an integer for the amount of days that have passed",ephemeral=True)
+            await itx.response.send_message("Your period has to be a number for the amount of days that have passed",ephemeral=True)
             return
 
-        accuracy = (lower_bound-upper_bound)*2400 #divide graph into 36 sections
+        accuracy = (lower_bound-upper_bound)*2400 #divide graph into 36 sections : 86400/36=2400
         lower_bound *= 86400 # days to seconds
         upper_bound *= 86400
         # Get a list of people (in this server) that joined at certain times. Maybe round these to a certain factor (don't overstress the x-axis)
@@ -223,6 +223,8 @@ class MemberData(commands.Cog):
         except:
             pass
         await itx.followup.send(f"From {lower_bound/86400} to {upper_bound/86400} days ago, {output} (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
+
+
 
 async def setup(client):
     # client.add_command(getMemberData)

@@ -274,12 +274,13 @@ class CustomVcs(commands.Cog):
         if not is_admin(itx):
             return [app_commands.Choice(name="Only admins can use this command!", value="No permission")]
 
-        if current.startswith("1") or current.startswith("2") or current.startswith("3") or current.startswith("4"):
+        if current.startswith("1") or current.startswith("2") or current.startswith("3") or current.startswith("4") or current.startswith("5"):
             options = [
                 ["Help: Main server settings",           "01"],
                 ["Help: Custom Voice Channels",          "02"],
                 ["Help: Starboard settings",             "03"],
                 ["Help: Bumping-related settings",       "04"],
+                ["Help: Additional settings",            "05"],
 
                 ["Logging channel",                      "11"],
                 ["Poll reactions blacklist",             "12"],
@@ -297,8 +298,9 @@ class CustomVcs(commands.Cog):
                 ["ID of the bump bot / DISBOARD bot",    "41"],
                 ["Channel that DISBOARD bumps in",       "42"],
                 ["Role to ping when sending reminder",   "43"],
+
+                ["Vc Activity Logs channel",             "51"],
             ]
-            # await asyncio.sleep(1)
             return [
                 app_commands.Choice(name=option[0], value=option[1])
                 for option in options if option[1].startswith(current)
@@ -334,6 +336,7 @@ class CustomVcs(commands.Cog):
             "02" : "Help: Custom Voice Channels",
             "03" : "Help: Starboard settings",
             "04" : "Help: Bumping-related settings",
+            "05" : "Help: Additional settings",
 
             "11" : "vcLog",
             "12" : "pollReactionsBlacklist",
@@ -351,6 +354,8 @@ class CustomVcs(commands.Cog):
             "41" : "bumpBot",
             "42" : "bumpChannel",
             "43" : "bumpRole",
+
+            "51" : "vcActivityLogChannel"
         }
 
         if option not in options:
@@ -385,6 +390,10 @@ class CustomVcs(commands.Cog):
                                                 "`41`: Bump bot: DISBOARD.org (Whose messages should I check for bump messages with embeds?)\n" +
                                                 "`42`: Bump channel (Which channel should be checked for messages by the DISBOARD bot?)\n" +
                                                 "`43`: Bump role (Which role should be pinged when 2 hours have passed?)", ephemeral=True)
+            elif option == "05":
+                await itx.response.send_message("Additional settings:\n" +
+                                                "`51`: Voice channel activity channel (What channel logs people joining/leaving/moving VCs?) (assumes Logger#6088 bot)" +
+                                                "", ephemeral=True)
             return
 
         if mode == 1:
@@ -514,6 +523,15 @@ class CustomVcs(commands.Cog):
                 ch = itx.guild.get_role(value)
                 if not isinstance(ch, discord.Role):
                     await itx.response.send_message("The ID you gave wasn't a role!", ephemeral=True)
+                    return
+                collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
+            elif option == "51":
+                value = await to_int(value, "You need to give the numerical ID for the channel you want to use!")
+                if value is None:
+                    return
+                ch = itx.client.get_channel(value)
+                if not isinstance(ch, discord.abc.Messageable):
+                    await itx.response.send_message("The ID you gave wasn't for the type of channel I was looking for!", ephemeral=True)
                     return
                 collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             
