@@ -220,12 +220,19 @@ class VCLogReader(commands.Cog):
                 data.append(int(mktime(embed.timestamp.timetuple()))) # unix timestamp of event
                 username = embed.description.split("**",2)[1].split("#",1)[0] # split **mysticmia#0** to mysticmia (assumes discord usernames can't contain hashtags (which they can't))
                 # print("Username = ", username)
-                type = embed.description.split("**",2)[2].split(" voice channel: ")[-2].split(") ")[-1].strip() # remove bold name and everything after the first word, to only select 'moved', 'joined', or 'left'
-                #  This transforms "**mysticmia#0** (Mia) joined voice channel: General.
-                #             into " (Mia) joined voice channel: General."
-                #             into " (Mia) joined"
-                #             into "joined"
-                # or, in the case there is no username: " joined", which is why you have to strip it too.
+                try:
+                    type = embed.description.split("**",2)[2].split(" voice channel: ")[-2].split(") ")[-1].strip() # remove bold name and everything after the first word, to only select 'moved', 'joined', or 'left'
+                    #  This transforms "**mysticmia#0** (Mia) joined voice channel: General.
+                    #             into " (Mia) joined voice channel: General."
+                    #             into " (Mia) joined"
+                    #             into "joined"
+                    # or, in the case there is no username: " joined", which is why you have to strip it too.
+                except IndexError:
+                    # this doesn't work if the user moved from one channel to another: 
+                    #    "**mysticmia#0** (Mia) moved from ⁠〙 Quiet (〙 Quiet) to ⁠〙 General 2 (〙 General 2)."
+                    #... honestly. i think it's probably safe to assume the user "moved" in this case. There isn't any fool-proof way to test otherwise
+                    type = "moved"
+                    # Will get an assertion error if it's not, anyway, so I'll leave it as it is for now.
 
                 # print("Type = ", type)
                 # print("Embed field count = ", len(embed.fields))
