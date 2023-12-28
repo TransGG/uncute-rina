@@ -220,7 +220,13 @@ class VCLogReader(commands.Cog):
                 data.append(int(mktime(embed.timestamp.timetuple()))) # unix timestamp of event
                 username = embed.description.split("**",2)[1].split("#",1)[0] # split **mysticmia#0** to mysticmia (assumes discord usernames can't contain hashtags (which they can't))
                 # print("Username = ", username)
-                type = embed.description.split("**",2)[2].strip().split(" ",1)[0] # remove bold name and everything after the first word, to only select 'moved', 'joined', or 'left'
+                type = embed.description.split("**",2)[2].split(" voice channel: ")[-2].split(") ")[-1].strip() # remove bold name and everything after the first word, to only select 'moved', 'joined', or 'left'
+                #  This transforms "**mysticmia#0** (Mia) joined voice channel: General.
+                #             into " (Mia) joined voice channel: General."
+                #             into " (Mia) joined"
+                #             into "joined"
+                # or, in the case there is no username: " joined", which is why you have to strip it too.
+
                 # print("Type = ", type)
                 # print("Embed field count = ", len(embed.fields))
                 user_data = []
@@ -243,7 +249,7 @@ class VCLogReader(commands.Cog):
                         previous_channel_data.append(embed.fields[0].value.split("#",1)[1].split(">",1)[0])      # split <#234567> (Channel Name) to 234567
                         previous_channel_data.append(embed.fields[0].value.split(">",1)[1].split("(",1)[1][:-1]) # split <#234567> (Channel Name) to Channel Name
                     else:
-                            raise AssertionError(f"type '{type}' is not a valid type (should be 'joined' or 'left')")
+                        raise AssertionError(f"type '{type}' is not a valid type (should be 'joined' or 'left')")
                 else:
                     raise AssertionError(f"Embed fields count was expected to be 3 or 2. Instead, it was '{len(embed.fields)}'")
 
@@ -310,6 +316,9 @@ class VCLogReader(commands.Cog):
 
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
     async def get_voice_channel_data(self, itx: discord.Interaction, requested_channel: discord.VoiceChannel, lower_bound: str, upper_bound: str = None):
+        if not is_staff(itx):
+            await itx.response.send_message("You don't have permissions to use this command.", ephemeral=True)
+            return
         cmd_mention = self.client.get_command_mention("editguildinfo")
         try:
             log_channel_id = await self.client.get_guild_info(itx.guild_id, "vcActivityLogChannel")
@@ -393,6 +402,7 @@ class VCLogReader(commands.Cog):
 
         color = "crimson"
         fig,ax=plt.subplots(figsize=(6,3))
+        fig.suptitle(f"VC data in '{requested_channel.id}' from T-{lower_bound/60} to T-{upper_bound/60}")
 
         labels=[]
         for i, task in enumerate(df.groupby("User")):
@@ -425,11 +435,11 @@ class VCLogReader(commands.Cog):
         
         ax.set_yticks(range(len(labels)))
         ax.set_yticklabels(labels)
-        ax.set_xlabel("time")
-        plt.tight_layout()       
+        ax.set_xlabel("time (utc+0)")
+        plt.tight_layout()
         #plt.show()
         plt.savefig('vcLogs.png', dpi=300)
-        await itx.followup.send(f"VC activity from '{requested_channel.id}' in {(lower_bound - upper_bound) / 60} minutes",file=discord.File('vcLogs.png'))
+        await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)",file=discord.File('vcLogs.png'))
 
         # id_pages = []
         # name_pages = []
