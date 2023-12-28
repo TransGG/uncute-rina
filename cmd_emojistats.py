@@ -361,6 +361,11 @@ class VCLogReader(commands.Cog):
         
         events = await self.get_vc_activity(log_channel, min_time, max_time)
 
+        # add fake "leave" event for every person that is currently still in the voice channel.
+        # This ensures that even [those that haven't joined or left during the given time frame] will still be plotted on the graph.
+        for member in requested_channel.members:
+            events.append((current_time, (member.id, member.name), (requested_channel.id, requested_channel.name), None))
+
         intermediate_data: dict[int, int | None | list[int]] = {}
 
         for event in events:
