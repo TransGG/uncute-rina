@@ -312,7 +312,7 @@ class VCLogReader(commands.Cog):
                 #     print(f"   field value: {field.value}")
                 # print()
                 # print("\n"*2)
-                
+
             # if count > 3:
             #     break
 
@@ -369,10 +369,11 @@ class VCLogReader(commands.Cog):
         
         events = await self.get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
 
-        # add fake "leave" event for every person that is currently still in the voice channel.
-        # This ensures that even [those that haven't joined or left during the given time frame] will still be plotted on the graph.
-        for member in requested_channel.members:
-            events.append((current_time, (member.id, member.name), (requested_channel.id, requested_channel.name), None))
+        if max_time == current_time: # current_time - 0 == current_time
+            # if looking until the current time/date, add fake "leave" event for every person that is currently still in the voice channel.
+            # This ensures that even [those that haven't joined or left during the given time frame] will still be plotted on the graph.
+            for member in requested_channel.members:
+                events.append((current_time, (member.id, member.name), (requested_channel.id, requested_channel.name), None))
 
         intermediate_data: dict[int, int | None | list[int]] = {}
 
@@ -453,7 +454,8 @@ class VCLogReader(commands.Cog):
         #plt.show()
         plt.savefig('vcLogs.png', dpi=300)
         await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
-                                f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 > msg_log_limit else ""
+                                ("Note: If you're looking in the past, people that joined before and left after the given timeframes may not show up on the graph. To ensure you get a good representation, be sure to add a bit of margin at the edges!" if max_time != current_time else "") +
+                                (f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 > msg_log_limit else "")
                                 ,file=discord.File('vcLogs.png'))
 
         # id_pages = []
