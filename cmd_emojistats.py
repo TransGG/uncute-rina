@@ -180,7 +180,7 @@ class VCLogReader(commands.Cog):
         asyncRinaDB = client.asyncRinaDB
         self.client = client
 
-    async def get_vc_activity(self, voice_log_channel: discord.abc.Messageable, min_time: int, max_time: int):
+    async def get_vc_activity(self, voice_log_channel: discord.abc.Messageable, min_time: int, max_time: int, msg_limit: int):
         """
         Retrieve the most recent voice channel activity from the logger channel and convert into neat string.
 
@@ -197,7 +197,8 @@ class VCLogReader(commands.Cog):
         count = 0
 
         async for message in voice_log_channel.history(before = datetime.fromtimestamp(max_time), 
-                                                       after  = datetime.fromtimestamp(min_time)):
+                                                       after  = datetime.fromtimestamp(min_time),
+                                                       limit  = msg_limit):
             # For context: the embed message sent by the Logger bot looks like this:
             #   author / image of user that sent message (author.name = username + descriminator (#0 in new discord update))
             #  case 1: the user joins/leaves a voice channel
@@ -322,7 +323,10 @@ class VCLogReader(commands.Cog):
             
 
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
-    async def get_voice_channel_data(self, itx: discord.Interaction, requested_channel: discord.VoiceChannel, lower_bound: str, upper_bound: str = None):
+    @app_commands.describe(lower_bound="Get data from [period] minutes ago",
+                           upper_bound="Get data up to [period] minutes ago",
+                           msg_log_limit="How many logs should I use to make the graph (default: 5000)")
+    async def get_voice_channel_data(self, itx: discord.Interaction, requested_channel: discord.VoiceChannel, lower_bound: str, upper_bound: str = None, msg_log_limit: int = 5000):
         if not is_staff(itx):
             await itx.response.send_message("You don't have permissions to use this command.", ephemeral=True)
             return
@@ -366,7 +370,7 @@ class VCLogReader(commands.Cog):
         min_time = current_time-lower_bound
         max_time = current_time-upper_bound
         
-        events = await self.get_vc_activity(log_channel, min_time, max_time)
+        events = await self.get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
 
         # add fake "leave" event for every person that is currently still in the voice channel.
         # This ensures that even [those that haven't joined or left during the given time frame] will still be plotted on the graph.
@@ -451,7 +455,9 @@ class VCLogReader(commands.Cog):
         plt.tight_layout()
         #plt.show()
         plt.savefig('vcLogs.png', dpi=300)
-        await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)",file=discord.File('vcLogs.png'))
+        await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)"
+                                f"Basing data off of {len(events)} data points. (current limit: 5000)"
+                                ,file=discord.File('vcLogs.png'))
 
         # id_pages = []
         # name_pages = []

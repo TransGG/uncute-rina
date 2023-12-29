@@ -45,8 +45,10 @@ class MemberData(commands.Cog):
             await add_to_data(after, "verified")
 
     @app_commands.command(name="getmemberdata",description="See joined, left, and recently verified users in x days")
-    @app_commands.describe(upper_bound="Get data from [period] days ago",
-                           doubles="If someone joined twice, are they counted double? (y/n or 1/0)")
+    @app_commands.describe(lower_bound="Get data from [period] days ago",
+                           upper_bound="Get data up to [period] days ago",
+                           doubles="If someone joined twice, are they counted double? (y/n or 1/0)",
+                           public="Send the output to everyone in the channel")
     async def get_member_data(self, itx: discord.Interaction, lower_bound: str, upper_bound: str = None, doubles: bool = False, public: bool = False):
         # if not is_staff(itx):
         #     await itx.response.send_message("You don't have the right role to be able to execute this command! (sorrryyy)",ephemeral=True)
