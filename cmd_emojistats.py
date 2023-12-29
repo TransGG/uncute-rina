@@ -312,10 +312,7 @@ class VCLogReader(commands.Cog):
                 #     print(f"   field value: {field.value}")
                 # print()
                 # print("\n"*2)
-
-                count+=1
-                if count > 15:
-                    break
+                
             # if count > 3:
             #     break
 
@@ -455,8 +452,8 @@ class VCLogReader(commands.Cog):
         plt.tight_layout()
         #plt.show()
         plt.savefig('vcLogs.png', dpi=300)
-        await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)"
-                                f"Basing data off of {len(events)} data points. (current limit: 5000)"
+        await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
+                                f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 > msg_log_limit else ""
                                 ,file=discord.File('vcLogs.png'))
 
         # id_pages = []
