@@ -7,6 +7,9 @@ class PrintProgress:
         print(f"[{self.progress*'#'}+{(self.max-self.progress-1)*' '}] Importing modules:   {name}{' '*(50-len(name))}\033[F")
         self.progress += 1
 
+class Object(object):
+    pass
+
 progress = PrintProgress(24)
 progress.increment("datetime")
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification

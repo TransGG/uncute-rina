@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.6.4".split(".")
+    fileVersion = "1.2.6.5".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -205,7 +205,7 @@ else:
     # Client events begin
     @client.event
     async def on_ready():
-        debug(f"[#######] Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
+        debug(f"[#######]: Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
         
     @client.event

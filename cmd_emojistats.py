@@ -196,8 +196,8 @@ class VCLogReader(commands.Cog):
         output: list[tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None]] = [] # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
         count = 0
 
-        async for message in voice_log_channel.history(before = datetime.fromtimestamp(max_time), 
-                                                       after  = datetime.fromtimestamp(min_time),
+        async for message in voice_log_channel.history(after  = datetime.fromtimestamp(min_time, tz=datetime.now().tzinfo),
+                                                       before = datetime.fromtimestamp(max_time, tz=datetime.now().tzinfo), 
                                                        limit  = msg_limit):
             # For context: the embed message sent by the Logger bot looks like this:
             #   author / image of user that sent message (author.name = username + descriminator (#0 in new discord update))
@@ -218,7 +218,7 @@ class VCLogReader(commands.Cog):
 
             for embed in message.embeds[::-1]: # flip list because messages sort from newest to oldest whereas the embeds in these messages would sort from oldest to newest.
                 data: tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None] = [] # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second variable if this works too. (long live python?)
-                data.append(int(mktime(embed.timestamp.timetuple()))) # unix timestamp of event
+                data.append(int(embed.timestamp.timestamp())) # unix timestamp of event
                 username = embed.description.split("**",2)[1].split("#",1)[0] # split **mysticmia#0** to mysticmia (assumes discord usernames can't contain hashtags (which they can't))
                 # print("Username = ", username)
                 try:
@@ -241,25 +241,33 @@ class VCLogReader(commands.Cog):
                 previous_channel_data = []
                 current_channel_data = []
 
-                # could be done more efficiently but oh well. Not like this is suitable for any other bot either anyway. And I'm limited by discord API anyway
-                if len(embed.fields) == 3: # user moved channels (3 fields: previous/current channel, and IDs)
-                    if type != "moved":
-                        raise AssertionError(f"type '{type}' is not a valid type (should be 'moved')")
-                    current_channel_data.append(embed.fields[0].value.split("#",1)[1].split(">",1)[0])           # split <#234567> (Channel Name) to 234567
-                    current_channel_data.append(embed.fields[0].value.split(">",1)[1].split("(",1)[1][:-1])      # split <#234567> (Channel Name) to Channel Name
-                    previous_channel_data.append(embed.fields[1].value.split("#",1)[1].split(">",1)[0])          # split <#123456> (Channel Name) to 123456
-                    previous_channel_data.append(embed.fields[1].value.split(">",1)[1].split("(",1)[1][:-1])     # split <#123456> (Channel Name) to Channel Name
-                elif len(embed.fields) == 2:
-                    if type == "joined":
-                        current_channel_data.append(embed.fields[0].value.split("#",1)[1].split(">",1)[0])       # split <#123456> (Channel Name) to 123456
-                        current_channel_data.append(embed.fields[0].value.split(">",1)[1].split("(",1)[1][:-1])  # split <#123456> (Channel Name) to Channel Name
-                    elif type == "left":
-                        previous_channel_data.append(embed.fields[0].value.split("#",1)[1].split(">",1)[0])      # split <#234567> (Channel Name) to 234567
-                        previous_channel_data.append(embed.fields[0].value.split(">",1)[1].split("(",1)[1][:-1]) # split <#234567> (Channel Name) to Channel Name
+                try:
+                    # could be done more efficiently but oh well. Not like this is suitable for any other bot either anyway. And I'm limited by discord API anyway
+                    if len(embed.fields) == 3: # user moved channels (3 fields: previous/current channel, and IDs)
+                        if type != "moved":
+                            raise AssertionError(f"type '{type}' is not a valid type (should be 'moved')")
+                        current_channel_data.append(embed.fields[0].value.split("#",1)[1].split(">",1)[0])           # split <#234567> (Channel Name) to 234567
+                        current_channel_data.append(embed.fields[0].value.split(">",1)[1].split("(",1)[1][:-1])      # split <#234567> (Channel Name) to Channel Name
+                        previous_channel_data.append(embed.fields[1].value.split("#",1)[1].split(">",1)[0])          # split <#123456> (Channel Name) to 123456
+                        previous_channel_data.append(embed.fields[1].value.split(">",1)[1].split("(",1)[1][:-1])     # split <#123456> (Channel Name) to Channel Name
+                    elif len(embed.fields) == 2:
+                        if type == "joined":
+                            current_channel_data.append(embed.fields[0].value.split("#",1)[1].split(">",1)[0])       # split <#123456> (Channel Name) to 123456
+                            current_channel_data.append(embed.fields[0].value.split(">",1)[1].split("(",1)[1][:-1])  # split <#123456> (Channel Name) to Channel Name
+                        elif type == "left":
+                            previous_channel_data.append(embed.fields[0].value.split("#",1)[1].split(">",1)[0])      # split <#234567> (Channel Name) to 234567
+                            previous_channel_data.append(embed.fields[0].value.split(">",1)[1].split("(",1)[1][:-1]) # split <#234567> (Channel Name) to Channel Name
+                        else:
+                            raise AssertionError(f"type '{type}' is not a valid type (should be 'joined' or 'left')")
                     else:
-                        raise AssertionError(f"type '{type}' is not a valid type (should be 'joined' or 'left')")
-                else:
-                    raise AssertionError(f"Embed fields count was expected to be 3 or 2. Instead, it was '{len(embed.fields)}'")
+                        raise AssertionError(f"Embed fields count was expected to be 3 or 2. Instead, it was '{len(embed.fields)}'")
+                except: # TODO: try to figure out why it crashed that one time. Now with more details
+                    if len(embed.fields) == 0:
+                        raise Exception("Embed has no fields!")
+                    else:
+                        if len(embed.fields[0].value.split("#",1)) < 2:
+                            raise Exception(f"First embed field '{embed.fields[0].value}' does not have hashtags for its ID!")
+                        raise Exception(f"Embed field '{embed.fields[0].value}' has some other error or something D:")
 
                 
                 id_data = embed.fields[-1].value.replace("```ini","")[:-3].strip() # remove the ```ini\n  ...   ``` from the embed field
@@ -282,7 +290,7 @@ class VCLogReader(commands.Cog):
                     else:
                         raise AssertionError(f"key '{key}' is not a valid key (should be 'User', 'Old', 'New', or 'Channel')")
                 user_data.append(username)
-                
+
                 try:
                     data.append((int(user_data[0]), user_data[1]))
 
@@ -361,11 +369,11 @@ class VCLogReader(commands.Cog):
         accuracy = 0.0001#(lower_bound-upper_bound)*(60/36=1.66666667) #divide graph into 36 sections 
         lower_bound *= 60 # minutes to seconds
         upper_bound *= 60
-        current_time = mktime(datetime.now().timetuple())
+        current_time: float = datetime.now().timestamp()
         # min_time = int((current_time-lower_bound)/accuracy)*accuracy
         # max_time = int((current_time-upper_bound)/accuracy)*accuracy
-        min_time = current_time-lower_bound
-        max_time = current_time-upper_bound
+        min_time: float = current_time-lower_bound
+        max_time: float = current_time-upper_bound
         
         events = await self.get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
 
@@ -435,7 +443,7 @@ class VCLogReader(commands.Cog):
             label_time_text_format = "%H:%M:%S"
         elif tick_labels[-1] - tick_labels[0] > 86400:
             label_time_text_format = "%Y-%m-%dT%H:%M"
-        ax.set_xticklabels([datetime.fromtimestamp(x).strftime(label_time_text_format) for x in tick_labels], rotation=30)
+        ax.set_xticklabels([datetime.fromtimestamp(x, tz=timezone.utc).strftime(label_time_text_format) for x in tick_labels], rotation=30)
 
         # plt.xticks(tick_loc, tick_disp, rotation='vertical')
         # plt.setp(tick_disp, rotation=45, horizontalalignment='right')
@@ -454,7 +462,7 @@ class VCLogReader(commands.Cog):
         #plt.show()
         plt.savefig('vcLogs.png', dpi=300)
         await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
-                                ("Note: If you're looking in the past, people that joined before and left after the given timeframes may not show up on the graph. To ensure you get a good representation, be sure to add a bit of margin at the edges!" if max_time != current_time else "") +
+                                ("\nNote: If you're looking in the past, people that joined before and left after the given timeframes may not show up on the graph. To ensure you get a good representation, be sure to add a bit of margin around the edges!" if max_time != current_time else "") +
                                 (f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 > msg_log_limit else "")
                                 ,file=discord.File('vcLogs.png'))
 
