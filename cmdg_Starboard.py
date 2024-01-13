@@ -1,10 +1,10 @@
 from Uncute_Rina import *
 from import_modules import *
 
-messageIdMarkedForDeletion = []
-starboardMessagesContentRefreshTimestamp = 0
-tempStarboardMessages: list[discord.Message] = []
-busy_re_storing_starboard_messages = False
+starboard_message_ids_marked_for_deletion = []
+local_starboard_message_list_refresh_timestamp = 0
+local_starboard_message_list: list[discord.Message] = []
+busy_updating_starboard_messages = False
 
 class Starboard(commands.Cog):
     def __init__(self, client: Bot):
@@ -12,7 +12,7 @@ class Starboard(commands.Cog):
         self.client: Bot = client
         RinaDB = client.RinaDB
 
-    async def updateStat(self, star_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int):
+    async def update_stat(self, star_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int):
         # find original message
         text = star_message.embeds[0].fields[0].value ## "[Jump!]({msgLink})"
         link = text.split("(")[1]
@@ -29,11 +29,11 @@ class Starboard(commands.Cog):
         except discord.NotFound:
             # if original message removed, remove starboard message
             await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
-            messageIdMarkedForDeletion.append(star_message.id)
+            starboard_message_ids_marked_for_deletion.append(star_message.id)
             await star_message.delete()
-            for i in range(len(tempStarboardMessages)):
-                if tempStarboardMessages[i].id == star_message.id:
-                    del tempStarboardMessages[i]
+            for i in range(len(local_starboard_message_list)):
+                if local_starboard_message_list[i].id == star_message.id:
+                    del local_starboard_message_list[i]
                     break
             return
         except discord.errors.Forbidden:
@@ -71,11 +71,11 @@ class Starboard(commands.Cog):
         #if more x'es than stars, and more than [15] reactions, remove message
         if star_stat < 0 and reactionTotal >= downvote_init_value:
             await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
-            messageIdMarkedForDeletion.append(star_message.id)
+            starboard_message_ids_marked_for_deletion.append(star_message.id)
             await star_message.delete()
-            for i in range(len(tempStarboardMessages)):
-                if tempStarboardMessages[i].id == star_message.id:
-                    del tempStarboardMessages[i]
+            for i in range(len(local_starboard_message_list)):
+                if local_starboard_message_list[i].id == star_message.id:
+                    del local_starboard_message_list[i]
                     break
             return
 
@@ -96,20 +96,20 @@ class Starboard(commands.Cog):
         )
         await star_message.edit(content=new_content, embeds=embeds)
 
-    async def getStarboardMessages(self, star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
-        global busy_re_storing_starboard_messages, tempStarboardMessages, starboardMessagesContentRefreshTimestamp
-        if not busy_re_storing_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - starboardMessagesContentRefreshTimestamp > 100: # refresh once every 100 seconds
-            busy_re_storing_starboard_messages = True
+    async def get_starboard_messages(self, star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
+        global busy_updating_starboard_messages, local_starboard_message_list, local_starboard_message_list_refresh_timestamp
+        if not busy_updating_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > 100: # refresh once every 100 seconds
+            busy_updating_starboard_messages = True
             messages: list[discord.Message] = []
             async for star_message in star_channel.history(limit=1000):
                 messages.append(star_message)
-            tempStarboardMessages = messages
-            starboardMessagesContentRefreshTimestamp = mktime(datetime.now(timezone.utc).timetuple())
-            busy_re_storing_starboard_messages = False
-        while busy_re_storing_starboard_messages:
+            local_starboard_message_list = messages
+            local_starboard_message_list_refresh_timestamp = mktime(datetime.now(timezone.utc).timetuple())
+            busy_updating_starboard_messages = False
+        while busy_updating_starboard_messages:
             # wait until not busy anymore
             await asyncio.sleep(1)
-        return tempStarboardMessages
+        return local_starboard_message_list
 
 
     @commands.Cog.listener()
@@ -143,18 +143,18 @@ class Starboard(commands.Cog):
 
         if message.channel.id == star_channel.id:
             if len(message.embeds) > 0:
-                await self.updateStat(message, starboard_emoji, downvote_init_value)
+                await self.update_stat(message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await self.getStarboardMessages(star_channel)
+                    starboard_messages = await self.get_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await self.updateStat(star_message, starboard_emoji, downvote_init_value)
+                                await self.update_stat(star_message, starboard_emoji, downvote_init_value)
                                 return
                     return
                 elif reaction.count == star_minimum:
@@ -240,7 +240,7 @@ class Starboard(commands.Cog):
                     # add new starboard msg
                     await msg.add_reaction(starboard_emoji)
                     await msg.add_reaction("❌")
-                    tempStarboardMessages.append(msg)
+                    local_starboard_message_list.append(msg)
                     # add star reaction to original message to prevent message from being re-added to the starboard
 
     @commands.Cog.listener()
@@ -262,18 +262,18 @@ class Starboard(commands.Cog):
 
         if message.channel.id == star_channel.id:
             if len(message.embeds) > 0:
-                await self.updateStat(message, starboard_emoji, downvote_init_value)
+                await self.update_stat(message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await self.getStarboardMessages(star_channel)
+                    starboard_messages = await self.get_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await self.updateStat(star_message, starboard_emoji, downvote_init_value)
+                                await self.update_stat(star_message, starboard_emoji, downvote_init_value)
                                 return
 
     @commands.Cog.listener()
@@ -284,9 +284,9 @@ class Starboard(commands.Cog):
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
-        if message_payload.message_id in messageIdMarkedForDeletion: #global variable
+        if message_payload.message_id in starboard_message_ids_marked_for_deletion: #global variable
             # this prevents having two 'message deleted' logs for manual deletion of starboard message
-            messageIdMarkedForDeletion.remove(message_payload.message_id)
+            starboard_message_ids_marked_for_deletion.remove(message_payload.message_id)
             return
         if message_payload.channel_id == star_channel.id:
             # check if the deleted message is a starboard message; if so, log it at starboard message deletion
@@ -296,7 +296,7 @@ class Starboard(commands.Cog):
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
-            starboard_messages = await self.getStarboardMessages(star_channel)
+            starboard_messages = await self.get_starboard_messages(star_channel)
             for star_message in starboard_messages:
                 for embed in star_message.embeds:
                     if embed.footer.text == str(message_payload.message_id):
@@ -312,11 +312,11 @@ class Starboard(commands.Cog):
                                      f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "
                                      f"(original message was removed (this starboard message's linked id matched the removed message's)). "
                                      f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
-                        messageIdMarkedForDeletion.append(star_message.id)
+                        starboard_message_ids_marked_for_deletion.append(star_message.id)
                         await star_message.delete()
-                        for i in range(len(tempStarboardMessages)):
-                            if tempStarboardMessages[i].id == star_message.id:
-                                del tempStarboardMessages[i]
+                        for i in range(len(local_starboard_message_list)):
+                            if local_starboard_message_list[i].id == star_message.id:
+                                del local_starboard_message_list[i]
                                 break
                         return
 

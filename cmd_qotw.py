@@ -1,6 +1,42 @@
 from Uncute_Rina import *
 from import_modules import *
 
+local_watchlist_index: dict[int, int] = {} # user_id, thread_id
+busy_updating_watchlist_index: bool = False
+
+async def get_watchlist_index(watch_channel: discord.TextChannel):
+    global busy_updating_watchlist_index, local_watchlist_index
+    if not busy_updating_watchlist_index:
+        busy_updating_watchlist_index = True
+        watchlist_index_temp: dict[int, int] = {} # to later overwrite the global variable instead of changing that directly
+        for thread in watch_channel.threads:
+            starter_message = await thread.parent.fetch_message(thread.id)
+            try:
+                # index: 0    1         2                   3          4
+                #     https: / / warned.username / 262913789375021056 /
+                user_id = int(starter_message.embeds[0].author.url.split("/")[3])
+                if user_id in watchlist_index_temp:
+                    continue # only use the user's most recent watchlist thread (if ever there is a second thread)
+                watchlist_index_temp[user_id] = thread.id
+            except (IndexError, AttributeError):
+                pass
+        else:
+            async for thread in watch_channel.archived_threads(limit=None):
+                starter_message = await thread.parent.fetch_message(thread.id)
+                try:
+                    user_id = int(starter_message.embeds[0].author.url.split("/")[3])
+                    if user_id in watchlist_index_temp:
+                        continue
+                    watchlist_index_temp[user_id] = thread.id
+                except (IndexError, AttributeError):
+                    pass
+        local_watchlist_index = watchlist_index_temp
+        busy_updating_watchlist_index = False
+    if busy_updating_watchlist_index:
+        # wait until not busy anymore, in case a command triggers the function while it's still catching up
+        await asyncio.sleep(1)
+    return local_watchlist_index
+
 class QOTW(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -146,8 +182,9 @@ class QOTW(commands.Cog):
     ####################
     # Watch out doubts #
     ####################
-
+    
     async def add_to_watchlist(self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None, warning=""):
+        global local_watchlist_index
         if not is_staff(itx):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
@@ -172,8 +209,8 @@ class QOTW(commands.Cog):
                 return
         if len(reason) > 2000: #embed has higher limits (?)
             await itx.response.send_message("Your watchlist reason won't fit! Please make your reason shorter. "
-                                            "You can also expand your reason / add details in the thread",ephemeral=True)
-            await itx.response.send_message("Given reason:\n"+reason[:1950]+"...", ephemeral=True) # because i'm nice
+                                            "You can also expand your reason / add details in the thread", ephemeral=True)
+            await itx.followup.send("Given reason:\n"+reason[:1950]+"...", ephemeral=True) # because i'm nice
             return
         
         # await itx.response.defer(ephemeral=True)
@@ -213,37 +250,14 @@ class QOTW(commands.Cog):
                 description=f"Loading WANTED entry...", #{message.content}
             )
         
-        already_on_watchlist = False
-        thread_maybe = None
-        starter_message_maybe = None
-        for thread in watch_channel.threads:
-            starter_message = await thread.parent.fetch_message(thread.id)
-            try:
-                # index: 0    1         2                   3          4
-                #     https: / / warned.username / 262913789375021056 /
-                if starter_message.embeds[0].author.url.split("/")[3] == str(user.id):
-                    already_on_watchlist = True
-                    starter_message_maybe = starter_message
-                    thread_maybe = thread
-                    break
-            except (IndexError, AttributeError):
-                pass
-        else:
-            async for thread in watch_channel.archived_threads(limit=None):
-                starter_message = await thread.parent.fetch_message(thread.id)
-                try:
-                    if starter_message.embeds[0].author.url.split("/")[3] == str(user.id):
-                        already_on_watchlist = True
-                        starter_message_maybe = starter_message
-                        thread_maybe = thread
-                        break
-                except (IndexError, AttributeError):
-                    pass
+        watchlist_index = get_watchlist_index(watch_channel)
+        already_on_watchlist = user.id in watchlist_index
 
         if not already_on_watchlist:
             msg = await watch_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
             # make and join a thread under the reason
             thread = await msg.create_thread(name=f"Watch-{(str(user)+'-'+str(user.id))}", auto_archive_duration=10080)
+            local_watchlist_index[user.id] = thread.id # thread.id will be the same as msg.id, because of discord structure
             await thread.join()
             # await thread.send("<@&986022587756871711>", silent=True) # silent messages don't work for this
             joiner_msg = await thread.send("user-mention placeholder")
@@ -259,8 +273,8 @@ class QOTW(commands.Cog):
             #         targets = []
             await joiner_msg.delete()
         else:
-            msg = starter_message_maybe
-            thread = thread_maybe
+            thread = await watch_channel.guild.fetch_channel(watchlist_index[user.id]) # fetch thread, in case the thread was archived (not in cache)
+            msg = await watch_channel.fetch_message(watchlist_index[user.id]) # fetch message, in case msg is not in cache
             await msg.reply(content=f"Someone added {user.mention} (`{user.id}`) to the watchlist.\n"
                                     f"Since they were already on this list, here's a reply to the original thread.\n"
                                     f"May this serve as a warning for this user.", allowed_mentions=discord.AllowedMentions.none())

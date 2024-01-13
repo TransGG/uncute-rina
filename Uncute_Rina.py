@@ -43,7 +43,7 @@ else:
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.6.5".split(".")
+    fileVersion = "1.2.6.6".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -207,6 +207,13 @@ else:
     async def on_ready():
         debug(f"[#######]: Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
+
+
+        debug(f"[+]: Pre-loading all watchlist threads", color="light_blue",end="\r")
+        watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
+        if watchlist_channel is not None: # if running on prod
+            await get_watchlist_index(watchlist_channel)
+        debug(f"[#]: Loaded watchlist threads."+" "*15, color="green")
         
     @client.event
     async def setup_hook():
