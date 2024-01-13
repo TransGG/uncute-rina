@@ -6,7 +6,7 @@ busy_updating_watchlist_index: bool = False
 
 async def get_watchlist_index(watch_channel: discord.TextChannel):
     global busy_updating_watchlist_index, local_watchlist_index
-    if not busy_updating_watchlist_index:
+    if not busy_updating_watchlist_index and local_watchlist_index == {}:
         busy_updating_watchlist_index = True
         watchlist_index_temp: dict[int, int] = {} # to later overwrite the global variable instead of changing that directly
         for thread in watch_channel.threads:
@@ -355,6 +355,25 @@ class QOTW(commands.Cog):
                       "If they got banned, there's no reason to look out for them anymore ;)\n" + \
                       "It's also easier to mention them if you run it in the main server. Anyway,\n\n"
         await self.add_to_watchlist(itx, user, reason, message_id, warning=warning)
+
+    @app_commands.command(name="watchlist",description="Check if a user is on the watchlist.")
+    @app_commands.describe(user="User to check")
+    async def check_watchlist(self, itx: discord.Interaction, user: discord.User):
+        if not is_staff(itx):
+            await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
+            return
+        
+        watch_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
+        watchlist_index = await get_watchlist_index(watch_channel)
+        on_watchlist: bool = user.id in watchlist_index
+
+        if on_watchlist:
+            msg = await itx.response.send_message(f"🔵 This user ({user.mention} `{user.id}`) is already on the watchlist.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+        else:
+            msg = await itx.response.send_message(f"🟡 This user ({user.mention} `{user.id}`) is not yet on the watchlist.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+
+    
+
 
     async def watchlist_ctx_user(self, itx, user: discord.User):
         if not is_staff(itx): # is already checked in the main command, but saves people's time

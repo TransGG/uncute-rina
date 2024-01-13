@@ -94,6 +94,7 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
         "lime":"\033[32m",
         "green":"\033[32m",
         "yellow":"\033[33m",
+        "orange":"\033[33m", # kinda orange i guess?
         "blue":"\033[34m",
         "magenta":"\033[35m",
         "purple":"\033[35m",
