@@ -356,7 +356,7 @@ class QOTW(commands.Cog):
                       "It's also easier to mention them if you run it in the main server. Anyway,\n\n"
         await self.add_to_watchlist(itx, user, reason, message_id, warning=warning)
 
-    @app_commands.command(name="watchlist",description="Check if a user is on the watchlist.")
+    @app_commands.command(name="check_watchlist",description="Check if a user is on the watchlist.")
     @app_commands.describe(user="User to check")
     async def check_watchlist(self, itx: discord.Interaction, user: discord.User):
         if not is_staff(itx):
