@@ -250,7 +250,7 @@ class QOTW(commands.Cog):
                 description=f"Loading WANTED entry...", #{message.content}
             )
         
-        watchlist_index = get_watchlist_index(watch_channel)
+        watchlist_index = await get_watchlist_index(watch_channel)
         already_on_watchlist = user.id in watchlist_index
 
         if not already_on_watchlist:
@@ -363,14 +363,16 @@ class QOTW(commands.Cog):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
         
+        await itx.response.defer()
+
         watch_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         watchlist_index = await get_watchlist_index(watch_channel)
         on_watchlist: bool = user.id in watchlist_index
 
         if on_watchlist:
-            msg = await itx.response.send_message(f"🔵 This user ({user.mention} `{user.id}`) is already on the watchlist.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            msg = await itx.followup.send(f"🔵 This user ({user.mention} `{user.id}`) is already on the watchlist.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         else:
-            msg = await itx.response.send_message(f"🟡 This user ({user.mention} `{user.id}`) is not yet on the watchlist.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            msg = await itx.followup.send(f"🟡 This user ({user.mention} `{user.id}`) is not yet on the watchlist.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
     
 
