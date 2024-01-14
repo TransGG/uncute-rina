@@ -124,239 +124,6 @@ class SearchAddons(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
 
-    nameusage = app_commands.Group(name='nameusage', description='Get data about which names are used in the server')
-
-    @nameusage.command(name="gettop", description="See how often different names occur in this server")
-    @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Search most-used usernames', value=1),
-        discord.app_commands.Choice(name='Search most-used nicknames', value=2),
-        discord.app_commands.Choice(name='Search nicks and usernames', value=3),
-    ])
-    async def nameusage_gettop(self, itx: discord.Interaction, mode: int):
-        await itx.response.defer(ephemeral=True)
-        sections = {}
-        for member in itx.guild.members:
-            member_sections = []
-            if mode == 1: # most-used usernames
-                names = [member.name]
-            elif mode == 2 and member.nick is not None: # most-used nicknames
-                names = [member.nick]
-            elif mode == 3: # most-used nicks and usernames
-                names = [member.name]
-                if member.nick is not None:
-                    names.append(member.nick)
-            else:
-                continue
-
-            _pronouns = [
-                "she", "her",
-                "he", "him",
-                "they", "them",
-                "it", "its",
-            ]
-            pronouns = []
-            for pronounx in _pronouns:
-                for pronouny in _pronouns:
-                    pronouns.append(pronounx + " " + pronouny)
-
-            for index in range(len(names)):
-                new_name = ""
-                for char in names[index]:
-                    if char.lower() in "abcdefghijklmnopqrstuvwxyz":
-                        new_name += char
-                    else:
-                        new_name += " "
-
-                for pronoun in pronouns:
-                    _name_backup = new_name + " "
-                    while new_name != _name_backup:
-                        _name_backup = new_name
-                        new_name = re.sub(pronoun, "", new_name, flags=re.IGNORECASE)
-
-                names[index] = new_name
-
-            def add(part):
-                if part not in member_sections:
-                    member_sections.append(part)
-
-            for name in names:
-                for section in name.split():
-                    if section in member_sections:
-                        pass
-                    else:
-                        parts = []
-                        match = 1
-                        while match:
-                            match = re.search("[A-Z][a-z]*[A-Z]", section, re.MULTILINE)
-                            if match:
-                                caps = match.span()[1]-1
-                                parts.append(section[:caps])
-                                section = section[caps:]
-                        if len(parts) != 0:
-                            for part in parts:
-                                add(part)
-                            add(section)
-                        else:
-                            add(section)
-
-            for section in member_sections:
-                section = section.lower()
-                if section in ["the", "any", "not"]:
-                    continue
-                if len(section) < 3:
-                    continue
-                if section in sections:
-                    sections[section] += 1
-                else:
-                    sections[section] = 1
-
-        sections = sorted(sections.items(), key=lambda x:x[1], reverse=True)
-        pages = []
-        for i in range(int(len(sections)/20+0.999)+1):
-            result_page = ""
-            for section in sections[0+20*i:20+20*i]:
-                result_page += f"{section[1]} {section[0]}\n"
-            if result_page == "":
-                result_page = "_"
-            pages.append(result_page)
-        page = 0
-        class Pages(discord.ui.View):
-            class GetName(discord.ui.Modal, title="Search page with word"):
-                def __init__(self, pages, embed_title, timeout=None):
-                    super().__init__()
-                    self.value = None
-                    self.timeout = timeout
-                    self.embed_title = embed_title
-                    self.pages = pages
-                    self.page = None
-
-                    self.word = None
-                    self.question_text = discord.ui.TextInput(label='What word to look up in the server name list?',
-                                                              placeholder=f"The word you want to look up",
-                                                              # style=discord.TextStyle.short,
-                                                              # required=True
-                                                              )
-                    self.add_item(self.question_text)
-
-                async def on_submit(self, itx: discord.Interaction):
-                    self.value = 9  # failed; placeholder
-                    self.word = self.question_text.value.lower()
-                    for page_id in range(len(self.pages)):
-                        # self.pages[page_id] returns ['15 nora\n13 rose\n9 brand\n8 george\n4 rina\n3 grace\n3 chroma\n2 eliza\n','1 cleo','_']
-                        # split at \n and " " to get [["15", "nora"], ["13", "rose"], ["9", "brand"], ["8", "george"]] and compare self.word with the names
-                        if self.word in [name.split(" ")[-1] for name in self.pages[page_id].split("\n")]:
-                            self.page = int(page_id / 2)
-                            break
-                    else:
-                        await itx.response.send_message(
-                            content=f"I couldn't find '{self.word}' in any of the pages! Perhaps nobody chose this name!",
-                            ephemeral=True)
-                        return
-                    result_page  = self.pages[self.page * 2]
-                    result_page2 = self.pages[self.page * 2 + 1]
-                    result_page   = result_page.replace(f" {self.word}\n", f" **__{self.word}__**\n")
-                    result_page2 = result_page2.replace(f" {self.word}\n", f" **__{self.word}__**\n")
-                    embed = discord.Embed(color=8481900, title=self.embed_title)
-                    embed.add_field(name="Column 1", value=result_page)
-                    embed.add_field(name="Column 2", value=result_page2)
-                    embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages) / 2)))
-                    await itx.response.edit_message(embed=embed)
-                    self.value = 1
-                    self.stop()
-
-            def __init__(self, pages, embed_title, timeout=None):
-                super().__init__()
-                self.value   = None
-                self.timeout = timeout
-                self.page    = 0
-                self.pages   = pages
-                self.embed_title = embed_title
-
-            # When the confirm button is pressed, set the inner value to `True` and
-            # stop the View from listening to more input.
-            # We also send the user an ephemeral message that we're confirming their choice.
-            @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-            async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
-                # self.value = "previous"
-                self.page -= 1
-                if self.page < 0:
-                    self.page = int(len(self.pages)/2)-1
-                result_page = self.pages[self.page*2]
-                result_page2 = self.pages[self.page*2+1]
-                embed = discord.Embed(color=8481900, title=self.embed_title)
-                embed.add_field(name="Column 1",value=result_page)
-                embed.add_field(name="Column 2",value=result_page2)
-                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
-                await itx.response.edit_message(embed=embed)
-
-            @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-            async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.page += 1
-                if self.page >= int(len(self.pages)/2):
-                    self.page = 0
-                result_page = self.pages[self.page*2]
-                result_page2 = self.pages[self.page*2+1]
-                embed = discord.Embed(color=8481900, title=self.embed_title)
-                embed.add_field(name="Column 1",value=result_page)
-                embed.add_field(name="Column 2",value=result_page2)
-                embed.set_footer(text="page: "+str(self.page+1)+" / "+str(int(len(self.pages)/2)))
-                await itx.response.edit_message(embed=embed)
-
-            @discord.ui.button(label='Find my name', style=discord.ButtonStyle.blurple)
-            async def find_name(self, itx: discord.Interaction, _button: discord.ui.Button):
-                send_one = Pages.GetName(self.pages, self.embed_title)
-                await itx.response.send_modal(send_one)
-                await send_one.wait()
-                if send_one.value in [None, 9]:
-                    pass
-                else:
-                    self.page = send_one.page
-
-        result_page = pages[page]
-        result_page2 = pages[page+1]
-        embed_title = f'Most-used {"user" if mode==1 else "nick" if mode==2 else "usernames and nick"}names leaderboard!'
-        embed = discord.Embed(color=8481900, title=embed_title)
-        embed.add_field(name="Column 1",value=result_page)
-        embed.add_field(name="Column 2",value=result_page2)
-        embed.set_footer(text="page: "+str(page+1)+" / "+str(int(len(pages)/2)))
-        view = Pages(pages, embed_title, timeout=60)
-        await itx.followup.send(f"",embed=embed, view=view,ephemeral=True)
-        await view.wait()
-        if view.value is None:
-            await itx.edit_original_response(view=None)
-
-    @nameusage.command(name="name", description="See how often different names occur in this server")
-    @app_commands.describe(name="What specific name are you looking for?")
-    @app_commands.choices(type=[
-        discord.app_commands.Choice(name='usernames', value=1),
-        discord.app_commands.Choice(name='nicknames', value=2),
-        discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
-    ])
-    async def nameusage_name(self, itx: discord.Interaction, name: str, type: int, public: bool = False):
-        await itx.response.defer(ephemeral=not public)
-        count = 0
-        type_string = ""
-        if type == 1: # usernames
-            for member in itx.guild.members:
-                if name.lower() in member.name.lower():
-                    count += 1
-            type_string = "username"
-        elif type == 2: # nicknames
-            for member in itx.guild.members:
-                if member.nick is not None:
-                    if name.lower() in member.nick.lower():
-                        count += 1
-            type_string = "nickname"
-        elif type == 3: # usernames and nicknames
-            for member in itx.guild.members:
-                if member.nick is not None:
-                    if name.lower() in member.nick.lower() or name.lower() in member.name.lower():
-                        count += 1
-                elif name.lower() in member.name.lower():
-                    count += 1
-            type_string = "username or nickname"
-        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=not public)
-
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
     async def equaldex(self, itx: discord.Interaction, country_id: str):
@@ -628,149 +395,11 @@ class SearchAddons(commands.Cog):
         await itx.followup.send("debug; It seems you reached the end of the function without "
                                 "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
 
-class OtherAddons(commands.Cog):
+class StaffAddons(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
-        self.headpatWait = 0
-        
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        try: # mention targeted user if added to mod-ticket with /add target:@user
-            # message.channel.category.id
-            if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
-                print("embeds:", len(message.embeds), "| message.author.id:", message.author.id)
-                if message.author.id == 557628352828014614 and len(message.embeds) == 1:
-                    # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
-                    components = message.embeds[0].description.split(" ")
-                    print("components:", repr(components))
-                    print("@" in components[0])
-                    print(f'{components[1]} {components[2]} {components[3]} == "added to ticket"', f"{components[1]} {components[2]} {components[3]}" == "added to ticket")
-                    if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
-                        await message.channel.send("Obligatory ping to notify newly added user: " + components[0], allowed_mentions=discord.AllowedMentions.all())
-        except (AttributeError, discord.errors.ClientException):
-            # apparently discord raises ClientException: Parent channel not found, instead of attribute error
-            pass
-
-        if message.author.bot:
-            return
-
-        #random cool commands
-        self.headpatWait += 1
-        if self.headpatWait >= 1000:
-            ignore = False
-            if type(message.channel) is discord.Thread:
-                if message.channel.parent == 987358841245151262: # <#welcome-verify>
-                    ignore = True
-            if message.channel.name.startswith('ticket-') or message.channel.name.startswith('closed-'):
-                ignore = True
-            if message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
-                                               995330645901455380, 995330667665707108]:
-                # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
-                ignore = True
-            if message.guild.id in [981730502987898960]: # don't send in Mod server
-                ignore = True
-            if not ignore:
-                self.headpatWait = 0
-                try:
-                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
-                except discord.errors.HTTPException:
-                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. They might have blocked Rina...')
-                    try:
-                        await message.add_reaction("☺") # relaxed
-                    except discord.errors.Forbidden:
-                        pass
-
-        if self.client.user.mention in message.content.split():
-            msg = message.content.lower()
-            if ((("cute" or "cutie" or "adorable" in msg) and "not" in msg) or "uncute" in msg) and "not uncute" not in msg:
-                try:
-                    await message.add_reaction("<:this:960916817801535528>")
-                except:
-                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}')
-                    raise
-            elif "cutie" in msg or "cute" in msg:
-                responses = [
-                    "I'm not cute >_<",
-                    "I'm not cute! I'm... Tough! Badass!",
-                    "Nyaa~",
-                    "Who? Me? No you're mistaken.",
-                    "I very much deny the cuteness of someone like myself",
-                    "If you think I'm cute, then you must be uber-cute!!",
-                    "I don't think so.",
-                    "Haha. Good joke. Tell me another tomorrow",
-                    "Ehe, cutie what do u need help with?",
-                    "No, I'm !cute.",
-                    "You too!",
-                    "No, you are <3",
-                    "[shocked] Wha- w. .. w what?? .. NOo? no im nott?\nwhstre you tslking about?",
-                    "Oh you were talking to me? I thought you were talking about everyone else here,",
-                    "Nope. I doubt it. There's no way I can be as cute as you",
-                    "Maybe.. Maybe I am cute.",
-                    "If the sun was dying, would you still think I was cute?",
-                    "Awww. Thanks sweety, but you've got the wrong number",
-                    ":joy: You *reaaally* think so? You've gotta be kidding me.",
-                    "If you're gonna be spamming this, .. maybe #general isn't the best channel for that.",
-                    "You gotta praise those around you as well. "+(message.author.nick or message.author.name)+", for example, is very cute.",
-                    "Oh by the way, did I say "+(message.author.nick or message.author.name)+" was cute yet? I probably didn't. "+(message.author.nick or message.author.name)+"? You're very cute",
-                    "Such nice weather outside, isn't it? What- you asked me a question?\nNo you didn't, you're just talking to youself.",
-                    "".join(random.choice("acefgilrsuwnopacefgilrsuwnopacefgilrsuwnop;;  ") for _ in range(random.randint(10,25))), # 3:2 letters to symbols
-                    "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
-                    "Cuties are not gender-specific. For example, my cat is a cutie!\nOh wait, species aren't the same as genders. Am I still a catgirl then? Trans-species?",
-                    "...",
-                    "Hey that's not how it works!",
-                    "Hey my lie detector said you are lying.",
-                    "You know i'm not a mirror, right?",
-                    "*And the oscar for cutest responses goes to..  YOU!!*",
-                    "No I am not cute",
-                    "k",
-                    (message.author.nick or message.author.name)+", stop lying >:C",
-                    "BAD!",
-                    "You're also part of the cuties set",
-                    "https://cdn.discordapp.com/emojis/920918513969950750.webp?size=4096&quality=lossless",
-                    "[Checks machine]; Huh? Is my lie detector broken? I should fix that..",
-                    "Hey, you should be talking about yourself first! After all, how do you keep up with being such a cutie all the time?"]
-                respond = random.choice(responses)
-                if respond == "BAD!":
-                    await message.channel.send("https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless", allowed_mentions=discord.AllowedMentions.none())
-                await message.channel.send(respond, allowed_mentions=discord.AllowedMentions.none())
-            elif any([x in msg for x in [
-                "can i have a pat",
-                "can i have a headpat",
-                "can i have pat",
-                "can i have headpat",
-                "can you pat",
-                "can you headpat",
-                "can u pat",
-                "can u headpat",
-                "please pat",
-                "pls pat",
-                "please headpat",
-                "pls headpat",
-                "i want a pat",
-                "i want a headpat",
-                "i want pat",
-                "i want headpat",
-                "pats please",
-                "headpats please",
-                "pats pls",
-                "headpats pls",
-                "pat pls",
-                "headpat pls",
-                "pat please",
-                "headpat please"
-            ]]):
-                try:
-                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
-                except discord.errors.HTTPException:
-                    try:
-                        await message.channel.send("Unfortunately I can't give you a headpat (for some reason), so have this instead:\n<:TPF_02_Pat:968285920421875744>")
-                    except discord.errors.Forbidden:
-                        pass
-            else:
-                cmd_mention = self.client.get_command_mention("help")
-                await message.channel.send(f"I use slash commands! Use /command  and see what cool things might pop up! or try {cmd_mention}\nPS: If you're trying to call me cute: no, I'm not", delete_after=8)
 
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?",
@@ -800,265 +429,98 @@ class OtherAddons(commands.Cog):
         #No longer necessary: this gets caught by the on_app_command_error() event in the main file.
         await itx.response.send_message("Successfully sent!", ephemeral=True)
 
-    @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
-    @app_commands.describe(user="Who do you want to compliment?")
-    async def compliment(self, itx: discord.Interaction, user: discord.User):
-        # discord.User because discord.Member gets errors.TransformerError in DMs (dunno why i'm accounting for that..)
-        try:
-            user: discord.Member # make IDE happy, i guess
-            userroles = user.roles[:]
-        except AttributeError:
-            await itx.response.send_message("Aw man, it seems this person isn't in the server. I wish I could compliment them but they won't be able to see it!", ephemeral=True)
+    @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
+    async def delete_week_selfies(self, itx: discord.Interaction):
+        # This funcion largely copies the built-in channel.purge() function with a check, but is more fancy by offering a sort of progress update every 50-100 messages :D
+        global selfies_delete_week_command_cooldown
+        if not is_staff(itx):
+            await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
             return
-
-        async def call(itx, user, type):
-            quotes = {
-                "fem_quotes": [
-                    # "Was the sun always this hot? or is it because of you?",
-                    # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
-                    # "I bet you sweat glitter.",
-                    "Your hair looks stunning!",
-                    "Being around you is like being on a happy little vacation.",
-                    "Good girll",
-                    "Who's a good girl?? You are!!",
-                    "Amazing! Perfect! Beautiful! How **does** she do it?!",
-                    "I can tell that you are a very special and talented girl!",
-                    "Here, have this cute sticker!",
-                    "Beep boop :zap: Oh no! my circuits overloaded! Her cuteness was too much for me to handle!",
-                ],
-                "masc_quotes": [
-                    "You are the best man out there.",
-                    "You are the strongest guy I know.",
-                    "You have an amazing energy!",
-                    "You seem to know how to fix everything!",
-                    "Waw, you seem like a very attractive guy!",
-                    "Good boyy!",
-                    "Who's a cool guy? You are!!",
-                    "I can tell that you are a very special and talented guy!",
-                    "You're such a gentleman!",
-                    "You always know how to make people feel welcome and included :D",
-                    "Your intelligence and knowledge never cease to amaze me :O",
-                    "Beep boop :zap: Oh no! my circuits overloaded! His aura was so strong that I couldn't generate a cool compliment!",
-                    
-
-                ],
-                "they_quotes": [
-                    "I can tell that you are a very special and talented person!",
-                    "Their, their... ",
-                ],
-                "it_quotes": [
-                    "I bet you do the crossword puzzle in ink!",
-                ],
-                "unisex_quotes": [ #unisex quotes are added to each of the other quotes later on.
-                    "Hey I have some leftover cookies.. \\*wink wink\\*",
-                    # "_Let me just hide this here-_ hey wait, are you looking?!", #it were meant to be cookies TwT
-                    "Would you like a hug?",
-                    "Would you like to walk in the park with me? I gotta walk my catgirls",
-                    "morb",
-                    "You look great today!",
-                    "You light up the room!",
-                    "On a scale from 1 to 10, you’re an 11!",
-                    'When you say, “I meant to do that,” I totally believe you.',
-                    "You should be thanked more often. So thank you!",
-                    "You are so easy to have a conversation with!",
-                    "Ooh you look like a good candidate to give my pet blahaj to!",
-                    "Here, have a sticker!",
-                    "You always know how to put a positive spin on things!",
-                    "You make the world a better place just by being in it",
-                    "Your strength and resilience is truly inspiring.",
-                    "You have a contagious positive attitude that lifts up those around you.",
-                    "Your positive energy is infectious and makes everyone feel welcomed!",
-                    "You have a great sense of style and always look so put together <3",
-                    "You are a truly unique and wonderful person!",
-                ]
-            }
-            type = {
-                "she/her"   : "fem_quotes",
-                "he/him"    : "masc_quotes",
-                "they/them" : "they_quotes",
-                "it/its"    : "it_quotes",
-                "unisex"    : "unisex_quotes", #todo
-            }[type]
-
-            for x in quotes:
-                if x == "unisex_quotes":
-                    continue
-                else:
-                    quotes[x] += quotes["unisex_quotes"]
-
-            collection = RinaDB["complimentblacklist"]
-            query = {"user": user.id}
-            search: dict[str,int|list] = collection.find_one(query)
-            blacklist: list = []
-            if search is not None:
-                try:
-                    blacklist += search["list"]
-                except KeyError:
-                    pass
-            query = {"user": itx.user.id}
-            search = collection.find_one(query)
-            if search is not None:
-                try:
-                    blacklist += search["personal_list"]
-                except KeyError:
-                    pass
-            for string in blacklist:
-                dec = 0
-                for x in range(len(quotes[type])):
-                    if string in quotes[type][x-dec]:
-                        del quotes[type][x-dec]
-                        dec += 1
-            if len(quotes[type]) == 0:
-                quotes[type].append("No compliment quotes could be given... You and/or this person have blacklisted every quote.")
-
-            base = f"{itx.user.mention} complimented {user.mention}!\n"
-            if itx.response.is_done():
-                # await itx.edit_original_response(content=base+random.choice(quotes[type]), view=None)
-                await itx.followup.send(content=base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
-            else:
-                await itx.response.send_message(base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
-        async def confirm_gender():
-            # Define a simple View that gives us a confirmation menu
-            class Confirm(discord.ui.View):
-                def __init__(self, timeout=None):
-                    super().__init__()
-                    self.value = None
-                    self.timeout = timeout
-
-                # When the confirm button is pressed, set the inner value to `True` and
-                # stop the View from listening to more input.
-                # We also send the user an ephemeral message that we're confirming their choice.
-                @discord.ui.button(label='She/Her', style=discord.ButtonStyle.green)
-                async def feminine(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.value = "she/her"
-                    await itx.response.edit_message(content='Selected She/Her pronouns for compliment', view=None)
-                    self.stop()
-
-                @discord.ui.button(label='He/Him', style=discord.ButtonStyle.green)
-                async def masculine(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.value = "he/him"
-                    await itx.response.edit_message(content='Selected He/Him pronouns for the compliment', view=None)
-                    self.stop()
-
-                @discord.ui.button(label='They/Them', style=discord.ButtonStyle.green)
-                async def enby_them(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.value = "they/them"
-                    await itx.response.edit_message(content='Selected They/Them pronouns for the compliment', view=None)
-                    self.stop()
-
-                @discord.ui.button(label='It/Its', style=discord.ButtonStyle.green)
-                async def enby_its(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.value = "it/its"
-                    await itx.response.edit_message(content='Selected It/Its pronouns for the compliment', view=None)
-                    self.stop()
-
-                @discord.ui.button(label='Unisex/Unknown', style=discord.ButtonStyle.grey)
-                async def unisex(self, itx: discord.Interaction, _button: discord.ui.Button):
-                    self.value = "unisex"
-                    await itx.response.edit_message(content='Selected Unisex/Unknown gender for the compliment', view=None)
-                    self.stop()
-
-            view = Confirm(timeout=60)
-            await itx.response.send_message(f"{user.mention} doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view,ephemeral=True)
-            await view.wait()
-            if view.value is None:
-                await itx.edit_original_response(content=':x: Timed out...', view=None)
-            else:
-                await call(itx, user, view.value)
-
-        roles = ["he/him", "she/her", "they/them", "it/its"]
-        random.shuffle(userroles) # pick a random order for which pronoun role to pick
-        for role in userroles:
-            if role.name.lower() in roles:
-                await call(itx, user, role.name.lower())
-                return
-        await confirm_gender()
-
-    @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
-    @app_commands.choices(location=[
-        discord.app_commands.Choice(name='When complimenting someone else', value=1),
-        discord.app_commands.Choice(name='When I\'m being complimented by others', value=2)
-    ])
-    @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Add a string to your compliments blacklist', value=1),
-        discord.app_commands.Choice(name='Remove a string from your compliments blacklist', value=2),
-        discord.app_commands.Choice(name='Check your blacklisted strings', value=3)
-    ])
-    @app_commands.describe(
-        location="Blacklist when giving compliments / when receiving compliments from others",
-        string  ="What sentence or word do you want to blacklist? (eg: 'good girl' or 'girl')")
-    async def complimentblacklist(self, itx: discord.Interaction, location: int, mode: int, string: str = None):
-        if location == 1:
-            db_location = "personal_list"
-        elif location == 2:
-            db_location = "list"
-        else:
-            raise NotImplementedError("This shouldn't happen.")
-        print(db_location)
-        if mode == 1: # add an item to the blacklist
-            if string is None:
-                await itx.response.send_message("With this command, you can blacklist a section of text in compliments. "
-                                                "For example, if you don't like being called 'Good girl', you can "
-                                                "blacklist this compliment by blacklisting 'good' or 'girl'. \n"
-                                                "Or if you don't like hugging people, you can blacklist 'hug'.\n"
-                                                "Note: it's case sensitive", ephemeral=True)
-                return
-            if len(string) > 150:
-                await itx.response.send_message("Please make strings shorter than 150 characters...",ephemeral=True)
-                return
-            collection = RinaDB["complimentblacklist"]
-            query = {"user": itx.user.id}
-            search = collection.find_one(query)
-            if search is None:
-                blacklist = []
-            else:
-                blacklist = search.get(db_location, [])
-            blacklist.append(string)
-            collection.update_one(query, {"$set":{db_location:blacklist}}, upsert=True)
-            await itx.response.send_message(f"Successfully added {repr(string)} to your blacklist. ({len(blacklist)} item{'s'*(len(blacklist)!=1)} in your blacklist now)",ephemeral=True)
-
-        elif mode == 2: # Remove item from black list
-            if string is None:
-                cmd_mention = self.client.get_command_mention("complimentblacklist")
-                await itx.response.send_message(f"Type the id of the string you want to remove. To find the id, type {cmd_mention} `mode:Check`.", ephemeral=True)
-                return
-            try:
-                string = int(string)
-            except ValueError:
-                await itx.response.send_message("To remove a string from your blacklist, you must give the id of the string you want to remove. This should be a number... You didn't give a number...", ephemeral=True)
-                return
-            collection = RinaDB["complimentblacklist"]
-            query = {"user": itx.user.id}
-            search = collection.find_one(query)
-            if search is None:
-                await itx.response.send_message("There are no items on your blacklist, so you can't remove any either...",ephemeral=True)
-                return
-            blacklist = search.get(db_location, [])
-
-            try:
-                del blacklist[string]
-            except IndexError:
-                cmd_mention = self.client.get_command_mention("complimentblacklist")
-                await itx.response.send_message(f"Couldn't delete that ID, because there isn't any item on your list with that ID.. Use {cmd_mention} `mode:Check` to see the IDs assigned to each item on your list",ephemeral=True)
-                return
-            collection.update_one(query, {"$set":{db_location:blacklist}}, upsert=True)
-            await itx.response.send_message(f"Successfully removed `{string}` from your blacklist. Your blacklist now contains {len(blacklist)} string{'s'*(len(blacklist)!=1)}.", ephemeral=True)
+        time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
+        if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
+            await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
+            return
         
-        elif mode == 3: # check
-            collection = RinaDB["complimentblacklist"]
-            query = {"user": itx.user.id}
-            search: dict[str,int|list] = collection.find_one(query)
-            if search is None:
-                await itx.response.send_message("There are no strings in your blacklist, so.. nothing to list here....",ephemeral=True)
-                return
-            blacklist = search.get(db_location, [])
-            length = len(blacklist)
+        output = "Attempting deletion...\n"
+        class Interaction:
+            def __init__(self, member: discord.Member):
+                self.user = member
+                self.guild = member.guild
 
-            ans = []
-            for id in range(length):
-                ans.append(f"`{id}`: {blacklist[id]}")
-            ans = '\n'.join(ans)
-            await itx.response.send_message(f"Found {length} string{'s'*(length!=1)}:\n{ans}",ephemeral=True)
+        await itx.response.send_message(output+"...", ephemeral=True)
+        try:
+            await log_to_guild(self.client, itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
+            message_delete_count: int = 0
+            queued_message_deletions: list[discord.Message] = []
+            feedback_output_count_status: int = 0 # current ephemeral message's count content (status of deleting messages)
+            async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
+                message_date = int(mktime(message.created_at.timetuple()))
+                if time_now-message_date > 14*86400: # 14 days, too old to remove by bulk
+                    message_delete_count += 1
+                    await message.delete()
+                elif time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
+                    if "[info]" in message.content.lower():
+                        if is_staff(Interaction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
+                            continue
+                    queued_message_deletions.append(message)
+                    if message_delete_count - feedback_output_count_status >= 50:
+                        feedback_output_count_status = message_delete_count - message_delete_count % 10 # round to 10s
+                        try:
+                            await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
+                        except discord.errors.HTTPException:
+                            pass # ephemeral message timed out or something..
+
+                if len(queued_message_deletions) >= 100:
+                    message_delete_count += len(queued_message_deletions[:100])
+                    await itx.channel.delete_messages(queued_message_deletions[:100], reason="Delete selfies older than 7 days") # can only bluk delete up to 100 msgs
+                    queued_message_deletions = queued_message_deletions[100:]
+
+            if queued_message_deletions:
+                message_delete_count += len(queued_message_deletions) # count remaining messages
+                await itx.channel.delete_messages(queued_message_deletions, reason="Delete selfies older than 7 days") # delete last few messages
+
+            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
+        except:
+            await itx.followup.send("Something went wrong!")
+            raise
+
+
+class FunAddons(commands.Cog):
+    def __init__(self, client: Bot):
+        global RinaDB
+        self.client = client
+        RinaDB = client.RinaDB
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        
+        #random cool commands
+        self.headpatWait += 1
+        if self.headpatWait >= 1000:
+            ignore = False
+            if type(message.channel) is discord.Thread:
+                if message.channel.parent == 987358841245151262: # <#welcome-verify>
+                    ignore = True
+            if message.channel.name.startswith('ticket-') or message.channel.name.startswith('closed-'):
+                ignore = True
+            if message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
+                                               995330645901455380, 995330667665707108]:
+                # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
+                ignore = True
+            if message.guild.id in [981730502987898960]: # don't send in Mod server
+                ignore = True
+            if not ignore:
+                self.headpatWait = 0
+                try:
+                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
+                except discord.errors.HTTPException:
+                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. They might have blocked Rina...')
+                    try:
+                        await message.add_reaction("☺") # relaxed
+                    except discord.errors.Forbidden:
+                        pass
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
@@ -1208,6 +670,34 @@ class OtherAddons(commands.Cog):
                     await itx.delete_original_response()
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
+class OtherAddons(commands.Cog):
+    def __init__(self, client: Bot):
+        global RinaDB
+        self.client = client
+        RinaDB = client.RinaDB
+        self.headpatWait = 0
+        
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        try: # mention targeted user if added to mod-ticket with /add target:@user
+            # message.channel.category.id
+            if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
+                print("embeds:", len(message.embeds), "| message.author.id:", message.author.id)
+                if message.author.id == 557628352828014614 and len(message.embeds) == 1:
+                    # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
+                    components = message.embeds[0].description.split(" ")
+                    print("components:", repr(components))
+                    print("@" in components[0])
+                    print(f'{components[1]} {components[2]} {components[3]} == "added to ticket"', f"{components[1]} {components[2]} {components[3]}" == "added to ticket")
+                    if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
+                        await message.channel.send("Obligatory ping to notify newly added user: " + components[0], allowed_mentions=discord.AllowedMentions.all())
+        except (AttributeError, discord.errors.ClientException):
+            # channel.category apparently discord raises ClientException: Parent channel not found, instead of attribute error
+            pass
+
+        if message.author.bot:
+            return
+
     async def print_help_text(self, itx):
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
@@ -1245,61 +735,6 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
     @app_commands.command(name="commands", description="A help command to learn more about me!")
     async def commands(self, itx: discord.Interaction):
         await self.print_help_text(itx)
-
-    @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
-    async def delete_week_selfies(self, itx: discord.Interaction):
-        # This funcion largely copies the built-in channel.purge() function with a check, but is more fancy by offering a sort of progress update every 50-100 messages :D
-        global selfies_delete_week_command_cooldown
-        if not is_staff(itx):
-            await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
-            return
-        time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
-        if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
-            await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
-            return
-        
-        output = "Attempting deletion...\n"
-        class Interaction:
-            def __init__(self, member: discord.Member):
-                self.user = member
-                self.guild = member.guild
-
-        await itx.response.send_message(output+"...", ephemeral=True)
-        try:
-            await log_to_guild(self.client, itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
-            message_delete_count: int = 0
-            queued_message_deletions: list[discord.Message] = []
-            feedback_output_count_status: int = 0 # current ephemeral message's count content (status of deleting messages)
-            async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
-                message_date = int(mktime(message.created_at.timetuple()))
-                if time_now-message_date > 14*86400: # 14 days, too old to remove by bulk
-                    message_delete_count += 1
-                    await message.delete()
-                elif time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
-                    if "[info]" in message.content.lower():
-                        if is_staff(Interaction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
-                            continue
-                    queued_message_deletions.append(message)
-                    if message_delete_count - feedback_output_count_status >= 50:
-                        feedback_output_count_status = message_delete_count - message_delete_count % 10 # round to 10s
-                        try:
-                            await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
-                        except discord.errors.HTTPException:
-                            pass # ephemeral message timed out or something..
-
-                if len(queued_message_deletions) >= 100:
-                    message_delete_count += len(queued_message_deletions[:100])
-                    await itx.channel.delete_messages(queued_message_deletions[:100], reason="Delete selfies older than 7 days") # can only bluk delete up to 100 msgs
-                    queued_message_deletions = queued_message_deletions[100:]
-
-            if queued_message_deletions:
-                message_delete_count += len(queued_message_deletions) # count remaining messages
-                await itx.channel.delete_messages(queued_message_deletions, reason="Delete selfies older than 7 days") # delete last few messages
-
-            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
-        except:
-            await itx.followup.send("Something went wrong!")
-            raise
 
     async def unit_autocomplete(self, itx: discord.Interaction, current: str):
         options = conversion_rates.copy()
@@ -1455,4 +890,5 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))
+    await client.add_cog(StaffAddons(client))
     await client.add_cog(SearchAddons(client))
