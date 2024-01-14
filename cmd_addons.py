@@ -400,6 +400,7 @@ class FunAddons(commands.Cog):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
+        self.headpatWait = 0
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -585,7 +586,6 @@ class OtherAddons(commands.Cog):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
-        self.headpatWait = 0
         
     @commands.Cog.listener()
     async def on_message(self, message):
