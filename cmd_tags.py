@@ -1,4 +1,3 @@
-from Uncute_Rina import *
 from import_modules import *
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))

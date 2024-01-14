@@ -1,4 +1,3 @@
-from Uncute_Rina import *
 from import_modules import *
 
 del_separators_table = str.maketrans({" ":"", "-":"", "_":""})

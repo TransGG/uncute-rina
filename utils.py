@@ -1,4 +1,4 @@
-from Uncute_Rina import *
+from import_modules import *
 
 def is_verified(itx: discord.Interaction) -> bool:
     """

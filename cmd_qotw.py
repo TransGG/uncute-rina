@@ -16,7 +16,7 @@ async def get_watchlist_index(watch_channel: discord.TextChannel):
                 #     https: / / warned.username / 262913789375021056 /
                 user_id = int(starter_message.embeds[0].author.url.split("/")[3])
                 if user_id in watchlist_index_temp:
-                    continue # only use the user's most recent watchlist thread (if ever there is a second thread)
+                    continue # only use the user's most recent watchlist thread (if ever there is a second thread) \\ or maybe it does the earliest one?
                 watchlist_index_temp[user_id] = thread.id
             except (IndexError, AttributeError):
                 pass
@@ -42,18 +42,6 @@ class QOTW(commands.Cog):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
-
-        # setting ContextMenu here, because apparently you can't use that decorator in classes..?
-        self.ctx_menu_user = app_commands.ContextMenu(
-            name='Add user to watchlist',
-            callback=self.watchlist_ctx_user,
-        )
-        self.ctx_menu_message = app_commands.ContextMenu(
-            name='Add msg to watchlist',
-            callback=self.watchlist_ctx_message,
-        )
-        self.client.tree.add_command(self.ctx_menu_user)
-        self.client.tree.add_command(self.ctx_menu_message)
 
     @app_commands.command(name="qotw",description="Suggest a question for the weekly queue!")
     @app_commands.describe(question="What question would you like to add?")
@@ -183,6 +171,25 @@ class QOTW(commands.Cog):
     # Watch out doubts #
     ####################
     
+class WatchList(commands.Cog):
+    def __init__(self, client: Bot):
+        global RinaDB
+        self.client = client
+        RinaDB = client.RinaDB
+
+        # setting ContextMenu here, because apparently you can't use that decorator in classes..?
+        self.ctx_menu_user = app_commands.ContextMenu(
+            name='Add user to watchlist',
+            callback=self.watchlist_ctx_user,
+        )
+        self.ctx_menu_message = app_commands.ContextMenu(
+            name='Add msg to watchlist',
+            callback=self.watchlist_ctx_message,
+        )
+        self.client.tree.add_command(self.ctx_menu_user)
+        self.client.tree.add_command(self.ctx_menu_message)
+
+
     async def add_to_watchlist(self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None, warning=""):
         global local_watchlist_index
         if not is_staff(itx):
@@ -363,7 +370,7 @@ class QOTW(commands.Cog):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
         
-        await itx.response.defer()
+        await itx.response.defer(ephemeral=True)
 
         watch_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
         watchlist_index = await get_watchlist_index(watch_channel)
@@ -532,3 +539,4 @@ class QOTW(commands.Cog):
 
 async def setup(client):
     await client.add_cog(QOTW(client))
+    await client.add_cog(WatchList(client))

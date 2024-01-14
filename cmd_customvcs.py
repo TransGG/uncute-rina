@@ -1,4 +1,3 @@
-from Uncute_Rina import *
 from import_modules import *
 
 recently_renamed_vcs = {} # make your own vcs!

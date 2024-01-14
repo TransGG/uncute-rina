@@ -1,11 +1,6 @@
-if __name__ == '__main__':
-    print("Program started")
 from import_modules import *
 
-if __name__ != '__main__':
-    class Bot(commands.Bot):
-        pass
-else:
+if __name__ == '__main__':
     debug(f"[#+   ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
     # debug(f"[+     ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
     try:

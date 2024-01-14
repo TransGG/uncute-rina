@@ -20,6 +20,10 @@ progress.increment("discord/app_commands")
 from discord import app_commands # v2.0, use slash commands
 progress.increment("discord.ext/commands")
 from discord.ext import commands # required for client bot
+
+class Bot(commands.Bot): # used for type checking. Program will always use Bot in main.py
+    pass
+
 progress.increment("time/mktime")
 from time import mktime # for unix time code
 progress.increment("json")
@@ -70,4 +74,4 @@ progress.increment("cmd_qotw/get_watchlist_index")
 from cmd_qotw import get_watchlist_index
 # used for adding reminders when starting up the bot
 # print_progress(21,31, "", end='\n')
-debug(f"[{'#'*(progress.max)}] Imported modules                      ",color='green', add_time=False)
+debug(f"[{'#'*(progress.max)}] Imported modules     "+' '*50,color='green', add_time=False)
