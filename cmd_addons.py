@@ -395,96 +395,6 @@ class SearchAddons(commands.Cog):
         await itx.followup.send("debug; It seems you reached the end of the function without "
                                 "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
 
-class StaffAddons(commands.Cog):
-    def __init__(self, client: Bot):
-        global RinaDB
-        self.client = client
-        RinaDB = client.RinaDB
-
-    @app_commands.command(name="say",description="Force Rina to repeat your wise words")
-    @app_commands.describe(text="What will you make Rina repeat?",
-                           reply_to_interaction="Show who sent the message?")
-    async def say(self, itx: discord.Interaction, text: str, reply_to_interaction: bool = False):
-        if not is_staff(itx):
-            await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
-            return
-        if reply_to_interaction:
-            await itx.response.send_message(text, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
-            return
-        cmd_mention = self.client.get_command_mention("editguildinfo")
-        vc_log = await self.client.get_guild_info(itx.guild, "vcLog", log=[
-            itx, "Couldn't send your message. You can't send messages in this server because the bot setup seems incomplete\n"
-            f"Use {cmd_mention} `mode:11` to fix this!"])
-        try:
-            # vcLog      = guild["vcLog"]
-            await log_to_guild(self.client, itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}")
-            text = text.replace("[[\\n]]","\n").replace("[[del]]","")
-            await itx.channel.send(f"{text}", allowed_mentions=discord.AllowedMentions(everyone=False,users=True,roles=True,replied_user=True))
-        except discord.Forbidden:
-            await itx.response.send_message("Forbidden! I can't send a message in this channel/thread because I can't see it or because I'm not added to it yet!\n(Add me to the thread by mentioning me, or let Rina see this channel)",ephemeral=True)
-            return
-        except:
-            await itx.response.send_message("Oops. Something went wrong!",ephemeral=True)
-            raise
-        #No longer necessary: this gets caught by the on_app_command_error() event in the main file.
-        await itx.response.send_message("Successfully sent!", ephemeral=True)
-
-    @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
-    async def delete_week_selfies(self, itx: discord.Interaction):
-        # This funcion largely copies the built-in channel.purge() function with a check, but is more fancy by offering a sort of progress update every 50-100 messages :D
-        global selfies_delete_week_command_cooldown
-        if not is_staff(itx):
-            await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
-            return
-        time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
-        if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
-            await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
-            return
-        
-        output = "Attempting deletion...\n"
-        class Interaction:
-            def __init__(self, member: discord.Member):
-                self.user = member
-                self.guild = member.guild
-
-        await itx.response.send_message(output+"...", ephemeral=True)
-        try:
-            await log_to_guild(self.client, itx.guild,f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in {itx.channel.mention} ({itx.channel.id}).")
-            message_delete_count: int = 0
-            queued_message_deletions: list[discord.Message] = []
-            feedback_output_count_status: int = 0 # current ephemeral message's count content (status of deleting messages)
-            async for message in itx.channel.history(limit=None, before = datetime.now()-timedelta(days=6,hours=23,minutes=30), oldest_first=True):
-                message_date = int(mktime(message.created_at.timetuple()))
-                if time_now-message_date > 14*86400: # 14 days, too old to remove by bulk
-                    message_delete_count += 1
-                    await message.delete()
-                elif time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
-                    if "[info]" in message.content.lower():
-                        if is_staff(Interaction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
-                            continue
-                    queued_message_deletions.append(message)
-                    if message_delete_count - feedback_output_count_status >= 50:
-                        feedback_output_count_status = message_delete_count - message_delete_count % 10 # round to 10s
-                        try:
-                            await itx.edit_original_response(content=output+f"\nRemoved {message_delete_count} messages older than 7 days in {itx.channel.mention} so far...")
-                        except discord.errors.HTTPException:
-                            pass # ephemeral message timed out or something..
-
-                if len(queued_message_deletions) >= 100:
-                    message_delete_count += len(queued_message_deletions[:100])
-                    await itx.channel.delete_messages(queued_message_deletions[:100], reason="Delete selfies older than 7 days") # can only bluk delete up to 100 msgs
-                    queued_message_deletions = queued_message_deletions[100:]
-
-            if queued_message_deletions:
-                message_delete_count += len(queued_message_deletions) # count remaining messages
-                await itx.channel.delete_messages(queued_message_deletions, reason="Delete selfies older than 7 days") # delete last few messages
-
-            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
-        except:
-            await itx.followup.send("Something went wrong!")
-            raise
-
-
 class FunAddons(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -890,5 +800,5 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))
-    await client.add_cog(StaffAddons(client))
+    await client.add_cog(FunAddons(client))
     await client.add_cog(SearchAddons(client))

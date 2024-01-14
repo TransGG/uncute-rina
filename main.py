@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.6.8".split(".")
+    fileVersion = "1.2.7.0".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -65,13 +65,16 @@ if __name__ == '__main__':
 
 
     class Bot(commands.Bot):
+        # defined in the middle of this file because we need the api_tokens
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
+        api_tokens = tokens
+        startup_time = datetime.now() # used in /version in cmd_staffaddons
+        version = version  # used in /version
+
         commandList: list[discord.app_commands.AppCommand]
         log_channel: discord.TextChannel
-        api_tokens = tokens
-        startup_time = datetime.now() # used in /version
         RinaDB = RinaDB
         asyncRinaDB = asyncRinaDB
         custom_ids = {
@@ -224,18 +227,22 @@ if __name__ == '__main__':
         ## activate the extensions/programs/code for slash commands
         extensions = [
             "cmd_addons",
+            "cmd_compliments",
             "cmd_customvcs",
             "cmd_emojistats",
             "cmd_getmemberdata",
             "cmd_pronouns",
             "cmd_qotw",
+            "cmd_staffaddons",
             "cmd_tags",
             "cmd_termdictionary",
             "cmd_todolist",
             "cmd_toneindicator",
-            "cmdg_Reminders",
-            "cmdg_Starboard",
-            # "cmdg_Table", # Disabled: it was never used. Will keep file in case of future projects
+            "cmd_vclogreader",
+            "cmd_watchlist",
+            "cmdg_nameusage",
+            "cmdg_reminders",
+            "cmdg_starboard",
         ]
 
         for extID in range(len(extensions)):
@@ -298,34 +305,6 @@ if __name__ == '__main__':
         elif message.content.lower().startswith("i am a very cool kid"):
             await message.channel.send("Yes. Yes you are.")
 
-    # Bot commands begin
-
-    @client.tree.command(name="version",description="Get bot version")
-    async def botVersion(itx: discord.Interaction):
-        public = is_staff(itx)
-        # get most recently pushed's version
-        latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/Uncute_Rina.py").text
-        latest_version = latest_rina.split("fileVersion = \"", 1)[1].split("\".split(\".\")", 1)[0]
-        unix = int(mktime(client.startup_time.timetuple()))
-        for i in range(len(latest_version.split("."))):
-            if int(latest_version.split(".")[i]) > int(version.split(".")[i]):
-                await itx.response.send_message(f"Bot is currently running on v{version} (latest: v{latest_version})\n(started <t:{unix}:D> at <t:{unix}:T>)", #.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
-                                                ephemeral=not public)
-                return
-        else:
-            await itx.response.send_message(f"Bot is currently running on v{version} (latest)\n(started <t:{unix}:D> at <t:{unix}:T>)",#.strftime('%Y-%m-%dT%H:%M:%S.%f')
-                                            ephemeral=not public)
-
-    @client.tree.command(name="update",description="Update slash-commands")
-    async def updateCmds(itx: discord.Interaction):
-        if not is_staff(itx):
-            await itx.response.send_message("Only Staff can update the slash commands (to prevent ratelimiting)", ephemeral=True)
-            return
-        await client.tree.sync()
-        client.commandList = await client.tree.fetch_commands()
-        await itx.response.send_message("Updated commands")
-
-    # Bot commands end
     # Crash event handling
 
     async def send_crash_message(error_type: str, traceback_text: str, error_source: str, color: discord.Colour, itx: discord.Interaction=None):

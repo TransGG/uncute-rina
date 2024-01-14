@@ -69,7 +69,7 @@ from math import ceil
 progress.increment("utils")
 from utils import *
 progress.increment("cmdg_Reminders/Reminders")
-from cmdg_Reminders import Reminders
+from cmdg_reminders import Reminders
 progress.increment("cmd_qotw/get_watchlist_index")
 from cmd_qotw import get_watchlist_index
 # used for adding reminders when starting up the bot
