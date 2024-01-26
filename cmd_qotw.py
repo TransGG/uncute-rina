@@ -1,8 +1,5 @@
 from import_modules import *
 
-local_watchlist_index: dict[int, int] = {} # user_id, thread_id
-busy_updating_watchlist_index: bool = False
-
 async def get_watchlist_index(watch_channel: discord.TextChannel):
     global busy_updating_watchlist_index, local_watchlist_index
     if not busy_updating_watchlist_index and local_watchlist_index == {}:
@@ -143,7 +140,7 @@ class QOTW(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id != self.client.custom_ids["staff_server"]:
+        if payload.guild_id != self.client.custom_ids["staff_server_id"]:
             return
         if payload.channel_id != self.client.custom_ids["staff_dev_request"]:
             return

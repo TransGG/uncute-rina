@@ -68,6 +68,9 @@ class VCLogReader(commands.Cog):
                 current_channel_data = []
 
                 try:
+                    if embed.fields[0].value == "Action":
+                        # actions like server deafening or muting someone also get logged, but are irrelevant for this diagram/command.
+                        continue
                     # could be done more efficiently but oh well. Not like this is suitable for any other bot either anyway. And I'm limited by discord API anyway
                     if len(embed.fields) == 3: # user moved channels (3 fields: previous/current channel, and IDs)
                         if type != "moved":
@@ -88,6 +91,7 @@ class VCLogReader(commands.Cog):
                     else:
                         raise AssertionError(f"Embed fields count was expected to be 3 or 2. Instead, it was '{len(embed.fields)}'")
                 except: # TODO: try to figure out why it crashed that one time. Now with more details
+                    # edit: Some actions, such as server-deafening another user, give a different log message.
                     if len(embed.fields) == 0:
                         raise Exception("Embed has no fields!")
                     else:
@@ -289,7 +293,7 @@ class VCLogReader(commands.Cog):
         plt.savefig('vcLogs.png', dpi=300)
         await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
                                 ("\nNote: If you're looking in the past, people that joined before and left after the given timeframes may not show up on the graph. To ensure you get a good representation, be sure to add a bit of margin around the edges!" if max_time != current_time else "") +
-                                (f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 > msg_log_limit else "")
+                                (f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 >= msg_log_limit else "")
                                 ,file=discord.File('vcLogs.png'))
 
         # id_pages = []

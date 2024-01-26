@@ -97,7 +97,22 @@ conversion_rates = { # [default 0, incrementation]
     }
 }
 
-def generateOutput(responses, author):
+def generateOutput(responses: list[str], author: discord.User):
+    """
+    Convert a list of verification follow-up questions into a nicely written message
+
+    ### Parameters
+    --------------
+    responses:  :class:`list[str]`
+        A list of questions to be asked to the user (parameter 'author')
+    author:  :class:`discord.User`
+        The user to mention for the response
+    
+    ### Returns
+    -----------
+    response: :class:`str`
+        A nicely written response with fluff and pre/postfixes, as well as listing keywords (first of all / next / also).
+    """
     output = ""
     if len(responses) > 0:
         output += f"""Hey there {author.mention},
@@ -220,7 +235,9 @@ class SearchAddons(commands.Cog):
                 "- What color is the sky?", ephemeral=True)
             return
         if "&" in query:
-            await itx.response.send_message("Your query cannot contain an ampersand (&/and symbol)! (it can mess with the URL)", ephemeral=True)
+            await itx.followup.send("Your query cannot contain an ampersand (&/and symbol)! (it can mess with the URL)\n"
+                                    "For the bitwise 'and' operator, try replacing '&' with ' bitwise and '. Example '4 & 6' -> '4 bitwise and 6'\n"
+                                    "For other uses, try replacing the ampersand with 'and' or the word(s) it symbolizes.", ephemeral=True)
             return
         query = query.replace("+", " plus ") # plusses are interpreted as a spacebar in urls. In LaTeX, that can mean multiply
         api_key = self.client.api_tokens['Wolfram Alpha']
@@ -605,10 +622,20 @@ class OtherAddons(commands.Cog):
             # channel.category apparently discord raises ClientException: Parent channel not found, instead of attribute error
             pass
 
-        if message.author.bot:
-            return
-
     async def print_help_text(self, itx):
+        """
+        A function to give the user Rina's list of public commands () (interaction response)
+
+        ### Parameters
+        --------------
+        command_string:  :class:`str`
+            Command you want to convert into a mention (without slash in front of it)
+        ### Returns
+        -----------
+        command mention: :class:`str`
+            The command mention, or input if not found
+        """
+
         out = f"""\
 Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 {self.client.get_command_mention('add_poll_reactions')}: Add an up-/downvote emoji to a message (for voting)
@@ -770,7 +797,7 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
-        if itx.guild.id != self.client.custom_ids["staff_server"]:
+        if itx.guild.id != self.client.custom_ids["staff_server_id"]:
             blacklisted_channels = await self.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
             if itx.channel.id in blacklisted_channels:
                 errors.append("- :no_entry: You are not allowed to use this command in this channel!")

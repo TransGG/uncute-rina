@@ -19,7 +19,7 @@ if __name__ == '__main__':
     debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
     cluster = MongoClient(tokens['MongoDB'])
     RinaDB = cluster["Rina"]
-    cluster = motor.AsyncIOMotorClient(tokens['MongoDB'])
+    cluster: motor.core.AgnosticClient = motor.AsyncIOMotorClient(tokens['MongoDB'])
     asyncRinaDB = cluster["Rina"]
     appcommanderror_cooldown = 0
     debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.7.0".split(".")
+    fileVersion = "1.2.7.1".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -78,7 +78,7 @@ if __name__ == '__main__':
         RinaDB = RinaDB
         asyncRinaDB = asyncRinaDB
         custom_ids = {
-            "staff_server": 981730502987898960,
+            "staff_server_id": 981730502987898960,
             "staff_qotw_channel": 1019706498609319969,
             "staff_dev_request": 982351285959413811,
             "staff_watch_channel": 989638606433968159,
@@ -86,6 +86,9 @@ if __name__ == '__main__':
             "staff_logs_category": 1025456987049312297,
             "staff_reports_channel": 981730694202023946,
             "active_staff_role": 996802301283020890,
+            "transplace_server_id": 959551566388547676,
+            "enbyplace_server_id": 1087014898199969873,
+            "transonance_server_id": 638480381552754730,
         }
         # custom_ids = {
         #     "staff_server": 985931648094834798,

@@ -113,7 +113,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id in [None, self.client.custom_ids["staff_server"]]:
+        if payload.guild_id in [None, self.client.custom_ids["staff_server_id"]]:
             return
         _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
             payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels", "starboardEmoji", "starboardDownvoteInitValue")
@@ -136,7 +136,7 @@ class Starboard(commands.Cog):
             return
 
         
-        # print(repr(message.guild.id), repr(self.client.custom_ids["staff_server"]), message.guild.id == self.client.custom_ids["staff_server"])
+        # print(repr(message.guild.id), repr(self.client.custom_ids["staff_server_id"]), message.guild.id == self.client.custom_ids["staff_server_id"])
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
@@ -244,7 +244,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id in [None, self.client.custom_ids["staff_server"]]:
+        if payload.guild_id in [None, self.client.custom_ids["staff_server_id"]]:
             return
         _star_channel, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(payload.guild_id, "starboardChannel", "starboardEmoji", "starboardDownvoteInitValue")
         if getattr(payload.emoji, "id", None) != starboard_emoji_id and \
@@ -277,7 +277,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
-        if message_payload.guild_id in [None, self.client.custom_ids["staff_server"]]:
+        if message_payload.guild_id in [None, self.client.custom_ids["staff_server_id"]]:
             return
         _star_channel, starboard_emoji_id = await self.client.get_guild_info(message_payload.guild_id, "starboardChannel", "starboardEmoji")
         star_channel = self.client.get_channel(_star_channel)

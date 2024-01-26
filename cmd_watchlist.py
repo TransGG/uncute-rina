@@ -1,5 +1,8 @@
 from import_modules import *
 
+local_watchlist_index: dict[int, int] = {} # user_id, thread_id
+busy_updating_watchlist_index: bool = False
+
 class WatchList(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -160,14 +163,17 @@ class WatchList(commands.Cog):
                                     "the message to the already-existing thread for this user. :thumbsup:",ephemeral=True)
 
     class WatchlistReason(discord.ui.Modal):
-        def __init__(self, parent, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
+        """
+        A modal allowing the user to add a user to the watchlist with a reason
+        """
+
+        def __init__(self, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
             super().__init__(title=title, timeout=timeout)
             self.value = None
             # self.timeout = timeout
             # self.title = title
             self.user = reported_user
             self.message = message
-            self.parent: QOTW = parent
 
             self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}',
                                                     placeholder=f"not required but recommended",
@@ -210,8 +216,6 @@ class WatchList(commands.Cog):
         else:
             msg = await itx.followup.send(f"🟡 This user ({user.mention} `{user.id}`) is not yet on the watchlist.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
-    
-
 
     async def watchlist_ctx_user(self, itx, user: discord.User):
         if not is_staff(itx): # is already checked in the main command, but saves people's time
@@ -229,7 +233,7 @@ class WatchList(commands.Cog):
         
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not message.guild or message.guild.id != self.client.custom_ids["staff_server"]:
+        if not message.guild or message.guild.id != self.client.custom_ids["staff_server_id"]:
             return
         if message.author.id != self.client.custom_ids["badeline_bot"]:
             return
@@ -310,7 +314,7 @@ class WatchList(commands.Cog):
                 if reported_message_text is not None:
                     reason += f"\n> {reported_message_text}\n"
                 if reason_details_link is not None:
-                    reaspon += f"\n\n[Jump to plain version]({reason_details_link})"
+                    reason += f"\n\n[Jump to plain version]({reason_details_link})"
 
                 embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=0, g=0, b=0),

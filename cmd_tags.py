@@ -110,15 +110,22 @@ class Tags:
                 await itx.edit_original_response(view=view)
 
 
-    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client, additional_info: None | list[str, int]=None, public=False, anonymous=True):
+    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
+        
+        if context.guild_id == client.custom_ids.get("enbyplace_server_id"):
+            mod_ticket_channel_id = 1186054373986537522
+        elif context.guild_id == client.custom_ids.get("transonance_server_id"):
+            mod_ticket_channel_id = 1108789589558177812
+        else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
+            mod_ticket_channel_id = 995343855069175858
         embed = discord.Embed(
             color=colours["report"], #a more saturated red orange color
             title='Reporting a message or scenario',
             description="Hi there! If anyone is making you uncomfortable, or you want to "
                         "report or prevent a rule-breaking situation, you can `Right Click "
                         "Message > Apps > Report Message` to notify our staff confidentially. "
-                        "You can also create a mod ticket in <#995343855069175858> or DM a staff " # channel-id = #contact-staff
+                       f"You can also create a mod ticket in <#{mod_ticket_channel_id}> or DM a staff " # channel-id = #contact-staff
                         "member.")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):

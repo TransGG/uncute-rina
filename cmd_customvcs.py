@@ -14,7 +14,7 @@ class CustomVcs(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         global recently_renamed_vcs
-        if member.guild.id == self.client.custom_ids["staff_server"]:
+        if member.guild.id == self.client.custom_ids["staff_server_id"]:
             return
         vcHub, vcLog, vcNoMic, vcCategory = await self.client.get_guild_info(member.guild, "vcHub", "vcLog", "vcNoMic", "vcCategory")
         if before.channel is None:
