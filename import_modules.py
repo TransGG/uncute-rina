@@ -46,6 +46,8 @@ progress.increment("pymongo/MongoClient")
 from pymongo import MongoClient
 progress.increment("motor/motor_asyncio")
 import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
+progress.increment("apscheduler/schedulers/asyncio/AsyncIOScheduler")
+from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling reminders
 
 class Bot(commands.Bot): # Only used for type checking. Program will always use Bot in main.py
     def __init__(self, *args, **kwargs):
@@ -109,8 +111,6 @@ progress.increment("matplotlib/dates")
 import matplotlib.dates as md
 progress.increment("pandas")
 import pandas as pd
-progress.increment("apscheduler/schedulers/asyncio/AsyncIOScheduler")
-from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling reminders
 progress.increment("traceback")
 import traceback
 progress.increment("logging")

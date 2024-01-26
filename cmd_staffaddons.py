@@ -93,7 +93,7 @@ class StaffAddons(commands.Cog):
     async def botVersion(self, itx: discord.Interaction):
         public = is_staff(itx)
         # get most recently pushed's version
-        latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/Uncute_Rina.py").text
+        latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("fileVersion = \"", 1)[1].split("\".split(\".\")", 1)[0]
         unix = int(mktime(self.client.startup_time.timetuple()))
         for i in range(len(latest_version.split("."))):
