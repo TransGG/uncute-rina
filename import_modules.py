@@ -122,7 +122,7 @@ from utils import *
 progress.increment("cmdg_Reminders/Reminders")
 from cmdg_reminders import Reminders
 progress.increment("cmd_qotw/get_watchlist_index")
-from cmd_qotw import get_watchlist_index
+from cmd_watchlist import get_watchlist_index
 # used for adding reminders when starting up the bot
 # print_progress(21,31, "", end='\n')
 debug(f"[{'#'*(progress.max)}] Imported modules     "+' '*50,color='green', add_time=False)
