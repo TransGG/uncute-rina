@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.7.3".split(".")
+    fileVersion = "1.2.7.4".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -91,7 +91,7 @@ if __name__ == '__main__':
             "transonance_server_id": 638480381552754730,
         }
         # custom_ids = {
-        #     "staff_server": 985931648094834798,
+        #     "staff_server_id": 985931648094834798,
         #     "staff_qotw_channel": 1019706498609319969,
         #     "staff_dev_request": 982351285959413811,
         #     "staff_watch_channel": 1143642388670202086,
@@ -274,7 +274,7 @@ if __name__ == '__main__':
                 for reminder in user['reminders']:
                     creationtime = datetime.fromtimestamp(reminder['creationtime'])#, timezone.utc)
                     remindertime = datetime.fromtimestamp(reminder['remindertime'])#, timezone.utc)
-                    Reminders.Reminder(client, creationtime, remindertime, user['userID'], reminder['reminder'], user, continued=True)
+                    ReminderObject(client, creationtime, remindertime, user['userID'], reminder['reminder'], user, continued=True)
             except KeyError:
                 pass
         debug(f"[#####  ]: Finished setting up reminders"+" "*30,color="green")
@@ -377,7 +377,7 @@ if __name__ == '__main__':
         
         if isinstance(error, discord.app_commands.errors.CommandNotFound):
             cmd_mention = client.get_command_mention("update")
-            await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask {client.bot_owner} if she typed {cmd_mention}!")
+            await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask {client.bot_owner} ({client.bot_owner.mention}) if she typed {cmd_mention}!")
         elif isinstance(error, discord.app_commands.errors.CommandSignatureMismatch):
             await reply(itx, f"Error: CommandSignatureMismatch. Either Mia used GroupCog instead of Cog, or this command is out of date (try /update)")
         else:
@@ -388,8 +388,8 @@ if __name__ == '__main__':
                     # if error.original.status == "403":
                     #     await reply(itx, f"Error 403: It seems like I didn't have permissions for this action! If you believe this is an error, please message or ping {client.bot_owner}} :)")
                 if hasattr(error.original, 'code'):
-                    error_reply += "(" + str(error.original.code) + ")"
-                await reply(itx, error_reply + f". Please report the error and details to {client.bot_owner} ({client.bot_owner.mention}) by pinging her or sending her a DM")
+                    error_reply += "(" + str(error.original.code) + "). "
+                await reply(itx, error_reply + f"Please report the error and details to {client.bot_owner} ({client.bot_owner.mention}) by pinging her or sending her a DM")
             else:
                 await reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
 

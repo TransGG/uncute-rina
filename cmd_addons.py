@@ -135,6 +135,37 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
+class EqualDexRegion:
+    def __init__(self, data):
+        self.id = data['region_id']
+        self.name = data['name']
+        self.continent = data['continent']
+        self.url = data['url']
+        self.issues = data['issues']
+
+class EqualDex_AdditionalInfo(discord.ui.View):
+    def __init__(self, url):
+        super().__init__()
+        link_button = discord.ui.Button(style = discord.ButtonStyle.gray,
+                                        label = "More info",
+                                        url = url)
+        self.add_item(link_button)
+
+class SendPublicButton_Math(discord.ui.View):
+    def __init__(self, client: Bot, timeout=180):
+        super().__init__()
+        self.value = None
+        self.client = client
+        self.timeout = timeout
+
+    @discord.ui.button(label='Send Publicly', style=discord.ButtonStyle.gray)
+    async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.value = 1
+        await itx.response.edit_message(content="Sent successfully!")
+        cmd_mention = self.client.get_command_mention("math")
+        await itx.followup.send(f"**{itx.user.mention} shared a {cmd_mention} output:**\n" + itx.message.content, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+
+
 class SearchAddons(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
@@ -170,15 +201,7 @@ class SearchAddons(commands.Cog):
                 await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...",ephemeral=True)
             return
 
-        class Region:
-            def __init__(self, data):
-                self.id = data['region_id']
-                self.name = data['name']
-                self.continent = data['continent']
-                self.url = data['url']
-                self.issues = data['issues']
-
-        region = Region(data['regions']['region'])
+        region = EqualDexRegion(data['regions']['region'])
 
         embed = discord.Embed(color=7829503, title=region.name)
         for issue in region.issues:
@@ -212,14 +235,7 @@ class SearchAddons(commands.Cog):
                             value  = value,
                             inline = False)
         embed.set_footer(text=f"For more info, click the button below,")
-        class MoreInfo(discord.ui.View):
-            def __init__(self, url):
-                super().__init__()
-                link_button = discord.ui.Button(style = discord.ButtonStyle.gray,
-                                                label = "More info",
-                                                url = url)
-                self.add_item(link_button)
-        view = MoreInfo(region.url)
+        view = EqualDex_AdditionalInfo(region.url)
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @app_commands.command(name="math", description="Ask Wolfram Alpha a question")    
@@ -247,21 +263,6 @@ class SearchAddons(commands.Cog):
         except requests.exceptions.JSONDecodeError:
             await itx.followup.send("Your input gave a malformed result! Perhaps it took too long to calculate...", ephemeral=True)
             return
-        
-        class SendPublic(discord.ui.View):
-            def __init__(self, client: Bot, timeout=180):
-                super().__init__()
-                self.value = None
-                self.client = client
-                self.timeout = timeout
-
-            @discord.ui.button(label='Send Publicly', style=discord.ButtonStyle.gray)
-            async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
-                self.value = 1
-                await itx.response.edit_message(content="Sent successfully!")
-                cmd_mention = self.client.get_command_mention("math")
-                await itx.followup.send(f"**{itx.user.mention} shared a {cmd_mention} output:**\n" + itx.message.content, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
-
 
         data = data["queryresult"]
         if data["success"]:
@@ -353,7 +354,7 @@ class SearchAddons(commands.Cog):
                 warnings = "\nWarnings:\n> " + '\n> '.join(warnings)
             else:
                 warnings = ""
-            view = SendPublic(self.client)
+            view = SendPublicButton_Math(self.client)
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
                 f"Result:\n> {output}" +

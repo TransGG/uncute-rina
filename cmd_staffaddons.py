@@ -1,5 +1,10 @@
 from import_modules import *
 
+class CustomInteraction:
+    def __init__(self, member: discord.Member):
+        self.user = member
+        self.guild = member.guild
+
 class StaffAddons(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -47,10 +52,6 @@ class StaffAddons(commands.Cog):
             return
         
         output = "Attempting deletion...\n"
-        class Interaction:
-            def __init__(self, member: discord.Member):
-                self.user = member
-                self.guild = member.guild
 
         await itx.response.send_message(output+"...", ephemeral=True)
         try:
@@ -65,7 +66,7 @@ class StaffAddons(commands.Cog):
                     await message.delete()
                 elif time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
                     if "[info]" in message.content.lower():
-                        if is_staff(Interaction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
+                        if is_staff(CustomInteraction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
                             continue
                     queued_message_deletions.append(message)
                     if message_delete_count - feedback_output_count_status >= 50:

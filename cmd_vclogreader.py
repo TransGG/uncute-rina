@@ -68,7 +68,7 @@ class VCLogReader(commands.Cog):
                 current_channel_data = []
 
                 try:
-                    if embed.fields[0].value == "Action":
+                    if embed.fields[0].name == "Action":
                         # actions like server deafening or muting someone also get logged, but are irrelevant for this diagram/command.
                         continue
                     # could be done more efficiently but oh well. Not like this is suitable for any other bot either anyway. And I'm limited by discord API anyway

@@ -37,6 +37,30 @@ async def get_watchlist_index(watch_channel: discord.TextChannel):
     return local_watchlist_index
 
 
+class WatchlistReasonModal(discord.ui.Modal):
+    """
+    A modal allowing the user to add a user to the watchlist with a reason
+    """
+
+    def __init__(self, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
+        super().__init__(title=title, timeout=timeout)
+        self.value = None
+        # self.timeout = timeout
+        # self.title = title
+        self.user = reported_user
+        self.message = message
+
+        self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}',
+                                                placeholder=f"not required but recommended",
+                                                style=discord.TextStyle.paragraph,
+                                                required=False)
+        self.add_item(self.reason_text)
+    
+    async def on_submit(self, itx: discord.Interaction):
+        self.value = 1
+        await self.parent.add_to_watchlist(itx, self.user, self.reason_text.value, str(getattr(self.message, "id", "")) or None)
+        self.stop()
+
 class WatchList(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -196,30 +220,6 @@ class WatchList(commands.Cog):
                                     "\nNote: They were already added to the watch list, so instead I added "
                                     "the message to the already-existing thread for this user. :thumbsup:",ephemeral=True)
 
-    class WatchlistReason(discord.ui.Modal):
-        """
-        A modal allowing the user to add a user to the watchlist with a reason
-        """
-
-        def __init__(self, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
-            super().__init__(title=title, timeout=timeout)
-            self.value = None
-            # self.timeout = timeout
-            # self.title = title
-            self.user = reported_user
-            self.message = message
-
-            self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}',
-                                                    placeholder=f"not required but recommended",
-                                                    style=discord.TextStyle.paragraph,
-                                                    required=False)
-            self.add_item(self.reason_text)
-        
-        async def on_submit(self, itx: discord.Interaction):
-            self.value = 1
-            await self.parent.add_to_watchlist(itx, self.user, self.reason_text.value, str(getattr(self.message, "id", "")) or None)
-            self.stop()
-
     @app_commands.command(name="watchlist",description="Add a user to the watchlist.")
     @app_commands.describe(user="User to add", reason="Reason for adding", message_id="Message to add to reason")
     async def watchlist(self, itx: discord.Interaction, user: discord.User, reason: str = "", message_id: str = None):
@@ -255,14 +255,14 @@ class WatchList(commands.Cog):
         if not is_staff(itx): # is already checked in the main command, but saves people's time
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
-        watchlist_reason_modal = self.WatchlistReason(self, "Add user to watchlist", user, None, 300)
+        watchlist_reason_modal = WatchlistReasonModal("Add user to watchlist", user, None, 300)
         await itx.response.send_modal(watchlist_reason_modal)
 
     async def watchlist_ctx_message(self, itx, message: discord.Message):
         if not is_staff(itx): # is already checked in the main command, but saves people's time
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
-        watchlist_reason_modal = self.WatchlistReason(self, "Add user to watchlist using message", message.author, message, 300)
+        watchlist_reason_modal = WatchlistReasonModal("Add user to watchlist using message", message.author, message, 300)
         await itx.response.send_modal(watchlist_reason_modal)
         
     @commands.Cog.listener()

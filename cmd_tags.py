@@ -4,6 +4,7 @@ report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 
 hsv_color_list = { #in h    s    v
     "report"                          : [ 16, 100, 100],
+    "plural kit"                      : [ 33, 100, 100],
     "customvcs"                       : [ 84,  55, 100],
     "trigger warnings"                : [240,  40, 100],
     "tone indicators"                 : [170,  40, 100],
@@ -16,51 +17,51 @@ hsv_color_list = { #in h    s    v
 }
 colours = {k: discord.Colour.from_hsv(v[0]/360, v[1]/100, v[2]/100) for k, v in hsv_color_list.items()}
 
+class SendPublicly_TagView(discord.ui.View):
+    def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
+        super().__init__()
+        if embed.footer.text is None:
+            self.footer = ""
+        else:
+            self.footer = embed.footer.text + "\n"
+
+        self.value = None
+        self.client = client
+        self.timeout = timeout
+        self.public_footer = public_footer
+        self.embed = embed
+        self.logmsg = logmsg
+        self.tag_name = tag_name
+
+    @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.primary)
+    async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.value = 1
+        if self.public_footer is None:
+            self.public_footer = f"Triggered by {itx.user.name} ({itx.user.id})"
+        else:
+            self.public_footer = f"Note: If you believe that this command was misused or abused, " + \
+                                    f"please do not argue in this channel. Instead, open a mod ticket " + \
+                                    f"and explain the situation there. Thank you."
+            self.value = 2
+        self.embed.set_footer(text=self.footer + self.public_footer)
+        await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
+        msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
+        if self.value == 2 and self.logmsg is not None:
+            await log_to_guild(self.client, itx.guild, self.logmsg)
+            cmd_mention = self.client.get_command_mention("tag")
+            staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
+            await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
+                                                        f"[Jump to the tag message]({msg.jump_url})")
+        self.stop()
+
+    async def on_timeout(self):
+        self.send_publicly.disabled = True
+        self.send_publicly.style = discord.ButtonStyle.gray
+
 class Tags:
     def __init__(self):
         self.no_politics_channel_id = 1126163144134361238
         self.no_venting_channel_id = 1126163020620513340
-
-    class TagView(discord.ui.View):
-        def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
-            super().__init__()
-            if embed.footer.text is None:
-                self.footer = ""
-            else:
-                self.footer = embed.footer.text + "\n"
-
-            self.value = None
-            self.client = client
-            self.timeout = timeout
-            self.public_footer = public_footer
-            self.embed = embed
-            self.logmsg = logmsg
-            self.tag_name = tag_name
-
-        @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.primary)
-        async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
-            self.value = 1
-            if self.public_footer is None:
-                self.public_footer = f"Triggered by {itx.user.name} ({itx.user.id})"
-            else:
-                self.public_footer = f"Note: If you believe that this command was misused or abused, " + \
-                                     f"please do not argue in this channel. Instead, open a mod ticket " + \
-                                     f"and explain the situation there. Thank you."
-                self.value = 2
-            self.embed.set_footer(text=self.footer + self.public_footer)
-            await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
-            msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
-            if self.value == 2 and self.logmsg is not None:
-                await log_to_guild(self.client, itx.guild, self.logmsg)
-                cmd_mention = self.client.get_command_mention("tag")
-                staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
-                await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
-                                                         f"[Jump to the tag message]({msg.jump_url})")
-            self.stop()
-
-        async def on_timeout(self):
-            self.send_publicly.disabled = True
-            self.send_publicly.style = discord.ButtonStyle.gray
 
     async def tag_message(self, tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool, 
                           embed: discord.Embed, public_footer: bool = False):
@@ -102,13 +103,12 @@ class Tags:
                 await itx.response.send_message(embed=embed)
         else:
             if anonymous:
-                view = Tags().TagView(client, embed, timeout=60, public_footer=public_footer, logmsg=logmsg, tag_name=tag_name)
+                view = SendPublicly_TagView(client, embed, timeout=60, public_footer=public_footer, logmsg=logmsg, tag_name=tag_name)
             else:
-                view = Tags().TagView(client, embed, timeout=60, tag_name=tag_name)
+                view = SendPublicly_TagView(client, embed, timeout=60, tag_name=tag_name)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
             if await view.wait():
                 await itx.edit_original_response(view=view)
-
 
     async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
@@ -267,6 +267,44 @@ class Tags:
         )
         embed.set_footer(text="More info: https://www.nohello.net/, https://dontasktoask.com/")
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+ 
+    async def send_pluralkit_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
+        embed = discord.Embed(
+            color=colours["plural kit"],
+            # title="If you see users talking with the bot tag, they're talking through PluralKit.",
+            # description="> Due to Discord limitations, these messages will show up with the [BOT] tag - "
+            #             "**however, they are not bots. They are users.**\n"
+            #             "\n"
+            #             "PluralKit is a Discord bot that exists to allow users to proxy their messages "
+            #             "via Discord webhooks. This has many practical applications, especially given "
+            #             "that Discord doesn't have any features that support the plural community, or "
+            #             "any built-in mental health aids.\n"
+            #             "\n"
+            #             "> This allows for one discord account to have multiple psudo accounts, without "
+            #             "the need to have alts in the server.\n"
+            #             "\n"
+            #             "PluralKit can have multiple uses in other communities, however in ours it "
+            #             "should only be used for plurality or self-identity purposes, or as a mental "
+            #             "health aid.\n"
+            #             "\n"
+            #             "***We do not allow users to make use of PluralKit for role-playing.***\n"
+            #             "\n"
+            #             "_Learn more? Check out <https://quiltmc.org/en/community/pluralkit/>!_"
+            title="PluralKit and users with the [BOT] tag",
+            description="PluralKit is a Discord bot that allows users to proxy their messages via Discord webhooks. This allows for "
+                        "one discord account to have multiple psudo accounts, without the need to have alts in the server.\n"
+                        "\n"
+                        "These messages are sent via the bot and get a [BOT] tag, but the user behind them is **not** a bot.\n"
+                        "\n"
+                        "PluralKit can have multiple uses in other communities. However, in ours it should only be used for plurality, "
+                        "self-identity purposes, or as a mental health aid.\n"
+                        "- Learn more? Check out <https://quiltmc.org/en/community/pluralkit/>\n"
+                        "\n"
+                        "***We do not allow users to make use of PluralKit for role-playing.***"
+        )
+        #embed.set_footer(text="")
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+
 
 class TagFunctions(commands.Cog):
     def __init__(self, client):
@@ -302,7 +340,8 @@ class TagFunctions(commands.Cog):
             "tone indicators",
             "trigger warnings",
             "trusted role",
-            "conversing effectively"
+            "conversing effectively",
+            "plural kit"
         ]
         return [
             app_commands.Choice(name=term, value=term)
@@ -327,6 +366,7 @@ class TagFunctions(commands.Cog):
             "avoiding politics" : t.send_avoidpolitics_info,
             "please change chat topic" : t.send_chat_topic_change_request,
             "conversing effectively" : t.send_conversing_effectively_info,
+            "plural kit" : t.send_pluralkit_info
         }
         if tag in tag_functions:
             await tag_functions[tag](tag, itx, self.client, public=public, anonymous=anonymous)

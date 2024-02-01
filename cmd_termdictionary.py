@@ -2,6 +2,139 @@ from import_modules import *
 
 del_separators_table = str.maketrans({" ":"", "-":"", "_":""})
 
+class DictionaryAPI_SendPageModal(discord.ui.Modal, title="Share single dictionary entry?"):
+    def __init__(self, entries, timeout=None):
+        super().__init__()
+        self.value = None
+        self.timeout = timeout
+        self.entries = entries
+        self.id = None
+        self.question_text = discord.ui.TextInput(label='Entry index',
+                                                    placeholder=f"[A number from 0 to {len(entries) - 1} ]",
+                                                    # style=discord.TextStyle.short,
+                                                    # required=True
+                                                    )
+        self.add_item(self.question_text)
+
+    async def on_submit(self, itx: discord.Interaction):
+        self.value = 9 # failed; placeholder
+        try:
+            self.id = int(self.question_text.value)
+        except ValueError:
+            await itx.response.send_message(
+                content=f"Couldn't send entry: '{self.question_text.value}' is not an integer. "
+                        "It has to be an index number from an entry in the /dictionary response.",
+                ephemeral=True)
+            return
+        if self.id < 0 or self.id >= len(self.entries):
+            await itx.response.send_message(
+                content=f"Couldn't send intry: '{self.id}' is not a possible index value for your dictionary entry. "
+                        "It has to be an index number from an entry in the /dictionary response.",
+                ephemeral=True)
+            return
+        self.value = 1 # succeeded
+        await itx.response.send_message(f'Sending item...', ephemeral=True, delete_after=8)
+        self.stop()
+
+class DictionaryApi_PageView(discord.ui.View):
+    def __init__(self, pages, pages_detailed, timeout=None):
+        super().__init__()
+        self.value = None
+        self.timeout = timeout
+        self.page = 0
+        self.pages = pages
+        self.printouts = 0
+        self.pages_detailed = pages_detailed
+
+    @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
+    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.page -= 1
+        if self.page < 0:
+            self.page = len(self.pages)-1
+        embed = self.pages[self.page]
+        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+        await itx.response.edit_message(embed=embed)
+
+    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.page += 1
+        if self.page >= (len(self.pages)):
+            self.page = 0
+        embed = self.pages[self.page]
+        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+        try:
+            await itx.response.edit_message(embed=embed)
+        except discord.errors.HTTPException:
+            self.page -= 1
+            await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                            ephemeral=True)
+
+    @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.gray)
+    async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.value = 1
+        embed = self.pages[self.page]
+        await itx.response.edit_message(content="Sent successfully!",embed=None)
+        await itx.followup.send(f"{itx.user.mention} shared a dictionary entry!", embed=embed,
+                                ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+        self.stop()
+
+    @discord.ui.button(label='Send one entry', style=discord.ButtonStyle.gray)
+    async def send_single_entry(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.value = 2
+        self.printouts += 1
+
+        send_one = DictionaryAPI_SendPageModal(self.pages_detailed[self.page])
+        await itx.response.send_modal(send_one)
+        await send_one.wait()
+        if send_one.value in [None, 9]:
+            pass
+        else:
+            ## pages_detailed = [ [result_id: int,   term: str,   type: str,   value: str],    [...], [...] ]
+            page = self.pages_detailed[self.page][send_one.id]
+            ## page = [result_id: int,   term: str,   type: str,   value: str]
+            embed = discord.Embed(color=8481900, title=page[1])
+            embed.add_field(name=page[2],
+                            value=page[3],
+                            inline=False)
+            await itx.followup.send(f"{itx.user.mention} shared a section of a dictionary entry! (item {page[0]})",embed=embed,
+                                    allowed_mentions=discord.AllowedMentions.none())
+
+        #only let someone send 3 of the entries in a dictionary before disabling to prevent spam
+        if self.printouts == 3:
+            self.stop()
+
+class UrbanDictionary_PageView(discord.ui.View):
+    def __init__(self, pages, timeout=None):
+        super().__init__()
+        self.value = None
+        self.timeout = timeout
+        self.page = 0
+        self.pages = pages
+
+    @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
+    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.page -= 1
+        if self.page < 0:
+            self.page = len(self.pages)-1
+        embed = self.pages[self.page]
+        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+        await itx.response.edit_message(embed=embed)
+
+    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
+    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+        self.page += 1
+        if self.page >= (len(self.pages)):
+            self.page = 0
+        embed = self.pages[self.page]
+        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
+        try:
+            await itx.response.edit_message(embed=embed)
+        except discord.errors.HTTPException:
+            self.page -= 1
+            await itx.response.send_message("This is the last page, you can't go to a next page!",
+                                            ephemeral=True)
+
+
 class TermDictionary(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -303,110 +436,9 @@ class TermDictionary(commands.Cog):
                     pages_detailed.append(page_detailed)
                     # [meaning, [type, definition1, definition2], synonym, antonym, sources]
 
-                class Pages(discord.ui.View):
-                    class SendEntry(discord.ui.Modal, title="Share single dictionary entry?"):
-                        def __init__(self, entries, timeout=None):
-                            super().__init__()
-                            self.value = None
-                            self.timeout = timeout
-                            self.entries = entries
-                            self.id = None
-                            self.question_text = discord.ui.TextInput(label='Entry index',
-                                                                      placeholder=f"[A number from 0 to {len(entries) - 1} ]",
-                                                                      # style=discord.TextStyle.short,
-                                                                      # required=True
-                                                                      )
-                            self.add_item(self.question_text)
-
-                        async def on_submit(self, itx: discord.Interaction):
-                            self.value = 9 # failed; placeholder
-                            try:
-                                self.id = int(self.question_text.value)
-                            except ValueError:
-                                await itx.response.send_message(
-                                    content=f"Couldn't send entry: '{self.question_text.value}' is not an integer. "
-                                            "It has to be an index number from an entry in the /dictionary response.",
-                                    ephemeral=True)
-                                return
-                            if self.id < 0 or self.id >= len(self.entries):
-                                await itx.response.send_message(
-                                    content=f"Couldn't send intry: '{self.id}' is not a possible index value for your dictionary entry. "
-                                            "It has to be an index number from an entry in the /dictionary response.",
-                                    ephemeral=True)
-                                return
-                            self.value = 1 # succeeded
-                            await itx.response.send_message(f'Sending item...', ephemeral=True, delete_after=8)
-                            self.stop()
-
-                    def __init__(self, pages, pages_detailed, timeout=None):
-                        super().__init__()
-                        self.value = None
-                        self.timeout = timeout
-                        self.page = 0
-                        self.pages = pages
-                        self.printouts = 0
-                        self.pages_detailed = pages_detailed
-
-                    @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-                    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
-                        self.page -= 1
-                        if self.page < 0:
-                            self.page = len(self.pages)-1
-                        embed = self.pages[self.page]
-                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
-                        await itx.response.edit_message(embed=embed)
-
-                    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-                    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
-                        self.page += 1
-                        if self.page >= (len(self.pages)):
-                            self.page = 0
-                        embed = self.pages[self.page]
-                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
-                        try:
-                            await itx.response.edit_message(embed=embed)
-                        except discord.errors.HTTPException:
-                            self.page -= 1
-                            await itx.response.send_message("This is the last page, you can't go to a next page!",
-                                                            ephemeral=True)
-
-                    @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.gray)
-                    async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
-                        self.value = 1
-                        embed = self.pages[self.page]
-                        await itx.response.edit_message(content="Sent successfully!",embed=None)
-                        await itx.followup.send(f"{itx.user.mention} shared a dictionary entry!", embed=embed,
-                                                ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
-                        self.stop()
-
-                    @discord.ui.button(label='Send one entry', style=discord.ButtonStyle.gray)
-                    async def send_single_entry(self, itx: discord.Interaction, _button: discord.ui.Button):
-                        self.value = 2
-                        self.printouts += 1
-
-                        send_one = Pages.SendEntry(self.pages_detailed[self.page])
-                        await itx.response.send_modal(send_one)
-                        await send_one.wait()
-                        if send_one.value in [None, 9]:
-                            pass
-                        else:
-                            ## pages_detailed = [ [result_id: int,   term: str,   type: str,   value: str],    [...], [...] ]
-                            page = self.pages_detailed[self.page][send_one.id]
-                            ## page = [result_id: int,   term: str,   type: str,   value: str]
-                            embed = discord.Embed(color=8481900, title=page[1])
-                            embed.add_field(name=page[2],
-                                            value=page[3],
-                                            inline=False)
-                            await itx.followup.send(f"{itx.user.mention} shared a section of a dictionary entry! (item {page[0]})",embed=embed,
-                                                    allowed_mentions=discord.AllowedMentions.none())
-
-                        #only let someone send 3 of the entries in a dictionary before disabling to prevent spam
-                        if self.printouts == 3:
-                            self.stop()
-
                 embed = pages[page]
                 embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
-                view = Pages(pages, pages_detailed, timeout=90)
+                view = DictionaryApi_PageView(pages, pages_detailed, timeout=90)
                 await itx.followup.send(f"I found the following `{len(results)}` results on dictionaryapi.dev: ", embed=embed, view=view, ephemeral=True)
                 await view.wait()
                 if view.value in [None, 1, 2]:
@@ -451,40 +483,9 @@ class TermDictionary(commands.Cog):
                                     inline=False)
                     pages.append(embed)
 
-                class Pages(discord.ui.View):
-                    def __init__(self, pages, timeout=None):
-                        super().__init__()
-                        self.value = None
-                        self.timeout = timeout
-                        self.page = 0
-                        self.pages = pages
-
-                    @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-                    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
-                        self.page -= 1
-                        if self.page < 0:
-                            self.page = len(self.pages)-1
-                        embed = self.pages[self.page]
-                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
-                        await itx.response.edit_message(embed=embed)
-
-                    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-                    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
-                        self.page += 1
-                        if self.page >= (len(self.pages)):
-                            self.page = 0
-                        embed = self.pages[self.page]
-                        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages))))
-                        try:
-                            await itx.response.edit_message(embed=embed)
-                        except discord.errors.HTTPException:
-                            self.page -= 1
-                            await itx.response.send_message("This is the last page, you can't go to a next page!",
-                                                            ephemeral=True)
-
                 embed = pages[page]
                 embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
-                view = Pages(pages, timeout=90)
+                view = UrbanDictionary_PageView(pages, timeout=90)
                 await itx.followup.send(f"I found the following `{len(pages)}` results on urbandictionary.com: ",
                                         embed=embed, view=view, ephemeral=True)
                 await view.wait()
