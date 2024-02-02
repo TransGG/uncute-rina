@@ -48,59 +48,6 @@ progress.increment("motor/motor_asyncio")
 import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
 progress.increment("apscheduler/schedulers/asyncio/AsyncIOScheduler")
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling reminders
-
-class Bot(commands.Bot): # Only used for type checking. Program will always use Bot in main.py
-    def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-    api_tokens: str
-    startup_time: datetime
-    version: str
-    commandList: list[discord.app_commands.AppCommand]
-    log_channel: discord.TextChannel
-    RinaDB: typing.Any # not entirely sure
-    asyncRinaDB: typing.Any
-    custom_ids: dict[str, int]
-    bot_owner: discord.User # for AllowedMentions in on_appcommand_error()
-    reminder_scheduler: AsyncIOScheduler # for Reminders
-    
-    def get_command_mention(self, command_string: str) -> str:
-        """
-        Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
-
-        ### Parameters
-        --------------
-        command_string:  :class:`str`
-            Command you want to convert into a mention (without slash in front of it)
-        ### Returns
-        -----------
-        command mention: :class:`str`
-            The command mention, or input if not found
-        """
-
-    async def get_guild_info(self, guild_id: discord.Guild | int, *args: str, log: list[discord.Interaction | str] | None = None) -> typing.Any:
-        """
-        Get a guild's server settings (from /editguildinfo, in cmd_customvcs)
-
-        ### Arguments:
-        --------------
-        guild_id: :class:`discord.Guild` or :class:`int`
-            guild or id from which you want to get the guild info / settings
-        *args: :class:`str`
-            settings (or multiple) that you want to fetch
-        log (optional): :class:`list[discord.Interaction, str]`
-            A list of [itx, error_message], and will reply this error message to the given interaction if there's a KeyError.
-
-        ### Returns:
-        ------------
-        `any` (whichever is given in the database)
-
-        ### Raises:
-        -----------
-        `KeyError` if guild is None, does not have data, or not the requested data.
-        """
-
-
 progress.increment("asyncio")
 import asyncio # lets rina take small pauses while getting emojis from MongoDB to allow room for other commands
 # that asyncio is literally just 'await asyncio.sleep(0)' lol
@@ -117,6 +64,8 @@ progress.increment("logging")
 import logging
 progress.increment("math/ceil")
 from math import ceil
+progress.increment("main/Bot")
+from main import Bot
 progress.increment("utils")
 from utils import *
 progress.increment("cmdg_Reminders/Reminders")

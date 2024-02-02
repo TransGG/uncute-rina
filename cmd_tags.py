@@ -112,10 +112,9 @@ class Tags:
 
     async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
-        
-        if context.guild_id == client.custom_ids.get("enbyplace_server_id"):
+        if context.guild.id == client.custom_ids.get("enbyplace_server_id"):
             mod_ticket_channel_id = 1186054373986537522
-        elif context.guild_id == client.custom_ids.get("transonance_server_id"):
+        elif context.guild.id == client.custom_ids.get("transonance_server_id"):
             mod_ticket_channel_id = 1108789589558177812
         else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
             mod_ticket_channel_id = 995343855069175858
