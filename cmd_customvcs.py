@@ -8,6 +8,11 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
     name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False)
     limit = discord.ui.TextInput(label='Limit', placeholder="Give your voice channel a user limit", required=False)
 
+    def __init__(self, vcHub, vcLog, vcCategory):
+        self.vcHub = vcHub
+        self.vcLog = vcLog
+        self.vcCategory = vcCategory
+
     async def on_submit(self, itx: discord.Interaction):
         name = str(self.name)
         if name == "":
@@ -42,7 +47,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
             raise
 
         warning = ""
-        if channel.category.id not in [vcCategory] or channel.id == vcHub:
+        if channel.category.id not in [self.vcCategory] or channel.id == self.vcHub:
             await itx.response.send_message("You can't change that voice channel's name (not with this command, at least)!",ephemeral=True)
             return
 
@@ -228,7 +233,7 @@ class CustomVcs(commands.Cog):
 
         if itx.user.voice is None:
             if is_staff(itx):
-                await itx.response.send_modal(CustomVcStaffEditorModal())
+                await itx.response.send_modal(CustomVcStaffEditorModal(vcHub, vcLog, vcCategory))
                 return
             await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
             return

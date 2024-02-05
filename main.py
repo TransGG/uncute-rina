@@ -165,7 +165,7 @@ if __name__ == '__main__':
     #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
     # dumb code for cool version updates
-    fileVersion = "1.2.7.5".split(".")
+    fileVersion = "1.2.7.6".split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
