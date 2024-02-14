@@ -1,5 +1,9 @@
 from import_modules import *
 
+BOT_VERSION = "1.2.7.7"
+TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
+appcommanderror_cooldown = 0
+
 class Bot(commands.Bot):
     def __init__(self, api_tokens, version, RinaDB, asyncRinaDB, *args, **kwargs):
         self.api_tokens: dict = api_tokens
@@ -127,14 +131,35 @@ class Bot(commands.Bot):
             await log[0].response.send_message(log[1], ephemeral=True)
             raise
 
-if __name__ == '__main__':
+# Permission requirements:
+#   server members intent,
+#   message content intent,
+#   guild permissions:
+#       send messages
+#       attach files (for image of the member joining graph thing)
+#       read channel history (locate previous starboard message, for example)
+#       move users between voice channels (custom vc)
+#       manage roles (for removing NPA and NVA roles)
+#       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
+#           Create and Delete voice channels
+#       use embeds (for starboard)
+#       use (external) emojis (for starboard, if you have external starboard reaction...?)
+
+def get_token_data():
+    """
+    Ensures the api_keys.json file contains all of the bot's required keys, and uses these keys to start a link to the MongoDB.
+
+    Returns:
+    --------
+    `tuple[discord_token, synchronous_db_connection, async_db_connection]` tuple of discord bot token and database client cluster connections
+    """
     debug(f"[#+   ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
     # debug(f"[+     ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
     try:
         with open("api_keys.json","r") as f:
             api_keys = json.loads(f.read())
         tokens = {}
-        TOKEN = api_keys['Discord']
+        bot_token: str = api_keys['Discord']
         for key in ['MongoDB', 'Open Exchange Rates', 'Wolfram Alpha']:
             # copy every other key to new dictionary to check if every key is in the file.
             tokens[key] = api_keys[key]
@@ -148,24 +173,18 @@ if __name__ == '__main__':
     RinaDB = cluster["Rina"]
     cluster: motor.core.AgnosticClient = motor.AsyncIOMotorClient(tokens['MongoDB'])
     asyncRinaDB = cluster["Rina"]
-    appcommanderror_cooldown = 0
     debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
-    # Dependencies:
-    #   server members intent,
-    #   message content intent,
-    #   permissions:
-    #       send messages
-    #       attach files (for image of the member joining graph thing)
-    #       read channel history (locate previous starboard message, for example)
-    #       move users between voice channels (custom vc)
-    #       manage roles (for removing NPA and NVA roles)
-    #       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
-    #           Create and Delete voice channels
-    #       use embeds (for starboard)
-    #       use (external) emojis (for starboard, if you have external starboard reaction...?)
+    return (bot_token, tokens, RinaDB, asyncRinaDB)
 
-    # dumb code for cool version updates
-    fileVersion = "1.2.7.6".split(".")
+def get_version() -> str:
+    """
+    Dumb code for cool version updates. Reads version file and matches with current version string. Updates file if string is newer, and adds another ".%d" for how often the bot has been started in this version.
+
+    Returns:
+    --------
+    `str` Current version/instance of the bot.
+    """
+    fileVersion = BOT_VERSION.split(".")
     try:
         with open("version.txt", "r") as f:
             version = f.read().split(".")
@@ -173,7 +192,6 @@ if __name__ == '__main__':
         version = ["0"]*len(fileVersion)
     # if testing, which environment are you in?
     # 1: private dev server; 2: public dev server (TransPlace [Copy])
-    testing_environment = 2
     for v in range(len(fileVersion)):
         if int(fileVersion[v]) > int(version[v]):
             version = fileVersion + ["0"]
@@ -183,6 +201,8 @@ if __name__ == '__main__':
     version = '.'.join(version)
     with open("version.txt","w") as f:
         f.write(f"{version}")
+
+def create_client(tokens, RinaDB, asyncRinaDB, version) -> discord.Client:
     debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
@@ -190,12 +210,10 @@ if __name__ == '__main__':
     intents.message_content = True #apparently it turned off my default intent or something: otherwise i can't send 1984, ofc.
     #setup default discord bot client settings, permissions, slash commands, and file paths
 
-
-    
     debug(f"[#      ]: Loaded bot" + " " * 30, color="green")
     debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
     discord.VoiceClient.warn_nacl = False   
-    client = Bot(
+    return Bot(
             api_tokens=tokens,
             version=version,
             RinaDB=RinaDB,
@@ -208,7 +226,12 @@ if __name__ == '__main__':
             allowed_mentions=discord.AllowedMentions(everyone=False)
     )
 
-    # Client events begin
+if __name__ == '__main__':
+    (TOKEN, tokens, RinaDB, asyncRinaDB) = get_token_data()
+    version = get_version()
+    client = create_client(tokens, RinaDB, asyncRinaDB, version)
+
+    #region Client events
     @client.event
     async def on_ready():
         debug(f"[#######]: Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
@@ -262,7 +285,7 @@ if __name__ == '__main__':
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
         except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
-            if testing_environment == 1:
+            if TESTING_ENVIRONMENT == 1:
                 client.log_channel = await client.fetch_channel(986304081234624554)
             else:
                 client.log_channel = await client.fetch_channel(1062396920187863111)
@@ -312,9 +335,9 @@ if __name__ == '__main__':
             await message.add_reaction("⚠")
         elif message.content.lower().startswith("i am a very cool kid"):
             await message.channel.send("Yes. Yes you are.")
-
-    # Crash event handling
-
+    #endregion
+    
+    #region Crash event handling
     async def send_crash_message(error_type: str, traceback_text: str, error_source: str, color: discord.Colour, itx: discord.Interaction=None):
         """
         Sends crash message to Rina's main logging channel
@@ -340,7 +363,7 @@ if __name__ == '__main__':
             try:
                 log_guild = await client.fetch_guild(959551566388547676)
             except discord.errors.NotFound:
-                if testing_environment == 1:
+                if TESTING_ENVIRONMENT == 1:
                     log_guild = await client.fetch_guild(985931648094834798)
                 else:
                     log_guild = await client.fetch_guild(981615050664075404)
@@ -418,9 +441,12 @@ if __name__ == '__main__':
         client.run(TOKEN, log_level=logging.WARNING)
     except SystemExit:
         print("Exited the program forcefully using the kill switch")
+    #endregion
 
-# todo:
+#region TODO:
 # - Translator
 # - (Unisex) compliment quotes
 # - Add error catch for when dictionaryapi.com is down
 # - make more three-in-one commands have optional arguments, explaining what to do if you don't fill in the optional argument
+        
+#endregion

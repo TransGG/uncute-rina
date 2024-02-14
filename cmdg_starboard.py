@@ -2,6 +2,7 @@ from import_modules import *
 
 starboard_message_ids_marked_for_deletion = []
 local_starboard_message_list_refresh_timestamp = 0
+STARBOARD_REFRESH_DELAY = 1000
 local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
 
@@ -93,11 +94,16 @@ class Starboard(commands.Cog):
             url=f"https://original.poster/{original_message.author.id}/",
             icon_url=original_message.author.display_avatar.url
         )
-        await star_message.edit(content=new_content, embeds=embeds)
+        try:
+            await star_message.edit(content=new_content, embeds=embeds)
+        except discord.HTTPException as ex:
+            if ex.code == 429: # too many requests; can't edit messages older than 1 hour more than x times an hour.
+                return
+            raise
 
     async def get_starboard_messages(self, star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
         global busy_updating_starboard_messages, local_starboard_message_list, local_starboard_message_list_refresh_timestamp
-        if not busy_updating_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > 100: # refresh once every 100 seconds
+        if not busy_updating_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > STARBOARD_REFRESH_DELAY: # refresh once every 1000 seconds
             busy_updating_starboard_messages = True
             messages: list[discord.Message] = []
             async for star_message in star_channel.history(limit=1000):
