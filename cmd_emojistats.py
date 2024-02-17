@@ -21,7 +21,7 @@ async def add_to_data(emoji: tuple[bool, str, str], location: str):
     location: `enum["message", "reaction"]`
         Whether the emoji was used in a message or as a reaction.
     """
-    
+
     (animated, emoji_name, emoji_id) = emoji
     collection = asyncRinaDB["emojistats"]
     query = {"id": emoji_id}
@@ -124,7 +124,7 @@ class EmojiStats(commands.Cog):
         discord.app_commands.Choice(name='Static/Image emojis', value=2),
         discord.app_commands.Choice(name='Both', value=3)
     ])
-    async def get_unused_emojis(self, itx: discord.Interaction, public: bool = True,
+    async def get_unused_emojis(self, itx: discord.Interaction, public: bool = False,
                                 max_results: int = 10, used_max: int = 10, msg_max: int = sys.maxsize, react_max: int = sys.maxsize,
                                 animated: int = 3):
         if not is_staff(itx):
@@ -138,9 +138,15 @@ class EmojiStats(commands.Cog):
         collection = asyncRinaDB["emojistats"]
         query = {
             "$expr": {
-                "$lt": [{"$add": ["$messageUsedCount", "$reactionUsedCount"]}, used_max]
+                "$lte": [
+                    {"$add": [
+                        {"$ifNull":["$messageUsedCount", 0]},
+                        {"$ifNull":["$reactionUsedCount", 0]}
+                        ]},
+                    used_max
+                    ]
             }
-        }
+        } # = [x for x in collection if x.get(messageUsedCount,0) + x.get(reactionUsedCount,0) <= used_max]
 
         if max_results > 50:
             max_results = 50
@@ -152,9 +158,9 @@ class EmojiStats(commands.Cog):
             react_max = 0
 
         if msg_max != sys.maxsize: # only limit query on '_UsedCount' if you want to limit for it. Some entries don't have a value for it- Don't want to search for a "0" then.
-            query["messageUsedCount"] = {"$lt": msg_max}
+            query["messageUsedCount"] = {"$lte": msg_max}
         if react_max != sys.maxsize: # only limit query on '_UsedCount' if you want to limit for it. Some entries don't have a value for it- Don't want to search for a "0" then.
-            query["reactionUsedCount"] = {"$lt": react_max}
+            query["reactionUsedCount"] = {"$lte": react_max}
         if animated != 3: # only limit query with 'animated' if its value actually matters (not 3 / "Both")
             query[animated] = animated == 1
 
