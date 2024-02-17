@@ -144,7 +144,7 @@ class EmojiStats(commands.Cog):
                         {"$ifNull":["$reactionUsedCount", 0]}
                         ]},
                     used_max
-                    ]
+                ]
             }
         } # = [x for x in collection if x.get(messageUsedCount,0) + x.get(reactionUsedCount,0) <= used_max]
 
@@ -162,7 +162,7 @@ class EmojiStats(commands.Cog):
         if react_max != sys.maxsize: # only limit query on '_UsedCount' if you want to limit for it. Some entries don't have a value for it- Don't want to search for a "0" then.
             query["reactionUsedCount"] = {"$lte": react_max}
         if animated != 3: # only limit query with 'animated' if its value actually matters (not 3 / "Both")
-            query[animated] = animated == 1
+            query["animated"] = animated == 1
 
         emoji_stats: list[dict[str, str | int | bool]] = [x async for x in collection.find(query)]
         emoji_stat_ids: list[str] = await collection.distinct("id")
