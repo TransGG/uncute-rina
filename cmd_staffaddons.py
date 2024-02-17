@@ -95,7 +95,7 @@ class StaffAddons(commands.Cog):
         public = is_staff(itx)
         # get most recently pushed's version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
-        latest_version = latest_rina.split("fileVersion = \"", 1)[1].split("\".split(\".\")", 1)[0]
+        latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]
         unix = int(mktime(self.client.startup_time.timetuple()))
         for i in range(len(latest_version.split("."))):
             if int(latest_version.split(".")[i]) > int(self.client.version.split(".")[i]):

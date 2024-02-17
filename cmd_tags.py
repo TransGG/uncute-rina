@@ -312,6 +312,9 @@ class TagFunctions(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         global report_message_reminder_unix
+        if message.author.bot:
+            return
+
         for staff_role_mention in ["<@&981735650971775077>",  # transplace moderator
                                    "<@&1012954384142966807>", # transplace sr. mod
                                    "<@&981735525784358962>",  # transplace admin

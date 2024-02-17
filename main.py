@@ -1,15 +1,17 @@
 from import_modules import *
 
-BOT_VERSION = "1.2.7.7"
+BOT_VERSION = "1.2.7.8"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
 class Bot(commands.Bot):
-    def __init__(self, api_tokens, version, RinaDB, asyncRinaDB, *args, **kwargs):
+    def __init__(self, api_tokens: dict, version: str, 
+                 RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase,
+                 *args, **kwargs):
         self.api_tokens: dict = api_tokens
         self.version: str = version
-        self.RinaDB = RinaDB
-        self.asyncRinaDB = asyncRinaDB
+        self.RinaDB: pydb = RinaDB
+        self.asyncRinaDB: motor.core.AgnosticDatabase = asyncRinaDB
         super().__init__(*args, **kwargs)
 
     startup_time = datetime.now() # used in /version in cmd_staffaddons
@@ -145,7 +147,7 @@ class Bot(commands.Bot):
 #       use embeds (for starboard)
 #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
-def get_token_data():
+def get_token_data() -> tuple[str, dict, pydb, motor.core.AgnosticDatabase]:
     """
     Ensures the api_keys.json file contains all of the bot's required keys, and uses these keys to start a link to the MongoDB.
 
@@ -171,7 +173,7 @@ def get_token_data():
     debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
     cluster = MongoClient(tokens['MongoDB'])
     RinaDB = cluster["Rina"]
-    cluster: motor.core.AgnosticClient = motor.AsyncIOMotorClient(tokens['MongoDB'])
+    cluster = motor.AsyncIOMotorClient(tokens['MongoDB'])
     asyncRinaDB = cluster["Rina"]
     debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
     return (bot_token, tokens, RinaDB, asyncRinaDB)
@@ -201,8 +203,9 @@ def get_version() -> str:
     version = '.'.join(version)
     with open("version.txt","w") as f:
         f.write(f"{version}")
+    return version
 
-def create_client(tokens, RinaDB, asyncRinaDB, version) -> discord.Client:
+def create_client(tokens: dict, RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase, version: str) -> discord.Client:
     debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
@@ -317,6 +320,8 @@ if __name__ == '__main__':
 
     @client.event
     async def on_message(message: discord.Message):
+        if message.author.bot:
+            return
         # kill switch, see cmd_addons for other on_message events. (and a few other extensions)
         if message.author.id == client.bot_owner.id:
             cool_keys = [

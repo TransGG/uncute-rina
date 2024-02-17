@@ -10,7 +10,7 @@ class PrintProgress:
 class Object(object):
     pass
 
-progress = PrintProgress(26)
+progress = PrintProgress(27)
 progress.increment("datetime")
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
 program_start = datetime.now()
@@ -44,6 +44,8 @@ progress.increment("pymongo")
 import pymongo # used in cmd_emojistats
 progress.increment("pymongo/MongoClient")
 from pymongo import MongoClient
+progress.increment("pymongo/Database")
+from pymongo.database import Database as pydb
 progress.increment("motor/motor_asyncio")
 import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
 progress.increment("apscheduler/schedulers/asyncio/AsyncIOScheduler")

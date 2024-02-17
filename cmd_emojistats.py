@@ -1,6 +1,28 @@
 from import_modules import *
 
-async def add_to_data(emoji_id, emoji_name, location, animated):
+#   Rina.emojistats                                     # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
+# ------------------------------------------------------
+#               _id = Object('62f3004156483575bb3175de')
+#                id = "987785257661108324"              #  str  of emoji.id
+#              name = "ask"                             #  str  of emoji.name
+#  messageUsedCount = 11                                #  int  of how often messages have contained this emoji
+#          lastUsed = 1666720691                        #  int  of unix timestamp of when this emoji was last used
+#          animated = false                             #  bool of emoji.animated
+# reactionUsedCount = 8                                 #  int  of how often messages have been replied to with this emoji
+
+async def add_to_data(emoji: tuple[bool, str, str], location: str):
+    """
+    Helper function to add emoji data to the mongo database when an emoji is sent/replied in chat
+
+    Parameters:
+    -----------
+    emoji: `tuple[animated, emoji_name, emoji_id]`
+        The emoji (kind of in format of <a:Emoji_Name1:0123456789>).
+    location: `enum["message", "reaction"]`
+        Whether the emoji was used in a message or as a reaction.
+    """
+    
+    (animated, emoji_name, emoji_id) = emoji
     collection = asyncRinaDB["emojistats"]
     query = {"id": emoji_id}
     data = await collection.find_one(query)
@@ -20,7 +42,6 @@ async def add_to_data(emoji_id, emoji_name, location, animated):
     # collection.update_one( query, {"$set":{"name":emojiName}})
     #debug(f"Successfully added new data for {emojiID} as {location.replace('UsedCount','')}",color="blue")
 
-
 class EmojiStats(commands.Cog):
     def __init__(self, client: Bot):
         global asyncRinaDB
@@ -33,37 +54,35 @@ class EmojiStats(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:
             return
-        emojis = []
-        start_index = 0
-        animated = None
+        emojis: list[tuple[bool, str, str]] = []
+        start_index: int = 0
         while True:
-            emoji = re.search("<a?:[a-zA-Z_0-9]+:[0-9]+>", message.content[start_index:])
+            # check for an emoji that isn't escaped (at beginning of msg or any non-backslash character in front of it): with this format <a:Name_1:0123456789> or <:Name_2:0123456789> (a = animated)
+            emoji = re.search("(?:[^\\\\]|^)<a?:[a-zA-Z_0-9]+:[0-9]+>", message.content[start_index:]) # get first instance of an emoji in the message slice (to get a list of all emojis)
             if emoji is None:
                 break
-            sections = emoji.group().split(":")
-            id = sections[2][:-1]
-            name = sections[1]
-            animated = (sections[0] == "<a")
+            (animated, name, id) = emoji.group().replace(">","").split(":")
+            assert id.isdecimal(), f"Emoji `{emoji}` should have a numeric emoji id" # should be decimal due to regex
+            animated = (animated == "<a")
+
             if not any(id in emojiList for emojiList in emojis):
-                emojis.append([id,name])
+                emojis.append((animated, name, id))
             start_index += emoji.span()[1] # (11,29) for example
 
-
         for emoji in emojis:
-            assert animated is not None
-            await add_to_data(emoji[0], emoji[1], "message", animated)
+            await add_to_data(emoji, location = "message")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction):
         if reaction.emoji.id is not None:
-            await add_to_data(str(reaction.emoji.id), reaction.emoji.name, "reaction", reaction.emoji.animated)
+            await add_to_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)), "reaction")
 
     @emojistats.command(name="getemojidata",description="Get emoji usage data from an ID!")
     @app_commands.rename(emoji_name="emoji")
     @app_commands.describe(emoji_name="Emoji you want to get data of")
     async def get_emoji_data(self, itx: discord.Interaction, emoji_name: str):
         if ":" in emoji_name:
-            emoji_name = emoji_name.split(":")[2][:-1]
+            emoji_name = emoji_name.strip().split(":")[2][:-1]
         emoji_id = emoji_name
         if not emoji_id.isdecimal():
             await itx.response.send_message("You need to fill in the ID of the emoji. This ID can't contain other characters. Only numbers.",ephemeral=True)
@@ -94,22 +113,34 @@ class EmojiStats(commands.Cog):
                                         f"Last used: {datetime.utcfromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
 
     @emojistats.command(name="getunusedemojis",description="Get the least-used emojis")
-    @app_commands.describe(hidden="Do you want everyone in this channel to be able to see this result?",
+    @app_commands.describe(public="Do you want everyone in this channel to be able to see this result?",
                            max_results="How many emojis do you want to retrieve at most? (may return fewer)",
-                           used_max="Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 5)",
-                           msg_max="Up to how many times may the emoji have been used in a message? (default: 5)",
-                           react_max="Up to how many times may the emoj have been used as a reaction? (default: 5)",
+                           used_max="Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 10)",
+                           msg_max="Up to how many times may the emoji have been used in a message? (default: inf)",
+                           react_max="Up to how many times may the emoj have been used as a reaction? (default: inf)",
                            animated="Are you looking for animated emojis or static emojis")
     @app_commands.choices(animated=[
         discord.app_commands.Choice(name='Animated emojis', value=1),
         discord.app_commands.Choice(name='Static/Image emojis', value=2),
         discord.app_commands.Choice(name='Both', value=3)
     ])
-    async def get_unused_emojis(self,itx: discord.Interaction, hidden: bool = True, max_results:int = 10, used_max:int = 5, msg_max:int = 5, react_max:int = 5, animated:int = 3):
+    async def get_unused_emojis(self, itx: discord.Interaction, public: bool = True,
+                                max_results: int = 10, used_max: int = 10, msg_max: int = sys.maxsize, react_max: int = sys.maxsize,
+                                animated: int = 3):
         if not is_staff(itx):
             await itx.response.send_message("Due to the amount of database calls required, perhaps it's better not to make this publicly available. You can make use of /getemojidata and /getemojitop10 though :D", ephemeral=True)
             return
-        await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)",ephemeral=hidden)
+        await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)", ephemeral = not public)
+
+
+        unused_emojis = []
+
+        collection = asyncRinaDB["emojistats"]
+        query = {
+            "$expr": {
+                "$lt": [{"$add": ["$messageUsedCount", "$reactionUsedCount"]}, used_max]
+            }
+        }
 
         if max_results > 50:
             max_results = 50
@@ -120,32 +151,37 @@ class EmojiStats(commands.Cog):
         if react_max < 0:
             react_max = 0
 
-        unused_emojis = []
-        for emoji in itx.guild.emojis:
-            if emoji.animated and (animated == 2):
-                continue
-            if (not emoji.animated) and animated == 1:
-                continue
+        if msg_max != sys.maxsize: # only limit query on '_UsedCount' if you want to limit for it. Some entries don't have a value for it- Don't want to search for a "0" then.
+            query["messageUsedCount"] = {"$lt": msg_max}
+        if react_max != sys.maxsize: # only limit query on '_UsedCount' if you want to limit for it. Some entries don't have a value for it- Don't want to search for a "0" then.
+            query["reactionUsedCount"] = {"$lt": react_max}
+        if animated != 3: # only limit query with 'animated' if its value actually matters (not 3 / "Both")
+            query[animated] = animated == 1
 
-            collection = asyncRinaDB["emojistats"]
-            query = {"id": str(emoji.id)}
-            emojidata = await collection.find_one(query)
-            if emojidata is None:
+        emoji_stats: list[dict[str, str | int | bool]] = [x async for x in collection.find(query)]
+        emoji_stat_ids: list[str] = await collection.distinct("id")
+
+        for emoji in itx.guild.emojis:
+            if str(emoji.id) not in emoji_stat_ids:
                 unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> (0,0)")
                 continue
 
-            msg_used = emojidata.get('messageUsedCount',0)
-            reaction_used = emojidata.get('reactionUsedCount',0)
-            if (msg_used + reaction_used <= used_max) and (msg_used <= msg_max) and (reaction_used <= react_max):
-                unused_emojis.append(f"<{'a'*emoji.animated}:{emoji.name}:{emoji.id}> ({msg_used},{reaction_used})")
+            for emoji_stat in emoji_stats:
+                if emoji_stat["id"] == str(emoji.id): # assumes the db ID column is unique (grabs first matching result)
+                    break
+            else:
+                continue # emoji doesn't exist anymore?
+            
+            unused_emojis.append(f"<{ 'a'*emoji.animated }:{ emoji.name }:{ emoji.id }>"+
+                                 f"({ emoji_stat.get('messageUsedCount',0) },{ emoji_stat.get('reactionUsedCount',0) })")
 
             if len(unused_emojis) > max_results:
                 break
-            await asyncio.sleep(0)
 
         output = ', '.join(unused_emojis)
         if len(output) > 1850:
-            output = output[:1850] + "\nShortened to be able to be sent."
+            warning = "\nShortened to be able to be sent."
+            output = output[:(2000 - len(warning)-5)] + warning
         await itx.edit_original_response(content="These emojis have been used very little (x used in msg, x used as reaction):\n"+output)
 
     @emojistats.command(name="getemojitop10",description="Get top 10 most used emojis")
