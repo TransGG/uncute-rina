@@ -184,11 +184,12 @@ class EmojiStats(commands.Cog):
             if len(unused_emojis) > max_results:
                 break
 
+        header = "These emojis have been used very little (x used in msg, x used as reaction):\n"
         output = ', '.join(unused_emojis)
         if len(output) > 1850:
             warning = "\nShortened to be able to be sent."
-            output = output[:(2000 - len(warning)-5)] + warning
-        await itx.edit_original_response(content="These emojis have been used very little (x used in msg, x used as reaction):\n"+output)
+            output = output[:(2000 - len(header) - len(warning)-5)] + warning
+        await itx.edit_original_response(content = header + output)
 
     @emojistats.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def get_emoji_top_10(self, itx: discord.Interaction):

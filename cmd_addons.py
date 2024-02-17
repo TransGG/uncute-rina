@@ -418,7 +418,8 @@ class FunAddons(commands.Cog):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
-        self.headpatWait = 0
+        self.headpat_wait = 0
+        self.staff_contact_check_wait = random.randint(1000, 1500)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -426,8 +427,8 @@ class FunAddons(commands.Cog):
             return
         
         #random cool commands
-        self.headpatWait += 1
-        if self.headpatWait >= 1000:
+        self.headpat_wait += 1
+        if self.headpat_wait >= 1000:
             ignore = False
             if type(message.channel) is discord.Thread:
                 if message.channel.parent == 987358841245151262: # <#welcome-verify>
@@ -441,7 +442,7 @@ class FunAddons(commands.Cog):
             if message.guild.id in [981730502987898960]: # don't send in Mod server
                 ignore = True
             if not ignore:
-                self.headpatWait = 0
+                self.headpat_wait = 0
                 try:
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
                 except discord.errors.HTTPException:
@@ -450,6 +451,30 @@ class FunAddons(commands.Cog):
                         await message.add_reaction("☺") # relaxed
                     except discord.errors.Forbidden:
                         pass
+        
+        self.staff_contact_check_wait -= 1
+        if self.staff_contact_check_wait <= 0:
+            if message.channel.category.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
+                # general, trans masc treehouse, trans fem forest, enby enclave
+
+                if message.guild.id == self.client.custom_ids.get("enbyplace_server_id"):
+                    mod_ticket_channel_id = 1186054373986537522
+                elif message.guild.id == self.client.custom_ids.get("transonance_server_id"):
+                    mod_ticket_channel_id = 1108789589558177812
+                else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
+                    mod_ticket_channel_id = 995343855069175858
+                cmd_mention = self.client.get_command_mention("tag")
+
+                embed = discord.Embed(
+                    color=discord.Color.from_hsv(205/360, 65/100, 100/100),
+                    title = "This conversation was powered by friendship.",
+                    description = f"See someone breaing the rules? Unsure about a situation? You can always contact staff! Reach us in "
+                                    f"<#{mod_ticket_channel_id}>, or report a user/message with our bot (more info: {cmd_mention} `tag:report`) "
+                                    f"(Gives staff a bit more context :). You may always ping/dm a staff member or Moderators if necessary."
+                )
+                await message.channel.send(embed=embed)
+                self.staff_contact_check_wait = random.randint(1000, 1500)
+
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
