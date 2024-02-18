@@ -33,7 +33,7 @@ Add an api_keys.json file in the same folder as the program, in which you add yo
 
 Put the discord token, the MongoDB connection string from your databasem, and potential other API keys you might want to use into this file. API keys don't have to have a value (an empty string), but they do have to be added to the file. Missing keys will give descriptive errors upon program startup.
 
-Direct yourself to the right directory/folder (in a terminal; or so I'd like to run it) (cd C:\Users\USER\x\) and run the main file using `py Uncute-Rina.py`
+Direct yourself to the right directory/folder (in a terminal; or so I'd like to run it) (cd C:\Users\USER\x\) and run the main file using `py main.py`
 
 ## Support
 

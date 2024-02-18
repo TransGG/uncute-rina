@@ -422,7 +422,7 @@ class FunAddons(commands.Cog):
         self.staff_contact_check_wait = random.randint(1000, 1500)
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
         
@@ -430,32 +430,29 @@ class FunAddons(commands.Cog):
         self.headpat_wait += 1
         if self.headpat_wait >= 1000:
             ignore = False
-            if type(message.channel) is discord.Thread:
-                if message.channel.parent == 987358841245151262: # <#welcome-verify>
-                    ignore = True
-            if message.channel.name.startswith('ticket-') or message.channel.name.startswith('closed-'):
-                ignore = True
-            if message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
-                                               995330645901455380, 995330667665707108]:
-                # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
-                ignore = True
-            if message.guild.id in [981730502987898960]: # don't send in Mod server
-                ignore = True
-            if not ignore:
+            if (
+                    (type(message.channel) is discord.Thread and message.channel.parent == 987358841245151262) or # <#welcome-verify>
+                    message.channel.name.startswith('ticket-') or 
+                    message.channel.name.startswith('closed-') or 
+                    message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
+                                                    995330645901455380, 995330667665707108] or 
+                    # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
+                    message.guild.id in [981730502987898960] # don't send in Mod server
+                ):
+                pass
+            else:
                 self.headpat_wait = 0
                 try:
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
-                except discord.errors.HTTPException:
-                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. They might have blocked Rina...')
-                    try:
-                        await message.add_reaction("☺") # relaxed
-                    except discord.errors.Forbidden:
-                        pass
+                except discord.errors.Forbidden:
+                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url} (Forbidden): They might have blocked Rina...')
+                except discord.errors.HTTPException as ex:
+                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
         
         self.staff_contact_check_wait -= 1
         if self.staff_contact_check_wait <= 0:
-            if message.channel.category.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
-                # general, trans masc treehouse, trans fem forest, enby enclave
+            if message.channel.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
+                # TransPlace [general, trans masc treehouse, trans fem forest, enby enclave] # TODO: when cleo adds "report" func to EnbyPlace (or other servers in general), add those server's channel IDs too.
 
                 if message.guild.id == self.client.custom_ids.get("enbyplace_server_id"):
                     mod_ticket_channel_id = 1186054373986537522
@@ -468,13 +465,12 @@ class FunAddons(commands.Cog):
                 embed = discord.Embed(
                     color=discord.Color.from_hsv(205/360, 65/100, 100/100),
                     title = "This conversation was powered by friendship.",
-                    description = f"See someone breaing the rules? Unsure about a situation? You can always contact staff! Reach us in "
+                    description = f"See someone breaking the rules? Unsure about a situation? You can always contact staff! Reach us in "
                                     f"<#{mod_ticket_channel_id}>, or report a user/message with our bot (more info: {cmd_mention} `tag:report`) "
                                     f"(Gives staff a bit more context :). You may always ping/dm a staff member or Moderators if necessary."
                 )
                 await message.channel.send(embed=embed)
                 self.staff_contact_check_wait = random.randint(1000, 1500)
-
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",

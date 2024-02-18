@@ -20,11 +20,11 @@ class VCLogReader(commands.Cog):
         `list[tuple[`event_time_unix, (user_id, username), (previous_channel_id, name) | None, (current_channel_id, name) | None `]]`
         """
         output: list[tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None]] = [] # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
-        count = 0
 
         async for message in voice_log_channel.history(after  = datetime.fromtimestamp(min_time, tz=datetime.now().tzinfo),
                                                        before = datetime.fromtimestamp(max_time, tz=datetime.now().tzinfo), 
-                                                       limit  = msg_limit):
+                                                       limit  = msg_limit,
+                                                       oldest_first=True): # since "after" != None, oldest_first will be true anyway. Might as well make it definitive.
             # For context: the embed message sent by the Logger bot looks like this:
             #   author / image of user that sent message (author.name = username + descriminator (#0 in new discord update))
             #  case 1: the user joins/leaves a voice channel
@@ -42,7 +42,7 @@ class VCLogReader(commands.Cog):
             #   fields[1].name: ID
             #   fields[1].value: "```ini\nUser = 123456789\nNew = 234567\nOld = 123456```"
 
-            for embed in message.embeds[::-1]: # flip list because messages sort from newest to oldest whereas the embeds in these messages would sort from oldest to newest.
+            for embed in message.embeds:
                 data: tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None] = [] # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second variable if this works too. (long live python?)
                 data.append(int(embed.timestamp.timestamp())) # unix timestamp of event
                 username = embed.description.split("**",2)[1].split("#",1)[0] # split **mysticmia#0** to mysticmia (assumes discord usernames can't contain hashtags (which they can't))
@@ -150,10 +150,7 @@ class VCLogReader(commands.Cog):
                 #     print(f"   field value: {field.value}")
                 # print()
                 # print("\n"*2)
-
-            # if count > 3:
-            #     break
-
+        
         return output
             
 
