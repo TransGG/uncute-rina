@@ -127,10 +127,11 @@ class EmojiStats(commands.Cog):
     async def get_unused_emojis(self, itx: discord.Interaction, public: bool = False,
                                 max_results: int = 10, used_max: int = 10, msg_max: int = sys.maxsize, react_max: int = sys.maxsize,
                                 animated: int = 3):
-        if not is_staff(itx):
-            await itx.response.send_message("Due to the amount of database calls required, perhaps it's better not to make this publicly available. You can make use of /getemojidata and /getemojitop10 though :D", ephemeral=True)
-            return
-        await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)", ephemeral = not public)
+        # if not is_staff(itx):
+        #     await itx.response.send_message("Due to the amount of database calls required, perhaps it's better not to make this publicly available. You can make use of /getemojidata and /getemojitop10 though :D", ephemeral=True)
+        #     return
+        #await itx.response.send_message("This might take a while (\"Rina is thinking...\")\nThis message will be edited when it has found a few unused emojis (both animated and non-animated)", ephemeral = not public)
+        await itx.response.defer(ephemeral = not public)
 
 
         unused_emojis = []
@@ -189,7 +190,7 @@ class EmojiStats(commands.Cog):
         if len(output) > 1850:
             warning = "\nShortened to be able to be sent."
             output = output[:(2000 - len(header) - len(warning)-5)] + warning
-        await itx.edit_original_response(content = header + output)
+        await itx.followup.send(content = header + output)
 
     @emojistats.command(name="getemojitop10",description="Get top 10 most used emojis")
     async def get_emoji_top_10(self, itx: discord.Interaction):

@@ -1,5 +1,7 @@
 from import_modules import *
 
+channel_separator_table = str.maketrans({"<":"", "#":"", ">":""})
+
 class VCLogReader(commands.Cog):
     def __init__(self, client: Bot):
         global asyncRinaDB
@@ -150,7 +152,6 @@ class VCLogReader(commands.Cog):
                 #     print(f"   field value: {field.value}")
                 # print()
                 # print("\n"*2)
-        
         return output
             
 
@@ -158,10 +159,29 @@ class VCLogReader(commands.Cog):
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
                            upper_bound="Get data up to [period] minutes ago",
                            msg_log_limit="How many logs should I use to make the graph (default: 5000)")
-    async def get_voice_channel_data(self, itx: discord.Interaction, requested_channel: discord.VoiceChannel, lower_bound: str, upper_bound: str = None, msg_log_limit: int = 5000):
+    async def get_voice_channel_data(self, itx: discord.Interaction, requested_channel: str, lower_bound: str, upper_bound: str = None, msg_log_limit: int = 5000):
+        requested_channel: discord.app_commands.AppCommandChannel = requested_channel # update typing
         if not is_staff(itx):
             await itx.response.send_message("You don't have permissions to use this command.", ephemeral=True)
             return
+        warning = ""
+        if type(requested_channel) is discord.app_commands.AppCommandChannel:
+            voice_channel = itx.client.get_channel(requested_channel.id)
+        else:
+            if not requested_channel.isdecimal():
+                await itx.response.send_message("You need to give a numerical ID!", ephemeral=True)
+                return
+            voice_channel = itx.client.get_channel(int(requested_channel))
+
+        if type(voice_channel) is not discord.VoiceChannel:
+            voice_channel = Object() # make custom vc if the voice channel we're trying to get logs does not exist anymore.
+            voice_channel.id = int(requested_channel)
+            voice_channel.name = "Unknown channel"
+            voice_channel.members = []
+            voice_channel.mention = "<#" + requested_channel + ">"
+            warning = "Warning: This channel is not a voice channel, or has been deleted!\n\n"
+
+
         cmd_mention = self.client.get_command_mention("editguildinfo")
         try:
             log_channel_id = await self.client.get_guild_info(itx.guild_id, "vcActivityLogChannel")
@@ -192,8 +212,7 @@ class VCLogReader(commands.Cog):
             return
 
         await itx.response.defer(ephemeral=True)
-        
-        accuracy = 0.0001#(lower_bound-upper_bound)*(60/36=1.66666667) #divide graph into 36 sections 
+
         lower_bound *= 60 # minutes to seconds
         upper_bound *= 60
         current_time: float = datetime.now().timestamp()
@@ -207,8 +226,8 @@ class VCLogReader(commands.Cog):
         if max_time == current_time: # current_time - 0 == current_time
             # if looking until the current time/date, add fake "leave" event for every person that is currently still in the voice channel.
             # This ensures that even [those that haven't joined or left during the given time frame] will still be plotted on the graph.
-            for member in requested_channel.members:
-                events.append((current_time, (member.id, member.name), (requested_channel.id, requested_channel.name), None))
+            for member in voice_channel.members:
+                events.append((current_time, (member.id, member.name), (voice_channel.id, voice_channel.name), None))
 
         intermediate_data: dict[int, int | None | list[int]] = {}
 
@@ -217,18 +236,18 @@ class VCLogReader(commands.Cog):
             from_channel = from_channel[0] if from_channel else from_channel # set as its ID if not None (prevent TypeError: 'NoneType' object is not subscriptable)
             to_channel = to_channel[0] if to_channel else to_channel
             user_id = user[0]
-            if requested_channel.id not in [from_channel, to_channel]:
+            if voice_channel.id not in [from_channel, to_channel]:
                 continue
             if user[0] not in intermediate_data:
                 intermediate_data[user_id] = {"name":user[1], "time_temp":None, "timestamps":[]}
 
-            if from_channel == requested_channel.id:
+            if from_channel == voice_channel.id:
                 if intermediate_data[user_id]["time_temp"] is None:
                     intermediate_data[user_id]["timestamps"].append((min_time, unix))
                 else:
                     intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], unix))
                     intermediate_data[user_id]["time_temp"] = None
-            elif to_channel == requested_channel.id:
+            elif to_channel == voice_channel.id:
                 intermediate_data[user_id]["time_temp"] = unix
         for user_id in intermediate_data:
             if intermediate_data[user_id]["time_temp"]:
@@ -251,7 +270,7 @@ class VCLogReader(commands.Cog):
 
         color = "crimson"
         fig,ax=plt.subplots(figsize=(6,3))
-        fig.suptitle(f"VC data in '{requested_channel.id}' from T-{lower_bound/60} to T-{upper_bound/60}")
+        fig.suptitle(f"VC data in '{voice_channel.id}' from T-{lower_bound/60} to T-{upper_bound/60}")
 
         labels=[]
         for i, task in enumerate(df.groupby("User")):
@@ -288,7 +307,7 @@ class VCLogReader(commands.Cog):
         plt.tight_layout()
         #plt.show()
         plt.savefig('vcLogs.png', dpi=300)
-        await itx.followup.send(f"VC activity from {requested_channel.mention} (`{requested_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
+        await itx.followup.send(warning+f"VC activity from {voice_channel.mention} (`{voice_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
                                 ("\nNote: If you're looking in the past, people that joined before and left after the given timeframes may not show up on the graph. To ensure you get a good representation, be sure to add a bit of margin around the edges!" if max_time != current_time else "") +
                                 (f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 >= msg_log_limit else "")
                                 ,file=discord.File('vcLogs.png'))

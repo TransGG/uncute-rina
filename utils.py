@@ -1,5 +1,8 @@
 from import_modules import *
 
+class Object(object):
+    ...
+
 def is_verified(itx: discord.Interaction) -> bool:
     """
     Check if someone is verified
@@ -86,7 +89,9 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
     advanced (optional) :class:`bool`
         Whether to interpret `text` as advanced text (like minecraft in-chat colors). Replaces "&4" to red, "&l" to bold, etc. and "&&4" to a red background.
     """
-
+    if type(text) is not str:
+        text = repr(text)
+    
     colors = {
         "default":"\033[0m",
         "black":"\033[30m",
