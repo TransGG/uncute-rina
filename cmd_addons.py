@@ -430,7 +430,6 @@ class FunAddons(commands.Cog):
         added_pat = False
         self.headpat_wait += 1
         if self.headpat_wait >= 1000:
-            ignore = False
             if (
                     (type(message.channel) is discord.Thread and message.channel.parent == 987358841245151262) or # <#welcome-verify>
                     message.channel.name.startswith('ticket-') or 

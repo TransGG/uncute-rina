@@ -377,19 +377,19 @@ class TagFunctions(commands.Cog):
 
 
     async def role_autocomplete(self, itx: discord.Interaction, current: str):
-        role_options = [
-            "NPA",
-            "NVA"
-        ]
+        role_options = {
+            1126160553145020460: ("Hide Politics channel role",  "NPA"), #NPA
+            1126160612620243044: ("Hide Venting channel role", "NVA") # NVA
+        }
         options = []
         for role in itx.user.roles:
-            if role.name in role_options:
-                if current.lower() in role.name.lower():
-                    options.append(role.name)
+            if role.id in role_options:
+                if current.lower() in role_options[role.id][0].lower() or current.lower() in role_options[role.id][1].lower():
+                    options.append(role.id)
         if options:
             return [
-                app_commands.Choice(name=role, value=role)
-                for role in options
+                app_commands.Choice(name=role_options[role_id][0], value=role_options[role_id][1])
+                for role_id in options
             ][:15]
         else:
             return[app_commands.Choice(name="You don't have any roles to remove!", value="none")]
