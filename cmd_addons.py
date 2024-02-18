@@ -448,6 +448,11 @@ class FunAddons(commands.Cog):
                     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url} (Forbidden): They might have blocked Rina...')
                 except discord.errors.HTTPException as ex:
                     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
+        if message.content == "ababababa":
+            try:
+                await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
+            except discord.errors.Forbidden: # blocked rina :(
+                pass
         
         self.staff_contact_check_wait -= 1
         if self.staff_contact_check_wait <= 0:
