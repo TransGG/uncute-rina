@@ -450,7 +450,7 @@ class FunAddons(commands.Cog):
                 except discord.errors.HTTPException as ex:
                     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
 
-        if not added_pat and len(_temp := message.content) > 5 and (_temp.startswith("aba") or _temp.startswith("awa")):
+        if not added_pat and len(_temp := message.content.lower()) > 5 and (_temp.startswith("aba") or _temp.startswith("awa")):
                 _temp = _temp.replace("ab","").replace("aw","")
                 if _temp == "a":
                     try:
@@ -463,7 +463,7 @@ class FunAddons(commands.Cog):
                             await message.add_reaction("☺") # :relaxed:
                         else:
                             raise
-        if not added_pat and len(_temp := message.content) > 9 and _temp.startswith("a"):
+        if not added_pat and len(_temp := message.content.lower()) > 9 and _temp.startswith("a"):
             for char in _temp:
                 if char not in "abw":
                     break

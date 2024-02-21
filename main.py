@@ -1,6 +1,6 @@
 from import_modules import *
 
-BOT_VERSION = "1.2.7.16"
+BOT_VERSION = "1.2.7.17"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -265,7 +265,7 @@ if __name__ == '__main__':
             "cmd_customvcs",
             "cmd_emojistats",
             "cmd_getmemberdata",
-            "cmd_pronouns",
+            #"cmd_pronouns", # depreciated
             "cmd_qotw",
             "cmd_staffaddons",
             "cmd_tags",
