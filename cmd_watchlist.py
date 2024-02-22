@@ -59,6 +59,10 @@ class WatchList(commands.Cog):
         if not is_staff(itx):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
+        if user.id == self.client.user.id:
+            await itx.response.send_message(f"You just tried to add a watchlist to Uncute Rina. Are you sure about that.......?\n"
+                                            "If so, please send a message to Mia so she can remove this extra if-statement.", ephemeral=True)
+            return
         
         allow_different_report_author = False
         # different report author = different message author than the reported user, 

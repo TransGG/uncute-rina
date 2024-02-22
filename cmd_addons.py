@@ -1,5 +1,9 @@
 from import_modules import *
 
+
+STAFF_CONTACT_CHECK_WAIT_MIN = 1000
+STAFF_CONTACT_CHECK_WAIT_MAX = 1500
+
 currency_options = {
     code: 0 for code in "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,"
                         "CHF,CLF,CLP,CNH,CNY,COP,CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,GGP,GHS,GIP,GMD,GNF,"
@@ -419,14 +423,15 @@ class FunAddons(commands.Cog):
         self.client = client
         RinaDB = client.RinaDB
         self.headpat_wait = 0
-        self.staff_contact_check_wait = random.randint(1000, 1500)
+        self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
+        self.rude_comments_opinion_cooldown = 0
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
         
-        #random cool commands
+        # adding headpats every x messages
         added_pat = False
         self.headpat_wait += 1
         if self.headpat_wait >= 1000:
@@ -450,6 +455,7 @@ class FunAddons(commands.Cog):
                 except discord.errors.HTTPException as ex:
                     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
 
+        # adding headpats on abababa or awawawawa
         if not added_pat and len(_temp := message.content.lower()) > 5 and (_temp.startswith("aba") or _temp.startswith("awa")):
                 _temp = _temp.replace("ab","").replace("aw","")
                 if _temp == "a":
@@ -478,7 +484,8 @@ class FunAddons(commands.Cog):
                         await message.add_reaction("☺") # :relaxed:
                     else:
                         raise
-        
+
+        # embed "This conversation was powered by friendship" every x messages
         self.staff_contact_check_wait -= 1
         if self.staff_contact_check_wait <= 0:
             if message.channel.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
@@ -500,7 +507,18 @@ class FunAddons(commands.Cog):
                                     f"(Gives staff a bit more context :). You may always ping/dm a staff member or Moderators if necessary."
                 )
                 await message.channel.send(embed=embed)
-                self.staff_contact_check_wait = random.randint(1000, 1500)
+                self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
+
+        # give opinion on people hating on rina
+        self.rude_comments_opinion_cooldown -= 1
+        if self.rude_comments_opinion_cooldown < 0:
+            if self.client.user.id in [user.id for user in message.mentions]:
+                if (    ":" in message.content and
+                        "middlefinger" in message.content.lower().replace(" ","")):
+                    await message.reply("That's kind of rude... Why would you do that?")
+                    self.rude_comments_opinion_cooldown = STAFF_CONTACT_CHECK_WAIT_MIN * 6
+
+
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",

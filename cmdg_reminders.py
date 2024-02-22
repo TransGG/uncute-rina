@@ -357,7 +357,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
         #     itx.response.send_message("")
         # #todo
 
-        self.Reminder(self.client, now, distance, itx.user.id, reminder, db_data)
+        ReminderObject(self.client, now, distance, itx.user.id, reminder, db_data)
         # await itx.user.send(f"On <t:{now}:f> (in <t:{int(mktime(distance.timetuple()))}:R>), you asked to be reminded of \"{reminder}.\"")
         # distance = distance+(datetime.now()-datetime.utcnow())
         _distance = int(mktime(distance.timetuple()))
