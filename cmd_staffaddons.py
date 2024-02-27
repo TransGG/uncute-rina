@@ -42,7 +42,6 @@ class StaffAddons(commands.Cog):
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
         # This funcion largely copies the built-in channel.purge() function with a check, but is more fancy by offering a sort of progress update every 50-100 messages :D
-        global selfies_delete_week_command_cooldown
         if not is_staff(itx):
             await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
             return

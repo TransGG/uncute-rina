@@ -486,8 +486,7 @@ class FunAddons(commands.Cog):
                         raise
 
         # embed "This conversation was powered by friendship" every x messages
-        self.staff_contact_check_wait -= 1
-        if self.staff_contact_check_wait <= 0:
+        if self.staff_contact_check_wait == 0 or self.staff_contact_check_wait < -100: # make sure it only sends once (and <-100 for backup)
             if message.channel.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
                 # TransPlace [general, trans masc treehouse, trans fem forest, enby enclave] # TODO: when cleo adds "report" func to EnbyPlace (or other servers in general), add those server's channel IDs too.
 
@@ -508,6 +507,8 @@ class FunAddons(commands.Cog):
                 )
                 await message.channel.send(embed=embed)
                 self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
+        else:
+            self.staff_contact_check_wait -= 1
 
         # give opinion on people hating on rina
         self.rude_comments_opinion_cooldown -= 1
