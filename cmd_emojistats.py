@@ -63,7 +63,7 @@ class EmojiStats(commands.Cog):
                 break
             (animated, name, id) = emoji.group().replace(">","").split(":")
             assert id.isdecimal(), f"Emoji `{emoji}` should have a numeric emoji id" # should be decimal due to regex
-            animated = (animated == "<a")
+            animated = (animated.split("<")[-1] == "a")
 
             if not any(id in emojiList for emojiList in emojis):
                 emojis.append((animated, name, id))

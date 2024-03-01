@@ -134,12 +134,18 @@ class Starboard(commands.Cog):
             ch = self.client.get_channel(payload.channel_id)
             message = await ch.fetch_message(payload.message_id)
         except discord.errors.NotFound:
-            await log_to_guild(
-                self.client, self.client.get_guild(payload.guild_id),
-                f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) or message {payload.message_id}!\n'
-                f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}\n'
-                f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
-            return
+            # likely caused by someone removing a PluralKit message by reacting with the :x: emoji.
+
+            # await log_to_guild(
+            #     self.client, self.client.get_guild(payload.guild_id),
+            #     f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) or message {payload.message_id}!\n'
+            #     f'Potentially broken link: https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}\n'
+            #     f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.')
+            
+            if payload.emoji == "❌":
+                return
+
+            raise
 
         
         # print(repr(message.guild.id), repr(self.client.custom_ids["staff_server_id"]), message.guild.id == self.client.custom_ids["staff_server_id"])

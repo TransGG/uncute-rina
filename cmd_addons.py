@@ -1,8 +1,8 @@
 from import_modules import *
 
 
-STAFF_CONTACT_CHECK_WAIT_MIN = 1000
-STAFF_CONTACT_CHECK_WAIT_MAX = 1500
+STAFF_CONTACT_CHECK_WAIT_MIN = 5000
+STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 currency_options = {
     code: 0 for code in "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,"
@@ -486,7 +486,7 @@ class FunAddons(commands.Cog):
                         raise
 
         # embed "This conversation was powered by friendship" every x messages
-        if self.staff_contact_check_wait == 0 or self.staff_contact_check_wait < -100: # make sure it only sends once (and <-100 for backup)
+        if False:#self.staff_contact_check_wait == 0 or (self.staff_contact_check_wait < -10 and self.staff_contact_check_wait % 6 == 0): # make sure it only sends once (and <-10 for backup)
             if message.channel.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
                 # TransPlace [general, trans masc treehouse, trans fem forest, enby enclave] # TODO: when cleo adds "report" func to EnbyPlace (or other servers in general), add those server's channel IDs too.
 
@@ -498,17 +498,50 @@ class FunAddons(commands.Cog):
                     mod_ticket_channel_id = 995343855069175858
                 cmd_mention = self.client.get_command_mention("tag")
 
+                options = [
+                    "This conversation was powered by friendship.",
+                    "This conversation was brought to you by the mods' dwindling patience.",
+                    "This conversation was brought to you by **emotional damage**!"
+                    "This conversation was powdered by friendship and glitter.",
+                    "This conversation was brought to you by trans rights"
+                    "This conversation was brought to you by the dwindling patience of the mods.",
+                    "This conversation has been trying to reach you about your car's extended warranty.",
+                    "This conversation was sponsored by Raid Shadow Legends, one of the biggest mobile role-playing gam...",
+                    "This conversation was sponsored by Spotify; Want a break from the ads?",
+                    "This conversation was sponsored by Homestuck",
+                    "This conversation was brought to you by Flex Seal! To show the power of Flex Tape, I sawed this boat in half!",
+                    "Want to advertise? Call 0900 0000 to place an AD!",
+                    "Do you have suggestions for what to place here? Ping mysticmia and share!",
+                    "1", #"Fun fact: ",
+                ]
+                superpower = random.choice(options)
+
+                if superpower == "1":
+                    response = requests.get('https://api.api-ninjas.com/v1/facts?limit=1', headers={
+                        # "X-Api-Key": "YOUR_API_KEY", 
+                        "Origin": "https://api-ninjas.com",
+                        # "Host": "api.api-ninjas.com", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0", "Accept": "*/*", "Accept-Language": "en-US,en;q=0.5", 
+                        # "Accept-Encoding": "gzip, deflate, br", "Referer": "https://api-ninjas.com/", "Connection": "keep-alive", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "same-site", "Sec-GPC": "1", "TE": "trailers"
+                    }).json()[0]["fact"]
+                    starter = random.choice(["This conversation is cool and all, but did you know ", "Fun fact: "])
+                    response = starter + response[0].lower() + response[1:] # make first letter lowercase so it fits with the rest of the sentence
+                    if len(response) > 256: # embed title length limit is 256 chars.
+                        header = options[0]
+                    else:
+                        header = response
+                else:
+                    header = superpower
+
                 embed = discord.Embed(
                     color=discord.Color.from_hsv(205/360, 65/100, 100/100),
-                    title = "This conversation was powered by friendship.",
+                    title = header,
                     description = f"See someone breaking the rules? Unsure about a situation? You can always contact staff! Reach us in "
                                     f"<#{mod_ticket_channel_id}>, or report a user/message with our bot (more info: {cmd_mention} `tag:report`) "
                                     f"(Gives staff a bit more context :). You may always ping/dm a staff member or Moderators if necessary."
                 )
                 await message.channel.send(embed=embed)
                 self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
-        else:
-            self.staff_contact_check_wait -= 1
+        self.staff_contact_check_wait -= 1
 
         # give opinion on people hating on rina
         self.rude_comments_opinion_cooldown -= 1
@@ -517,9 +550,7 @@ class FunAddons(commands.Cog):
                 if (    ":" in message.content and
                         "middlefinger" in message.content.lower().replace(" ","")):
                     await message.reply("That's kind of rude... Why would you do that?")
-                    self.rude_comments_opinion_cooldown = STAFF_CONTACT_CHECK_WAIT_MIN * 6
-
-
+                    self.rude_comments_opinion_cooldown = STAFF_CONTACT_CHECK_WAIT_MIN * 8
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
