@@ -139,6 +139,41 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
+def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING):
+    """
+    Get a matching (partial) emoji object from an emoji string or emoji ID.
+
+    ### Parameters:
+    ---------------
+    client: :class:`Bot`
+        The client/bot whose servers to check for the emoji
+    emoji_str: :class:`str` | :class:`discord.utils.MISSING`
+        The emoji (<a:emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
+        
+    ### Returns:
+    ------------
+    - `None` if no emoji found or it can't be used by the bot (not in the server).
+    - `PartialEmoji` if emoji is unicode
+    - `Emoji` if emoji is valid and can be used but the bot.
+    """
+    if emoji_str is discord.utils.MISSING:
+        return None
+    elif emoji_str.isdecimal():
+        return client.get_emoji(int(emoji_str)) # returns None if not found
+    else:
+        emoji_partial = discord.PartialEmoji.from_str(emoji_str)
+        if emoji_partial is None or emoji_partial.is_unicode_emoji():
+            # note: PartialEmoji.from_str turns "e" into <PartialEmoji name="e", id=None>
+            #   this means .is_unicode_emoji will return True because id == None (and name != None?)
+            #   so it might still raise a NotFound error
+            return emoji_partial
+        emoji = client.get_emoji(emoji_partial.id)
+        if emoji is None:
+            return None
+        if not emoji.is_usable():
+            return None
+        return emoji
+
 class EqualDexRegion:
     def __init__(self, data):
         self.id = data['region_id']
@@ -867,35 +902,16 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         else:
             errors.append("- The message ID needs to be a number!")
 
-        def get_emoji(client: Bot, emoji_str: str):
-            if emoji_str is discord.utils.MISSING:
-                return None
-            elif emoji_str.isdecimal():
-                return client.get_emoji(int(emoji_str)) # returns None if not found
-            else:
-                emoji_partial = discord.PartialEmoji.from_str(emoji_str)
-                if emoji_partial is None or emoji_partial.is_unicode_emoji():
-                    # note: PartialEmoji.from_str turns "e" into <PartialEmoji name="e", id=None>
-                    #   this means .is_unicode_emoji will return True because id == None (and name != None?)
-                    #   so it might still raise a NotFound error
-                    return emoji_partial
-                emoji = client.get_emoji(emoji_partial.id)
-                if None:
-                    return None
-                if not emoji.is_usable():
-                    return None
-                return emoji
-
-        upvote_emoji = get_emoji(self.client, upvote_emoji)
+        upvote_emoji = get_emoji_from_str(self.client, upvote_emoji)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
 
-        downvote_emoji = get_emoji(self.client, downvote_emoji)
+        downvote_emoji = get_emoji_from_str(self.client, downvote_emoji)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
 
         if neutral_emoji is not discord.utils.MISSING:
-            neutral_emoji = get_emoji(self.client, neutral_emoji)
+            neutral_emoji = get_emoji_from_str(self.client, neutral_emoji)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
