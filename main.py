@@ -1,6 +1,6 @@
 from import_modules import *
 
-BOT_VERSION = "1.2.7.21"
+BOT_VERSION = "1.2.7.22"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 

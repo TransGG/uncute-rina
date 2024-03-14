@@ -104,13 +104,13 @@ class WatchList(commands.Cog):
             except:
                 await itx.followup.send("Couldn't fetch message from message_id. Perhaps you copied the wrong ID, "
                                         "were in another channel than the one in which the message was sent, or I don't "
-                                        "have access to this current channel?")
+                                        "have access to this current channel?", ephemeral=True)
                 raise
             if reported_message.author.id != user.id and not allow_different_report_author:
                 await itx.followup.send(f":warning: The given message didn't match the mentioned user!\n"
                                         f"(message author: {reported_message.author}, mentioned user: {user})\n"
                                         f"If you want to use this message anyway, add \" | overwrite\" after the message id\n"
-                                        f"(example: \"1817305029878989603 | overwrite\")")
+                                        f"(example: \"1817305029878989603 | overwrite\")", ephemeral=True)
                 return
             mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url})\n> {reported_message.content}\n"
             if allow_different_report_author:
