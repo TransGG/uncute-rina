@@ -139,7 +139,7 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
-def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING):
+def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSentinel):
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
@@ -147,7 +147,7 @@ def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING):
     ---------------
     client: :class:`Bot`
         The client/bot whose servers to check for the emoji
-    emoji_str: :class:`str` | :class:`discord.utils.MISSING`
+    emoji_str: :class:`str` | `discord.utils.MISSING`
         The emoji (<a:emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
         
     ### Returns:
@@ -156,7 +156,7 @@ def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING):
     - `PartialEmoji` if emoji is unicode
     - `Emoji` if emoji is valid and can be used but the bot.
     """
-    if emoji_str is discord.utils.MISSING:
+    if emoji_str == discord.utils.MISSING:
         return None
     elif emoji_str.isdecimal():
         return client.get_emoji(int(emoji_str)) # returns None if not found
