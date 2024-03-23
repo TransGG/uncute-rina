@@ -14,7 +14,7 @@ currency_options = {
                         "ZAR,ZMW,ZWL".split(",")}
 conversion_rates = { # [default 0, incrementation]
     "temperature":{
-        "Celcius"    : [273.15, 1, "°C"],
+        "Celsius"    : [273.15, 1, "°C"],
         "Kelvin"     : [0, 1, "K"],
         "Fahrenheit" : [459.67, 1.8, "°F"],
         "Rankine"    : [0, 1.8, "°R"]
@@ -868,9 +868,9 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
             return
         base_value = (value + options[from_unit][0]) / options[from_unit][1]
         # base_value is essentially the "x" in the conversion rates
-        #      {"Celcius": [273.15, 1],
+        #      {"Celsius": [273.15, 1],
         #       "Fahrenheit": [459.67, 1.8]}
-        # x = (273.15 + C degrees Celcius) / 1
+        # x = (273.15 + C degrees Celsius) / 1
         # result = x * 1.8 - 459.67
         result = (base_value * options[to_unit][1]) - options[to_unit][0]
         result = round(result,12)
