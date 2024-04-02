@@ -14,7 +14,7 @@ currency_options = {
                         "ZAR,ZMW,ZWL".split(",")}
 conversion_rates = { # [default 0, incrementation]
     "temperature":{
-        "Celcius"    : [273.15, 1, "°C"],
+        "Celsius"    : [273.15, 1, "°C"],
         "Kelvin"     : [0, 1, "K"],
         "Fahrenheit" : [459.67, 1.8, "°F"],
         "Rankine"    : [0, 1.8, "°R"]
@@ -742,7 +742,7 @@ class OtherAddons(commands.Cog):
         RinaDB = client.RinaDB
         
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         try: # mention targeted user if added to mod-ticket with /add target:@user
             # message.channel.category.id
             if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
@@ -758,6 +758,9 @@ class OtherAddons(commands.Cog):
         except (AttributeError, discord.errors.ClientException):
             # channel.category apparently discord raises ClientException: Parent channel not found, instead of attribute error
             pass
+
+        if "celcius" in message.content.lower():
+            await message.reply("Fun fact: Celsius was named after a guy named ['Anders Celsius'](https://en.wikipedia.org/wiki/Anders_Celsius). 'Celcius' is therefor an incorrect spelling. :)")
 
     async def unit_autocomplete(self, itx: discord.Interaction, current: str):
         options = conversion_rates.copy()
@@ -817,9 +820,9 @@ class OtherAddons(commands.Cog):
             return
         base_value = (value + options[from_unit][0]) / options[from_unit][1]
         # base_value is essentially the "x" in the conversion rates
-        #      {"Celcius": [273.15, 1],
+        #      {"Celsius": [273.15, 1],
         #       "Fahrenheit": [459.67, 1.8]}
-        # x = (273.15 + C degrees Celcius) / 1
+        # x = (273.15 + C degrees Celsius) / 1
         # result = x * 1.8 - 459.67
         result = (base_value * options[to_unit][1]) - options[to_unit][0]
         result = round(result,12)
