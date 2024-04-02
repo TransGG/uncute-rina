@@ -1,8 +1,29 @@
 from import_modules import *
 
-BOT_VERSION = "1.2.7.22"
+BOT_VERSION = "1.2.7.23"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
+
+EXTENSIONS = [
+    "cmd_addons",
+    "cmd_compliments",
+    "cmd_customvcs",
+    "cmd_emojistats",
+    "cmd_help",
+    "cmd_getmemberdata",
+    #"cmd_pronouns", # depreciated
+    "cmd_qotw",
+    "cmd_staffaddons",
+    "cmd_tags",
+    "cmd_termdictionary",
+    "cmd_todolist",
+    "cmd_toneindicator",
+    "cmd_vclogreader",
+    "cmd_watchlist",
+    "cmdg_nameusage",
+    "cmdg_reminders",
+    "cmdg_starboard",
+]
 
 class Bot(commands.Bot):
     def __init__(self, api_tokens: dict, version: str, 
@@ -259,29 +280,10 @@ if __name__ == '__main__':
         ## cache server settings into client, to prevent having to load settings for every extension
         debug(f"[##     ]: Started Bot"+" "*30,color="green")
         ## activate the extensions/programs/code for slash commands
-        extensions = [
-            "cmd_addons",
-            "cmd_compliments",
-            "cmd_customvcs",
-            "cmd_emojistats",
-            "cmd_getmemberdata",
-            #"cmd_pronouns", # depreciated
-            "cmd_qotw",
-            "cmd_staffaddons",
-            "cmd_tags",
-            "cmd_termdictionary",
-            "cmd_todolist",
-            "cmd_toneindicator",
-            "cmd_vclogreader",
-            "cmd_watchlist",
-            "cmdg_nameusage",
-            "cmdg_reminders",
-            "cmdg_starboard",
-        ]
 
-        for extID in range(len(extensions)):
-            debug(f"[{'#'*extID}+{' '*(len(extensions)-extID-1)}]: Loading {extensions[extID]}"+" "*15,color="light_blue",end='\r')
-            await client.load_extension(extensions[extID])
+        for extID in range(len(EXTENSIONS)):
+            debug(f"[{'#'*extID}+{' '*(len(EXTENSIONS)-extID-1)}]: Loading {EXTENSIONS[extID]}"+" "*15,color="light_blue",end='\r')
+            await client.load_extension(EXTENSIONS[extID])
         debug(f"[###    ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
 
         debug(f"[###+   ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
