@@ -1,6 +1,6 @@
 from import_modules import *
 
-BOT_VERSION = "1.2.7.24"
+BOT_VERSION = "1.2.8.1"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -226,7 +226,7 @@ def get_version() -> str:
         f.write(f"{version}")
     return version
 
-def create_client(tokens: dict, RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase, version: str) -> discord.Client:
+def create_client(tokens: dict, RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase, version: str) -> Bot:
     debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
@@ -260,7 +260,7 @@ if __name__ == '__main__':
     async def on_ready():
         debug(f"[#######]: Logged in as {client.user}, in version {version} (in {datetime.now()-program_start})",color="green")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
-
+        #await client.tree.sync()
 
         debug(f"[+]: Pre-loading all watchlist threads", color="light_blue",end="\r")
         watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])

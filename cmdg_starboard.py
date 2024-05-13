@@ -7,7 +7,7 @@ local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
 
 
-async def get_starboard_original_message(self, star_message: discord.Message, starboard_emoji: discord.Emoji):
+async def get_starboard_original_message(client: Bot, star_message: discord.Message, starboard_emoji: discord.Emoji):
     # find original message
     text = star_message.embeds[0].fields[0].value ## "[Jump!]({msgLink})"
     link = text.split("(")[1]
@@ -19,11 +19,11 @@ async def get_starboard_original_message(self, star_message: discord.Message, st
     #    https:/ /discord.com / channels / 985931648094834798 / 1006682505149169694 / 1014887159485968455
     guild_id, channel_id, message_id = [int(i) for i in link.split("/")[4:]]
     try:
-        ch = self.client.get_channel(channel_id)
+        ch = client.get_channel(channel_id)
         original_message = await ch.fetch_message(message_id)
     except discord.NotFound:
         # if original message removed, remove starboard message
-        await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
+        await log_to_guild(client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {message_id}) (original message could not be found)")
         starboard_message_ids_marked_for_deletion.append(star_message.id)
         await star_message.delete()
         for i in range(len(local_starboard_message_list)):
@@ -32,12 +32,12 @@ async def get_starboard_original_message(self, star_message: discord.Message, st
                 break
         return
     except discord.errors.Forbidden:
-        await log_to_guild(self.client, star_message.guild, f":warning: Couldn't fetch starboard message [{star_message.id}]({star_message.jump_url}) from this channel ({ch.mention})!")
+        await log_to_guild(client, star_message.guild, f":warning: Couldn't fetch starboard message [{star_message.id}]({star_message.jump_url}) from this channel ({ch.mention})!")
         return
     return original_message
 
-async def update_starboard_message_score(self, star_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int):
-    original_message: discord.Message = get_starboard_original_message(star_message, starboard_emoji)
+async def update_starboard_message_score(client: Bot, star_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int):
+    original_message: discord.Message = get_starboard_original_message(client, star_message, starboard_emoji)
     if original_message is None:
         return
 
@@ -60,7 +60,7 @@ async def update_starboard_message_score(self, star_message: discord.Message, st
                         star_reacters.append(user.id)
 
     star_stat = len(star_reacters)
-    if self.client.user.id in star_reacters:
+    if client.user.id in star_reacters:
         star_stat -= 1
 
     for reaction in star_message.reactions:
@@ -70,7 +70,7 @@ async def update_starboard_message_score(self, star_message: discord.Message, st
 
     #if more x'es than stars, and more than [15] reactions, remove message
     if star_stat < 0 and reactionTotal >= downvote_init_value:
-        await log_to_guild(self.client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {original_message.id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
+        await log_to_guild(client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {original_message.id}) (too many downvotes! Score: {star_stat}, Votes: {reactionTotal})")
         starboard_message_ids_marked_for_deletion.append(star_message.id)
         await star_message.delete()
         for i in range(len(local_starboard_message_list)):
@@ -101,7 +101,7 @@ async def update_starboard_message_score(self, star_message: discord.Message, st
             return
         raise
 
-async def get_starboard_messages(self, star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
+async def get_starboard_messages(star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
     global busy_updating_starboard_messages, local_starboard_message_list, local_starboard_message_list_refresh_timestamp
     if not busy_updating_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > STARBOARD_REFRESH_DELAY: # refresh once every 1000 seconds
         busy_updating_starboard_messages = True
@@ -157,12 +157,12 @@ class Starboard(commands.Cog):
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            original_starboard_message: discord.Message = get_starboard_original_message(message, starboard_emoji)
+            original_starboard_message: discord.Message = get_starboard_original_message(self.client, message, starboard_emoji)
             if original_starboard_message is not None and original_starboard_message.author.id == payload.user_id:
                 await message.delete()
 
             if len(message.embeds) > 0:
-                await update_starboard_message_score(message, starboard_emoji, downvote_init_value)
+                await update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
@@ -173,7 +173,7 @@ class Starboard(commands.Cog):
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await update_starboard_message_score(star_message, starboard_emoji, downvote_init_value)
+                                await update_starboard_message_score(self.client, star_message, starboard_emoji, downvote_init_value)
                                 return
                     return
                 elif reaction.count == star_minimum:
@@ -281,7 +281,7 @@ class Starboard(commands.Cog):
 
         if message.channel.id == star_channel.id:
             if len(message.embeds) > 0:
-                await update_starboard_message_score(message, starboard_emoji, downvote_init_value)
+                await update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
@@ -292,7 +292,7 @@ class Starboard(commands.Cog):
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await update_starboard_message_score(star_message, starboard_emoji, downvote_init_value)
+                                await update_starboard_message_score(self.client, star_message, starboard_emoji, downvote_init_value)
                                 return
 
     @commands.Cog.listener()

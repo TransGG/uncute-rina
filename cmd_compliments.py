@@ -39,6 +39,126 @@ class ConfirmPronounsView(discord.ui.View):
         await itx.response.edit_message(content='Selected Unisex/Unknown gender for the compliment', view=None)
         self.stop()
 
+async def choose_and_send_compliment(client: Bot, itx: discord.Interaction, user: discord.User, type: str):
+    quotes = {
+        "fem_quotes": [
+            # "Was the sun always this hot? or is it because of you?",
+            # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
+            # "I bet you sweat glitter.",
+            "Your hair looks stunning!",
+            "Being around you is like being on a happy little vacation.",
+            "Good girll",
+            "Who's a good girl?? You are!!",
+            "Amazing! Perfect! Beautiful! How **does** she do it?!",
+            "I can tell that you are a very special and talented girl!",
+            "Here, have this cute sticker!",
+            "Beep boop :zap: Oh no! my circuits overloaded! Her cuteness was too much for me to handle!",
+        ],
+        "masc_quotes": [
+            "You are the best man out there.",
+            "You are the strongest guy I know.",
+            "You have an amazing energy!",
+            "You seem to know how to fix everything!",
+            "Waw, you seem like a very attractive guy!",
+            "Good boyy!",
+            "Who's a cool guy? You are!!",
+            "I can tell that you are a very special and talented guy!",
+            "You're such a gentleman!",
+            "You always know how to make people feel welcome and included :D",
+            "Your intelligence and knowledge never cease to amaze me :O",
+            "Beep boop :zap: Oh no! my circuits overloaded! His aura was so strong that I couldn't generate a cool compliment!",
+            
+
+        ],
+        "they_quotes": [
+            "I can tell that you are a very special and talented person!",
+            "Their, their... ",
+        ],
+        "it_quotes": [
+            "I bet you do the crossword puzzle in ink!",
+        ],
+        "unisex_quotes": [ #unisex quotes are added to each of the other quotes later on.
+            "Hey I have some leftover cookies.. \\*wink wink\\*",
+            # "_Let me just hide this here-_ hey wait, are you looking?!", #it were meant to be cookies TwT
+            "Would you like a hug?",
+            "Would you like to walk in the park with me? I gotta walk my catgirls",
+            "morb",
+            "You look great today!",
+            "You light up the room!",
+            "On a scale from 1 to 10, you’re an 11!",
+            'When you say, “I meant to do that,” I totally believe you.',
+            "You should be thanked more often. So thank you!",
+            "You are so easy to have a conversation with!",
+            "Ooh you look like a good candidate to give my pet blahaj to!",
+            "Here, have a sticker!",
+            "You always know how to put a positive spin on things!",
+            "You make the world a better place just by being in it",
+            "Your strength and resilience is truly inspiring.",
+            "You have a contagious positive attitude that lifts up those around you.",
+            "Your positive energy is infectious and makes everyone feel welcomed!",
+            "You have a great sense of style and always look so put together <3",
+            "You are a truly unique and wonderful person!",
+        ]
+    }
+    type = {
+        "she/her"   : "fem_quotes",
+        "he/him"    : "masc_quotes",
+        "they/them" : "they_quotes",
+        "it/its"    : "it_quotes",
+        "unisex"    : "unisex_quotes", #todo
+    }[type]
+
+    for x in quotes:
+        if x == "unisex_quotes":
+            continue
+        else:
+            quotes[x] += quotes["unisex_quotes"]
+
+    collection = RinaDB["complimentblacklist"]
+    query = {"user": user.id}
+    search: dict[str,int|list] = collection.find_one(query)
+    blacklist: list = []
+    if search is not None:
+        try:
+            blacklist += search["list"]
+        except KeyError:
+            pass
+    query = {"user": itx.user.id}
+    search = collection.find_one(query)
+    if search is not None:
+        try:
+            blacklist += search["personal_list"]
+        except KeyError:
+            pass
+    for string in blacklist:
+        dec = 0
+        for x in range(len(quotes[type])):
+            if string in quotes[type][x-dec]:
+                del quotes[type][x-dec]
+                dec += 1
+    if len(quotes[type]) == 0:
+        quotes[type].append("No compliment quotes could be given... You and/or this person have blacklisted every quote.")
+
+    base = f"{itx.user.mention} complimented {user.mention}!\n"
+    cmd_mention = client.get_command_mention("developer_request")
+    cmd_mention1 = client.get_command_mention("complimentblacklist")
+    suffix = f"""\n\nPlease give suggestions for compliments! DM <@262913789375021056>, make a staff ticket, or use {cmd_mention} to suggest one. Do you dislike this compliment? Use {cmd_mention1} `location:being complimented` `mode:Add` `string: ` and block specific words (or the letters "e" and "o" to block every compliment)"""
+    if itx.response.is_done():
+        # await itx.edit_original_response(content=base+random.choice(quotes[type]), view=None)
+        await itx.followup.send(content=base+random.choice(quotes[type])+suffix, allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
+    else:
+        await itx.response.send_message(base+random.choice(quotes[type])+suffix, allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
+
+async def send_confirm_gender_modal(client: Bot, itx: discord.Interaction, user: discord.User):
+    # Define a simple View that gives us a confirmation menu
+    view = ConfirmPronounsView(timeout=60)
+    await itx.response.send_message(f"{user.mention} doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view,ephemeral=True)
+    await view.wait()
+    if view.value is None:
+        await itx.edit_original_response(content=':x: Timed out...', view=None)
+    else:
+        await choose_and_send_compliment(client, itx, user, view.value)
+
 class Compliments(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -152,129 +272,13 @@ class Compliments(commands.Cog):
             await itx.response.send_message("Aw man, it seems this person isn't in the server. I wish I could compliment them but they won't be able to see it!", ephemeral=True)
             return
 
-        async def call(itx, user, type):
-            quotes = {
-                "fem_quotes": [
-                    # "Was the sun always this hot? or is it because of you?",
-                    # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
-                    # "I bet you sweat glitter.",
-                    "Your hair looks stunning!",
-                    "Being around you is like being on a happy little vacation.",
-                    "Good girll",
-                    "Who's a good girl?? You are!!",
-                    "Amazing! Perfect! Beautiful! How **does** she do it?!",
-                    "I can tell that you are a very special and talented girl!",
-                    "Here, have this cute sticker!",
-                    "Beep boop :zap: Oh no! my circuits overloaded! Her cuteness was too much for me to handle!",
-                ],
-                "masc_quotes": [
-                    "You are the best man out there.",
-                    "You are the strongest guy I know.",
-                    "You have an amazing energy!",
-                    "You seem to know how to fix everything!",
-                    "Waw, you seem like a very attractive guy!",
-                    "Good boyy!",
-                    "Who's a cool guy? You are!!",
-                    "I can tell that you are a very special and talented guy!",
-                    "You're such a gentleman!",
-                    "You always know how to make people feel welcome and included :D",
-                    "Your intelligence and knowledge never cease to amaze me :O",
-                    "Beep boop :zap: Oh no! my circuits overloaded! His aura was so strong that I couldn't generate a cool compliment!",
-                    
-
-                ],
-                "they_quotes": [
-                    "I can tell that you are a very special and talented person!",
-                    "Their, their... ",
-                ],
-                "it_quotes": [
-                    "I bet you do the crossword puzzle in ink!",
-                ],
-                "unisex_quotes": [ #unisex quotes are added to each of the other quotes later on.
-                    "Hey I have some leftover cookies.. \\*wink wink\\*",
-                    # "_Let me just hide this here-_ hey wait, are you looking?!", #it were meant to be cookies TwT
-                    "Would you like a hug?",
-                    "Would you like to walk in the park with me? I gotta walk my catgirls",
-                    "morb",
-                    "You look great today!",
-                    "You light up the room!",
-                    "On a scale from 1 to 10, you’re an 11!",
-                    'When you say, “I meant to do that,” I totally believe you.',
-                    "You should be thanked more often. So thank you!",
-                    "You are so easy to have a conversation with!",
-                    "Ooh you look like a good candidate to give my pet blahaj to!",
-                    "Here, have a sticker!",
-                    "You always know how to put a positive spin on things!",
-                    "You make the world a better place just by being in it",
-                    "Your strength and resilience is truly inspiring.",
-                    "You have a contagious positive attitude that lifts up those around you.",
-                    "Your positive energy is infectious and makes everyone feel welcomed!",
-                    "You have a great sense of style and always look so put together <3",
-                    "You are a truly unique and wonderful person!",
-                ]
-            }
-            type = {
-                "she/her"   : "fem_quotes",
-                "he/him"    : "masc_quotes",
-                "they/them" : "they_quotes",
-                "it/its"    : "it_quotes",
-                "unisex"    : "unisex_quotes", #todo
-            }[type]
-
-            for x in quotes:
-                if x == "unisex_quotes":
-                    continue
-                else:
-                    quotes[x] += quotes["unisex_quotes"]
-
-            collection = RinaDB["complimentblacklist"]
-            query = {"user": user.id}
-            search: dict[str,int|list] = collection.find_one(query)
-            blacklist: list = []
-            if search is not None:
-                try:
-                    blacklist += search["list"]
-                except KeyError:
-                    pass
-            query = {"user": itx.user.id}
-            search = collection.find_one(query)
-            if search is not None:
-                try:
-                    blacklist += search["personal_list"]
-                except KeyError:
-                    pass
-            for string in blacklist:
-                dec = 0
-                for x in range(len(quotes[type])):
-                    if string in quotes[type][x-dec]:
-                        del quotes[type][x-dec]
-                        dec += 1
-            if len(quotes[type]) == 0:
-                quotes[type].append("No compliment quotes could be given... You and/or this person have blacklisted every quote.")
-
-            base = f"{itx.user.mention} complimented {user.mention}!\n"
-            if itx.response.is_done():
-                # await itx.edit_original_response(content=base+random.choice(quotes[type]), view=None)
-                await itx.followup.send(content=base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
-            else:
-                await itx.response.send_message(base+random.choice(quotes[type]), allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
-        async def confirm_gender():
-            # Define a simple View that gives us a confirmation menu
-            view = ConfirmPronounsView(timeout=60)
-            await itx.response.send_message(f"{user.mention} doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view,ephemeral=True)
-            await view.wait()
-            if view.value is None:
-                await itx.edit_original_response(content=':x: Timed out...', view=None)
-            else:
-                await call(itx, user, view.value)
-
         roles = ["he/him", "she/her", "they/them", "it/its"]
         random.shuffle(userroles) # pick a random order for which pronoun role to pick
         for role in userroles:
             if role.name.lower() in roles:
-                await call(itx, user, role.name.lower())
+                await choose_and_send_compliment(self.client, itx, user, role.name.lower())
                 return
-        await confirm_gender()
+        await send_confirm_gender_modal(self.client, itx, user)
 
     @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
     @app_commands.choices(location=[

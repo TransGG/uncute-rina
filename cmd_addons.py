@@ -641,6 +641,9 @@ class FunAddons(commands.Cog):
         else:
             await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ","")
+            if advanced == "help":
+                await itx.response.send("I don't think I ever implemented this... Ping mysticmia for more information about this command, or run /help `page:102` for more information.")
+
             def prod(list: list):
                 a = 1
                 for x in list:
