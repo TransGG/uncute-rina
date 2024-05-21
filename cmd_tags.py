@@ -9,6 +9,7 @@ hsv_color_list = { #in h    s    v
     "trigger warnings"                : [240,  40, 100],
     "tone indicators"                 : [170,  40, 100],
     "trusted role"                    : [280,  40, 100],
+    "image ban role"                  : [260,  40, 100],
     "selfies"                         : [120,  40, 100],
     "minimodding or correcting staff" : [340,  55, 100],
     "avoiding politics"               : [ 60,  40, 100],
@@ -110,14 +111,17 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
+    def get_mod_ticket_channel_id(self, context: discord.Interaction | discord.TextChannel):
+        if context.guild.id == client.custom_ids.get("enbyplace_server_id"):
+            return 1186054373986537522
+        elif context.guild.id == client.custom_ids.get("transonance_server_id"):
+            return 1108789589558177812
+        else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
+            return 995343855069175858
+
     async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
-        if context.guild.id == client.custom_ids.get("enbyplace_server_id"):
-            mod_ticket_channel_id = 1186054373986537522
-        elif context.guild.id == client.custom_ids.get("transonance_server_id"):
-            mod_ticket_channel_id = 1108789589558177812
-        else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
-            mod_ticket_channel_id = 995343855069175858
+        mod_ticket_channel_id = self.get_mod_ticket_channel_id(context)
         embed = discord.Embed(
             color=colours["report"], #a more saturated red orange color
             title='Reporting a message or scenario',
@@ -195,6 +199,26 @@ class Tags:
                         "You can obtain the trusted role by sending 500 messages or after gaining the "
                         "equivalent XP from voice channel usage. If you rejoin the server you can always "
                         "ask for the role back too!"
+        )
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+
+    async def send_imagebanrole_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
+        mod_ticket_channel_id = self.get_mod_ticket_channel_id(context)
+        embed = discord.Embed(
+            color=colours["image ban role"], # magenta
+            title="TEB (Image Ban)",
+            description="Why can't I send images in the server? Why are my .GIFs only sending links and not "
+                        "the actual meme I was hoping for?\n"
+                        "\n"
+                        "You have the TEB (Temporary Embed Ban, or Image Ban for short) role. There may be a "
+                        "number of reasons for it, but the most common one is that most new verifications "
+                        "have it. Don't worry - you're not in trouble if this is the case. It's simply a "
+                        "method we use to prevent trolls and other bad actors from spamming our server.\n"
+                        "\n"
+                        "If you've been active on the server for a bit and need this role removed, please "
+                       f"don't hesitate to make a ticket in <#{mod_ticket_channel_id}>"
+                        "Do note that mods will *not* remove the role unless you have been active on the server, "
+                        "or if you've received it in conjunction with a warning."
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
@@ -363,6 +387,7 @@ class TagFunctions(commands.Cog):
             "trigger warnings" : t.send_triggerwarning_info,
             "tone indicators" : t.send_toneindicator_info,
             "trusted role" : t.send_trustedrole_info,
+            "image ban role" : t.send_imagebanrole_info,
             "selfies channel info" : t.send_selfies_info,
             "minimodding or correcting staff" : t.send_minimodding_info,
             "avoiding politics" : t.send_avoidpolitics_info,
