@@ -2,19 +2,19 @@ from import_modules import *
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 
-hsv_color_list = { #in h    s    v
+hsv_color_list = { # (sorted by hue)     Hue  Sat  value (HSV)
     "report"                          : [ 16, 100, 100],
     "plural kit"                      : [ 33, 100, 100],
-    "customvcs"                       : [ 84,  55, 100],
-    "trigger warnings"                : [240,  40, 100],
-    "tone indicators"                 : [170,  40, 100],
-    "trusted role"                    : [280,  40, 100],
-    "image ban role"                  : [260,  40, 100],
-    "selfies"                         : [120,  40, 100],
-    "minimodding or correcting staff" : [340,  55, 100],
     "avoiding politics"               : [ 60,  40, 100],
+    "customvcs"                       : [ 84,  55, 100],
+    "selfies"                         : [120,  40, 100],
+    "tone indicators"                 : [170,  40, 100],
     "please change topic"             : [205,  40, 100],
+    "trigger warnings"                : [240,  40, 100],
+    "image ban role"                  : [260,  40, 100],
+    "trusted role"                    : [280,  40, 100],
     "conversing effectively"          : [315,  40, 100],
+    "minimodding or correcting staff" : [340,  55, 100],
 }
 colours = {k: discord.Colour.from_hsv(v[0]/360, v[1]/100, v[2]/100) for k, v in hsv_color_list.items()}
 
@@ -111,17 +111,9 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
-    def get_mod_ticket_channel_id(self, context: discord.Interaction | discord.TextChannel):
-        if context.guild.id == client.custom_ids.get("enbyplace_server_id"):
-            return 1186054373986537522
-        elif context.guild.id == client.custom_ids.get("transonance_server_id"):
-            return 1108789589558177812
-        else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
-            return 995343855069175858
-
     async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
-        mod_ticket_channel_id = self.get_mod_ticket_channel_id(context)
+        mod_ticket_channel_id = get_mod_ticket_channel_id(client, context)
         embed = discord.Embed(
             color=colours["report"], #a more saturated red orange color
             title='Reporting a message or scenario',
@@ -203,22 +195,22 @@ class Tags:
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
     async def send_imagebanrole_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
-        mod_ticket_channel_id = self.get_mod_ticket_channel_id(context)
+        mod_ticket_channel_id = self.get_mod_ticket_channel_id(itx)
         embed = discord.Embed(
             color=colours["image ban role"], # magenta
-            title="TEB (Image Ban)",
-            description="Why can't I send images in the server? Why are my .GIFs only sending links and not "
-                        "the actual meme I was hoping for?\n"
+            title="TEB role (Image Ban)",
+            description="**Why can't I send images in the server? Why are my .GIFs only sending links and not "
+                        "the actual meme I was hoping for?**\n"
                         "\n"
-                        "You have the TEB (Temporary Embed Ban, or Image Ban for short) role. There may be a "
+                        "You have the TEB role (Temporary Embed Ban, or Image Ban for short). There may be a "
                         "number of reasons for it, but the most common one is that most new verifications "
                         "have it. Don't worry - you're not in trouble if this is the case. It's simply a "
                         "method we use to prevent trolls and other bad actors from spamming our server.\n"
                         "\n"
                         "If you've been active on the server for a bit and need this role removed, please "
-                       f"don't hesitate to make a ticket in <#{mod_ticket_channel_id}>"
-                        "Do note that mods will *not* remove the role unless you have been active on the server, "
-                        "or if you've received it in conjunction with a warning."
+                       f"don't hesitate to make a ticket in <#{mod_ticket_channel_id}>.\n"
+                        "Do note that mods will *only* remove the role if you have been active enough in the "
+                        "server and weren't given the role from a warning."
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
@@ -358,7 +350,9 @@ class TagFunctions(commands.Cog):
     async def tag_autocomplete(self, _: discord.Interaction, current: str):
         options = [
             "avoiding politics",
+            "conversing effectively",
             "customvc",
+            "image ban role"
             "minimodding or correcting staff",
             "please change chat topic",
             "report",
@@ -366,7 +360,6 @@ class TagFunctions(commands.Cog):
             "tone indicators",
             "trigger warnings",
             "trusted role",
-            "conversing effectively",
             "plural kit"
         ]
         return [

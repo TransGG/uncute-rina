@@ -180,6 +180,14 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
         end = end[:-2]
     print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
 
+def get_mod_ticket_channel_id(client: Bot, guild: discord.Guild):
+    if guild.id == client.custom_ids.get("enbyplace_server_id"):
+        return 1186054373986537522
+    elif guild.id == client.custom_ids.get("transonance_server_id"):
+        return 1108789589558177812
+    else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
+        return 995343855069175858
+
 #unused
 def thousand_space(number, interval = 3, separator = " ") -> str:
     """
