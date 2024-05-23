@@ -1,6 +1,6 @@
 from import_modules import *
 
-class OtherAddons(commands.Cog):
+class Help(commands.Cog):
     async def print_help_text(self, itx):
         """
         A function to give the user Rina's list of public commands () (interaction response)
@@ -53,4 +53,4 @@ Make a custom voice channel by joining "Join to create VC" (use {self.client.get
         await self.print_help_text(itx)
 
 async def setup(client):
-    await client.add_cog(OtherAddons(client))
+    await client.add_cog(Help(client))
