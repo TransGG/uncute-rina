@@ -352,7 +352,7 @@ class TagFunctions(commands.Cog):
             "avoiding politics",
             "conversing effectively",
             "customvc",
-            "image ban role"
+            "image ban role",
             "minimodding or correcting staff",
             "please change chat topic",
             "report",
