@@ -7,56 +7,57 @@ class help_page(typing.TypedDict):
 
 help_pages: dict[int, help_page] = {
     #region Default pages (home / index)
-    1:{
-        "title":"Rina's commands",
-        "description": "Hey there. This is Rina. I'm a bot that does silly things for TransPlace and some linked servers. I'm being maintained by <@262913789375021056>.\n"
-                       "I can do many things like looking up tone indicators or words, or sharing server info and questions of the week. To share my commands, I've made this cool interactive menu.\n"
-                       "\n"
-                       "Use the buttons below to cycle through different categories of commands!\n"
-                       "\n"
-                       "📋 Index (page 2)\n"
-                       "◀️ Previous page:\n"
-                       "▶️ Next page: Index\n"
-                       "🔢 Jump to page\n"
-                       "\n"
-                       "Do you have a cool bot idea? use %%developer_request%% to suggest them to staff!"
-    },
-    2:{
-        "title":"Index",
-        "description": "Here's a list of all the categories. You can use the :1234: button to quickly hop between these pages. Press :clipboard: to quickly go back to this index page.\n"
-                       "\n"
-                       ". . **1:** Welcome page\n"
-                       ". . **2:** Index\n"
-                       ". . **3:** Utility\n"
-    },
+    1 : help_page(
+        title = "Rina's commands",
+        description = "Hey there. This is Rina. I'm a bot that does silly things for TransPlace and some linked servers. I'm being maintained by <@262913789375021056>.\n"
+                      "I can do many things like looking up tone indicators or words, or sharing server info and questions of the week. To share my commands, I've made this cool interactive menu.\n"
+                      "\n"
+                      "Use the buttons below to cycle through different categories of commands!\n"
+                      "\n"
+                      "📋 Index (page 2)\n"
+                      "◀️ Previous page:\n"
+                      "▶️ Next page: Index\n"
+                      "🔢 Jump to page\n"
+                      "\n"
+                      "Do you have a cool bot idea? use %%developer_request%% to suggest them to staff!"
+    ),
+    2 : help_page(
+        title = "Index",
+        description = "Here's a list of all the categories. You can use the :1234: button to quickly hop "
+                      "between these pages. Press :clipboard: to quickly go back to this index page.\n"
+                      "\n"
+                      ". . **1:** Welcome page\n"
+                      ". . **2:** Index\n"
+                      ". . **3:** Utility\n"
+    ),
     #endregion
     #region Expanded index pages (commands)
-    3:{
-        "title":"Utility",
-        "description":"Some commands help in your daily life, like the following commands:\n"
+    3 : help_page( # index: Utility
+        title = "Utility",
+        description = "Some commands help in your daily life, like the following commands:\n"
                       "\n"
                       ". . **101:** roll\n"
                       ". . **103:** reminder\n"
                       ". . **104:** convert_unit\n"
                       ". . **105:** todo\n",
-    },
-    4:{
-        "title":"null",
-        "description":"null"
-    },
-    5:{
-        "title":"null",
-        "description":"null"
-    },
+    ),
+    4 : help_page(
+        title = "null",
+        description = "null"
+    ),
+    5 : help_page(
+        title = "null",
+        description = "null"
+    ),
     #endregion
     #region Utility commands
-    101:{
-        "title":"Rolling dice",
-        "description":"Have you ever wanted to roll virtual dice? Now you can!\n"
+    101 : help_page( # dice rolls
+        title = "Rolling dice", # /roll
+        description = "Have you ever wanted to roll virtual dice? Now you can!\n"
                       "Rina lets you roll dice with many kinds of faces. Rolling a 2-faced die (aka, a coin)? sure!\n"
                       "\n"
                       "Because this command also allows an __advanced input__, go to the next page for more info: __**102**__\n",
-        "fields":[
+        fields = [
             (
                 "Parameters",
                 "`dice`: How many dice do you want to roll?\n"
@@ -66,7 +67,7 @@ help_pages: dict[int, help_page] = {
                 "`mod`: Do you want to add a modifier? (eg. add 2 after rolling the dice)\n"
                 "- (optional) Any (negative) (decimal) number\n"
                 "`advanced`: Roll more advanced! example: 1d20+3*2d4\n"
-                "- (optional) String of your advanced dice roll."
+                "- (optional) String of your advanced dice roll. See page __**102**__ for more info."
             ),
             (
                 "Examples",
@@ -81,11 +82,107 @@ help_pages: dict[int, help_page] = {
                 "  - See next page (__**102**__) for more information about advanced dice rolls."
             )
         ]
-    }
+    ),
+    102 : help_page( # dice rolls advanced
+        title = "Advanced dice rolls", # /roll advanced: ...
+        description = "In the case that the simple dice roll command is not enough, you can roll complexer combinations of dice rolls using the advanced option.\n"
+                      "The advanced mode lets you use addition, subtraction, multiplication, and custom dice.\n"
+                      "To use the advanced function, you must give a value to the required parameters first ('dice' and 'faces') (the inserted value is ignored).\n"
+                      "Supported characters are: `0123456789d+*-`. Spaces are ignored. Multiplication goes before addition/subtraction.",
+        fields = [
+            (
+                "Examples",
+                "- %%roll%% `dice:1` `faces:1` `advanced:3d2 + 1`\n"
+                "  - Flip 3 coins (dice with 2 faces), then add 1 to the total.\n"
+                "- %%roll%% `dice:9999` `faces:9999` `advanced:2d20*2`\n"
+                "  - Roll two 20-sided dice, add their eyes, and then multiply the total by 2.\n"
+                "- %%roll%% `dice:1` `faces:1` `advanced:2*1d20+2*1d20`\n"
+                "  - Same as the above.\n"
+                "- %%roll%% `dice:1` `faces:1` `advanced:5d6*2d6-3d6`\n"
+                "  - Multiply the outcome of 5 dice with the outcome of 2 dice, and subtract the outcome of 3 dice."
+             )
+        ]
+    ),
+    103 : help_page( # reminders
+        title = "Reminders", # /reminder
+        description = "With this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n"
+                      "This command lets you create, remove, and view your reminders.",
+        fields = [
+            (
+                "reminder remindme",
+                "> %%reminder remindme%% `time:` `reminder:`\n"
+                "`time`: When do you want to be reminded?\n"
+                "- Use a format like 10d9h8m7s for days/hours/min/sec.\n" #TODO: clarify; copy paste ValueError help message?
+                "`reminder`: What would you like to be reminded of?"
+            ),
+            (
+                "reminder reminders",
+                "%%reminder reminders%% [`item:`]\n"
+                "- Show a list of active reminders. They each have a number. Use `item:number` to view more information about this reminder."
+            ),
+            (
+                "reminder remove",
+                "%%reminder remove%% item:\n"
+                "- Remove a reminder. Use %%reminder reminders%% to see a list of reminders. Each has a number. Use that number to remove the reminder like so: `item:number`."
+            )
+        ]
+    ),
+    104 : help_page( # convert unit
+        title = "Converting units",
+        description = "Since international communities often share stories about temperature and speed, it's not uncommon to have to look up how many feet go in a centimeter. "
+                      "This module lets you easily converty a large amount of units in multiple categories! Currencies are fetched live using an online website (api)!\n"
+                      "The units (`from` and `to_unit`) will autocomplete depending on the selected category.",
+        fields = [
+            (
+                "Parameters",
+                "`mode`: What type of unit do you want to compare? length/time/currency/...\n"
+                "`from`: What unit are you trying to convert? (eg. Celsius / Fahrenheit)\n"
+                "`value`: How much of this unit are you converting? (think __20__ degrees Celsius)\n"
+                "`to_unit`: What unit to convert to? *C -> *F : fill in Fahrenheit.\n"
+                "`public`: (optional) Do you want to show this to everyone in chat?\n"
+                "- Default: False"
+            ),
+            (
+                "Examples",
+                "%%convert_unit%% `mode:Length (miles,km,inch)` `from:meter` `value:80` `to_unit:yard`\n"
+                "- Convert 80 meters to yards = about 87.5 yd\n"
+                ""
+            )
+        ]
+    ),
+    105 : help_page( # to-do list
+        title = "Todo lists",
+        description = "For the forgetful, or if you just want a nice grocery list, this command is for you! You can easily add and remove to-do notes, and they're saved throughout all servers with me (TransPlace, EnbyPlace, Transonance, etc.)",
+        fields = [
+            (
+                "Parameters",
+                "`mode`: Do you want to add, remove, or check (view) your to-do list?\n"
+                "- if you want to add to / remove from your to-do list, you must also give the `todo` value below.\n"
+                "`todo`:\n"
+                "- Add: What to-do would you like to add?\n"
+                "- Remove: What to-do item would you like to remove from your list? Give the number of the to-do list as it's shown with %%todo%% `mode:Check`"
+            ),
+            (
+                "Examples",
+                "%%todo%% `mode:Add something to your to-do list` `todo:Create a nice help command`\n"
+                "- Add \"Create a nice help command\"\n"
+                "%%todo%% `mode:Check`\n"
+                "- Your to-do list would look like this. Note how each item starts with a number. Use this number to remove them.\n"
+                "  - Found 4 to-do items:\n"
+                "  - `0`: Create a nice help command\n"
+                "%%todo%% `mode:Remove to-do` `todo:0`\n"
+                "- Remove to-do item number 0 from your list. Use %%todo%% `mode:Check` to see what number to use to remove the right item.\n"
+                "- Keep in mind that the order will shift after you've removed an item, so redo the `check` command to make sure you're removing the right command when removing multiple to-do items at once!"
+            )
+        ]
+    )
+    #endregion
 }
-FIRST_PAGE = sorted(list(help_pages))[0]
+FIRST_PAGE: int = sorted(list(help_pages))[0]
 
-assert sorted(list(help_pages)) == list(help_pages)
+assert all([type(i) is int for i in help_pages]) # all help pages have an integer key
+assert sorted(list(help_pages)) == list(help_pages) # all help pages are sorted by default
+assert all([all([j in ["title", "description", "fields"] for j in help_pages[i]]) for i in help_pages]) # all pages only have one of these attributes
 
 def replace_string_command_mentions(text: str, client: Bot) -> str:
     """
@@ -259,7 +356,7 @@ class HelpCommand(commands.Cog):
         self.client = client
         RinaDB = client.RinaDB
 
-    async def send_help_menu(self, itx: discord.Interaction, requested_page = FIRST_PAGE):
+    async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
         embed = discord.Embed(color = discord.Color.from_hsv(180/360, 0.4, 1),
                               title = help_pages[requested_page]["title"],
                               description = replace_string_command_mentions(help_pages[1]["description"], self.client))
@@ -309,8 +406,8 @@ class HelpCommand(commands.Cog):
 
     @app_commands.command(name="help", description="A help command to learn more about me!")
     @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")
-    async def help(self, itx: discord.Interaction, page: int = 1):
-        await self.send_help_menu(itx)
+    async def help(self, itx: discord.Interaction, page: int = FIRST_PAGE):
+        await self.send_help_menu(itx, page)
 
     @app_commands.command(name="commands", description="A help command to learn more about me!")
     async def commands(self, itx: discord.Interaction):

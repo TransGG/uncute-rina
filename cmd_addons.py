@@ -642,7 +642,8 @@ class FunAddons(commands.Cog):
             await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ","")
             if advanced == "help":
-                await itx.response.send("I don't think I ever implemented this... Ping mysticmia for more information about this command, or run /help `page:102` for more information.")
+                cmd_mention = self.client.get_command_mention("help")
+                await itx.response.send(f"I don't think I ever implemented this... Ping mysticmia for more information about this command, or run {cmd_mention} `page:102` for more information.")
 
             def prod(list: list):
                 a = 1
