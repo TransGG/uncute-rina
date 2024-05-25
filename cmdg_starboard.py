@@ -101,7 +101,7 @@ async def update_starboard_message_score(self, star_message: discord.Message, st
             return
         raise
 
-async def get_starboard_messages(self, star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
+async def get_starboard_messages(star_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
     global busy_updating_starboard_messages, local_starboard_message_list, local_starboard_message_list_refresh_timestamp
     if not busy_updating_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > STARBOARD_REFRESH_DELAY: # refresh once every 1000 seconds
         busy_updating_starboard_messages = True

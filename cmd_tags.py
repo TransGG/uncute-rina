@@ -195,7 +195,7 @@ class Tags:
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
     async def send_imagebanrole_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
-        mod_ticket_channel_id = self.get_mod_ticket_channel_id(itx)
+        mod_ticket_channel_id = get_mod_ticket_channel_id(itx)
         embed = discord.Embed(
             color=colours["image ban role"], # magenta
             title="TEB role (Image Ban)",
