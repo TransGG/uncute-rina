@@ -759,8 +759,11 @@ class OtherAddons(commands.Cog):
             # channel.category apparently discord raises ClientException: Parent channel not found, instead of attribute error
             pass
 
+        if message.author.bot:
+            return
+
         if "celcius" in message.content.lower():
-            await message.reply("Fun fact: Celsius was named after a guy named ['Anders Celsius'](https://en.wikipedia.org/wiki/Anders_Celsius). 'Celcius' is therefor an incorrect spelling. :)")
+            await message.reply("Fun fact: Celsius was named after a guy named ['Anders Celsius'](https://en.wikipedia.org/wiki/Anders_Celsius). 'Celcius' is therefore an incorrect spelling. :)")
 
     async def unit_autocomplete(self, itx: discord.Interaction, current: str):
         options = conversion_rates.copy()
