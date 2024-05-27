@@ -1,6 +1,6 @@
 from import_modules import *
 
-BOT_VERSION = "1.2.7.27"
+BOT_VERSION = "1.2.8.1"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -226,7 +226,7 @@ def get_version() -> str:
         f.write(f"{version}")
     return version
 
-def create_client(tokens: dict, RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase, version: str) -> discord.Client:
+def create_client(tokens: dict, RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase, version: str) -> Bot:
     debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()

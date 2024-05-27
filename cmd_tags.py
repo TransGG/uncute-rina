@@ -41,8 +41,8 @@ class SendPublicly_TagView(discord.ui.View):
             self.public_footer = f"Triggered by {itx.user.name} ({itx.user.id})"
         else:
             self.public_footer = f"Note: If you believe that this command was misused or abused, " + \
-                                    f"please do not argue in this channel. Instead, open a mod ticket " + \
-                                    f"and explain the situation there. Thank you."
+                                 f"please do not argue in this channel. Instead, open a mod ticket " + \
+                                 f"and explain the situation there. Thank you."
             self.value = 2
         self.embed.set_footer(text=self.footer + self.public_footer)
         await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
@@ -52,7 +52,7 @@ class SendPublicly_TagView(discord.ui.View):
             cmd_mention = self.client.get_command_mention("tag")
             staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
             await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
-                                                        f"[Jump to the tag message]({msg.jump_url})")
+                                                     f"[Jump to the tag message]({msg.jump_url})")
         self.stop()
 
     async def on_timeout(self):
