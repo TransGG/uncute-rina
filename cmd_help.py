@@ -6,6 +6,30 @@ class help_page(typing.TypedDict):
     fields: list[tuple[str,str]]
 
 help_pages: dict[int, help_page] = {
+    0 : help_page( # fallback default page
+        title="Rina's fallback help page",
+        description="""Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
+%%add_poll_reactions%%: Add an up-/downvote emoji to a message (for voting)
+%%commands%% or %%help%%: See this help page
+%%compliment%%: Rina can compliment others (matching their pronoun role)
+%%convert_unit%%: Convert a value from one to another! Distance, speed, currency, etc.
+%%dictionary%%: Search for an lgbtq+-related or dictionary term!
+%%equaldex%%: See LGBTQ safety and rights in a country (with API)
+%%math%%: Ask Wolfram|Alpha for math or science help
+%%nameusage gettop%%: See how many people are using the same name
+%%pronouns%%: See someone's pronouns or edit your own
+%%qotw%% and %%developer_request%%: Suggest a Question Of The Week or Bot Suggestion to staff
+%%reminder reminders%%: Make or see your reminders
+%%roll%%: Roll some dice with a random result
+%%tag%%: Get information about some of the server's extra features
+%%todo%%: Make, add, or remove items from your to-do list
+%%toneindicator%%: Look up which tone tag/indicator matches your input (eg. /srs)
+
+Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:customvc` for more info)
+%%editvc%%: edit the name or user limit of your custom voice channel
+%%vctable about%%: Learn about making your voice chat more on-topic!
+"""
+    ),
     #region Default pages (home / index)
     1 : help_page(
         title = "Rina's commands",
@@ -282,10 +306,10 @@ class JumpToPageModal_HelpCommands_Help(discord.ui.Modal, title="Go to help page
         self.stop()
 
 class PageView_HelpCommands_Help(discord.ui.View):
-    def __init__(self, pages: dict[int, help_page], client: Bot, timeout: float=None):
+    def __init__(self, pages: dict[int, help_page], start_page: int, client: Bot, timeout: float=None):
         super().__init__()
         self.timeout = timeout
-        self.page    = 1
+        self.page    = start_page
         self.pages   = pages
         self.client = client
 
@@ -359,7 +383,7 @@ class HelpCommand(commands.Cog):
     async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
         embed = discord.Embed(color = discord.Color.from_hsv(180/360, 0.4, 1),
                               title = help_pages[requested_page]["title"],
-                              description = replace_string_command_mentions(help_pages[1]["description"], self.client))
+                              description = replace_string_command_mentions(help_pages[requested_page]["description"], self.client))
         if "fields" in help_pages[requested_page]:
             for field in help_pages[requested_page]["fields"]:
                 embed.add_field(name  = replace_string_command_mentions(field[0], self.client),
@@ -369,7 +393,7 @@ class HelpCommand(commands.Cog):
         embed.set_footer(text = f"page: {requested_page}")
 
         await itx.response.send_message(embed = embed,
-                                        view = PageView_HelpCommands_Help(help_pages, self.client),
+                                        view = PageView_HelpCommands_Help(help_pages, requested_page, self.client),
                                         ephemeral = True)
 
 
