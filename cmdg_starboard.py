@@ -37,7 +37,7 @@ async def get_starboard_original_message(client: Bot, star_message: discord.Mess
     return original_message
 
 async def update_starboard_message_score(client: Bot, star_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int):
-    original_message: discord.Message = get_starboard_original_message(client, star_message, starboard_emoji)
+    original_message: discord.Message = await get_starboard_original_message(client, star_message, starboard_emoji)
     if original_message is None:
         return
 
@@ -157,7 +157,7 @@ class Starboard(commands.Cog):
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            original_starboard_message: discord.Message = get_starboard_original_message(self.client, message, starboard_emoji)
+            original_starboard_message: discord.Message = await get_starboard_original_message(self.client, message, starboard_emoji)
             if original_starboard_message is not None and original_starboard_message.author.id == payload.user_id:
                 await message.delete()
 

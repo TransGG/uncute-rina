@@ -434,8 +434,9 @@ class HelpCommand(commands.Cog):
         await self.send_help_menu(itx, page)
 
     @app_commands.command(name="commands", description="A help command to learn more about me!")
-    async def commands(self, itx: discord.Interaction):
-        await self.send_help_menu(itx)
+    @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")
+    async def commands(self, itx: discord.Interaction, page: int = FIRST_PAGE):
+        await self.send_help_menu(itx, page)
 
 async def setup(client):
     await client.add_cog(HelpCommand(client))
