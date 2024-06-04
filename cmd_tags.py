@@ -2,22 +2,6 @@ from import_modules import *
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 
-hsv_color_list = { # (sorted by hue)     Hue  Sat  value (HSV)
-    "report"                          : [ 16, 100, 100],
-    "plural kit"                      : [ 33, 100, 100],
-    "avoiding politics"               : [ 60,  40, 100],
-    "customvcs"                       : [ 84,  55, 100],
-    "selfies"                         : [120,  40, 100],
-    "tone indicators"                 : [170,  40, 100],
-    "please change topic"             : [205,  40, 100],
-    "trigger warnings"                : [240,  40, 100],
-    "image ban role"                  : [260,  40, 100],
-    "trusted role"                    : [280,  40, 100],
-    "conversing effectively"          : [315,  40, 100],
-    "minimodding or correcting staff" : [340,  55, 100],
-}
-colours = {k: discord.Colour.from_hsv(v[0]/360, v[1]/100, v[2]/100) for k, v in hsv_color_list.items()}
-
 class SendPublicly_TagView(discord.ui.View):
     def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
         super().__init__()
@@ -50,9 +34,10 @@ class SendPublicly_TagView(discord.ui.View):
         if self.value == 2 and self.logmsg is not None:
             await log_to_guild(self.client, itx.guild, self.logmsg)
             cmd_mention = self.client.get_command_mention("tag")
-            staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
-            await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
-                                                     f"[Jump to the tag message]({msg.jump_url})")
+            if itx.guild_id not in EnabledServers.dev_server_ids():
+                staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
+                await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
+                                                         f"[Jump to the tag message]({msg.jump_url})")
         self.stop()
 
     async def on_timeout(self):
@@ -86,6 +71,7 @@ class Tags:
             Whether to add the pre-made 'misused command' footer to the embed if sent anonymously
         """
 
+        embed.color = colours[tag_name]
         cmd_mention = client.get_command_mention("tag")
         logmsg = f"{itx.user.name} ({itx.user.id}) used {cmd_mention} `tag:{tag_name}` anonymously"
         if public:
@@ -97,9 +83,10 @@ class Tags:
                 await itx.response.send_message("sending...", ephemeral=True)
                 msg = await itx.followup.send(embed=embed, ephemeral=False, wait=True)
                 await log_to_guild(client, itx.guild, logmsg)
-                staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
-                await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
-                                                         f"[Jump to the tag message]({msg.jump_url})")
+                if itx.guild_id not in EnabledServers.dev_server_ids():
+                    staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                    await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
+                                                             f"[Jump to the tag message]({msg.jump_url})")
             else:
                 await itx.response.send_message(embed=embed)
         else:
@@ -111,11 +98,11 @@ class Tags:
             if await view.wait():
                 await itx.edit_original_response(view=view)
 
+    # region Tags
     async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
         mod_ticket_channel_id = get_mod_ticket_channel_id(client, context)
         embed = discord.Embed(
-            color=colours["report"], #a more saturated red orange color
             title='Reporting a message or scenario',
             description="Hi there! If anyone is making you uncomfortable, or you want to "
                         "report or prevent a rule-breaking situation, you can `Right Click "
@@ -136,7 +123,6 @@ class Tags:
         cmd_mention = client.get_command_mention('editvc')
         cmd_mention2 = client.get_command_mention('vctable about')
         embed = discord.Embed(
-            color=colours["customvcs"], # greenish lime-colored
             title="TransPlace's custom voice channels (vc)",
             description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You "
                         f"are then moved to this channel automatically. You can change the name and user "
@@ -147,7 +133,6 @@ class Tags:
 
     async def send_triggerwarning_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
-            color=colours["trigger warnings"], #bluer than baby blue ish. kinda light indigo
             title="Using trigger warnings correctly",
             description="Content or trigger warnings (CW and TW for short) are notices placed before a "
                         "(section of) text to warn the reader of potential traumatic triggers in it. Often, "
@@ -164,7 +149,6 @@ class Tags:
 
     async def send_toneindicator_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         embed = discord.Embed(
-            color=colours["tone indicators"], # tealish aqua
             title="When to use tone indicators?",
             description="Tone indicators are a useful tool to clarify the meaning of a message.\n"
                         "Occasionally, people reading your comment may not be certain about the tone of "
@@ -182,7 +166,6 @@ class Tags:
 
     async def send_trustedrole_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
-            color=colours["trusted role"], # magenta
             title="The trusted role (and selfies)",
             description="The trusted role is the role we use to add an extra layer of protection to some "
                         "aspects of our community. Currently, this involves the selfies channel, but may be "
@@ -197,7 +180,6 @@ class Tags:
     async def send_imagebanrole_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         mod_ticket_channel_id = get_mod_ticket_channel_id(itx)
         embed = discord.Embed(
-            color=colours["image ban role"], # magenta
             title="TEB role (Image Ban)",
             description="**Why can't I send images in the server? Why are my .GIFs only sending links and not "
                         "the actual meme I was hoping for?**\n"
@@ -216,7 +198,6 @@ class Tags:
 
     async def send_selfies_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
-            color=colours["selfies"], # magenta
             title="Selfies and the #selfies channel",
             description="For your own and other's safety, the selfies channel is hidden behind the "
                         "trusted role. This role is granted automatically when you've been active in "
@@ -230,7 +211,6 @@ class Tags:
 
     async def send_minimodding_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
-            color=colours["minimodding or correcting staff"],  # bright slightly reddish pink
             title="Correcting staff or minimodding",
             description="If you have any input on how members of staff operate, please open a ticket to "
                         "properly discuss."
@@ -243,7 +223,6 @@ class Tags:
     async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         cmd_mention = client.get_command_mention("remove-role")
         embed = discord.Embed(
-            color=colours["avoiding politics"], # yellow
             title="Please avoid political discussions!",
             description="A member has requested that we avoid political discussions in this chat, we kindly "
                         "ask that you refrain from discussing politics in this chat to maintain a positive and "
@@ -260,7 +239,6 @@ class Tags:
 
     async def send_chat_topic_change_request(self, tag_name: str, itx:discord.Interaction,  client,public, anonymous):
         embed = discord.Embed(
-            color=colours["please change topic"],
             title="Please change chat topic",
             description="A community member has requested a change of topic as the current one is making them "
                         "uncomfortable. Please refrain from continuing the current line of discussion and find "
@@ -270,7 +248,6 @@ class Tags:
 
     async def send_conversing_effectively_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
-            color=colours["conversing effectively"],
             title="Conversing effectively",
             description="When you have a question and hope to find the answer quickly, don't start with just "
                         "\"hi\", but instead also immediately ask the question. That way, you don't have to wait "
@@ -285,26 +262,6 @@ class Tags:
  
     async def send_pluralkit_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
-            color=colours["plural kit"],
-            # title="If you see users talking with the bot tag, they're talking through PluralKit.",
-            # description="> Due to Discord limitations, these messages will show up with the [BOT] tag - "
-            #             "**however, they are not bots. They are users.**\n"
-            #             "\n"
-            #             "PluralKit is a Discord bot that exists to allow users to proxy their messages "
-            #             "via Discord webhooks. This has many practical applications, especially given "
-            #             "that Discord doesn't have any features that support the plural community, or "
-            #             "any built-in mental health aids.\n"
-            #             "\n"
-            #             "> This allows for one discord account to have multiple psudo accounts, without "
-            #             "the need to have alts in the server.\n"
-            #             "\n"
-            #             "PluralKit can have multiple uses in other communities, however in ours it "
-            #             "should only be used for plurality or self-identity purposes, or as a mental "
-            #             "health aid.\n"
-            #             "\n"
-            #             "***We do not allow users to make use of PluralKit for role-playing.***\n"
-            #             "\n"
-            #             "_Learn more? Check out <https://quiltmc.org/en/community/pluralkit/>!_"
             title="PluralKit and users with the [BOT] tag",
             description="PluralKit is a Discord bot that allows users to proxy their messages via Discord webhooks. This allows for "
                         "one discord account to have multiple psudo accounts, without the need to have alts in the server.\n"
@@ -317,13 +274,27 @@ class Tags:
                         "\n"
                         "***We do not allow users to make use of PluralKit for role-playing.***"
         )
-        #embed.set_footer(text="")
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
+    async def send_maturerole_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
+        mod_ticket_channel_id = get_mod_ticket_channel_id(client, itx)
+        embed = discord.Embed(
+            title="Mature role and \\#mature\\-chat",
+            description="Our server is accessible to people of all ages. Because of that, you may often "
+                        "come across young people figuring things out regarding their identity. If you "
+                        "feel more like talking about finance or working, these chats may not offer the "
+                        "right conversation partners. In such cases, the \\# mature-chat may be something for you!\n"
+                        "\n"
+                        "The channel is 18+, with the intention of keeping the chat more mature. You must still follow "
+                        "all server rules.\n"
+                        f"Access the channel by making a ticket in <#{mod_ticket_channel_id}>!"
+        )
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)    
+    #endregion Tags
 
 class TagFunctions(commands.Cog):
     def __init__(self, client):
-        self.client = client
+        self.client: Bot = client
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -347,21 +318,11 @@ class TagFunctions(commands.Cog):
                     report_message_reminder_unix = time_now
                     break
 
-    async def tag_autocomplete(self, _: discord.Interaction, current: str):
-        options = [
-            "avoiding politics",
-            "conversing effectively",
-            "customvc",
-            "image ban role",
-            "minimodding or correcting staff",
-            "please change chat topic",
-            "report",
-            "selfies channel info",
-            "tone indicators",
-            "trigger warnings",
-            "trusted role",
-            "plural kit"
-        ]
+    async def tag_autocomplete(self, itx: discord.Interaction, current: str):
+        if current == "":
+            return [app_commands.Choice(name="Show list of tags", value="help")]
+        
+        options = [i.lower() for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
         return [
             app_commands.Choice(name=term, value=term)
             for term in options if current.lower() in term
@@ -369,30 +330,22 @@ class TagFunctions(commands.Cog):
 
     @app_commands.command(name="tag", description="Look up something through a tag")
     @app_commands.describe(tag="What tag do you want more information about?")
-    @app_commands.describe(public="Show everyone in chat? (default: no)")
+    @app_commands.describe(public="Show everyone in chat? (default: yes)")
     @app_commands.describe(anonymous="Hide your name when sending the message publicly? (default: yes)")
     @app_commands.autocomplete(tag=tag_autocomplete)
-    async def tag(self, itx: discord.Interaction, tag: str, public: bool = False, anonymous: bool = True):
-        t = Tags()
-        tag_functions = {
-            "report" : t.send_report_info,
-            "customvc" : t.send_customvc_info,
-            "trigger warnings" : t.send_triggerwarning_info,
-            "tone indicators" : t.send_toneindicator_info,
-            "trusted role" : t.send_trustedrole_info,
-            "image ban role" : t.send_imagebanrole_info,
-            "selfies channel info" : t.send_selfies_info,
-            "minimodding or correcting staff" : t.send_minimodding_info,
-            "avoiding politics" : t.send_avoidpolitics_info,
-            "please change chat topic" : t.send_chat_topic_change_request,
-            "conversing effectively" : t.send_conversing_effectively_info,
-            "plural kit" : t.send_pluralkit_info
-        }
-        if tag in tag_functions:
-            await tag_functions[tag](tag, itx, self.client, public=public, anonymous=anonymous)
+    async def tag(self, itx: discord.Interaction, tag: str, public: bool = True, anonymous: bool = True):
+        options = [i for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
+        tag = tag.lower()
+        if tag in options:
+            await tag_info_dict[tag][1](tag, itx, self.client, public=public, anonymous=anonymous)
+        elif tag in tag_info_dict:
+            ticket_channel = get_mod_ticket_channel_id(self.client, itx)
+            await itx.response.send_message(f"This tag is not enabled in this server! If you think this is a mistake, make a staff ticket (<#{ticket_channel}>).", ephemeral=True)
+        elif tag == "help":
+            await itx.response.send_message("List of tags currently available to send:\n" +
+                                            '\n'.join(["- " + i for i in tag_info_dict]), ephemeral=True)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
-
 
     async def role_autocomplete(self, itx: discord.Interaction, current: str):
         role_options = {
@@ -434,7 +387,25 @@ class TagFunctions(commands.Cog):
         except discord.Forbidden:
             await itx.response.send_message("I couldn't remove this role! (Forbidden)", ephemeral=True)
             return
-        
+
+t: Tags = Tags()
+tag_info_dict: dict[str, tuple[tuple[int,int,int], typing.Callable, int]] = \
+{ # (sorted ABC and by hue; change hue)   (Hue  Sat  value (HSV) , tag function,              servers they're active in)
+    "avoiding politics"               : ([  0,  40, 100], t.send_avoidpolitics_info,          EnabledServers.all_server_ids()),
+    "conversing effectively"          : ([ 20,  40, 100], t.send_conversing_effectively_info, EnabledServers.all_server_ids()),
+    "customvcs"                       : ([ 40,  40, 100], t.send_customvc_info,               EnabledServers.all_server_ids()),
+    "image ban role"                  : ([ 60,  40, 100], t.send_imagebanrole_info,           EnabledServers.transplace_etc_ids()),
+    "mature role and mature chat"     : ([ 80,  40, 100], t.send_maturerole_info,             EnabledServers.transplace_etc_ids()),
+    "minimodding or correcting staff" : ([100,  40, 100], t.send_minimodding_info,            EnabledServers.all_server_ids()),
+    "please change topic"             : ([120,  40, 100], t.send_chat_topic_change_request,   EnabledServers.all_server_ids()),
+    "plural kit"                      : ([140,  40, 100], t.send_pluralkit_info,              EnabledServers.all_server_ids()),
+    "report"                          : ([  0, 100, 100], t.send_report_info,                 EnabledServers.all_server_ids()),
+    "selfies"                         : ([160,  40, 100], t.send_selfies_info,                EnabledServers.transplace_etc_ids()),
+    "tone indicators"                 : ([180,  40, 100], t.send_toneindicator_info,          EnabledServers.all_server_ids()),
+    "trigger warnings"                : ([200,  40, 100], t.send_triggerwarning_info,         EnabledServers.all_server_ids()),
+    "trusted role"                    : ([220,  40, 100], t.send_trustedrole_info,            EnabledServers.transplace_etc_ids()),
+}
+colours = {k: discord.Colour.from_hsv(v[0][0]/360, v[0][1]/100, v[0][2]/100) for k, v in tag_info_dict.items()}
 
 async def setup(client):
     await client.add_cog(TagFunctions(client))

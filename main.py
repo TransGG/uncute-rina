@@ -387,7 +387,7 @@ if __name__ == '__main__':
         channel = await log_guild.fetch_channel(vcLog) #crashes if none
         msg = debug_message.replace("``", "`` ")#("\\", "\\\\").replace("*", "\\*").replace("`", "\\`").replace("_", "\\_").replace("~~", "\\~\\~")
         msg = "```" + msg + "```"
-        embed = discord.Embed(color=color, title = error_type +' Log', description=msg)
+        embed = discord.Embed(color=color, title = error_type +' Log', description=msg[:4095]) # max length of 4096 chars
         await channel.send(f"{client.bot_owner.mention}", embed=embed, allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
 
     @client.event

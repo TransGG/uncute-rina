@@ -180,10 +180,41 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
         end = end[:-2]
     print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
 
-def get_mod_ticket_channel_id(client: Bot, guild: discord.Guild):
-    if guild.id == client.custom_ids.get("enbyplace_server_id"):
+class EnabledServers:
+    @classmethod
+    def no_server_ids(cls):
+        return []
+
+    @classmethod
+    def dev_server_ids(cls):
+        """
+        Returns a list of the TransPlace development servers
+        """
+        return [985931648094834798, 981615050664075404] # private, public
+    
+    @classmethod
+    def transplace_etc_ids(cls):
+        """
+        Returns a list of TransPlace dev servers, TransPlace, and the staff server ids
+        """
+        return [959551566388547676, 981730502987898960] + EnabledServers.dev_server_ids() # transplace, staff
+    
+    @classmethod
+    def all_server_ids(cls):
+        """
+        Returns a list of all TransPlace dev 
+        """
+        return [1087014898199969873, 638480381552754730] + EnabledServers.transplace_etc_ids() # EnbyPlace, Transonance
+
+def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | discord.Interaction):
+    if type(guild_id) is discord.Interaction:
+        guild_id = guild_id.guild_id
+    if type(guild_id) is discord.Guild: # can be merged technically but whatevs
+        guild_id = guild_id.guild_id
+
+    if guild_id == client.custom_ids.get("enbyplace_server_id"):
         return 1186054373986537522
-    elif guild.id == client.custom_ids.get("transonance_server_id"):
+    elif guild_id == client.custom_ids.get("transonance_server_id"):
         return 1108789589558177812
     else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
         return 995343855069175858
@@ -203,7 +234,6 @@ def thousand_space(number, interval = 3, separator = " ") -> str:
         number = number[:x]+separator+number[x:]
     decimals = ''.join(['.'+x for x in decimals])
     return number+decimals
-
 
 async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | discord.Message:
     """
