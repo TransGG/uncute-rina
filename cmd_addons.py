@@ -482,6 +482,14 @@ class FunAddons(commands.Cog):
                 pass
             else:
                 self.headpat_wait = 0
+                return # people asked for no random headpats anymore; or make it opt-in. See GitHub #23 # TODO: re-enable code someday
+
+
+
+
+
+
+
                 try:
                     added_pat = True
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
@@ -520,7 +528,7 @@ class FunAddons(commands.Cog):
                     else:
                         raise
 
-        # embed "This conversation was powered by friendship" every x messages
+        # embed "This conversation was powered by friendship" every x messages # TODO: re-enable code someday
         if False:#self.staff_contact_check_wait == 0 or (self.staff_contact_check_wait < -10 and self.staff_contact_check_wait % 6 == 0): # make sure it only sends once (and <-10 for backup)
             if message.channel.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
                 # TransPlace [general, trans masc treehouse, trans fem forest, enby enclave] # TODO: when cleo adds "report" func to EnbyPlace (or other servers in general), add those server's channel IDs too.
