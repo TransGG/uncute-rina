@@ -6,8 +6,41 @@ STARBOARD_REFRESH_DELAY = 1000
 local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
 
+async def delete_starboard_message(client: Bot, starboard_message: discord.Message, reason: str) -> None:
+    """
+    Handles custom starboard message deletion messages and preventing double logging messages when the bot removes a starboard message.
 
-async def fetch_starboard_original_message(client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji):
+    ### Parameters
+    client: :class:`Bot`
+        The bot, to get the correct logging channel.
+    starboard_message: :class:`discord.Message`
+        The starboard message to delete.
+    reason: :class:`str`
+        The reason of deletion.
+    """
+    await log_to_guild(client, starboard_message.guild, reason)
+    starboard_message_ids_marked_for_deletion.append(starboard_message.id)
+    await starboard_message.delete()
+    for i in range(len(local_starboard_message_list)):
+        if local_starboard_message_list[i].id == starboard_message.id:
+            del local_starboard_message_list[i]
+            break
+
+async def fetch_starboard_original_message(client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji) -> discord.Message | None:
+    """
+    Uses the 'jump to original' link in a starboard message to fetch its original author's message.
+
+    ### Parameters
+    client: :class:`Bot`
+        The bot, to get the correct logging channel.
+    starboard_message: :class:`discord.Message`
+        The starboard message to get the original message of.
+    starboard_emoji: :class:`discord.Emoji`
+        The starboard upvote emoji, used in logging messages.
+
+    ### Returns
+    The original author's message or None if not found (no permission, or can't be found). If the original message was deleted, it deletes its starboard message too.
+    """
     # find original message
     if len(starboard_message.embeds) == 0:
         await log_to_guild(client, starboard_message.guild, f"{starboard_emoji} :x: Starboard message {starboard_message.id} was ignored (from {message_id}) (starboard's message had no embeds)")
@@ -26,29 +59,27 @@ async def fetch_starboard_original_message(client: Bot, starboard_message: disco
         original_message = await ch.fetch_message(message_id)
     except discord.NotFound:
         # if original message removed, remove starboard message
-        await log_to_guild(client, starboard_message.guild, f"{starboard_emoji} :x: Starboard message {starboard_message.id} was removed (from {message_id}) (original message could not be found)")
-        starboard_message_ids_marked_for_deletion.append(starboard_message.id)
-        await starboard_message.delete()
-        for i in range(len(local_starboard_message_list)):
-            if local_starboard_message_list[i].id == starboard_message.id:
-                del local_starboard_message_list[i]
-                break
+        delete_starboard_message(client, starboard_message, f"{starboard_emoji} :x: Starboard message {starboard_message.id} was removed (from {message_id}) (original message could not be found)")
         return
     except discord.errors.Forbidden:
         await log_to_guild(client, starboard_message.guild, f":warning: Couldn't fetch starboard message [{starboard_message.id}]({starboard_message.jump_url}) from this channel ({ch.mention})!")
         return
     return original_message
 
-async def delete_starboard_message(client: Bot, starboard_message: discord.Message, reason: str):
-    await log_to_guild(client, starboard_message.guild, reason)
-    starboard_message_ids_marked_for_deletion.append(starboard_message.id)
-    await starboard_message.delete()
-    for i in range(len(local_starboard_message_list)):
-        if local_starboard_message_list[i].id == starboard_message.id:
-            del local_starboard_message_list[i]
-            break
-
-async def update_starboard_message_score(client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int):
+async def update_starboard_message_score(client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int) -> None:
+    """
+    Check a starboard message and original message's reactions and calculate its score. Negative scores can cause the message to be removed from the starboard.
+    
+    ### Parameters
+    client: :class:`Bot`
+        The bot, to get the correct logging channel.
+    starboard_message: :class:`discord.Message`
+        The starboard message to update.
+    starboard_emoji: :class:`discord.Emoji`
+        The starboard upvote emoji (for scoring)
+    downvote_init_value: :class:`int`
+        The minimum required votes before a negative score can cause the message to be deleted.
+    """
     original_message: discord.Message = await fetch_starboard_original_message(client, starboard_message, starboard_emoji)
     if original_message is None:
         return
@@ -107,7 +138,20 @@ async def update_starboard_message_score(client: Bot, starboard_message: discord
             return
         raise
 
-async def get_starboard_messages(starboard_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
+async def get_or_fetch_starboard_messages(starboard_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
+    """
+    Fetch list of all starboard messages, unless it is already fetching: then it waits until the 
+    other instance of the fetching function is done and retrieves the cached list. The list is 
+    stored for STARBOARD_REFRESH_DELAY seconds.
+
+    ### Parameters
+    starboard_channel: :class:`discord.abc.GuildChannel` | :class:`discord.abc.PrivateChannel` | :class:`discord.Thread` | `None`
+        The starboard channel to fetch messages from.
+    
+    ### Returns
+    :class:`list[discord.Message]`:
+        A list of starboard messages (send by the bot) in the starboard channel.
+    """
     global busy_updating_starboard_messages, local_starboard_message_list, local_starboard_message_list_refresh_timestamp
     if not busy_updating_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > STARBOARD_REFRESH_DELAY: # refresh once every 1000 seconds
         busy_updating_starboard_messages = True
@@ -181,7 +225,7 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await get_starboard_messages(star_channel)
+                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
@@ -300,7 +344,7 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await get_starboard_messages(star_channel)
+                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
@@ -327,7 +371,7 @@ class Starboard(commands.Cog):
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
-            starboard_messages = await get_starboard_messages(star_channel)
+            starboard_messages = await get_or_fetch_starboard_messages(star_channel)
             for star_message in starboard_messages:
                 for embed in star_message.embeds:
                     if embed.footer.text == str(message_payload.message_id):
@@ -339,16 +383,13 @@ class Starboard(commands.Cog):
                             msg_link = str(message_payload.message_id)+"  |  "+(await self.client.get_channel(message_payload.channel_id).fetch_message(message_payload.message_id)).jump_url
                         except discord.NotFound:
                             msg_link = str(message_payload.message_id)+" (couldn't get jump link)"
-                        await log_to_guild(self.client, star_channel.guild, 
-                                     f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "
-                                     f"(original message was removed (this starboard message's linked id matched the removed message's)). "
-                                     f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
-                        starboard_message_ids_marked_for_deletion.append(star_message.id)
-                        await star_message.delete()
-                        for i in range(len(local_starboard_message_list)):
-                            if local_starboard_message_list[i].id == star_message.id:
-                                del local_starboard_message_list[i]
-                                break
+                        
+                        await delete_starboard_message(
+                            self.client,
+                            star_message,
+                            f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "
+                            f"(original message was removed (this starboard message's linked id matched the removed message's)). "
+                            f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
                         return
 
 async def setup(client):

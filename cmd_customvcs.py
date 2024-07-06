@@ -412,7 +412,7 @@ class CustomVcs(commands.Cog):
                                                 "`32`: Starboard channel (which channel are starboard messages sent in?)\n" +
                                                 "`33`: Star minimum (how many stars does a message need before it's added to the starboard?)\n"
                                                 "`34`: Starboard blacklist (what channels' messages can't be starboarded? (list))\n"
-                                                "`35`: Starboard downvote initiation value (how many total (up/down)votes must a message have before deleting it if its score is below 0?)", ephemeral=True)
+                                                "`35`: Starboard downvote initiation value (how many total (up/down)votes must a message have before a negative score can cause it to be deleted?)", ephemeral=True)
             elif option == "04":
                 await itx.response.send_message("Bumping-related settings:\n" +
                                                 "`41`: Bump bot: DISBOARD.org (Whose messages should I check for bump messages with embeds?)\n" +

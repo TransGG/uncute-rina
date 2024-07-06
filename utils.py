@@ -254,7 +254,7 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
     ### Parameters
     --------------
     client: :class:`Uncute_Rina.Bot`
-        The bot class with `client.get_command_info()`
+        The bot class with `client.get_guild_info()` to find logging channel.
     guild: :class:`discord.Guild`
         Guild of the logging channel
     msg: :class:`str`
