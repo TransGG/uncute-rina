@@ -1,7 +1,12 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, Bot, 
+    log_to_guild, # to log starboard addition/removal
+    mktime, datetime, timezone, # to track starboard refresh timestamps TODO: make it not use unix timestamps but just datetimes; and get message send time for embed because cool (serves no real purpose)
+    asyncio # for sleep(1) while waiting for other starboard message fetching function instance. See get_or_fetch_starboard_messages()
+)
 
 starboard_message_ids_marked_for_deletion = []
-local_starboard_message_list_refresh_timestamp = 0
+local_starboard_message_list_refresh_timestamp = 0 # TODO: make this not unix :P just use datetime
 STARBOARD_REFRESH_DELAY = 1000
 local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False

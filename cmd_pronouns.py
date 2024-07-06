@@ -1,4 +1,7 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    is_staff # to check staff for removing a user's custom pronouns.
+)
 
 class Pronouns(commands.Cog):
     def __init__(self, client: Bot):

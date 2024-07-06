@@ -1,4 +1,6 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands
+)
 
 class ToneIndicator(commands.Cog):
     @app_commands.command(name="toneindicator",description="Look for the definition of a tone indicator")

@@ -1,4 +1,7 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    re # to remove pronouns from user-/nicknames and split names at capital letters
+)
 
 class GetNameModal_NameUsage_GetTop(discord.ui.Modal, title="Search page with word"):
     def __init__(self, pages, embed_title, timeout=None):

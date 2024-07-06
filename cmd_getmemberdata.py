@@ -1,4 +1,9 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    mktime, datetime, timezone, # for tracking member joins/leaves/verifications
+    asyncio, # for sleep(0.1) to prevent blocking: allow discord and other processes to send a heartbeat and function.
+    pd, plt # for graphing member joins/leaves/verifications
+)
 
 async def add_to_data(member, type):
     collection = asyncRinaDB["data"]

@@ -1,4 +1,10 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    mktime, datetime, timezone, # for logging emoji last use time
+    re, # to find all emojis used in someone's message
+    sys, # for integer max value: sys.maxsize
+    pymongo # to sort database collection search query descending (pymongo.DESCENDING)
+)
 
 #   Rina.emojistats                                     # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
 # ------------------------------------------------------

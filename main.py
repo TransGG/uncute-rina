@@ -1,6 +1,20 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, # for main discord bot functionality
+    pydb, motor, MongoClient, # for MongoDB database
+    json, #for loading the API keys file
+    logging, # to set logging level to not DEBUG and hide unnecessary logs
+    datetime, # for startup and crash logging, and Reminders
+    mktime, # to convert datetime to unix epoch time to store in database
+    debug, # for logging crash messages
+    traceback, # for crash logging
+    AsyncIOScheduler, # scheduler for Reminders
+    ReminderObject, # Reminders (/reminders remindme)
+    get_watchlist_index, # for fetching all watchlists on startup
+    sys, # to stop the program (and automatically restart, thanks to pterodactyl)
+    program_start # first startup time datetime, for logging startup duration
+)
 
-BOT_VERSION = "1.2.8.2"
+BOT_VERSION = "1.2.8.7"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -35,7 +49,7 @@ class Bot(commands.Bot):
         self.asyncRinaDB: motor.core.AgnosticDatabase = asyncRinaDB
         super().__init__(*args, **kwargs)
 
-    startup_time = datetime.now() # used in /version in cmd_staffaddons
+    startup_time = datetime.now() # bot uptime start, used in /version in cmd_staffaddons
 
     commandList: list[discord.app_commands.AppCommand]
     log_channel: discord.TextChannel
@@ -273,7 +287,6 @@ if __name__ == '__main__':
         
     @client.event
     async def setup_hook():
-        start = datetime.now()
         logger = logging.getLogger("apscheduler")
         logger.setLevel(logging.WARNING)
         # remove annoying 'Scheduler started' message on sched.start()
@@ -284,10 +297,11 @@ if __name__ == '__main__':
         debug(f"[##     ]: Started Bot"+" "*30,color="green")
         ## activate the extensions/programs/code for slash commands
 
+        extension_loading_start_time = datetime.now()
         for extID in range(len(EXTENSIONS)):
             debug(f"[{'#'*extID}+{' '*(len(EXTENSIONS)-extID-1)}]: Loading {EXTENSIONS[extID]}"+" "*15,color="light_blue",end='\r')
             await client.load_extension(EXTENSIONS[extID])
-        debug(f"[###    ]: Loaded extensions successfully (in {datetime.now()-start})",color="green")
+        debug(f"[###    ]: Loaded extensions successfully (in {datetime.now()-extension_loading_start_time})",color="green")
 
         debug(f"[###+   ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
         try:

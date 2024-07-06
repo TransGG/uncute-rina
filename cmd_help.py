@@ -1,12 +1,15 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    typing # typing.TypedDict for a HelpPage
+)
 
-class help_page(typing.TypedDict):
+class HelpPage(typing.TypedDict):
     title: str
     description: str
     fields: list[tuple[str,str]]
 
-help_pages: dict[int, help_page] = {
-    0 : help_page( # fallback default page
+help_pages: dict[int, HelpPage] = {
+    0 : HelpPage( # fallback default page
         title="Rina's fallback help page",
         description="""Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 %%add_poll_reactions%%: Add an up-/downvote emoji to a message (for voting)
@@ -31,7 +34,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
 """
     ),
     #region Default pages (home / index)
-    1 : help_page(
+    1 : HelpPage(
         title = "Rina's commands",
         description = "Hey there. This is Rina. I'm a bot that does silly things for TransPlace and some linked servers. I'm being maintained by <@262913789375021056>.\n"
                       "I can do many things like looking up tone indicators or words, or sharing server info and questions of the week. To share my commands, I've made this cool interactive menu.\n"
@@ -45,7 +48,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       "\n"
                       "Do you have a cool bot idea? use %%developer_request%% to suggest them to staff!"
     ),
-    2 : help_page(
+    2 : HelpPage(
         title = "Index",
         description = "Here's a list of all the categories. You can use the :1234: button to quickly hop "
                       "between these pages. Press :clipboard: to quickly go back to this index page.\n"
@@ -56,7 +59,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     ),
     #endregion
     #region Expanded index pages (commands)
-    3 : help_page( # index: Utility
+    3 : HelpPage( # index: Utility
         title = "Utility",
         description = "Some commands help in your daily life, like the following commands:\n"
                       "\n"
@@ -65,17 +68,17 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       ". . **104:** convert_unit\n"
                       ". . **105:** todo\n",
     ),
-    4 : help_page(
+    4 : HelpPage(
         title = "null",
         description = "null"
     ),
-    5 : help_page(
+    5 : HelpPage(
         title = "null",
         description = "null"
     ),
     #endregion
     #region Utility commands
-    101 : help_page( # dice rolls
+    101 : HelpPage( # dice rolls
         title = "Rolling dice", # /roll
         description = "Have you ever wanted to roll virtual dice? Now you can!\n"
                       "Rina lets you roll dice with many kinds of faces. Rolling a 2-faced die (aka, a coin)? sure!\n"
@@ -107,7 +110,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             )
         ]
     ),
-    102 : help_page( # dice rolls advanced
+    102 : HelpPage( # dice rolls advanced
         title = "Advanced dice rolls", # /roll advanced: ...
         description = "In the case that the simple dice roll command is not enough, you can roll complexer combinations of dice rolls using the advanced option.\n"
                       "The advanced mode lets you use addition, subtraction, multiplication, and custom dice.\n"
@@ -127,7 +130,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
              )
         ]
     ),
-    103 : help_page( # reminders
+    103 : HelpPage( # reminders
         title = "Reminders", # /reminder
         description = "With this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n"
                       "This command lets you create, remove, and view your reminders.",
@@ -151,7 +154,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             )
         ]
     ),
-    104 : help_page( # convert unit
+    104 : HelpPage( # convert unit
         title = "Converting units",
         description = "Since international communities often share stories about temperature and speed, it's not uncommon to have to look up how many feet go in a centimeter. "
                       "This module lets you easily converty a large amount of units in multiple categories! Currencies are fetched live using an online website (api)!\n"
@@ -174,7 +177,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             )
         ]
     ),
-    105 : help_page( # to-do list
+    105 : HelpPage( # to-do list
         title = "Todo lists",
         description = "For the forgetful, or if you just want a nice grocery list, this command is for you! You can easily add and remove to-do notes, and they're saved throughout all servers with me (TransPlace, EnbyPlace, Transonance, etc.)",
         fields = [
@@ -231,7 +234,7 @@ def replace_string_command_mentions(text: str, client: Bot) -> str:
                 text[command_end_index + 2:])
     return text
 
-def generate_help_page_embed(page: help_page, page_number: int, client: Bot) -> discord.Embed:
+def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
     """
     Helper command to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
     Page fields are appended after the description, in the order they are given in the list.
@@ -306,7 +309,7 @@ class JumpToPageModal_HelpCommands_Help(discord.ui.Modal, title="Go to help page
         self.stop()
 
 class PageView_HelpCommands_Help(discord.ui.View):
-    def __init__(self, pages: dict[int, help_page], start_page: int, client: Bot, timeout: float=None):
+    def __init__(self, pages: dict[int, HelpPage], start_page: int, client: Bot, timeout: float=None):
         super().__init__()
         self.timeout = timeout
         self.page    = start_page

@@ -1,4 +1,7 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    datetime # to get embed send time for embed because cool (serves no real purpose)
+)
 
 class QOTW(commands.Cog):
     def __init__(self, client: Bot):

@@ -1,4 +1,8 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    datetime, timedelta, mktime, # for reminder times
+    asyncio # to create new reminder task that runs immediately (from a not-async ReminderObject __init__ function)
+)
 
 def parse_date(time_string, now: datetime):
     # - "next thursday at 3pm"

@@ -1,4 +1,9 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    mktime, datetime, # to abide to discord ratelimiting (see global variable recently_renamed_vcs)
+    log_to_guild, # to log custom vc changes
+    is_verified, is_staff, is_admin # to check permissions for staff commands
+)
 
 recently_renamed_vcs = {} # make your own vcs!
 VcTable_prefix = "[T] "

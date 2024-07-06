@@ -1,4 +1,11 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    datetime, timezone, # to plot and sort voice chat logs
+    traceback, # to pass traceback into error return message
+    pd, plt, # to plot voice channel timeline graph
+    is_staff, # to test staff roles
+    Object # to make fake voice channel class
+)
 
 channel_separator_table = str.maketrans({"<":"", "#":"", ">":""})
 

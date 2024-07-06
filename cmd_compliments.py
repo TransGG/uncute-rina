@@ -1,4 +1,8 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    random, # random compliment from list, random user pronouns from their role list, and random keyboard mash
+    log_to_guild # to warn when bot can't add headpat reaction (typically cause used blocked the user)
+)
 
 class ConfirmPronounsView(discord.ui.View):
     def __init__(self, timeout=None):

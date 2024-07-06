@@ -1,7 +1,8 @@
-from import_modules import *
-
-class Object(object):
-    ...
+from import_modules import (discord, Bot, 
+                            datetime, # for logging, to show log time
+                            logging, # for debug (logger.info)
+                            warnings # for debug (if given wrong color)
+                            )
 
 def is_verified(itx: discord.Interaction) -> bool:
     """

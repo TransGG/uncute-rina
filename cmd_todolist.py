@@ -1,4 +1,6 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot
+)
 
 class TodoList(commands.Cog):
     def __init__(self, client: Bot):

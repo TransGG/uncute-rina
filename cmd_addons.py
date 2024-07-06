@@ -1,4 +1,10 @@
-from import_modules import *
+from import_modules import (
+    discord, commands, app_commands, Bot,
+    requests, # to read api calls
+    json, # to read API json responses
+    random, # for dice rolls (/roll) and selecting a random staff interaction wait time
+    log_to_guild # to log add_poll_reactions
+)
 
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
