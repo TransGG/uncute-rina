@@ -1,16 +1,18 @@
 from import_modules import (
-    discord, commands, app_commands, Bot,
+    discord, commands, app_commands,
     log_to_guild, # for logging when people send tags anonymously (in case someone abuses the anonymousness)
     EnabledServers, # to specify which tags can be used in which servers (eg. Mature role not in EnbyPlace)
     get_mod_ticket_channel_id, # for ticket channel id in Report tag
     mktime, datetime, # to make report tag autotrigger at most once every 15 minutes
-    typing # for typing.Callable type annotation; for list of [tag send functions].
+    typing # for typing.Callable type annotation: for list of [tag send functions].; and Bot type checking
 )
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 
 class SendPublicly_TagView(discord.ui.View):
-    def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
+    def __init__(self, client: "Bot", embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
         super().__init__()
         if embed.footer.text is None:
             self.footer = ""
@@ -37,7 +39,11 @@ class SendPublicly_TagView(discord.ui.View):
             self.value = 2
         self.embed.set_footer(text=self.footer + self.public_footer)
         await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
-        msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
+        try:
+            # try sending the message without replying to the previous ephemeral
+            msg = await itx.channel.send("", embed=self.embed, allowed_mentions=discord.AllowedMentions.none(), wait=True)
+        except discord.Forbidden:
+            msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
         if self.value == 2 and self.logmsg is not None:
             await log_to_guild(self.client, itx.guild, self.logmsg)
             cmd_mention = self.client.get_command_mention("tag")
@@ -56,7 +62,7 @@ class Tags:
         self.no_politics_channel_id = 1126163144134361238
         self.no_venting_channel_id = 1126163020620513340
 
-    async def tag_message(self, tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool, 
+    async def tag_message(self, tag_name: str, itx: discord.Interaction, client: "Bot", public: bool, anonymous: bool, 
                           embed: discord.Embed, public_footer: bool = False):
         """
         Send a tag message (un)publicly or (un)anonymously, given an embed.
@@ -88,7 +94,11 @@ class Tags:
                                             f"please do not argue in this channel. Instead, open a mod ticket " 
                                             f"and explain the situation there. Thank you.")
                 await itx.response.send_message("sending...", ephemeral=True)
-                msg = await itx.followup.send(embed=embed, ephemeral=False, wait=True)
+                try:
+                    # try sending the message without replying to the previous ephemeral
+                    msg = await itx.channel.send(embed=embed)
+                except discord.Forbidden:
+                    msg = await itx.followup.send(embed=embed, ephemeral=False, wait=True)
                 await log_to_guild(client, itx.guild, logmsg)
                 if itx.guild_id not in EnabledServers.dev_server_ids():
                     staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
@@ -106,7 +116,7 @@ class Tags:
                 await itx.edit_original_response(view=view)
 
     # region Tags
-    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
+    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: "Bot", additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
         mod_ticket_channel_id = get_mod_ticket_channel_id(client, context.guild.id)
         embed = discord.Embed(
@@ -124,7 +134,7 @@ class Tags:
                 embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
             await context.send(embed=embed)
 
-    async def send_customvc_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
+    async def send_customvc_info(self, tag_name: str, itx: discord.Interaction, client: "Bot", public, anonymous):
         vc_hub = await client.get_guild_info(itx.guild, "vcHub")
 
         cmd_mention = client.get_command_mention('editvc')
@@ -154,7 +164,7 @@ class Tags:
                         "transphobic content.")
         await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
 
-    async def send_toneindicator_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
+    async def send_toneindicator_info(self, tag_name: str, itx: discord.Interaction, client: "Bot", public, anonymous):
         embed = discord.Embed(
             title="When to use tone indicators?",
             description="Tone indicators are a useful tool to clarify the meaning of a message.\n"
@@ -227,7 +237,7 @@ class Tags:
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
         
-    async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
+    async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client: "Bot", public, anonymous):
         cmd_mention = client.get_command_mention("remove-role")
         embed = discord.Embed(
             title="Please avoid political discussions!",
@@ -301,7 +311,7 @@ class Tags:
 
 class TagFunctions(commands.Cog):
     def __init__(self, client):
-        self.client: Bot = client
+        self.client: "Bot" = client
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -398,19 +408,19 @@ class TagFunctions(commands.Cog):
 t: Tags = Tags()
 tag_info_dict: dict[str, tuple[tuple[int,int,int], typing.Callable, int]] = \
 { # (sorted ABC and by hue; change hue)   (Hue  Sat  value (HSV) , tag function,              servers they're active in)
-    "avoiding politics"               : ([  0,  40, 100], t.send_avoidpolitics_info,          EnabledServers.all_server_ids()),
-    "conversing effectively"          : ([ 20,  40, 100], t.send_conversing_effectively_info, EnabledServers.all_server_ids()),
-    "customvcs"                       : ([ 40,  40, 100], t.send_customvc_info,               EnabledServers.all_server_ids()),
-    "image ban role"                  : ([ 60,  40, 100], t.send_imagebanrole_info,           EnabledServers.transplace_etc_ids()),
-    "mature role and mature chat"     : ([ 80,  40, 100], t.send_maturerole_info,             EnabledServers.transplace_etc_ids()),
-    "minimodding or correcting staff" : ([100,  40, 100], t.send_minimodding_info,            EnabledServers.all_server_ids()),
-    "please change topic"             : ([120,  40, 100], t.send_chat_topic_change_request,   EnabledServers.all_server_ids()),
-    "plural kit"                      : ([140,  40, 100], t.send_pluralkit_info,              EnabledServers.all_server_ids()),
-    "report"                          : ([  0, 100, 100], t.send_report_info,                 EnabledServers.all_server_ids()),
-    "selfies"                         : ([160,  40, 100], t.send_selfies_info,                EnabledServers.transplace_etc_ids()),
-    "tone indicators"                 : ([180,  40, 100], t.send_toneindicator_info,          EnabledServers.all_server_ids()),
-    "trigger warnings"                : ([200,  40, 100], t.send_triggerwarning_info,         EnabledServers.all_server_ids()),
-    "trusted role"                    : ([220,  40, 100], t.send_trustedrole_info,            EnabledServers.transplace_etc_ids()),
+    "avoiding politics"                    : ([  0,  40, 100], t.send_avoidpolitics_info,          EnabledServers.all_server_ids()),
+    "conversing effectively"               : ([ 20,  40, 100], t.send_conversing_effectively_info, EnabledServers.all_server_ids()),
+    "customvcs"                            : ([ 40,  40, 100], t.send_customvc_info,               EnabledServers.all_server_ids()),
+    "image ban role / temporary embed ban" : ([ 60,  40, 100], t.send_imagebanrole_info,           EnabledServers.transplace_etc_ids()),
+    "mature role and mature chat"          : ([ 80,  40, 100], t.send_maturerole_info,             EnabledServers.transplace_etc_ids()),
+    "minimodding or correcting staff"      : ([100,  40, 100], t.send_minimodding_info,            EnabledServers.all_server_ids()),
+    "please change topic"                  : ([120,  40, 100], t.send_chat_topic_change_request,   EnabledServers.all_server_ids()),
+    "plural kit"                           : ([140,  40, 100], t.send_pluralkit_info,              EnabledServers.all_server_ids()),
+    "report"                               : ([  0, 100, 100], t.send_report_info,                 EnabledServers.all_server_ids()),
+    "selfies"                              : ([160,  40, 100], t.send_selfies_info,                EnabledServers.transplace_etc_ids()),
+    "tone indicators"                      : ([180,  40, 100], t.send_toneindicator_info,          EnabledServers.all_server_ids()),
+    "trigger warnings"                     : ([200,  40, 100], t.send_triggerwarning_info,         EnabledServers.all_server_ids()),
+    "trusted role"                         : ([220,  40, 100], t.send_trustedrole_info,            EnabledServers.transplace_etc_ids()),
 }
 colours = {k: discord.Colour.from_hsv(v[0][0]/360, v[0][1]/100, v[0][2]/100) for k, v in tag_info_dict.items()}
 

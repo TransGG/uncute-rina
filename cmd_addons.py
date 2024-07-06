@@ -1,11 +1,13 @@
 from import_modules import (
-    discord, commands, app_commands, Bot,
+    discord, commands, app_commands,
     requests, # to read api calls
     json, # to read API json responses
     random, # for dice rolls (/roll) and selecting a random staff interaction wait time
-    log_to_guild # to log add_poll_reactions
+    log_to_guild, # to log add_poll_reactions
+    typing # for type checking
 )
-
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -145,7 +147,7 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
-def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSentinel):
+def get_emoji_from_str(client: "Bot", emoji_str: str | discord.utils._MissingSentinel):
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
@@ -197,7 +199,7 @@ class EqualDex_AdditionalInfo(discord.ui.View):
         self.add_item(link_button)
 
 class SendPublicButton_Math(discord.ui.View):
-    def __init__(self, client: Bot, timeout=180):
+    def __init__(self, client: "Bot", timeout=180):
         super().__init__()
         self.value = None
         self.client = client
@@ -212,7 +214,7 @@ class SendPublicButton_Math(discord.ui.View):
 
 
 class SearchAddons(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         self.client = client
 
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
@@ -459,7 +461,7 @@ class SearchAddons(commands.Cog):
                                 "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
 
 class FunAddons(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -754,7 +756,7 @@ class FunAddons(commands.Cog):
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
 class OtherAddons(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB

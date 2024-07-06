@@ -1,10 +1,13 @@
 from import_modules import (
-    discord, commands, app_commands, Bot,
+    discord, commands, app_commands,
     asyncio, # for sleep(1) while waiting for other thread fetching function instance. Like cmdg_starboard: see get_or_fetch_starboard_messages()
     datetime, # to get embed send time for embed because cool (serves no real purpose)
     is_staff, # to test staff roles
-    log_to_guild # to log user errors when people delete watchlist threads and break stuff
+    log_to_guild, # to log user errors when people delete watchlist threads and break stuff
+    typing # for type checking
 )
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 local_watchlist_index: dict[int, int] = {} # user_id, thread_id
 busy_updating_watchlist_index: bool = False
@@ -43,7 +46,7 @@ async def get_watchlist_index(watch_channel: discord.TextChannel):
     return local_watchlist_index
 
 class WatchList(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB

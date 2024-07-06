@@ -1,8 +1,11 @@
 from import_modules import (
-    discord, commands, app_commands, Bot,
+    discord, commands, app_commands,
     random, # random compliment from list, random user pronouns from their role list, and random keyboard mash
-    log_to_guild # to warn when bot can't add headpat reaction (typically cause used blocked the user)
+    log_to_guild, # to warn when bot can't add headpat reaction (typically cause used blocked the user)
+    typing # for type checking
 )
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 class ConfirmPronounsView(discord.ui.View):
     def __init__(self, timeout=None):
@@ -43,7 +46,7 @@ class ConfirmPronounsView(discord.ui.View):
         await itx.response.edit_message(content='Selected Unisex/Unknown gender for the compliment', view=None)
         self.stop()
 
-async def choose_and_send_compliment(client: Bot, itx: discord.Interaction, user: discord.User, type: str):
+async def choose_and_send_compliment(client: "Bot", itx: discord.Interaction, user: discord.User, type: str):
     quotes = {
         "fem_quotes": [
             # "Was the sun always this hot? or is it because of you?",
@@ -153,7 +156,7 @@ async def choose_and_send_compliment(client: Bot, itx: discord.Interaction, user
     else:
         await itx.response.send_message(base+random.choice(quotes[type])+suffix, allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
 
-async def send_confirm_gender_modal(client: Bot, itx: discord.Interaction, user: discord.User):
+async def send_confirm_gender_modal(client: "Bot", itx: discord.Interaction, user: discord.User):
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(f"{user.mention} doesn't have any pronoun roles! Which pronouns would like to use for the compliment?", view=view,ephemeral=True)
@@ -164,7 +167,7 @@ async def send_confirm_gender_modal(client: Bot, itx: discord.Interaction, user:
         await choose_and_send_compliment(client, itx, user, view.value)
 
 class Compliments(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB

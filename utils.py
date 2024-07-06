@@ -1,8 +1,24 @@
-from import_modules import (discord, Bot, 
-                            datetime, # for logging, to show log time
-                            logging, # for debug (logger.info)
-                            warnings # for debug (if given wrong color)
-                            )
+from import_modules import (
+    discord,
+    datetime, # for logging, to show log time
+    logging, # for debug (logger.info)
+    warnings, # for debug (if given wrong color)
+    typing # for type checking
+)
+if typing.TYPE_CHECKING:
+    from main import Bot
+
+__all__ = [
+    "is_verified",
+    "is_staff",
+    "is_admin",
+    "debug",
+    "EnabledServers",
+    "get_mod_ticket_channel_id",
+    "thousand_space",
+    "log_to_guild",
+    "executed_in_dms"
+]
 
 def is_verified(itx: discord.Interaction) -> bool:
     """
@@ -207,7 +223,7 @@ class EnabledServers:
         """
         return [1087014898199969873, 638480381552754730] + EnabledServers.transplace_etc_ids() # EnbyPlace, Transonance
 
-def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | discord.Interaction):
+def get_mod_ticket_channel_id(client: "Bot", guild_id: int | discord.Guild | discord.Interaction):
     """
     Fetch the #contact-staff ticket channel for a specific guild.
 
@@ -248,7 +264,7 @@ def thousand_space(number, interval = 3, separator = " ") -> str:
     decimals = ''.join(['.'+x for x in decimals])
     return number+decimals
 
-async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | discord.Message:
+async def log_to_guild(client: "Bot", guild: discord.Guild, msg: str) -> None | discord.Message:
     """
     Log a message to a guild's logging channel (vcLog)
 

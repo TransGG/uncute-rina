@@ -1,10 +1,13 @@
 from import_modules import (
-    discord, commands, app_commands, Bot,
-    is_staff # to check staff for removing a user's custom pronouns.
+    discord, commands, app_commands,
+    is_staff, # to check staff for removing a user's custom pronouns.
+    typing # for type checking
 )
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 class Pronouns(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client

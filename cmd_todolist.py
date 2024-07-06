@@ -1,9 +1,12 @@
 from import_modules import (
-    discord, commands, app_commands, Bot
+    discord, commands, app_commands,
+    typing # for type checking
 )
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 class TodoList(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client

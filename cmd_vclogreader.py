@@ -1,16 +1,19 @@
 from import_modules import (
-    discord, commands, app_commands, Bot,
+    discord, commands, app_commands,
     datetime, timezone, # to plot and sort voice chat logs
     traceback, # to pass traceback into error return message
     pd, plt, # to plot voice channel timeline graph
     is_staff, # to test staff roles
-    Object # to make fake voice channel class
+    Object, # to make fake voice channel class
+    typing # for type checking
 )
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 channel_separator_table = str.maketrans({"<":"", "#":"", ">":""})
 
 class VCLogReader(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global asyncRinaDB
         asyncRinaDB = client.asyncRinaDB
         self.client = client

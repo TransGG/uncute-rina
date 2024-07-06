@@ -1,9 +1,12 @@
 from import_modules import (
-    discord, commands, app_commands, Bot,
+    discord, commands, app_commands,
     mktime, datetime, # to abide to discord ratelimiting (see global variable recently_renamed_vcs)
     log_to_guild, # to log custom vc changes
-    is_verified, is_staff, is_admin # to check permissions for staff commands
+    is_verified, is_staff, is_admin, # to check permissions for staff commands
+    typing # for type checking
 )
+if typing.TYPE_CHECKING:
+    from main import Bot
 
 recently_renamed_vcs = {} # make your own vcs!
 VcTable_prefix = "[T] "
@@ -123,7 +126,7 @@ class ConfirmationView_VcTable_AutorizedMode(discord.ui.View):
         self.stop()
 
 class CustomVcs(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: "Bot"):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
