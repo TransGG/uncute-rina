@@ -51,6 +51,9 @@ class Bot(commands.Bot):
         "transplace_server_id": 959551566388547676,
         "enbyplace_server_id": 1087014898199969873,
         "transonance_server_id": 638480381552754730,
+        "transplace_ticket_channel_id": 995343855069175858,
+        "enbyplace_ticket_channel_id": 1186054373986537522,
+        "transonance_ticket_channel_id": 1108789589558177812
     }
     # custom_ids = {
     #     "staff_server_id": 985931648094834798,

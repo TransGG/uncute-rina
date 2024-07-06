@@ -9,6 +9,9 @@ busy_updating_starboard_messages = False
 
 async def get_starboard_original_message(client: Bot, star_message: discord.Message, starboard_emoji: discord.Emoji):
     # find original message
+    if len(star_message.embeds) == 0:
+        await log_to_guild(client, star_message.guild, f"{starboard_emoji} :x: Starboard message {star_message.id} was ignored (from {message_id}) (starboard's message had no embeds)")
+        return
     text = star_message.embeds[0].fields[0].value ## "[Jump!]({msgLink})"
     link = text.split("(")[1]
     # Initial attempt to use [:-1] to remove the final ")" character doesn't work if there are unknown
@@ -152,14 +155,20 @@ class Starboard(commands.Cog):
                 f'\n'
                 f"In this case, the user reacted with a '{repr(payload.emoji)}' emoji")
 
+        if message.author.id != self.client.user.id:
+            return # only needs to update the message if it's a rina starboard message of course...
+
         # print(repr(message.guild.id), repr(self.client.custom_ids["staff_server_id"]), message.guild.id == self.client.custom_ids["staff_server_id"])
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            original_starboard_message: discord.Message = await get_starboard_original_message(self.client, message, starboard_emoji)
-            if original_starboard_message is not None and original_starboard_message.author.id == payload.user_id:
+            original_starboard_message: discord.Message | None = await get_starboard_original_message(self.client, message, starboard_emoji)
+            if (original_starboard_message is not None and 
+                    original_starboard_message.author.id == payload.user_id and 
+                    payload.emoji.name == "❌"):
                 await message.delete()
+                return
 
             if len(message.embeds) > 0:
                 await update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)

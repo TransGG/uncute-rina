@@ -101,7 +101,7 @@ class Tags:
     # region Tags
     async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
-        mod_ticket_channel_id = get_mod_ticket_channel_id(client, context)
+        mod_ticket_channel_id = get_mod_ticket_channel_id(client, context.guild.id)
         embed = discord.Embed(
             title='Reporting a message or scenario',
             description="Hi there! If anyone is making you uncomfortable, or you want to "
@@ -178,7 +178,7 @@ class Tags:
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
 
     async def send_imagebanrole_info(self, tag_name: str, itx: discord.Interaction, client, public, anonymous):
-        mod_ticket_channel_id = get_mod_ticket_channel_id(itx)
+        mod_ticket_channel_id = get_mod_ticket_channel_id(client, itx.guild.id)
         embed = discord.Embed(
             title="TEB role (Image Ban)",
             description="**Why can't I send images in the server? Why are my .GIFs only sending links and not "
@@ -305,11 +305,11 @@ class TagFunctions(commands.Cog):
         for staff_role_mention in ["<@&981735650971775077>",  # transplace moderator
                                    "<@&1012954384142966807>", # transplace sr. mod
                                    "<@&981735525784358962>",  # transplace admin
-                                   "<@&1109905190372524132>", # transonance admin
-                                   "<@&1108771208931049544>", # transonance staff
-                                   "<@&1087014898418061363>", # enbyplace moderator
-                                   "<@&1087014898418061365>", # enbyplace sr. mod
-                                   "<@&1087014898418061367>", # enbyplace admin
+                                #    "<@&1109905190372524132>", # transonance admin
+                                #    "<@&1108771208931049544>", # transonance staff
+                                #    "<@&1087014898418061363>", # enbyplace moderator
+                                #    "<@&1087014898418061365>", # enbyplace sr. mod
+                                #    "<@&1087014898418061367>", # enbyplace admin
                                    ]:
             if staff_role_mention in message.content:
                 time_now = int(mktime(datetime.now().timetuple())) # get time in unix

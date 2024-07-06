@@ -207,17 +207,29 @@ class EnabledServers:
         return [1087014898199969873, 638480381552754730] + EnabledServers.transplace_etc_ids() # EnbyPlace, Transonance
 
 def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | discord.Interaction):
+    """
+    Fetch the #contact-staff ticket channel for a specific guild.
+
+    ### Parameters:
+    client: :class:`Bot`
+        Rina's Bot class to fetch ticket channel IDs (hardcoded).
+    guild_id: :class:`int` | :class:`discord.Guild` | :class:`discord.Interaction`
+        A class with a guild_id or guild property.
+    
+    ### Returns:
+    :class:`int` The matching guild's ticket channel id.
+    """
     if type(guild_id) is discord.Interaction:
         guild_id = guild_id.guild_id
     if type(guild_id) is discord.Guild: # can be merged technically but whatevs
         guild_id = guild_id.guild_id
 
     if guild_id == client.custom_ids.get("enbyplace_server_id"):
-        return 1186054373986537522
+        return client.custom_ids.get("enbyplace_ticket_channel_id")
     elif guild_id == client.custom_ids.get("transonance_server_id"):
-        return 1108789589558177812
+        return client.custom_ids.get("transonance_ticket_channel_id")
     else: #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
-        return 995343855069175858
+        return client.custom_ids.get("transplace_ticket_channel_id")
 
 #unused
 def thousand_space(number, interval = 3, separator = " ") -> str:
