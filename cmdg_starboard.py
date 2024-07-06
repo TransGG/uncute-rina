@@ -183,7 +183,7 @@ class Starboard(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id in [None, self.client.custom_ids["staff_server_id"]]:
-            return
+            return # TODO: implement server-dependent module toggling
         _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
             payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels", "starboardEmoji", "starboardDownvoteInitValue")
         if payload.member.id == self.client.user.id or \
@@ -210,14 +210,14 @@ class Starboard(commands.Cog):
                 f'\n'
                 f"In this case, the user reacted with a '{repr(payload.emoji)}' emoji")
 
-        if message.author.id != self.client.user.id:
-            return # only needs to update the message if it's a rina starboard message of course...
-
         # print(repr(message.guild.id), repr(self.client.custom_ids["staff_server_id"]), message.guild.id == self.client.custom_ids["staff_server_id"])
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
+            if message.author.id != self.client.user.id:
+                return # only needs to update the message if it's a rina starboard message of course...
+
             starboard_original_message: discord.Message | None = await fetch_starboard_original_message(self.client, message, starboard_emoji)
             if (starboard_original_message is not None and 
                     starboard_original_message.author.id == payload.user_id and 
