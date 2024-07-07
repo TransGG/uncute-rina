@@ -171,7 +171,7 @@ class VCLogReader(commands.Cog):
                            msg_log_limit="How many logs should I use to make the graph (default: 5000)")
     async def get_voice_channel_data(self, itx: discord.Interaction, requested_channel: str, lower_bound: str, upper_bound: str = None, msg_log_limit: int = 5000):
         requested_channel: discord.app_commands.AppCommandChannel = requested_channel # update typing (if channel mention)
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have permissions to use this command.", ephemeral=True)
             return
         warning = ""

@@ -29,7 +29,7 @@ class WatchList(commands.Cog):
 
     async def add_to_watchlist(self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None, warning=""):
         global local_watchlist_index
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
         if user.id == self.client.user.id:
@@ -186,7 +186,7 @@ class WatchList(commands.Cog):
     @app_commands.command(name="check_watchlist",description="Check if a user is on the watchlist.")
     @app_commands.describe(user="User to check")
     async def check_watchlist(self, itx: discord.Interaction, user: discord.User):
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
         
@@ -203,14 +203,14 @@ class WatchList(commands.Cog):
 
 
     async def watchlist_ctx_user(self, itx, user: discord.User):
-        if not is_staff(itx): # is already checked in the main command, but saves people's time
+        if not is_staff(itx.guild, itx.user): # is already checked in the main command, but saves people's time
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
         watchlist_reason_modal = WatchlistReasonModal(self, "Add user to watchlist", user, None, 300)
         await itx.response.send_modal(watchlist_reason_modal)
 
     async def watchlist_ctx_message(self, itx, message: discord.Message):
-        if not is_staff(itx): # is already checked in the main command, but saves people's time
+        if not is_staff(itx.guild, itx.user): # is already checked in the main command, but saves people's time
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
         watchlist_reason_modal = WatchlistReasonModal(self, "Add user to watchlist using message", message.author, message, 300)

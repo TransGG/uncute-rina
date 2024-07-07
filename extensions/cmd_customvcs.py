@@ -11,12 +11,6 @@ from resources.modals.customvcs import CustomVcStaffEditorModal
 VcTable_prefix = "[T] "
 
 
-class CustomInteraction: # need new class- can't edit itx.user cause it's used later to mention who muted the target user.
-    def __init__(self, guild, user):
-        self.user = user
-        self.guild = guild
-
-
 class CustomVcs(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
@@ -122,7 +116,7 @@ class CustomVcs(commands.Cog):
                      name: app_commands.Range[str,4,35] = None, 
                      limit: app_commands.Range[int, 0, 99] = None):
         global recently_renamed_vcs
-        if not is_verified(itx):
+        if not is_verified(itx.guild, itx.user):
             await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",ephemeral=True)
             return
         
@@ -132,7 +126,7 @@ class CustomVcs(commands.Cog):
         warning = ""
 
         if itx.user.voice is None:
-            if is_staff(itx):
+            if is_staff(itx.guild, itx.user):
                 await itx.response.send_modal(CustomVcStaffEditorModal(vcHub, vcLog, vcCategory))
                 return
             await itx.response.send_message("You must be connected to a voice channel to use this command",ephemeral=True)
@@ -199,7 +193,7 @@ class CustomVcs(commands.Cog):
             await log_to_guild(self.client, itx.guild, f"Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {oldName} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
 
     async def edit_guild_info_autocomplete(self, itx: discord.Interaction, current: str):
-        if not is_admin(itx):
+        if not is_admin(itx.guild, itx.user):
             return [app_commands.Choice(name="Only admins can use this command!", value="No permission")]
 
         if current.startswith("1") or current.startswith("2") or current.startswith("3") or current.startswith("4") or current.startswith("5"):
@@ -255,7 +249,7 @@ class CustomVcs(commands.Cog):
     ])
     @app_commands.autocomplete(option=edit_guild_info_autocomplete)
     async def edit_guild_info(self, itx: discord.Interaction, mode: int, option: str, value: str):
-        if not is_admin(itx):
+        if not is_admin(itx.guild, itx.user):
             await itx.response.send_message("You don't have sufficient permissions to execute this command! (don't want you to break the bot ofc.)",ephemeral=True)
             return
         
@@ -776,7 +770,7 @@ class CustomVcs(commands.Cog):
             except KeyError:
                 warning = ""
 
-            if is_staff(CustomInteraction(itx.guild, user)):
+            if is_staff(itx.guild, user):
                 await itx.response.send_message("You can't mute staff members! If you have an issue with staff, make a ticket or DM an admin!",ephemeral=True)
                 return
             await channel.set_permissions(user, overwrite=discord.PermissionOverwrite(speak=False, stream=False), reason="VcTable edited: muted participant")

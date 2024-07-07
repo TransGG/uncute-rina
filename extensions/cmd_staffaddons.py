@@ -6,7 +6,6 @@ from import_modules import (
 from resources.utils.permissions import is_staff # for checking staff roles
 from resources.utils.utils import log_to_guild # logging when a staff command is used 
 from resources.customs.bot import Bot
-from resources.utils.class_shells import CustomInteraction
 
 
 class StaffAddons(commands.Cog):
@@ -19,7 +18,7 @@ class StaffAddons(commands.Cog):
     @app_commands.describe(text="What will you make Rina repeat?",
                            reply_to_interaction="Show who sent the message?")
     async def say(self, itx: discord.Interaction, text: str, reply_to_interaction: bool = False):
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("Hi. sorry.. It would be too powerful to let you very cool person use this command.",ephemeral=True)
             return
         if reply_to_interaction:
@@ -46,7 +45,7 @@ class StaffAddons(commands.Cog):
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
         # This funcion largely copies the built-in channel.purge() function with a check, but is more fancy by offering a sort of progress update every 50-100 messages :D
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)", ephemeral=True)
             return
         time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
@@ -69,7 +68,7 @@ class StaffAddons(commands.Cog):
                     await message.delete()
                 elif time_now-message_date > 7*86400: # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
                     if "[info]" in message.content.lower():
-                        if is_staff(CustomInteraction(message.author)): # nested in earlier comparison to save having to look through function 1000 times
+                        if is_staff(message.guild, message.author): # nested in earlier comparison to save having to look through function 1000 times
                             continue
                     queued_message_deletions.append(message)
                     if message_delete_count - feedback_output_count_status >= 50:
@@ -95,7 +94,7 @@ class StaffAddons(commands.Cog):
 
     @app_commands.command(name="version",description="Get bot version")
     async def botVersion(self, itx: discord.Interaction):
-        public = is_staff(itx)
+        public = is_staff(itx.guild, itx.user)
         # get most recently pushed's version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]
@@ -111,7 +110,7 @@ class StaffAddons(commands.Cog):
 
     @app_commands.command(name="update",description="Update slash-commands")
     async def updateCmds(self, itx: discord.Interaction):
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("Only Staff can update the slash commands (to prevent ratelimiting)", ephemeral=True)
             return
         await self.client.tree.sync()

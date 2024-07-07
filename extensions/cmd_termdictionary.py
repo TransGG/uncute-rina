@@ -384,7 +384,7 @@ class TermDictionary(commands.Cog):
                            definition="Give this term a definition",
                            synonyms="Add synonyms (SEPARATE WITH \", \")")
     async def define(self, itx: discord.Interaction, term: str, definition: str, synonyms: str = ""):
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You can't add words to the dictionary without staff roles!", ephemeral=True)
             return
         def simplify(q):
@@ -427,7 +427,7 @@ class TermDictionary(commands.Cog):
     @app_commands.describe(term="This is the main word for the dictionary entry (case sens.) Example: Egg, Hormone Replacement Therapy (HRT), etc.",
                            definition="Redefine this definition")
     async def redefine(self, itx: discord.Interaction, term: str, definition: str):
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You can't add words to the dictionary without staff roles!", ephemeral=True)
             return
         collection = RinaDB["termDictionary"]
@@ -445,7 +445,7 @@ class TermDictionary(commands.Cog):
     @admin.command(name="undefine",description="Remove a dictionary entry for a word!")
     @app_commands.describe(term="What word do you need to undefine (case sensitive). Example: Egg, Hormone Replacement Therapy (HRT), etc")
     async def undefine(self, itx: discord.Interaction, term: str):
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You can't remove words to the dictionary without staff roles!", ephemeral=True)
             return
         collection = RinaDB["termDictionary"]
@@ -469,7 +469,7 @@ class TermDictionary(commands.Cog):
             discord.app_commands.Choice(name='Remove a synonym', value=2),
         ])
     async def edit_synonym(self, itx: discord.Interaction, term: str, mode: int, synonym: str):
-        if not is_staff(itx):
+        if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You can't add synonyms to the dictionary without staff roles!", ephemeral=True)
             return
         collection = RinaDB["termDictionary"]

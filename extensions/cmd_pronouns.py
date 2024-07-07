@@ -139,7 +139,7 @@ class Pronouns(commands.Cog):
         if itx.namespace.mode == 3:
             staff_overwrite = False
             data = None
-            if is_staff(itx) and " |" in current:
+            if is_staff(itx.guild, itx.user) and " |" in current:
                 sections = current.split(" |")
                 if len(sections) == 2:
                     try:
@@ -267,7 +267,7 @@ class Pronouns(commands.Cog):
             pronoun = argument
             pronouns = data['pronouns']
             if pronoun not in pronouns:
-                if is_staff(itx):
+                if is_staff(itx.guild, itx.user):
                     # made possible with the annoying user '27', alt of Error, trying to break the bot :\
                     try:
                         member_id, pronoun = pronoun.split(" | ", 1)
