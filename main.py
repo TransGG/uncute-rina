@@ -300,7 +300,7 @@ if __name__ == '__main__':
         extension_loading_start_time = datetime.now()
         for extID in range(len(EXTENSIONS)):
             debug(f"[{'#'*extID}+{' '*(len(EXTENSIONS)-extID-1)}]: Loading {EXTENSIONS[extID]}"+" "*15,color="light_blue",end='\r')
-            await client.load_extension(EXTENSIONS[extID])
+            await client.load_extension("extensions."+EXTENSIONS[extID])
         debug(f"[###    ]: Loaded extensions successfully (in {datetime.now()-extension_loading_start_time})",color="green")
 
         debug(f"[###+   ]: Loading server settings"+ " "*30,color="light_blue",end='\r')
