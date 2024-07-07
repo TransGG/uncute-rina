@@ -1,10 +1,9 @@
 from import_modules import (
     discord, commands, app_commands,
     re, # to remove pronouns from user-/nicknames and split names at capital letters
-    typing # for type checking
 )
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.customs.bot import Bot
+
 
 class GetNameModal_NameUsage_GetTop(discord.ui.Modal, title="Search page with word"):
     def __init__(self, pages, embed_title, timeout=None):
@@ -98,8 +97,9 @@ class PageView_NameUsage_GetTop(discord.ui.View):
         else:
             self.page = send_one.page
 
+
 class NameUsage(commands.GroupCog, name="nameusage",description="Get data about which names are used in which server"):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         self.client = client
 
     @app_commands.command(name="gettop", description="See how often different names occur in this server")
@@ -241,6 +241,7 @@ class NameUsage(commands.GroupCog, name="nameusage",description="Get data about 
                     count += 1
             type_string = "username or nickname"
         await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=not public)
+
 
 async def setup(client):
     await client.add_cog(NameUsage(client))

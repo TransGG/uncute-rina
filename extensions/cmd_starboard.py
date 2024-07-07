@@ -4,9 +4,9 @@ from import_modules import (
     asyncio, # for sleep(1) while waiting for other starboard message fetching function instance. See get_or_fetch_starboard_messages()
     typing # for type checking
 )
-from utils.utils import log_to_guild # to log starboard addition/removal
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.utils.utils import log_to_guild # to log starboard addition/removal
+from resources.customs.bot import Bot
+
 
 starboard_message_ids_marked_for_deletion = []
 local_starboard_message_list_refresh_timestamp = 0 # TODO: make this not unix :P just use datetime
@@ -14,7 +14,8 @@ STARBOARD_REFRESH_DELAY = 1000
 local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
 
-async def delete_starboard_message(client: "Bot", starboard_message: discord.Message, reason: str) -> None:
+
+async def delete_starboard_message(client: Bot, starboard_message: discord.Message, reason: str) -> None:
     """
     Handles custom starboard message deletion messages and preventing double logging messages when the bot removes a starboard message.
 
@@ -34,7 +35,7 @@ async def delete_starboard_message(client: "Bot", starboard_message: discord.Mes
             del local_starboard_message_list[i]
             break
 
-async def fetch_starboard_original_message(client: "Bot", starboard_message: discord.Message, starboard_emoji: discord.Emoji) -> discord.Message | None:
+async def fetch_starboard_original_message(client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji) -> discord.Message | None:
     """
     Uses the 'jump to original' link in a starboard message to fetch its original author's message.
 
@@ -74,7 +75,7 @@ async def fetch_starboard_original_message(client: "Bot", starboard_message: dis
         return
     return original_message
 
-async def update_starboard_message_score(client: "Bot", starboard_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int) -> None:
+async def update_starboard_message_score(client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int) -> None:
     """
     Check a starboard message and original message's reactions and calculate its score. Negative scores can cause the message to be removed from the starboard.
     
@@ -174,10 +175,11 @@ async def get_or_fetch_starboard_messages(starboard_channel: discord.abc.GuildCh
         await asyncio.sleep(1)
     return local_starboard_message_list
 
+
 class Starboard(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
-        self.client: "Bot" = client
+        self.client: Bot = client
         RinaDB = client.RinaDB
 
     @commands.Cog.listener()
@@ -399,6 +401,7 @@ class Starboard(commands.Cog):
                             f"(original message was removed (this starboard message's linked id matched the removed message's)). "
                             f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
                         return
+
 
 async def setup(client):
     await client.add_cog(Starboard(client))

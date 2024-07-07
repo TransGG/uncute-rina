@@ -1,18 +1,19 @@
 from import_modules import (
     discord, commands, app_commands,
     mktime, datetime, # to make report tag autotrigger at most once every 15 minutes
-    typing # for typing.Callable type annotation: for list of [tag send functions].; and Bot type checking
+    typing # for typing.Callable type annotation: for list of [tag send functions].
 )
-from utils.utils import (log_to_guild, # for logging when people send tags anonymously (in case someone abuses the anonymousness)
-                         EnabledServers, # to specify which tags can be used in which servers (eg. Mature role not in EnbyPlace)
-                         get_mod_ticket_channel_id) # for ticket channel id in Report tag
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.utils.utils import (log_to_guild, # for logging when people send tags anonymously (in case someone abuses the anonymousness)
+                                   EnabledServers, # to specify which tags can be used in which servers (eg. Mature role not in EnbyPlace)
+                                   get_mod_ticket_channel_id) # for ticket channel id in Report tag
+from resources.customs.bot import Bot
+
 
 report_message_reminder_unix = 0 #int(mktime(datetime.now().timetuple()))
 
+
 class SendPublicly_TagView(discord.ui.View):
-    def __init__(self, client: "Bot", embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
+    def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, logmsg=None, tag_name=None):
         super().__init__()
         if embed.footer.text is None:
             self.footer = ""
@@ -57,12 +58,13 @@ class SendPublicly_TagView(discord.ui.View):
         self.send_publicly.disabled = True
         self.send_publicly.style = discord.ButtonStyle.gray
 
+
 class Tags:
     def __init__(self):
         self.no_politics_channel_id = 1126163144134361238
         self.no_venting_channel_id = 1126163020620513340
 
-    async def tag_message(self, tag_name: str, itx: discord.Interaction, client: "Bot", public: bool, anonymous: bool, 
+    async def tag_message(self, tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool, 
                           embed: discord.Embed, public_footer: bool = False):
         """
         Send a tag message (un)publicly or (un)anonymously, given an embed.
@@ -116,7 +118,7 @@ class Tags:
                 await itx.edit_original_response(view=view)
 
     # region Tags
-    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: "Bot", additional_info: None | list[str, int]=None, public=False, anonymous=True):
+    async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):
         # additional_info = [message.author.name, message.author.id]
         mod_ticket_channel_id = get_mod_ticket_channel_id(client, context.guild.id)
         embed = discord.Embed(
@@ -134,7 +136,7 @@ class Tags:
                 embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
             await context.send(embed=embed)
 
-    async def send_customvc_info(self, tag_name: str, itx: discord.Interaction, client: "Bot", public, anonymous):
+    async def send_customvc_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         vc_hub = await client.get_guild_info(itx.guild, "vcHub")
 
         cmd_mention = client.get_command_mention('editvc')
@@ -164,7 +166,7 @@ class Tags:
                         "transphobic content.")
         await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
 
-    async def send_toneindicator_info(self, tag_name: str, itx: discord.Interaction, client: "Bot", public, anonymous):
+    async def send_toneindicator_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         embed = discord.Embed(
             title="When to use tone indicators?",
             description="Tone indicators are a useful tool to clarify the meaning of a message.\n"
@@ -237,7 +239,7 @@ class Tags:
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
         
-    async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client: "Bot", public, anonymous):
+    async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         cmd_mention = client.get_command_mention("remove-role")
         embed = discord.Embed(
             title="Please avoid political discussions!",
@@ -309,9 +311,10 @@ class Tags:
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)    
     #endregion Tags
 
+
 class TagFunctions(commands.Cog):
     def __init__(self, client):
-        self.client: "Bot" = client
+        self.client: Bot = client
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -405,9 +408,10 @@ class TagFunctions(commands.Cog):
             await itx.response.send_message("I couldn't remove this role! (Forbidden)", ephemeral=True)
             return
 
+
 t: Tags = Tags()
-tag_info_dict: dict[str, tuple[tuple[int,int,int], typing.Callable, int]] = \
-{ # (sorted ABC and by hue; change hue)   (Hue  Sat  value (HSV) , tag function,              servers they're active in)
+tag_info_dict: dict[str, tuple[tuple[int,int,int], typing.Callable, int]] = {
+    # (sorted ABC and by hue; change hue)     (Hue  Sat  value (HSV) , tag function,              servers they're active in)
     "avoiding politics"                    : ([  0,  40, 100], t.send_avoidpolitics_info,          EnabledServers.all_server_ids()),
     "conversing effectively"               : ([ 20,  40, 100], t.send_conversing_effectively_info, EnabledServers.all_server_ids()),
     "customvcs"                            : ([ 40,  40, 100], t.send_customvc_info,               EnabledServers.all_server_ids()),
@@ -423,6 +427,7 @@ tag_info_dict: dict[str, tuple[tuple[int,int,int], typing.Callable, int]] = \
     "trusted role"                         : ([220,  40, 100], t.send_trustedrole_info,            EnabledServers.transplace_etc_ids()),
 }
 colours = {k: discord.Colour.from_hsv(v[0][0]/360, v[0][1]/100, v[0][2]/100) for k, v in tag_info_dict.items()}
+
 
 async def setup(client):
     await client.add_cog(TagFunctions(client))

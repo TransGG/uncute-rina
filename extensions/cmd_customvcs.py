@@ -1,15 +1,15 @@
 from import_modules import (
     discord, commands, app_commands,
     mktime, datetime, # to abide to discord ratelimiting (see global variable recently_renamed_vcs)
-    typing # for type checking
 )
-from utils.utils import (is_verified, is_staff, is_admin, # to check permissions for staff commands
-                         log_to_guild) # to log custom vc changes
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.utils.utils import log_to_guild # to log custom vc changes
+from resources.utils.permissions import is_verified, is_staff, is_admin # to check permissions for staff commands
+from resources.customs.bot import Bot
+
 
 recently_renamed_vcs = {} # make your own vcs!
 VcTable_prefix = "[T] "
+
 
 class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s channel'):
     channel_id = discord.ui.TextInput(label='Channel Id', placeholder="Which channel do you want to edit")#, required=True)
@@ -102,7 +102,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
             await log_to_guild(self.client, itx.guild, f"Staff: Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {old_name} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
 
 class CustomInteraction: # need new class- can't edit itx.user cause it's used later to mention who muted the target user.
-    def __init__(self,guild, user):
+    def __init__(self, guild, user):
         self.user = user
         self.guild = guild
 
@@ -125,8 +125,9 @@ class ConfirmationView_VcTable_AutorizedMode(discord.ui.View):
         self.value = 0
         self.stop()
 
+
 class CustomVcs(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -1008,6 +1009,7 @@ class CustomVcs(commands.Cog):
                           f"{self.client.get_command_mention('vctable make_authorized_only')}: Toggle the whitelist for speaking\n"
                           f"{self.client.get_command_mention('vctable speaker')} `mode: ` `user: `: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted participants\n")
         await itx.response.send_message(embeds=[embed1,embed2], ephemeral=True)
+
 
 async def setup(client):
     await client.add_cog(CustomVcs(client))

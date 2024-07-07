@@ -1,12 +1,11 @@
 from import_modules import (
     discord, commands, app_commands,
-    typing # for type checking
 )
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.customs.bot import Bot
+
 
 class TodoList(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client
@@ -86,7 +85,6 @@ class TodoList(commands.Cog):
                 ans.append(f"`{id}`: {list[id]}")
             ans = '\n'.join(ans)
             await itx.response.send_message(f"Found {length} to-do item{'s'*(length!=1)}:\n{ans}",ephemeral=True)
-
 
 
 async def setup(client):

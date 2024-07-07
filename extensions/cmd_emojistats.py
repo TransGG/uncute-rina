@@ -4,10 +4,9 @@ from import_modules import (
     re, # to find all emojis used in someone's message
     sys, # for integer max value: sys.maxsize
     pymongo, # to sort database collection search query descending (pymongo.DESCENDING)
-    typing # for type checking
 )
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.customs.bot import Bot
+
 
 #   Rina.emojistats                                     # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
 # ------------------------------------------------------
@@ -51,8 +50,9 @@ async def add_to_data(emoji: tuple[bool, str, str], location: str):
     # collection.update_one( query, {"$set":{"name":emojiName}})
     #debug(f"Successfully added new data for {emojiID} as {location.replace('UsedCount','')}",color="blue")
 
+
 class EmojiStats(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global asyncRinaDB
         asyncRinaDB = client.asyncRinaDB
         self.client = client

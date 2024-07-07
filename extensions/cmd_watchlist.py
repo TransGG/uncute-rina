@@ -2,15 +2,15 @@ from import_modules import (
     discord, commands, app_commands,
     asyncio, # for sleep(1) while waiting for other thread fetching function instance. Like cmdg_starboard: see get_or_fetch_starboard_messages()
     datetime, # to get embed send time for embed because cool (serves no real purpose)
-    typing # for type checking
 )
-from utils.utils import (is_staff, # to test staff roles
-                         log_to_guild) # to log user errors when people delete watchlist threads and break stuff
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.utils.permissions import is_staff # to test staff roles
+from resources.utils.utils import log_to_guild # to log user errors when people delete watchlist threads and break stuff
+from resources.customs.bot import Bot
+
 
 local_watchlist_index: dict[int, int] = {} # user_id, thread_id
 busy_updating_watchlist_index: bool = False
+
 
 async def get_watchlist_index(watch_channel: discord.TextChannel):
     global busy_updating_watchlist_index, local_watchlist_index
@@ -45,8 +45,9 @@ async def get_watchlist_index(watch_channel: discord.TextChannel):
         await asyncio.sleep(1)
     return local_watchlist_index
 
+
 class WatchList(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -390,6 +391,7 @@ class WatchList(commands.Cog):
     #     embed.add_field(name="Private Notes",value = f">>> {private_notes}")
     #     await self.client.get_channel(1143642283577725009).send(embed=embed)
 
+
 class WatchlistReasonModal(discord.ui.Modal):
     """
     A modal allowing the user to add a user to the watchlist with a reason
@@ -414,6 +416,7 @@ class WatchlistReasonModal(discord.ui.Modal):
         self.value = 1
         await self.watchlist.add_to_watchlist(itx, self.user, self.reason_text.value, str(getattr(self.message, "id", "")) or None)
         self.stop()
+
 
 async def setup(client):
     await client.add_cog(WatchList(client))

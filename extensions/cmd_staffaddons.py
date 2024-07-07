@@ -1,20 +1,21 @@
 from import_modules import (
     discord, commands, app_commands,
     mktime, datetime, timedelta, # for /delete_week_selfies (within 7 days), and /version startup time parsing to discord unix <t:1234:F>
-    requests, # to fetch from GitHub and see Rina is running the latest version
-    typing # for type checking
+    requests # to fetch from GitHub and see Rina is running the latest version
 )
-from utils.utils import log_to_guild, is_staff # for checking staff roles and logging when a command is used
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.utils.permissions import is_staff # for checking staff roles
+from resources.utils.utils import log_to_guild # logging when a staff command is used 
+from resources.customs.bot import Bot
+
 
 class CustomInteraction:
     def __init__(self, member: discord.Member):
         self.user = member
         self.guild = member.guild
 
+
 class StaffAddons(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -123,6 +124,7 @@ class StaffAddons(commands.Cog):
         await itx.response.send_message("Updated commands")
 
     # Bot commands end
+
 
 async def setup(client):
     await client.add_cog(StaffAddons(client))

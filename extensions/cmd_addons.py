@@ -2,15 +2,16 @@ from import_modules import (
     discord, commands, app_commands,
     requests, # to read api calls
     json, # to read API json responses
-    random, # for dice rolls (/roll) and selecting a random staff interaction wait time
-    typing # for type checking
 )
-from utils.utils import log_to_guild # to log add_poll_reactions
-if typing.TYPE_CHECKING:
-    from main import Bot
+import random # for dice rolls (/roll) and selecting a random staff interaction wait time
+from resources.utils.utils import log_to_guild # to log add_poll_reactions
+from resources.customs.addons import EqualDexRegion
+from resources.views.addons import EqualDex_AdditionalInfo, SendPublicButton_Math
+from resources.customs.bot import Bot
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
+
 
 currency_options = {
     code: 0 for code in "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,"
@@ -109,6 +110,7 @@ conversion_rates = { # [default 0, incrementation]
     }
 }
 
+
 def generateOutput(responses: list[str], author: discord.User):
     """
     Convert a list of verification follow-up questions into a nicely written message
@@ -147,7 +149,7 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
-def get_emoji_from_str(client: "Bot", emoji_str: str | discord.utils._MissingSentinel):
+def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSentinel):
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
@@ -182,39 +184,9 @@ def get_emoji_from_str(client: "Bot", emoji_str: str | discord.utils._MissingSen
             return None
         return emoji
 
-class EqualDexRegion:
-    def __init__(self, data):
-        self.id = data['region_id']
-        self.name = data['name']
-        self.continent = data['continent']
-        self.url = data['url']
-        self.issues = data['issues']
-
-class EqualDex_AdditionalInfo(discord.ui.View):
-    def __init__(self, url):
-        super().__init__()
-        link_button = discord.ui.Button(style = discord.ButtonStyle.gray,
-                                        label = "More info",
-                                        url = url)
-        self.add_item(link_button)
-
-class SendPublicButton_Math(discord.ui.View):
-    def __init__(self, client: "Bot", timeout=180):
-        super().__init__()
-        self.value = None
-        self.client = client
-        self.timeout = timeout
-
-    @discord.ui.button(label='Send Publicly', style=discord.ButtonStyle.gray)
-    async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
-        self.value = 1
-        await itx.response.edit_message(content="Sent successfully!")
-        cmd_mention = self.client.get_command_mention("math")
-        await itx.followup.send(f"**{itx.user.mention} shared a {cmd_mention} output:**\n" + itx.message.content, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
-
 
 class SearchAddons(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         self.client = client
 
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
@@ -461,7 +433,7 @@ class SearchAddons(commands.Cog):
                                 "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
 
 class FunAddons(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -756,7 +728,7 @@ class FunAddons(commands.Cog):
                 await itx.user.send("Couldn't send you the result of your roll because it took too long or something. Here you go: \n"+output)
 
 class OtherAddons(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -917,6 +889,7 @@ class OtherAddons(commands.Cog):
                 await itx.edit_original_response(content=":warning: Adding emojis failed!")
         cmd_mention = self.client.get_command_mention("add_poll_reactions")
         await log_to_guild(self.client, itx.guild, f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
+
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))

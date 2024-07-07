@@ -4,16 +4,16 @@ from import_modules import (
     traceback, # to pass traceback into error return message
     pd, plt, # to plot voice channel timeline graph
     Object, # to make fake voice channel class
-    typing # for type checking
 )
-from utils.utils import is_staff # to check staff roles
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.utils.permissions import is_staff # to check staff roles
+from resources.customs.bot import Bot
+
 
 channel_separator_table = str.maketrans({"<":"", "#":"", ">":""})
 
+
 class VCLogReader(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global asyncRinaDB
         asyncRinaDB = client.asyncRinaDB
         self.client = client
@@ -400,6 +400,7 @@ class VCLogReader(commands.Cog):
         # await view.wait()
         # if view.value is None:
         #     await itx.edit_original_response(view=None)
+
 
 async def setup(client):
     await client.add_cog(VCLogReader(client))

@@ -2,10 +2,9 @@ from import_modules import (
     discord, commands, app_commands,
     datetime, timedelta, mktime, # for reminder times
     asyncio, # to create new reminder task that runs immediately (from a not-async ReminderObject __init__ function)
-    typing # for type checking
 )
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.customs.bot import Bot
+
 
 def parse_date(time_string, now: datetime):
     # - "next thursday at 3pm"
@@ -126,8 +125,9 @@ def parse_date(time_string, now: datetime):
 
     return distance
 
+
 class ReminderObject:
-    def __init__(self, client: "Bot", 
+    def __init__(self, client: Bot, 
                        creationtime: datetime,
                        remindertime: datetime,
                        userID: int,
@@ -219,7 +219,7 @@ class TimeOfDaySelection(discord.ui.View):
             self.add_item(TimeOfDayButton(self, style=discord.ButtonStyle.green, label=option))
 
 class BumpReminderObject:
-    def __init__(self, client: "Bot", guild: discord.Guild, remindertime):
+    def __init__(self, client: Bot, guild: discord.Guild, remindertime):
         self.client = client
         self.guild = guild
         self.remindertime = remindertime - timedelta(seconds=1.5)
@@ -234,7 +234,7 @@ class BumpReminderObject:
 
 
 class RemindersCog(commands.GroupCog,name="reminder"):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client
@@ -444,7 +444,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
         await itx.response.send_message(f"Successfully removed this reminder! You have {len(db_data['reminders'])} other reminders going.",ephemeral=True)
 
 class BumpReminder(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client

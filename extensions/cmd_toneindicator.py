@@ -2,6 +2,7 @@ from import_modules import (
     discord, commands, app_commands
 )
 
+
 class ToneIndicator(commands.Cog):
     @app_commands.command(name="toneindicator",description="Look for the definition of a tone indicator")
     @app_commands.describe(mode="Choose a search method, eg. /p -> platonic; or vice versa",
@@ -255,6 +256,7 @@ class ToneIndicator(commands.Cog):
         if len(result_str) > 1999    :
             result_str = "Your search returned too many results (discord has a 2000-character message length D:). Please search for something more specific."
         await itx.response.send_message(result_str,ephemeral=not public)
+
 
 async def setup(client):
     # client.add_command("toneindicator")

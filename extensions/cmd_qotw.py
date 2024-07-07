@@ -1,13 +1,12 @@
 from import_modules import (
     discord, commands, app_commands,
     datetime, # to get embed send time for embed because cool (serves no real purpose)
-    typing # for type checking
 )
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.customs.bot import Bot
+
 
 class QOTW(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -139,6 +138,7 @@ class QOTW(commands.Cog):
     ####################
     # Watch out doubts #
     ####################
+
 
 async def setup(client):
     await client.add_cog(QOTW(client))

@@ -3,10 +3,9 @@ from import_modules import (
     mktime, datetime, timezone, # for tracking member joins/leaves/verifications
     asyncio, # for sleep(0.1) to prevent blocking: allow discord and other processes to send a heartbeat and function.
     pd, plt, # for graphing member joins/leaves/verifications
-    typing # for type checking
 )
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.customs.bot import Bot
+
 
 async def add_to_data(member, type):
     collection = asyncRinaDB["data"]
@@ -27,8 +26,9 @@ async def add_to_data(member, type):
     await collection.update_one(query, {"$set":{f"{type}.{member.id}":data[type][str(member.id)]}}, upsert=True)
     #debug(f"Successfully added new data for {member.name} to {repr(type)}",color="blue")
 
+
 class MemberData(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global asyncRinaDB
         self.client = client
         asyncRinaDB = client.asyncRinaDB
@@ -232,7 +232,6 @@ class MemberData(commands.Cog):
         except:
             pass
         await itx.followup.send(f"From {lower_bound/86400} to {upper_bound/86400} days ago, {output} (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
-
 
 
 async def setup(client):

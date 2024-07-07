@@ -1,14 +1,15 @@
 from import_modules import (
     discord, commands, app_commands,
-    typing # typing.TypedDict for a HelpPage and type checking
+    typing # typing.TypedDict for a HelpPage
 )
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.customs.bot import Bot
+
 
 class HelpPage(typing.TypedDict):
     title: str
     description: str
     fields: list[tuple[str,str]]
+
 
 help_pages: dict[int, HelpPage] = {
     0 : HelpPage( # fallback default page
@@ -213,7 +214,8 @@ assert all([type(i) is int for i in help_pages]) # all help pages have an intege
 assert sorted(list(help_pages)) == list(help_pages) # all help pages are sorted by default
 assert all([all([j in ["title", "description", "fields"] for j in help_pages[i]]) for i in help_pages]) # all pages only have one of these attributes
 
-def replace_string_command_mentions(text: str, client: "Bot") -> str:
+
+def replace_string_command_mentions(text: str, client: Bot) -> str:
     """
     Converts strings with "%%command%%" into a command mention (</command:12345678912345678>).
 
@@ -236,7 +238,7 @@ def replace_string_command_mentions(text: str, client: "Bot") -> str:
                 text[command_end_index + 2:])
     return text
 
-def generate_help_page_embed(page: HelpPage, page_number: int, client: "Bot") -> discord.Embed:
+def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
     """
     Helper command to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
     Page fields are appended after the description, in the order they are given in the list.
@@ -263,6 +265,7 @@ def generate_help_page_embed(page: HelpPage, page_number: int, client: "Bot") ->
                             inline = False)
     embed.set_footer(text="page: "+str(page_number))
     return embed
+
 
 class JumpToPageModal_HelpCommands_Help(discord.ui.Modal, title="Go to help page"):
     def __init__(self, page_count, timeout=None):
@@ -311,7 +314,7 @@ class JumpToPageModal_HelpCommands_Help(discord.ui.Modal, title="Go to help page
         self.stop()
 
 class PageView_HelpCommands_Help(discord.ui.View):
-    def __init__(self, pages: dict[int, HelpPage], start_page: int, client: "Bot", timeout: float=None):
+    def __init__(self, pages: dict[int, HelpPage], start_page: int, client: Bot, timeout: float=None):
         super().__init__()
         self.timeout = timeout
         self.page    = start_page
@@ -380,7 +383,7 @@ class PageView_HelpCommands_Help(discord.ui.View):
 
 
 class HelpCommand(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
@@ -442,6 +445,7 @@ class HelpCommand(commands.Cog):
     @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")
     async def commands(self, itx: discord.Interaction, page: int = FIRST_PAGE):
         await self.send_help_menu(itx, page)
+
 
 async def setup(client):
     await client.add_cog(HelpCommand(client))

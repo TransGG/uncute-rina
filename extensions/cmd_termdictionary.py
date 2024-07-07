@@ -3,14 +3,14 @@ from import_modules import (
     requests, json, # for API calls to dictionary apis
     re, # to parse and remove https:/pronouns.page/ in-text page linking
     mktime, datetime, # for urbandictionary post creation time
-    typing # for type checking
 )
-from utils.utils import (log_to_guild, # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
-                         is_staff) # for staff dictionary commands
-if typing.TYPE_CHECKING:
-    from main import Bot
+from resources.utils.utils import log_to_guild # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
+from resources.utils.permissions import is_staff # for staff dictionary commands
+from resources.customs.bot import Bot
+
 
 del_separators_table = str.maketrans({" ":"", "-":"", "_":""})
+
 
 class DictionaryAPI_SendPageModal(discord.ui.Modal, title="Share single dictionary entry?"):
     def __init__(self, entries, timeout=None):
@@ -146,7 +146,7 @@ class UrbanDictionary_PageView(discord.ui.View):
 
 
 class TermDictionary(commands.Cog):
-    def __init__(self, client: "Bot"):
+    def __init__(self, client: Bot):
         global RinaDB
         RinaDB = client.RinaDB
         self.client = client
@@ -634,6 +634,6 @@ class TermDictionary(commands.Cog):
             await log_to_guild(self.client, itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) removed synonym '{synonym}' the dictionary definition of '{term}'")
             await itx.response.send_message("Successfully removed synonym", ephemeral=True)
 
+
 async def setup(client):
     await client.add_cog(TermDictionary(client))
-    # await client.add_cog(DictionaryGroup(client))
