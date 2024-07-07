@@ -2,7 +2,6 @@ from import_modules import (
     discord, commands,
     mktime, datetime, timezone, # to track starboard refresh timestamps TODO: make it not use unix timestamps but just datetimes; and get message send time for embed because cool (serves no real purpose)
     asyncio, # for sleep(1) while waiting for other starboard message fetching function instance. See get_or_fetch_starboard_messages()
-    typing # for type checking
 )
 from resources.utils.utils import log_to_guild # to log starboard addition/removal
 from resources.customs.bot import Bot

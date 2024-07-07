@@ -1,9 +1,9 @@
 from import_modules import (
     discord,
     datetime, # for logging, to show log time
+    timedelta, # for parsetime
     logging, # for debug (logger.info)
     warnings, # for debug (if given wrong color)
-    typing # for type checking
 )
 from resources.customs.bot import Bot
 
@@ -259,3 +259,124 @@ async def executed_in_dms(itx: discord.Interaction = None,
         await id_object.send("This command is unavailable in DMs", ephemeral=True)
         return True
     return False
+
+def parse_date(time_string, now: datetime):
+    # - "next thursday at 3pm"
+    # - "tomorrow"
+    # + "in 3 days"
+    # + "2d"
+    # - "2022-07-03"
+    # + "2022y4mo3days"
+    # - "<t:293847839273>"
+    timeterms = {
+        "y":["y","year","years"],
+        "M":["mo","month","months"],
+        "w":["w","week","weeks"],
+        "d":["d","day","days"],
+        "h":["h","hour","hours"],
+        "m":["m","min","mins","minute","minutes"],
+        "s":["s","sec", "secs","second","seconds"]
+    }
+
+    time_units = []
+    low_index = 0
+    number_index = 0
+    is_number = True
+
+    def magic_date_split(index, low_index, number_index) -> list[float]:
+        try:
+            time = [float(time_string[low_index:number_index + 1])]
+        except ValueError:
+            raise ValueError(f"The value for your date/time has to be a number (0, 1, 2) not '{time_string[low_index:number_index + 1]}'")
+        date = time_string[number_index + 1:index]
+        for unit in timeterms:
+            if date in timeterms[unit]:
+                time.append(unit)
+                break
+        else:
+            raise ValueError(f"You can't use '{date}' as unit for your date/time")
+        return time
+    
+    index = 0 #for making my IDE happy
+    for index in range(len(time_string)):
+        # for index in "14days7hours": get index of the first number, the last number, and the last letter before the next number:
+        #    "1" to "<d" (until but not including "d") and "<7" -> so "1" to "4" and "d" to "s"
+        # then it converts "14" to a number and "days" to the timedict of "d", so you get [[14,'d'], [7,'h']]
+        if time_string[index] in "0123456789.":
+            if not is_number:
+                time_units.append(magic_date_split(index, low_index, number_index))
+                low_index = index
+            number_index = index
+            is_number = True
+        else:
+            is_number = False
+    time_units.append(magic_date_split(index + 1, low_index, number_index))
+
+    timedict = {
+        "y":now.year,
+        "M":now.month,
+        "d":now.day-1,
+        "h":now.hour,
+        "m":now.minute,
+        "s":now.second,
+        "f":0, # microseconds can only be set with "0.04s" eg.
+        # now.day-1 for _timedict["d"] because later, datetime(day=...) starts with 1, and adds this value with
+        # timedelta. This is required cause the datetime() doesn't let you set "0" for days. (cuz a month starts
+        # at day 1)
+    }
+    
+    # add values to each timedict key
+    for unit in time_units:
+        if unit[1] == "w":
+            timedict["d"] += 7*unit[0]
+        else:
+            timedict[unit[1]] += unit[0]
+    
+    # check non-whole numbers, and shift "0.2m" to 0.2*60 = 12 seconds
+    def decimals(time):
+        return time - int(time)
+    def is_whole(time):
+        return time - int(time) == 0
+    
+    if not is_whole(timedict["y"]):
+        timedict["M"] += decimals(timedict["y"]) * 12
+        timedict["y"] = int(timedict["y"])
+    if not is_whole(timedict["M"]):
+        timedict["d"] += decimals(timedict["M"]) * (365.2425 / 12)
+        timedict["M"] = int(timedict["M"])
+    if not is_whole(timedict["d"]):
+        timedict["h"] += decimals(timedict["d"]) * 24
+        timedict["d"] = int(timedict["d"])
+    if not is_whole(timedict["h"]):
+        timedict["m"] += decimals(timedict["h"]) * 60
+        timedict["h"] = int(timedict["h"])
+    if not is_whole(timedict["m"]):
+        timedict["s"] += decimals(timedict["m"]) * 60
+        timedict["m"] = int(timedict["m"])
+    if not is_whole(timedict["s"]):
+        timedict["f"] += decimals(timedict["s"]) * 1000000
+        timedict["s"] = int(timedict["s"])
+    
+    # check overflows
+    while timedict["s"] >= 60:
+        timedict["s"] -= 60
+        timedict["m"] += 1
+    while timedict["m"] >= 60:
+        timedict["m"] -= 60
+        timedict["h"] += 1
+    while timedict["h"] >= 24:
+        timedict["h"] -= 24
+        timedict["d"] += 1
+    while timedict["M"] > 12:
+        timedict["M"] -= 12
+        timedict["y"] += 1
+    if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
+        raise ValueError("I don't think I can remind you in that long!")
+    
+    timedict = {i:int(timedict[i]) for i in timedict}
+    
+    distance = datetime(timedict["y"],timedict["M"],1,timedict["h"],timedict["m"],timedict["s"])
+    # cause you cant have >31 days in a month, but if overflow is given, then let this timedelta calculate the new months/years
+    distance += timedelta(days=timedict["d"])
+
+    return distance

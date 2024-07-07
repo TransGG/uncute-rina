@@ -6,12 +6,7 @@ from import_modules import (
 from resources.utils.permissions import is_staff # for checking staff roles
 from resources.utils.utils import log_to_guild # logging when a staff command is used 
 from resources.customs.bot import Bot
-
-
-class CustomInteraction:
-    def __init__(self, member: discord.Member):
-        self.user = member
-        self.guild = member.guild
+from resources.utils.class_shells import CustomInteraction
 
 
 class StaffAddons(commands.Cog):

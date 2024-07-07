@@ -1,14 +1,10 @@
 from import_modules import (
-    discord, commands, app_commands,
-    typing # typing.TypedDict for a HelpPage
+    discord, commands, app_commands
 )
 from resources.customs.bot import Bot
-
-
-class HelpPage(typing.TypedDict):
-    title: str
-    description: str
-    fields: list[tuple[str,str]]
+from resources.views.help import PageView_HelpCommands_Help
+from resources.customs.help import HelpPage
+from resources.utils.stringhelper import replace_string_command_mentions
 
 
 help_pages: dict[int, HelpPage] = {
@@ -215,29 +211,7 @@ assert sorted(list(help_pages)) == list(help_pages) # all help pages are sorted 
 assert all([all([j in ["title", "description", "fields"] for j in help_pages[i]]) for i in help_pages]) # all pages only have one of these attributes
 
 
-def replace_string_command_mentions(text: str, client: Bot) -> str:
-    """
-    Converts strings with "%%command%%" into a command mention (</command:12345678912345678>).
-
-    Parameters:
-    -----------
-    text: :class:`str`
-        The text in which to look for command mentions
-    client: :class:`main.Bot`
-        The client with which to convert the command into a command mention
-
-    Returns:
-    --------
-    :class:`str`: The input text, with every command instance replaced with its matching command mention. Note: If the command does not exist, it will fill the mention with "/command" instead of "</command:1>"
-    """
-    while "%%" in text:
-        command_start_index = text.index("%%")
-        command_end_index = text.index("%%", command_start_index + 2)
-        text = (text[:command_start_index] +
-                client.get_command_mention(text[command_start_index + 2 : command_end_index]) +
-                text[command_end_index + 2:])
-    return text
-
+# TODO: move to own file
 def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
     """
     Helper command to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
@@ -265,121 +239,6 @@ def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> d
                             inline = False)
     embed.set_footer(text="page: "+str(page_number))
     return embed
-
-
-class JumpToPageModal_HelpCommands_Help(discord.ui.Modal, title="Go to help page"):
-    def __init__(self, page_count, timeout=None):
-        super().__init__()
-        self.value = None # itx if valid input is given, else None
-        self.timeout = timeout
-        self.page = None # numeric input, or None if non-numeric input (can be out of range)
-        self.page_count = page_count
-
-        self.question_text = discord.ui.TextInput(label='What help page do you want to jump to?',
-                                                  placeholder=f"2",
-                                                  # style=discord.TextStyle.short, required=True
-                                                  )
-        self.add_item(self.question_text)
-
-    async def on_submit(self, itx: discord.Interaction):
-        if not self.question_text.value.isnumeric():
-            await itx.response.send_message("Error: Invalid number.\n"
-                                            "\n"
-                                            "This button lets you jump to a help page (number). To see what kinds of help pages there are, go to the index page (page 2, or click the :clipboard: button).\n"
-                                            "An example of a help page is page 3: `Utility`. To go to this page, you can either use the previous/next buttons (◀️ and ▶️) to navigate there, or click the 🔢 button: This button opens a modal.\n"
-                                            "In this modal, you can put in the page number you want to jump to. Following from our example, if you type in '3', it will bring you to page 3; `Utility`.\n"
-                                            "Happy browsing!", ephemeral=True)
-            return
-        else:
-            self.page = int(self.question_text.value)
-
-            if self.page not in self.page_indexes:
-                if self.page > self.page_indexes[-1]:
-                    relative_page_location_details = f" (nearest pages to `{self.page}` are `{self.page_indexes[-1]}` and `{self.page_indexes[0]}`)"
-                elif self.page < self.page_indexes[0]:
-                    relative_page_location_details = f" (nearest pages to `{self.page}` are `{self.page_indexes[0]}` and `{self.page_indexes[-1]}`)"
-                else:
-                    min_index = self.page
-                    max_index = self.page
-                    while min_index not in self.page_indexes:
-                        min_index -= 1
-                    while max_index not in self.page_indexes:
-                        max_index += 1
-                    relative_page_location_details = f" (nearest pages to `{self.page}` are `{min_index}` and `{max_index}`)"
-                await itx.response.send_message(f"Error: Number invalid. Please go to a valid help page" + relative_page_location_details + ".", ephemeral=True)
-                return
-
-            #self.page = self.page-1 # turn page number into index number
-        self.value = itx
-        self.stop()
-
-class PageView_HelpCommands_Help(discord.ui.View):
-    def __init__(self, pages: dict[int, HelpPage], start_page: int, client: Bot, timeout: float=None):
-        super().__init__()
-        self.timeout = timeout
-        self.page    = start_page
-        self.pages   = pages
-        self.client = client
-
-    async def update_page(self, itx: discord.Interaction):
-        page_details = self.pages[self.page]
-
-        embed = discord.Embed(color= discord.Color.from_hsv((180 + self.page*10)/360, 0.4, 1),
-                              title=page_details["title"],
-                              description=replace_string_command_mentions(page_details["description"], self.client))
-        if "fields" in page_details:
-            for field in page_details["fields"]:
-                embed.add_field(name  = replace_string_command_mentions(field[0], self.client), 
-                                value = replace_string_command_mentions(field[1], self.client), 
-                                inline = False)
-        embed.set_footer(text="page: "+str(self.page))
-
-        await itx.response.edit_message(embed=embed)
-
-    #region Buttons
-
-    @discord.ui.button(emoji='📋', style=discord.ButtonStyle.gray) # index
-    async def go_to_index(self, itx: discord.Interaction, _button: discord.ui.Button):
-        self.page = 1 # page 2, but index 1
-        await self.update_page(itx)
-
-    @discord.ui.button(emoji='◀️', style=discord.ButtonStyle.blurple) # previous
-    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
-        # get current page, find the index of it, subtract 1 from that index, and find the related page to match
-        page_indexes = sorted(list(self.pages)) # sorting may be unnecessary, since it should already be sorted.
-        current_page_index = page_indexes.index(self.page)
-        if current_page_index - 1 < page_indexes[0]: # below lowest index
-            self.page = page_indexes[-1] # set to highest index
-        else:
-            self.page = page_indexes[current_page_index - 1]
-
-        await self.update_page(itx)
-
-    @discord.ui.button(emoji='▶️', style=discord.ButtonStyle.blurple) # next
-    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
-        # get current page, find the index of it, add 1 to that index, and find the related page to match
-        page_indexes = sorted(list(self.pages)) # sorting may be unnecessary, since it should already be sorted.
-        current_page_index = page_indexes.index(self.page)
-        if current_page_index + 1 > page_indexes[-1]: # above highest index
-            self.page = page_indexes[0] # set to lowest index
-        else:
-            self.page = page_indexes[current_page_index + 1]
-
-        await self.update_page(itx)
-
-    @discord.ui.button(emoji='🔢', style=discord.ButtonStyle.gray) # go to page
-    async def go_to_page(self, itx: discord.Interaction, _button: discord.ui.Button):
-        jump_page_modal = JumpToPageModal_HelpCommands_Help(len(self.pages))
-        await itx.response.send_modal(jump_page_modal)
-
-        await jump_page_modal.wait()
-        if jump_page_modal.value == None:
-            pass
-        else:
-            self.page = jump_page_modal.page
-            await self.update_page(jump_page_modal.value)
-
-    #endregion Buttons
 
 
 class HelpCommand(commands.Cog):
