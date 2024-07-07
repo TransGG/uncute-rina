@@ -1,10 +1,10 @@
 from import_modules import (
     discord, commands, app_commands,
     mktime, datetime, # to abide to discord ratelimiting (see global variable recently_renamed_vcs)
-    log_to_guild, # to log custom vc changes
-    is_verified, is_staff, is_admin, # to check permissions for staff commands
     typing # for type checking
 )
+from utils.utils import (is_verified, is_staff, is_admin, # to check permissions for staff commands
+                         log_to_guild) # to log custom vc changes
 if typing.TYPE_CHECKING:
     from main import Bot
 

@@ -3,10 +3,10 @@ from import_modules import (
     datetime, timezone, # to plot and sort voice chat logs
     traceback, # to pass traceback into error return message
     pd, plt, # to plot voice channel timeline graph
-    is_staff, # to test staff roles
     Object, # to make fake voice channel class
     typing # for type checking
 )
+from utils.utils import is_staff # to check staff roles
 if typing.TYPE_CHECKING:
     from main import Bot
 

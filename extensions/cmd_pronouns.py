@@ -1,8 +1,8 @@
 from import_modules import (
     discord, commands, app_commands,
-    is_staff, # to check staff for removing a user's custom pronouns.
     typing # for type checking
 )
+from utils.utils import is_staff # to check staff for removing a user's custom pronouns.
 if typing.TYPE_CHECKING:
     from main import Bot
 

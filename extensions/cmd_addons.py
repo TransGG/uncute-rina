@@ -3,9 +3,9 @@ from import_modules import (
     requests, # to read api calls
     json, # to read API json responses
     random, # for dice rolls (/roll) and selecting a random staff interaction wait time
-    log_to_guild, # to log add_poll_reactions
     typing # for type checking
 )
+from utils.utils import log_to_guild # to log add_poll_reactions
 if typing.TYPE_CHECKING:
     from main import Bot
 

@@ -3,10 +3,10 @@ from import_modules import (
     requests, json, # for API calls to dictionary apis
     re, # to parse and remove https:/pronouns.page/ in-text page linking
     mktime, datetime, # for urbandictionary post creation time
-    log_to_guild, # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
-    is_staff, # for staff dictionary commands
     typing # for type checking
 )
+from utils.utils import (log_to_guild, # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
+                         is_staff) # for staff dictionary commands
 if typing.TYPE_CHECKING:
     from main import Bot
 

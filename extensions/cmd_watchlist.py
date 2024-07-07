@@ -2,10 +2,10 @@ from import_modules import (
     discord, commands, app_commands,
     asyncio, # for sleep(1) while waiting for other thread fetching function instance. Like cmdg_starboard: see get_or_fetch_starboard_messages()
     datetime, # to get embed send time for embed because cool (serves no real purpose)
-    is_staff, # to test staff roles
-    log_to_guild, # to log user errors when people delete watchlist threads and break stuff
     typing # for type checking
 )
+from utils.utils import (is_staff, # to test staff roles
+                         log_to_guild) # to log user errors when people delete watchlist threads and break stuff
 if typing.TYPE_CHECKING:
     from main import Bot
 

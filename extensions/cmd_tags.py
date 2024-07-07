@@ -1,11 +1,11 @@
 from import_modules import (
     discord, commands, app_commands,
-    log_to_guild, # for logging when people send tags anonymously (in case someone abuses the anonymousness)
-    EnabledServers, # to specify which tags can be used in which servers (eg. Mature role not in EnbyPlace)
-    get_mod_ticket_channel_id, # for ticket channel id in Report tag
     mktime, datetime, # to make report tag autotrigger at most once every 15 minutes
     typing # for typing.Callable type annotation: for list of [tag send functions].; and Bot type checking
 )
+from utils.utils import (log_to_guild, # for logging when people send tags anonymously (in case someone abuses the anonymousness)
+                         EnabledServers, # to specify which tags can be used in which servers (eg. Mature role not in EnbyPlace)
+                         get_mod_ticket_channel_id) # for ticket channel id in Report tag
 if typing.TYPE_CHECKING:
     from main import Bot
 

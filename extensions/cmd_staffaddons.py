@@ -1,10 +1,10 @@
 from import_modules import (
     discord, commands, app_commands,
     mktime, datetime, timedelta, # for /delete_week_selfies (within 7 days), and /version startup time parsing to discord unix <t:1234:F>
-    log_to_guild, is_staff, # for checking staff roles and logging when a command is used
     requests, # to fetch from GitHub and see Rina is running the latest version
     typing # for type checking
 )
+from utils.utils import log_to_guild, is_staff # for checking staff roles and logging when a command is used
 if typing.TYPE_CHECKING:
     from main import Bot
 

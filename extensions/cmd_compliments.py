@@ -1,9 +1,9 @@
 from import_modules import (
     discord, commands, app_commands,
     random, # random compliment from list, random user pronouns from their role list, and random keyboard mash
-    log_to_guild, # to warn when bot can't add headpat reaction (typically cause used blocked the user)
     typing # for type checking
 )
+from utils.utils import log_to_guild # to warn when bot can't add headpat reaction (typically cause used blocked the user)
 if typing.TYPE_CHECKING:
     from main import Bot
 

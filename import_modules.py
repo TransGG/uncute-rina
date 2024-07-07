@@ -67,13 +67,11 @@ import traceback
 progress.increment("math/ceil")
 from math import ceil
 progress.increment("cmdg_Reminders/Reminders")
-from extensions.cmdg_reminders import ReminderObject
-progress.increment("utils")
-from utils import is_verified, is_staff, is_admin, debug, EnabledServers, get_mod_ticket_channel_id, thousand_space, log_to_guild, executed_in_dms
+#from extensions.cmdg_reminders import ReminderObject # used for adding reminders when starting up the bot
 progress.increment("cmd_qotw/get_watchlist_index")
 from extensions.cmd_watchlist import get_watchlist_index
-# used for adding reminders when starting up the bot
-# print_progress(21,31, "", end='\n')
+progress.increment("utils")
+from utils.utils import debug
 debug(f"[{'#'*(progress.max)}] Imported modules in {datetime.now()-program_start}"+' '*40,color='green', add_time=False)
 
 __all__ = [
@@ -92,8 +90,6 @@ __all__ = [
     "AsyncIOScheduler", "asyncio",
     "plt", "md", "traceback",
     "ceil",
-    "is_verified", "is_staff", "is_admin", "debug", "EnabledServers", "get_mod_ticket_channel_id", 
-        "thousand_space", "log_to_guild", "executed_in_dms",
-    "ReminderObject",
+    #"ReminderObject",
     "get_watchlist_index"
 ]

@@ -8,11 +8,11 @@ from import_modules import (
     debug, # for logging crash messages
     traceback, # for crash logging
     AsyncIOScheduler, # scheduler for Reminders
-    ReminderObject, # Reminders (/reminders remindme)
     get_watchlist_index, # for fetching all watchlists on startup
     sys, # to stop the program (and automatically restart, thanks to pterodactyl)
     program_start # first startup time datetime, for logging startup duration
 )
+from cmdg_reminders import ReminderObject # Reminders (/reminders remindme)
 
 BOT_VERSION = "1.2.8.7"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
