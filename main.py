@@ -12,7 +12,7 @@ from import_modules import (
     sys, # to stop the program (and automatically restart, thanks to pterodactyl)
     program_start # first startup time datetime, for logging startup duration
 )
-from cmdg_reminders import ReminderObject # Reminders (/reminders remindme)
+from extensions.cmdg_reminders import ReminderObject # Reminders (/reminders remindme)
 
 BOT_VERSION = "1.2.8.7"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
@@ -36,7 +36,7 @@ EXTENSIONS = [
     "cmd_watchlist",
     "cmdg_nameusage",
     "cmdg_reminders",
-    "cmdg_starboard",
+    "cmd_starboard",
 ]
 
 class Bot(commands.Bot):

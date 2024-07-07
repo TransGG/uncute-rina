@@ -10,7 +10,7 @@ class PrintProgress:
 class Object(object):
     pass
 
-progress = PrintProgress(27)
+progress = PrintProgress(25)
 progress.increment("datetime")
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
 program_start = datetime.now()
@@ -66,10 +66,10 @@ progress.increment("traceback")
 import traceback
 progress.increment("math/ceil")
 from math import ceil
-progress.increment("cmdg_Reminders/Reminders")
-#from extensions.cmdg_reminders import ReminderObject # used for adding reminders when starting up the bot
-progress.increment("cmd_qotw/get_watchlist_index")
-from extensions.cmd_watchlist import get_watchlist_index
+# progress.increment("cmdg_Reminders/Reminders")
+# from extensions.cmdg_reminders import ReminderObject # used for adding reminders when starting up the bot
+# progress.increment("cmd_qotw/get_watchlist_index")
+# from extensions.cmd_watchlist import get_watchlist_index
 progress.increment("utils")
 from utils.utils import debug
 debug(f"[{'#'*(progress.max)}] Imported modules in {datetime.now()-program_start}"+' '*40,color='green', add_time=False)
