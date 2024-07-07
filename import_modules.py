@@ -74,7 +74,7 @@ progress.increment("cmd_qotw/get_watchlist_index")
 from cmd_watchlist import get_watchlist_index
 # used for adding reminders when starting up the bot
 # print_progress(21,31, "", end='\n')
-debug(f"[{'#'*(progress.max)}] Imported modules     "+' '*50,color='green', add_time=False)
+debug(f"[{'#'*(progress.max)}] Imported modules in {datetime.now()-program_start}"+' '*40,color='green', add_time=False)
 
 __all__ = [
     "Object",
