@@ -1,0 +1,7 @@
+discord
+pymongo[srv]
+motor
+pandas
+apscheduler
+matplotlib
+requests
