@@ -1,5 +1,6 @@
 import discord
 
+
 class ConfirmationView_VcTable_AutorizedMode(discord.ui.View):
     def __init__(self, timeout=None):
         super().__init__()

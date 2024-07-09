@@ -6,7 +6,7 @@ from resources.utils.utils import log_to_guild # to log custom vc changes
 from resources.utils.permissions import is_verified, is_staff, is_admin # to check permissions for staff commands
 from resources.customs.bot import Bot
 from resources.views.customvcs import ConfirmationView_VcTable_AutorizedMode
-from resources.modals.customvcs import CustomVcStaffEditorModal
+from resources.modals.customvcs import CustomVcStaffEditorModal, recently_renamed_vcs
 
 VcTable_prefix = "[T] "
 

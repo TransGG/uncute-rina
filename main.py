@@ -13,7 +13,7 @@ from import_modules import (
 from resources.utils.utils import debug # for logging crash messages
 from resources.customs.bot import Bot
 from extensions.cmdg_reminders import ReminderObject # Reminders (/reminders remindme)
-from extensions.cmd_watchlist import get_watchlist_index # for fetching all watchlists on startup
+from extensions.cmd_watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 BOT_VERSION = "1.2.8.7"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
@@ -151,9 +151,9 @@ if __name__ == '__main__':
         debug(f"[+]: Pre-loading all watchlist threads", color="light_blue",end="\r")
         watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
         if watchlist_channel is not None: # if running on prod
-            await get_watchlist_index(watchlist_channel)
+            await get_or_fetch_watchlist_index(watchlist_channel)
         debug(f"[#]: Loaded watchlist threads."+" "*15, color="green")
-        
+    
     @client.event
     async def setup_hook():
         logger = logging.getLogger("apscheduler")

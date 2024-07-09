@@ -6,7 +6,7 @@ from import_modules import (
 from resources.utils.permissions import is_staff # to test staff roles
 from resources.utils.utils import log_to_guild # to log user errors when people delete watchlist threads and break stuff
 from resources.customs.bot import Bot
-from resources.customs.watchlist import get_watchlist_index
+from resources.customs.watchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache
 
 
 class WatchList(commands.Cog):
@@ -98,14 +98,14 @@ class WatchList(commands.Cog):
                 description=f"Loading WANTED entry...", #{message.content}
             )
         
-        watchlist_index = await get_watchlist_index(watch_channel)
+        watchlist_index = await get_or_fetch_watchlist_index(watch_channel)
         already_on_watchlist = user.id in watchlist_index
 
         if not already_on_watchlist:
             msg = await watch_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
             # make and join a thread under the reason
             thread = await msg.create_thread(name=f"Watch-{(str(user)+'-'+str(user.id))}", auto_archive_duration=10080)
-            local_watchlist_index[user.id] = thread.id # thread.id will be the same as msg.id, because of discord structure
+            add_to_watchlist_cache(user.id, thread.id) # thread.id will be the same as msg.id, because of discord structure
             await thread.join()
             # await thread.send("<@&986022587756871711>", silent=True) # silent messages don't work for this
             joiner_msg = await thread.send("user-mention placeholder")
@@ -193,7 +193,7 @@ class WatchList(commands.Cog):
         await itx.response.defer(ephemeral=True)
 
         watch_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
-        watchlist_index = await get_watchlist_index(watch_channel)
+        watchlist_index = await get_or_fetch_watchlist_index(watch_channel)
         on_watchlist: bool = user.id in watchlist_index
 
         if on_watchlist:
