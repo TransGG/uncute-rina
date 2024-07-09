@@ -109,9 +109,12 @@ async def choose_and_send_compliment(client: Bot, itx: discord.Interaction, user
     cmd_mention = client.get_command_mention("developer_request")
     cmd_mention1 = client.get_command_mention("complimentblacklist")
     suffix = f""#"\n\nPlease give suggestions for compliments! DM <@262913789375021056>, make a staff ticket, or use {cmd_mention} to suggest one. Do you dislike this compliment? Use {cmd_mention1} `location:being complimented` `mode:Add` `string: ` and block specific words (or the letters "e" and "o" to block every compliment)"""
-    if itx.response.is_done():
-        # await itx.edit_original_response(content=base+random.choice(quotes[type]), view=None)
-        await itx.followup.send(content=base+random.choice(quotes[type])+suffix, allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
+    if itx.response.is_done(): # should happen if user used the modal to select a pronoun role
+        try:
+            await itx.channel.send(content=base+random.choice(quotes[type])+suffix, allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
+        except discord.Forbidden: # in channel where rina is not allowed to send
+            # await itx.edit_original_response(content=base+random.choice(quotes[type]), view=None)
+            await itx.followup.send(content=base+random.choice(quotes[type])+suffix, allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
     else:
         await itx.response.send_message(base+random.choice(quotes[type])+suffix, allowed_mentions=discord.AllowedMentions(everyone=False, users=[user], roles=False, replied_user=False))
 

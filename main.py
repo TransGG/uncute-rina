@@ -7,7 +7,7 @@ import sys # to stop the program (and automatically restart, thanks to pterodact
 import logging # to set logging level to not DEBUG and hide unnecessary logs
 import traceback # for crash logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling Reminders
-from pymongo.database import Database as pydb # for MongoDB database  
+from pymongo.database import Database as pydb # for MongoDB database
 from pymongo import MongoClient
 import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
 
@@ -15,6 +15,7 @@ from resources.utils.utils import debug # for logging crash messages
 from resources.customs.bot import Bot
 from resources.customs.reminders import ReminderObject # Reminders (/reminders remindme)
 from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
+
 
 BOT_VERSION = "1.2.8.7"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)

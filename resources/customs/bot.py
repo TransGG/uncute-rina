@@ -1,9 +1,8 @@
-from import_modules import (
-    discord, commands, # for main discord bot functionality
-    pydb, motor, # for MongoDB database
-    datetime, # for startup and crash logging, and Reminders
-    AsyncIOScheduler, # scheduler for Reminders
-)
+import discord, discord.ext.commands as commands # for main discord bot functionality
+from pymongo.database import Database as pydb # for MongoDB database
+import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
+from datetime import datetime # for startup and crash logging, and Reminders
+from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling Reminders
 
 
 class Bot(commands.Bot):
