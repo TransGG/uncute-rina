@@ -1,6 +1,7 @@
 import discord
 from resources.customs.bot import Bot
-from resources.utils.utils import log_to_guild, EnabledServers
+from resources.utils.utils import log_to_guild
+from resources.customs.utils import EnabledServers
 
 
 class SendPublicly_TagView(discord.ui.View):

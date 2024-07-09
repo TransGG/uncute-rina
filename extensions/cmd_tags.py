@@ -3,8 +3,8 @@ from time import mktime
 from datetime import datetime # to make report tag autotrigger at most once every 15 minutes
 import typing # for typing.Callable: for list of [tag send functions].
 from resources.utils.utils import (log_to_guild, # for logging when people send tags anonymously (in case someone abuses the anonymousness)
-                                   EnabledServers, # to specify which tags can be used in which servers (eg. Mature role not in EnbyPlace)
                                    get_mod_ticket_channel_id) # for ticket channel id in Report tag
+from resources.customs.utils import EnabledServers # to specify which tags can be used in which servers (eg. Mature role not in EnbyPlace)
 from resources.customs.bot import Bot
 from resources.views.tags import SendPublicly_TagView
 
