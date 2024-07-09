@@ -148,7 +148,7 @@ class NameUsage(commands.GroupCog, name="nameusage",description="Get data about 
                 elif name.lower() in member.name.lower():
                     count += 1
             type_string = "username or nickname"
-        await itx.followup.send(f"I found {count} people with '{name.lower()}' in their {type_string}",ephemeral=not public)
+        await itx.followup.send(f"I found {count} {"person" if count == 1 else "people"} with '{name.lower()}' in their {type_string}",ephemeral=not public)
 
 
 async def setup(client):
