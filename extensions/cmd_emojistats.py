@@ -1,10 +1,9 @@
-from import_modules import (
-    discord, commands, app_commands,
-    mktime, datetime, timezone, # for logging emoji last use time
-    re, # to find all emojis used in someone's message
-    sys, # for integer max value: sys.maxsize
-    pymongo, # to sort database collection search query descending (pymongo.DESCENDING)
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from time import mktime # for logging emoji last use time
+from datetime import datetime, timezone
+import re # to find all emojis used in someone's message
+import pymongo # for pymongo.DESCENDING when sorting db query output
+import sys # for integer max value: sys.maxsize
 from resources.customs.bot import Bot
 
 

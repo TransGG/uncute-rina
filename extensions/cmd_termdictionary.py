@@ -1,9 +1,9 @@
-from import_modules import (
-    discord, commands, app_commands,
-    requests, json, # for API calls to dictionary apis
-    re, # to parse and remove https:/pronouns.page/ in-text page linking
-    mktime, datetime, # for urbandictionary post creation time
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+import requests # for API calls to dictionary apis
+import json
+import re # to parse and remove https:/pronouns.page/ in-text page linking
+from time import mktime # for urbandictionary post creation time
+from datetime import datetime
 from resources.utils.utils import log_to_guild # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
 from resources.utils.permissions import is_staff # for staff dictionary commands
 from resources.customs.bot import Bot

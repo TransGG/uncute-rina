@@ -1,16 +1,10 @@
-from import_modules import (
-    discord,
-    datetime, # for logging, to show log time
-    timedelta, # for parsetime
-    logging, # for debug (logger.info)
-    warnings, # for debug (if given wrong color)
-)
+import discord
+from datetime import datetime, timedelta # for logging, to show log time; and for parsetime
+import logging # for debug (logger.info)
+import warnings # for debug (if given wrong color)
 from resources.customs.bot import Bot
 
 __all__ = [
-    "is_verified",
-    "is_staff",
-    "is_admin",
     "debug",
     "EnabledServers",
     "get_mod_ticket_channel_id",

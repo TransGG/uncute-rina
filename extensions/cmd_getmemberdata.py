@@ -1,9 +1,9 @@
-from import_modules import (
-    discord, commands, app_commands,
-    mktime, datetime, timezone, # for tracking member joins/leaves/verifications
-    asyncio, # for sleep(0.1) to prevent blocking: allow discord and other processes to send a heartbeat and function.
-    pd, plt, # for graphing member joins/leaves/verifications
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from time import mktime # for tracking member joins/leaves/verifications
+from datetime import datetime, timezone
+import asyncio # for sleep(0.1) to prevent blocking: allow discord and other processes to send a heartbeat and function.
+import pandas as pd # for graphing member joins/leaves/verifications
+import matplotlib.pyplot as plt
 from resources.customs.bot import Bot
 
 

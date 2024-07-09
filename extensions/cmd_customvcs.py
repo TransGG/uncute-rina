@@ -1,7 +1,6 @@
-from import_modules import (
-    discord, commands, app_commands,
-    mktime, datetime, # to abide to discord ratelimiting (see global variable recently_renamed_vcs)
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from time import mktime # to abide to discord ratelimiting (see global variable recently_renamed_vcs)
+from datetime import datetime
 from resources.utils.utils import log_to_guild # to log custom vc changes
 from resources.utils.permissions import is_verified, is_staff, is_admin # to check permissions for staff commands
 from resources.customs.bot import Bot

@@ -1,8 +1,6 @@
-from import_modules import (
-    discord, commands, app_commands,
-    requests, # to read api calls
-    json, # to read API json responses
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+import requests # to read api calls
+import json # to read API json responses
 import random # for dice rolls (/roll) and selecting a random staff interaction wait time
 from resources.utils.utils import log_to_guild # to log add_poll_reactions
 from resources.customs.addons import EqualDexRegion

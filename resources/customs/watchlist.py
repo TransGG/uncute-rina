@@ -1,5 +1,5 @@
 import discord
-import asyncio
+import asyncio # for sleep(1) while waiting for other thread fetching function instance. Like cmdg_starboard: see get_or_fetch_starboard_messages()
 
 
 local_watchlist_index: dict[int, int] = {} # user_id, thread_id

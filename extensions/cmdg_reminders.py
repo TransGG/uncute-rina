@@ -1,7 +1,6 @@
-from import_modules import (
-    discord, commands, app_commands,
-    datetime, timedelta, mktime # for reminder times
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from time import mktime # for reminder times
+from datetime import datetime, timedelta
 from resources.customs.bot import Bot
 from resources.customs.reminders import ReminderObject, BumpReminderObject
 from resources.utils.utils import parse_date

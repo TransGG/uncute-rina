@@ -1,19 +1,20 @@
-from import_modules import (
-    discord, # for main discord bot functionality
-    pydb, motor, MongoClient, # for MongoDB database
-    json, #for loading the API keys file
-    logging, # to set logging level to not DEBUG and hide unnecessary logs
-    datetime, # for startup and crash logging, and Reminders
-    mktime, # to convert datetime to unix epoch time to store in database
-    traceback, # for crash logging
-    AsyncIOScheduler, # scheduler for Reminders
-    sys, # to stop the program (and automatically restart, thanks to pterodactyl)
-    program_start # first startup time datetime, for logging startup duration
-)
+from datetime import datetime # for startup and crash logging, and Reminders
+program_start = datetime.now() # first startup time datetime; for logging startup duration
+from time import mktime # to convert datetime to unix epoch time to store in database
+import discord # for main discord bot functionality
+import json # for loading the API keys file
+import sys # to stop the program (and automatically restart, thanks to pterodactyl)
+import logging # to set logging level to not DEBUG and hide unnecessary logs
+import traceback # for crash logging
+from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling Reminders
+from pymongo.database import Database as pydb # for MongoDB database  
+from pymongo import MongoClient
+import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
+
 from resources.utils.utils import debug # for logging crash messages
 from resources.customs.bot import Bot
-from extensions.cmdg_reminders import ReminderObject # Reminders (/reminders remindme)
-from extensions.cmd_watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
+from resources.customs.reminders import ReminderObject # Reminders (/reminders remindme)
+from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 BOT_VERSION = "1.2.8.7"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)

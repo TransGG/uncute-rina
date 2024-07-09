@@ -1,6 +1,4 @@
-from import_modules import (
-    discord, commands, app_commands,
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
 from resources.customs.bot import Bot
 
 

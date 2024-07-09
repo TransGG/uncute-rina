@@ -1,7 +1,5 @@
-from import_modules import (
-    discord, commands, app_commands,
-    re, # to remove pronouns from user-/nicknames and split names at capital letters
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+import re # to remove pronouns from user-/nicknames and split names at capital letters
 from resources.customs.bot import Bot
 from resources.views.nameusage import PageView_NameUsage_GetTop
 

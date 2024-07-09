@@ -1,12 +1,11 @@
-from import_modules import (
-    discord, commands, app_commands,
-    datetime, timezone, # to plot and sort voice chat logs
-    traceback, # to pass traceback into error return message
-    pd, plt, # to plot voice channel timeline graph
-    Object, # to make fake voice channel class
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from datetime import datetime, timezone # to plot and sort voice chat logs
+import traceback # to pass traceback into error return message
+import pandas as pd # to plot voice channel timeline graph
+import matplotlib.pyplot as plt
 from resources.utils.permissions import is_staff # to check staff roles
 from resources.customs.bot import Bot
+from resources.customs.vclogreader import CustomVoiceChannel
 
 
 channel_separator_table = str.maketrans({"<":"", "#":"", ">":""})
@@ -170,7 +169,7 @@ class VCLogReader(commands.Cog):
                            upper_bound="Get data up to [period] minutes ago",
                            msg_log_limit="How many logs should I use to make the graph (default: 5000)")
     async def get_voice_channel_data(self, itx: discord.Interaction, requested_channel: str, lower_bound: str, upper_bound: str = None, msg_log_limit: int = 5000):
-        requested_channel: discord.app_commands.AppCommandChannel = requested_channel # update typing (if channel mention)
+        requested_channel: discord.app_commands.AppCommandChannel | str = requested_channel # update typing (if channel mention)
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have permissions to use this command.", ephemeral=True)
             return
@@ -184,13 +183,11 @@ class VCLogReader(commands.Cog):
             voice_channel = itx.client.get_channel(int(requested_channel))
 
         if type(voice_channel) is not discord.VoiceChannel:
-            voice_channel = Object() # make custom vc if the voice channel we're trying to get logs does not exist anymore.
-            voice_channel.id = int(requested_channel)
-            voice_channel.name = "Unknown channel"
-            voice_channel.members = []
-            voice_channel.mention = "<#" + requested_channel + ">"
+            # make custom vc if the voice channel we're trying to get logs does not exist anymore.
+            voice_channel = CustomVoiceChannel(id=int(requested_channel),
+                                               name="Unknown Channel",
+                                               members=[])
             warning = "Warning: This channel is not a voice channel, or has been deleted!\n\n"
-
 
         cmd_mention = self.client.get_command_mention("editguildinfo")
         try:

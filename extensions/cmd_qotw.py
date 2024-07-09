@@ -1,7 +1,5 @@
-from import_modules import (
-    discord, commands, app_commands,
-    datetime, # to get embed send time for embed because cool (serves no real purpose)
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from datetime import datetime # to get embed send time for embed because cool (serves no real purpose)
 from resources.customs.bot import Bot
 
 

@@ -1,12 +1,10 @@
-from import_modules import (
-    discord, commands, app_commands,
-    asyncio, # for sleep(1) while waiting for other thread fetching function instance. Like cmdg_starboard: see get_or_fetch_starboard_messages()
-    datetime, # to get embed send time for embed because cool (serves no real purpose)
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from datetime import datetime # to get embed send time for embed because cool (serves no real purpose)
 from resources.utils.permissions import is_staff # to test staff roles
 from resources.utils.utils import log_to_guild # to log user errors when people delete watchlist threads and break stuff
 from resources.customs.bot import Bot
 from resources.customs.watchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache
+from resources.modals.watchlist import WatchlistReasonModal
 
 
 class WatchList(commands.Cog):
@@ -353,32 +351,6 @@ class WatchList(commands.Cog):
     #     embed.add_field(name="\u200b",value = f"\u200b", inline=False)
     #     embed.add_field(name="Private Notes",value = f">>> {private_notes}")
     #     await self.client.get_channel(1143642283577725009).send(embed=embed)
-
-
-class WatchlistReasonModal(discord.ui.Modal):
-    """
-    A modal allowing the user to add a user to the watchlist with a reason
-    """
-
-    def __init__(self, watchlist: WatchList, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
-        super().__init__(title=title, timeout=timeout)
-        self.value = None
-        # self.timeout = timeout
-        # self.title = title
-        self.user = reported_user
-        self.message = message
-        self.watchlist = watchlist
-
-        self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}',
-                                                placeholder=f"not required but recommended",
-                                                style=discord.TextStyle.paragraph,
-                                                required=False)
-        self.add_item(self.reason_text)
-    
-    async def on_submit(self, itx: discord.Interaction):
-        self.value = 1
-        await self.watchlist.add_to_watchlist(itx, self.user, self.reason_text.value, str(getattr(self.message, "id", "")) or None)
-        self.stop()
 
 
 async def setup(client):

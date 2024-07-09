@@ -1,7 +1,5 @@
-from import_modules import (
-    discord, commands, app_commands,
-    random, # random compliment from list, random user pronouns from their role list, and random keyboard mash
-)
+import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+import random # random compliment from list, random user pronouns from their role list, and random keyboard mash
 from resources.utils.utils import log_to_guild # to warn when bot can't add headpat reaction (typically cause used blocked the user)
 from resources.views.compliments import ConfirmPronounsView
 from resources.customs.bot import Bot

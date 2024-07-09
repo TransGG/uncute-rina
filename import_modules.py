@@ -7,9 +7,6 @@ class PrintProgress:
         print(f"[{self.progress*'#'}+{(self.max-self.progress-1)*' '}] Importing modules:   {name}{' '*(50-len(name))}\033[F")
         self.progress += 1
 
-class Object(object):
-    pass
-
 progress = PrintProgress(25)
 progress.increment("datetime")
 from datetime import datetime, timedelta, timezone # for checking if user is older than 7days (in verification
@@ -90,6 +87,5 @@ __all__ = [
     "AsyncIOScheduler", "asyncio",
     "plt", "md", "traceback",
     "ceil",
-    #"ReminderObject",
     "get_watchlist_index"
 ]
