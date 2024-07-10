@@ -144,10 +144,6 @@ class DevRequest(commands.Cog):
                     threads.append(thread)
 
             for thread in threads:
-                ###### TODO: remove unnecessary code: ######
-                if thread.auto_archive_duration != 10080:
-                    await thread.edit(auto_archive_duration=10080)
-                ############################################
                 try:
                     starter_message = await watchlist_channel.fetch_message(thread.id)
                 except discord.errors.NotFound:
@@ -162,6 +158,10 @@ class DevRequest(commands.Cog):
                     await thread.send(itx.user.mention + f" poked this thread with {cmd_mention}.\n"
                                       "This channel got a message because it was archived and the request wasn't marked as completed or rejected.", allowed_mentions=discord.AllowedMentions.none())
                     pinged_thread_count += 1
+                    ###### TODO: remove unnecessary code: ######
+                    if thread.auto_archive_duration != 10080:
+                        await thread.edit(auto_archive_duration=10080)
+                    ############################################
             await itx.followup.send(f"Pinged {pinged_thread_count} archived channel{'' if pinged_thread_count == 1 else 's'} successfully!", ephemeral=True)
         except:
             await itx.followup.send("Something went wrong!", ephemeral=True)
