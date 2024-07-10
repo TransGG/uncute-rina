@@ -29,7 +29,7 @@ def is_verified(guild: discord.Guild, member: discord.Member | discord.User) -> 
 #     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
 #     return len(set(roles).intersection(itx.user.roles)) > 0 or is_admin(itx.guild, itx.user)
 
-def is_staff(guild: discord.Guild, member: discord.Member | discord.User):
+def is_staff(guild: discord.Guild, member: discord.Member | discord.User) -> bool:
     """
     Check if someone is staff.
 
@@ -58,7 +58,7 @@ def is_staff(guild: discord.Guild, member: discord.Member | discord.User):
                 1108771208931049544] # Transonance: Staff
     return len(set(roles).intersection(member.roles)) > 0 or is_admin(guild, member) or len(set(role_ids).intersection(user_role_ids)) > 0
 
-def is_admin(guild: discord.Guild, member: discord.Member | discord.User):
+def is_admin(guild: discord.Guild, member: discord.Member | discord.User) -> bool:
     """
     Check if someone is an admin.
 
@@ -83,5 +83,5 @@ def is_admin(guild: discord.Guild, member: discord.Member | discord.User):
              discord.utils.find(lambda r: r.name.lower() in 'owner'     , guild.roles)] 
     user_role_ids = [role.id for role in member.roles]
     role_ids = [981735525784358962]  # TransPlace: Admin
-    has_admin = [role.permissions.administrator for role in member.roles]
+    has_admin = any([role.permissions.administrator for role in member.roles])
     return has_admin or len(set(roles).intersection(member.roles)) > 0 or member.id == 262913789375021056 or len(set(role_ids).intersection(user_role_ids)) > 0

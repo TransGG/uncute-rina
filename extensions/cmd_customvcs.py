@@ -45,7 +45,7 @@ class CustomVcs(commands.Cog):
                 try:
                     await before.channel.delete()
                 except discord.errors.NotFound:
-                    await log_to_guild(self.client, member.guild, f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, but it **could not be deleted!.**")
+                    await log_to_guild(self.client, member.guild, f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, but it **could not be deleted**!")
                     raise
                 await log_to_guild(self.client, member.guild, f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.")
 
