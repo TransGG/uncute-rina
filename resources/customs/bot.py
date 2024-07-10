@@ -28,6 +28,7 @@ class Bot(commands.Bot):
         "staff_logs_category": 1025456987049312297,
         "staff_reports_channel": 981730694202023946,
         "active_staff_role": 996802301283020890,
+        "staff_developer_role": 982274122920902656,
         "transplace_server_id": 959551566388547676,
         "enbyplace_server_id": 1087014898199969873,
         "transonance_server_id": 638480381552754730,

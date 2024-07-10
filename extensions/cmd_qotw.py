@@ -85,6 +85,12 @@ class QOTW(commands.Cog):
             question = question.replace("\\n", "\n")
             #send a plaintext version of the question, and copy a link to it
             copyable_version = await thread.send(f"{question}",allowed_mentions=discord.AllowedMentions.none())
+
+            # mention developers in a message edit, adding them all to the thread without mentioning them
+            joiner_msg = await thread.send("role mention placeholder")
+            await joiner_msg.edit(content=f"<@&{self.client.custom_ids['staff_developer_role']}>")
+            await joiner_msg.delete()
+
             # edit the uncool embed to make it cool: Show question, link to plaintext, and upvotes/downvotes
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=255, g=255, b=172),
@@ -110,10 +116,10 @@ class QOTW(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id != self.client.custom_ids["staff_server_id"]:
+        if (payload.guild_id   != self.client.custom_ids["staff_server_id"] or
+            payload.channel_id != self.client.custom_ids["staff_dev_request"]):
             return
-        if payload.channel_id != self.client.custom_ids["staff_dev_request"]:
-            return
+        
         emoji_color_selection = {
             "🔴": discord.Colour.from_rgb(r=255,g=100,b=100),
             "🟡": discord.Colour.from_rgb(r=255,g=255,b=172),
