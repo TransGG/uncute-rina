@@ -135,6 +135,7 @@ class DevRequest(commands.Cog):
         try:
             watchlist_channel = itx.client.get_channel(self.client.custom_ids["staff_dev_request"])
             threads: list[discord.Thread] = []
+            pinged_thread_count = 0
             async for thread in watchlist_channel.archived_threads(limit=None):
                 threads.append(thread)
             archived_thread_ids = [t.id for t in threads]
@@ -147,16 +148,21 @@ class DevRequest(commands.Cog):
                 if thread.auto_archive_duration != 10080:
                     thread.edit(auto_archive_duration=10080)
                 ############################################
-
-                starter_message = await thread.parent.fetch_message(thread.id)
+                try:
+                    starter_message = await watchlist_channel.fetch_message(thread.id)
+                except discord.errors.NotFound:
+                    continue # thread starter message was removed.
+                
                 if (starter_message is None or
-                    starter_message.author.id != self.client.user.id or
-                    len(starter_message.embeds) == 0):
-                    return
+                        starter_message.author.id != self.client.user.id or
+                        len(starter_message.embeds) == 0):
+                    continue
                 if starter_message.embeds[0].color in [dev_request_emoji_color_options["🟡"], dev_request_emoji_color_options["🔵"]]:
                     cmd_mention = self.client.get_command_mention("ping_open_dev_requests")
                     await thread.send(itx.user.mention + f" poked this thread with {cmd_mention}.\n"
                                       "This channel got a message because it was archived and the request wasn't marked as completed or rejected.", allowed_mentions=discord.AllowedMentions.none())
+                    pinged_thread_count += 1
+            await itx.followup.send(f"Pinged {pinged_thread_count} archived channel{'' if pinged_thread_count == 1 else 's'} successfully!", ephemeral=True)
         except:
             await itx.followup.send("Something went wrong!", ephemeral=True)
             raise

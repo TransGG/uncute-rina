@@ -17,7 +17,7 @@ from resources.customs.reminders import ReminderObject # Reminders (/reminders r
 from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 
-BOT_VERSION = "1.2.9.2"
+BOT_VERSION = "1.2.9.3"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -178,6 +178,7 @@ if __name__ == '__main__':
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
         except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound, discord.errors.Forbidden): #one of these
+            client.running_on_production = False
             if TESTING_ENVIRONMENT == 1:
                 client.log_channel = await client.fetch_channel(986304081234624554)
             else:
