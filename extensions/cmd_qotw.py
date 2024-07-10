@@ -146,7 +146,7 @@ class DevRequest(commands.Cog):
             for thread in threads:
                 ###### TODO: remove unnecessary code: ######
                 if thread.auto_archive_duration != 10080:
-                    thread.edit(auto_archive_duration=10080)
+                    await thread.edit(auto_archive_duration=10080)
                 ############################################
                 try:
                     starter_message = await watchlist_channel.fetch_message(thread.id)

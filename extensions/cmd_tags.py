@@ -54,11 +54,10 @@ class Tags: # TODO: move to own file
                     msg = await itx.channel.send(embed=embed)
                 except discord.Forbidden:
                     msg = await itx.followup.send(embed=embed, ephemeral=False, wait=True)
+                logmsg += f", in {itx.channel.mention} (`{itx.channel.id}`)\n[Jump to the tag message]({msg.jump_url})"
                 await log_to_guild(client, itx.guild, logmsg)
-                if itx.guild_id not in EnabledServers.dev_server_ids():
-                    staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
-                    await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
-                                                             f"[Jump to the tag message]({msg.jump_url})")
+                staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                await staff_message_reports_channel.send(logmsg)
             else:
                 await itx.response.send_message(embed=embed)
         else:

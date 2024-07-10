@@ -1,7 +1,6 @@
 import discord
 from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild
-from resources.customs.utils import EnabledServers
 
 
 class SendPublicly_TagView(discord.ui.View):
@@ -37,13 +36,11 @@ class SendPublicly_TagView(discord.ui.View):
             msg = await itx.channel.send("", embed=self.embed, allowed_mentions=discord.AllowedMentions.none(), wait=True)
         except discord.Forbidden:
             msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
+        self.logmsg += f", in {itx.channel.mention} (`{itx.channel.id}`)\n[Jump to the tag message]({msg.jump_url})"
         if self.value == 2 and self.logmsg is not None:
             await log_to_guild(self.client, itx.guild, self.logmsg)
-            cmd_mention = self.client.get_command_mention("tag")
-            if itx.guild_id not in EnabledServers.dev_server_ids():
-                staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
-                await staff_message_reports_channel.send(f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{self.tag_name}` anonymously, in {itx.channel.mention} (`{itx.channel.id}`)\n"
-                                                         f"[Jump to the tag message]({msg.jump_url})")
+            staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
+            await staff_message_reports_channel.send(self.logmsg)
         self.stop()
 
     async def on_timeout(self):
