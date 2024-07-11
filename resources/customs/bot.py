@@ -40,7 +40,8 @@ class Bot(commands.Bot):
             "transonance_server_id": 638480381552754730,
             "transplace_ticket_channel_id": 995343855069175858,
             "enbyplace_ticket_channel_id": 1186054373986537522,
-            "transonance_ticket_channel_id": 1108789589558177812
+            "transonance_ticket_channel_id": 1108789589558177812,
+            "no_headpat_roles": []
         }
         development_ids = {
             "staff_server_id": 985931648094834798,
@@ -57,7 +58,8 @@ class Bot(commands.Bot):
             "transonance_server_id": 981615050664075404,            # + public dev server
             "transplace_ticket_channel_id": 1175669542412877824,    # - private dev server channel
             "enbyplace_ticket_channel_id": 1125108250426228826,     # + public dev server channel
-            "transonance_ticket_channel_id": 1125108250426228826    # + public dev server channel
+            "transonance_ticket_channel_id": 1125108250426228826,   # + public dev server channel
+            "no_headpat_roles": []
         }
         assert [i for i in production_ids] == [i for i in development_ids] # all keys match
 

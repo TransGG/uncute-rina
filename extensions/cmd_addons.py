@@ -447,20 +447,22 @@ class FunAddons(commands.Cog):
         # adding headpats every x messages
         added_pat = False
         self.headpat_wait += 1
-        if self.headpat_wait >= 1000:
-            if (
-                    (type(message.channel) is discord.Thread and message.channel.parent == 987358841245151262) or # <#welcome-verify>
-                    message.channel.name.startswith('ticket-') or 
-                    message.channel.name.startswith('closed-') or 
-                    message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
-                                                    995330645901455380, 995330667665707108] or 
-                    # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
-                    message.guild.id in [981730502987898960] # don't send in Mod server
-                ):
-                pass
-            else:
-                self.headpat_wait = 0
-                return # people asked for no random headpats anymore; or make it opt-in. See GitHub #23 # TODO: re-enable code someday
+        
+        if not any(role.id in self.client.custom_ids["no_headpat_roles"] for role in message.author.roles):
+            if self.headpat_wait >= 1000:
+                if (
+                        (type(message.channel) is discord.Thread and message.channel.parent == 987358841245151262) or # <#welcome-verify>
+                        message.channel.name.startswith('ticket-') or 
+                        message.channel.name.startswith('closed-') or 
+                        message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
+                                                        995330645901455380, 995330667665707108] or 
+                        # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
+                        message.guild.id in [981730502987898960] # don't send in Mod server
+                    ):
+                    pass
+                else:
+                    self.headpat_wait = 0
+                    return # people asked for no random headpats anymore; or make it opt-in. See GitHub #23 # TODO: re-enable code someday
 
 
 
@@ -468,18 +470,33 @@ class FunAddons(commands.Cog):
 
 
 
-                try:
-                    added_pat = True
-                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
-                except discord.errors.Forbidden:
-                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url} (Forbidden): They might have blocked Rina...')
-                except discord.errors.HTTPException as ex:
-                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
+                    try:
+                        added_pat = True
+                        await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
+                    except discord.errors.Forbidden:
+                        await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url} (Forbidden): They might have blocked Rina...')
+                    except discord.errors.HTTPException as ex:
+                        await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
 
-        # adding headpats on abababa or awawawawa
-        if not added_pat and len(_temp := message.content.lower()) > 5 and (_temp.startswith("aba") or _temp.startswith("awa")):
-                _temp = _temp.replace("ab","").replace("aw","")
-                if _temp == "a":
+            # adding headpats on abababa or awawawawa
+            if not added_pat and len(_temp := message.content.lower()) > 5 and (_temp.startswith("aba") or _temp.startswith("awa")):
+                    _temp = _temp.replace("ab","").replace("aw","")
+                    if _temp == "a":
+                        try:
+                            added_pat = True
+                            await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
+                        except discord.errors.Forbidden: # blocked rina :(
+                            pass
+                        except discord.errors.HTTPException as ex:
+                            if ex.code == 10014: # bad request (emoji doesnt exist: cause it's dev testing environment)
+                                await message.add_reaction("☺") # :relaxed:
+                            else:
+                                raise
+            if not added_pat and len(_temp := message.content.lower()) > 9 and _temp.startswith("a"):
+                for char in _temp:
+                    if char not in "abw":
+                        break
+                else:
                     try:
                         added_pat = True
                         await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
@@ -490,21 +507,6 @@ class FunAddons(commands.Cog):
                             await message.add_reaction("☺") # :relaxed:
                         else:
                             raise
-        if not added_pat and len(_temp := message.content.lower()) > 9 and _temp.startswith("a"):
-            for char in _temp:
-                if char not in "abw":
-                    break
-            else:
-                try:
-                    added_pat = True
-                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
-                except discord.errors.Forbidden: # blocked rina :(
-                    pass
-                except discord.errors.HTTPException as ex:
-                    if ex.code == 10014: # bad request (emoji doesnt exist: cause it's dev testing environment)
-                        await message.add_reaction("☺") # :relaxed:
-                    else:
-                        raise
 
         # embed "This conversation was powered by friendship" every x messages # TODO: re-enable code someday
         if False:#self.staff_contact_check_wait == 0 or (self.staff_contact_check_wait < -10 and self.staff_contact_check_wait % 6 == 0): # make sure it only sends once (and <-10 for backup)
