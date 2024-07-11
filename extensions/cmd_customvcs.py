@@ -318,7 +318,11 @@ class CustomVcs(commands.Cog):
             return
 
         if mode == 1:
-            value = await self.client.get_guild_info(itx.guild, options[option])
+            try:
+                value = await self.client.get_guild_info(itx.guild, options[option])
+            except KeyError:
+                await itx.response.send_message("This server does not yet have a value for this option!", ephemeral=True)
+                return
             await itx.response.send_message("Here is the value for " + options[option] + " in this guild (" + str(itx.guild.id) + "):\n\n" +
                                             str(value), ephemeral=True)
         if mode == 2:

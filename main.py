@@ -17,7 +17,7 @@ from resources.customs.reminders import ReminderObject # Reminders (/reminders r
 from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 
-BOT_VERSION = "1.2.9.3"
+BOT_VERSION = "1.2.9.4"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -97,7 +97,7 @@ def get_version() -> str:
     """
     fileVersion = BOT_VERSION.split(".")
     try:
-        with open("version.txt", "r") as f:
+        with open("outputs/version.txt", "r") as f:
             version = f.read().split(".")
     except FileNotFoundError:
         version = ["0"]*len(fileVersion)
@@ -110,7 +110,7 @@ def get_version() -> str:
     else:
         version[-1] = str(int(version[-1])+1)
     version = '.'.join(version)
-    with open("version.txt","w") as f:
+    with open("outputs/version.txt","w") as f:
         f.write(f"{version}")
     return version
 

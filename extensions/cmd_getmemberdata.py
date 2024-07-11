@@ -206,7 +206,7 @@ class MemberData(commands.Cog):
                            rotation=30)
             ax1.grid(visible=True, which='major', axis='both')
             fig.subplots_adjust(bottom=0.180, top=0.90, left=0.1, hspace=0.1)
-            plt.savefig('userJoins.png', dpi=300)
+            plt.savefig('outputs/userJoins.png', dpi=300)
         except ValueError:
             await itx.followup.send("You encountered a ValueError! Mia has been sent an error report to hopefully be able to fix it :)",ephemeral=True)
             raise
@@ -231,7 +231,8 @@ class MemberData(commands.Cog):
             output += f"`{totals['verified']}` members were verified."
         except:
             pass
-        await itx.followup.send(f"From {lower_bound/86400} to {upper_bound/86400} days ago, {output} (with{'out'*(1-doubles)} doubles)"+warning,file=discord.File('userJoins.png'))
+        await itx.followup.send(f"From {lower_bound/86400} to {upper_bound/86400} days ago, {output} (with{'out'*(1-doubles)} doubles)"+warning,
+                                file=discord.File('outputs/userJoins.png'))
 
 
 async def setup(client):

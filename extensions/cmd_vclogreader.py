@@ -313,11 +313,11 @@ class VCLogReader(commands.Cog):
         ax.set_xlabel("time (utc+0)")
         plt.tight_layout()
         #plt.show()
-        plt.savefig('vcLogs.png', dpi=300)
+        plt.savefig('outputs/vcLogs.png', dpi=300)
         await itx.followup.send(warning+f"VC activity from {voice_channel.mention} (`{voice_channel.id}`) from {lower_bound/60} to {upper_bound/60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
                                 ("\nNote: If you're looking in the past, people that joined before and left after the given timeframes may not show up on the graph. To ensure you get a good representation, be sure to add a bit of margin around the edges!" if max_time != current_time else "") +
-                                (f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 >= msg_log_limit else "")
-                                ,file=discord.File('vcLogs.png'))
+                                (f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})" if len(events)*2 >= msg_log_limit else ""),
+                                file=discord.File('outputs/vcLogs.png'))
 
         # id_pages = []
         # name_pages = []

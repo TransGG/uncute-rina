@@ -52,7 +52,7 @@ class Bot(commands.Bot):
             "staff_reports_channel": 1260505477364711547,
             "active_staff_role": 986022587756871711, # @Developers
             "staff_developer_role": 986022587756871711,
-            "transplace_server_id": 959551566388547676,             # - private dev server
+            "transplace_server_id": 985931648094834798,             # - private dev server
             "enbyplace_server_id": 981615050664075404,              # + public dev server
             "transonance_server_id": 981615050664075404,            # + public dev server
             "transplace_ticket_channel_id": 1175669542412877824,    # - private dev server channel
