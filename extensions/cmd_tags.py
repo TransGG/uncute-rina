@@ -261,6 +261,23 @@ class Tags: # TODO: move to own file
                         f"Access the channel by making a ticket in <#{mod_ticket_channel_id}>!"
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)    
+    
+    async def send_syscourse_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
+        embed = discord.Embed(
+            title="Please avoid system discourse",
+            description="A member has requested that we avoid discussions of system origins, including but "
+                        "not limited to: __Tuplas__; __Tuplagenic, Endogenic, and non-Traumagenic systems__; __system "
+                        "hopping__; and __intentional splits__.\n\n"
+                        "We kindly ask that you **refrain from discussing system origins** to maintain a positive "
+                        "and uplifting environment for all members and to **avoid controversial topics** such as "
+                        "the \"Endogenic vs. Traumagenic\" debate and other system discourse.\n\n"
+                        "This is a **trans-focused server** and **not system-focused**, so we cannot take a strong stance "
+                        "on controversial topics within systems communities, and not all moderators are educated "
+                        "on systems and system discourse. "
+                        "If you continue discussing system origins or other disallowed topics, a moderator may "
+                        "need to take action and mute you. Thank you for your cooperation."
+        )
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
     #endregion Tags
 
 
@@ -377,6 +394,7 @@ tag_info_dict: dict[str, tuple[tuple[int,int,int], typing.Callable, int]] = {
     "tone indicators"                      : ([180,  40, 100], t.send_toneindicator_info,          EnabledServers.all_server_ids()),
     "trigger warnings"                     : ([200,  40, 100], t.send_triggerwarning_info,         EnabledServers.all_server_ids()),
     "trusted role"                         : ([220,  40, 100], t.send_trustedrole_info,            EnabledServers.transplace_etc_ids()),
+    "system discourse"                     : ([240,  40, 100], t.send_syscourse_info,              EnabledServers.all_server_ids())
 }
 colours = {k: discord.Colour.from_hsv(v[0][0]/360, v[0][1]/100, v[0][2]/100) for k, v in tag_info_dict.items()}
 
