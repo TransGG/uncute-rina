@@ -266,8 +266,8 @@ class Tags: # TODO: move to own file
         embed = discord.Embed(
             title="Please avoid system discourse",
             description="A member has requested that we avoid discussions of system origins, including but "
-                        "not limited to: __Tuplas__, __Tuplagenic, Endogenic, and non-Traumagenic systems__, __system "
-                        "hopping__, and __intentional splits__.\n\n"
+                        "not limited to: __Tuplas__; __Tuplagenic, Endogenic, and non-Traumagenic systems__; __system "
+                        "hopping__; and __intentional splits__.\n\n"
                         "We kindly ask that you **refrain from discussing system origins** to maintain a positive "
                         "and uplifting environment for all members and to **avoid controversial topics** such as "
                         "the \"Endogenic vs. Traumagenic\" debate and other system discourse.\n\n"
