@@ -23,6 +23,7 @@ appcommanderror_cooldown = 0
 
 EXTENSIONS = [
     "cmd_addons",
+    "cmd_ban_appeal_reactions",
     "cmd_compliments",
     "cmd_customvcs",
     "cmd_emojistats",
