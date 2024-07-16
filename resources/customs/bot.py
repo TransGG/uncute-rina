@@ -12,7 +12,7 @@ class Bot(commands.Bot):
     log_channel: discord.TextChannel
     bot_owner: discord.User # for AllowedMentions in on_appcommand_error()
     reminder_scheduler: AsyncIOScheduler # for Reminders
-    running_on_production = False
+    running_on_production = True
 
     def __init__(self, api_tokens: dict, version: str,
                  RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase,
