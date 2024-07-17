@@ -581,12 +581,12 @@ class FunAddons(commands.Cog):
     async def roll(self, itx: discord.Interaction, 
                    dice: app_commands.Range[int, 1, 999999],
                    faces: app_commands.Range[int, 1, 999999], 
-                   public: bool = False, mod: int = None, advanced: str = None):
+                   public: bool = False, mod: int | None = None, advanced: str | None = None):
         hide = False
         if advanced is None:
             await itx.response.defer(ephemeral=not public)
             rolls = []
-            for die in range(dice):
+            for _ in range(dice):
                 rolls.append(random.randint(1,faces))
 
             if mod is None:
@@ -629,7 +629,7 @@ class FunAddons(commands.Cog):
             advanced = advanced.replace(" ","")
             if advanced == "help":
                 cmd_mention = self.client.get_command_mention("help")
-                await itx.response.send(f"I don't think I ever implemented this... Ping mysticmia for more information about this command, or run {cmd_mention} `page:102` for more information.")
+                await itx.response.send(f"I don't think I ever implemented this... Ping mysticmia for more information about this command, or run {cmd_mention} `page:112` for more information.")
 
             def prod(list: list):
                 a = 1
@@ -664,7 +664,7 @@ class FunAddons(commands.Cog):
                         faces += x
                     else:
                         break
-                remainder = temp[1][len(faces):]
+                remainder = temp[1][len(faces):] # (take the length of the now-still-string faces variable)
                 try:
                     dice = int(dice)
                 except ValueError:

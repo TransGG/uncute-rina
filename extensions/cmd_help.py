@@ -52,30 +52,146 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       "\n"
                       ". . **1:** Welcome page\n"
                       ". . **2:** Index\n"
-                      ". . **3:** Utility\n"
+                      ". . **3:** Bot functions\n"
+                      ". . **4:** Utility\n"
+                      ". . **5:** Suggestion commands\n"
+                      ". . **6:** Internet search commands\n"
+                      ". . **7:** Server search commands\n"
+                      ". . **8:** Chat actions\n"
+                      ". . **9:** Server functions\n"
+                      ". . **10:** Voice channels"
     ),
     #endregion
+
+    ## ### Bot functions:
+    ## #      add_poll_reactions, version, help, commands
+    ## ### Utility:
+    ## #      roll, convert_unit, reminders, todo
+    ## ### Suggestion commands:
+    ## #      qotw, developer_request
+    ## ### Internet search commands:
+    ## #      equaldex, math, dictionary, toneindicator (kinda not really API / internet but oh well)
+    ## ### Server search commands:
+    ## #      getemojidata, getunusedemojis, getemojitop10, getmemberdata, nameusage name/gettop
+    ## ### Chat actions:
+    ## #      abababa/awawawa, headpats, not cute, compliment, complimentblacklist
+    ## ### Server functions:
+    ## #      tags, remove_role
+    ## ### Voice channels:
+    ## #      editvc and vctable
+
+
+
+
     #region Expanded index pages (commands)
-    3 : HelpPage( # index: Utility
+    3 : HelpPage( # index: Bot functions
+        title = "Bot functions",
+        description = "This section will list some commands that may help you:\n"
+                      "\n"
+                      ". . **101:** /help and /commands\n"
+                      ". . **102:** version\n"
+                      ". . **103:** add_poll_reactions\n"
+    ),
+    4 : HelpPage( # index: Utility
         title = "Utility",
         description = "Some commands help in your daily life, like the following commands:\n"
                       "\n"
-                      ". . **101:** roll\n"
-                      ". . **103:** reminder\n"
-                      ". . **104:** convert_unit\n"
-                      ". . **105:** todo\n",
+                      ". . **111:** roll\n"
+                      ". . **113:** reminder\n"
+                      ". . **114:** convert_unit\n"
+                      ". . **115:** todo\n",
     ),
-    4 : HelpPage(
-        title = "null",
-        description = "null"
+    5 : HelpPage( # index: Suggestion commands
+        title = "Work in progress...",
+        description = "This section is still being worked on! (help, so much text to write D: )\n"
+                      "Scroll a few pages ahead to see what the rest of the help pages look like!"
     ),
-    5 : HelpPage(
-        title = "null",
-        description = "null"
+    6 : HelpPage( # index: Suggestion commands
+        title = "placeholder (skip ahead)",
+        description = "placeholder (skip ahead)"
+    ),
+    #endregion
+    #region Bot Functions
+    101 : HelpPage( # /help ad /commands
+        title = "The help command and command list.",
+        description = "Obviously the most important command on the bot, this command attempts to explain "
+                      "every command and function in the bot. This page will also be the first page "
+                      "to show the layout of these commands.\n"
+                      "\n"
+                      "After running the command, Rina replies with an embed showing information about "
+                      "the bot or command. There are interactable buttons to go back to start, jump to the "
+                      "previous or next page, or jump to a specific page number. You can also provide a "
+                      "`page ` argument to jump to a page immediately. Useful for sharing help command "
+                      "pages.\n"
+                      ""
+                      "Running /help and /commands both bring up this embed.",
+        fields = [
+            (
+                "Parameters",
+                "`page`: The page to immediately jump to. Useful for sharing commands with other users.\n"
+                "- (optional) Any number."
+            ),
+            (
+                "Examples",
+                "- %%help%%\n"
+                "  - The simplest way to learn Rina's commands. Brings you to the first page.\n"
+                "- %%help%% `page:1`\n"
+                "  - brings up the help page for this /help command.\n"
+                "- %%commands%% `page:3`\n"
+                "  - An alias for this command. Brings you to the Bot Functions index page."
+            )
+        ]
+    ),
+    102 : HelpPage( # /version
+        title = "Bot version",
+        description = "You can run %%version%% at any time. It will show you the bot's current "
+                      "version and when it was started up. The message will only be visible for "
+                      "you, unless you are a staff member.\n"
+                      "This might someties also show that there is a new version available. Rina "
+                      "will automatically update to it when she restarts.",
+        fields = [
+            (
+                "Examples",
+                "- %%version%%\n"
+                "  - Gives Rina's current version, and if there is a newer version."
+            )
+        ]
+    ),
+    103 : HelpPage( # /add_poll_reactions
+        title = "Adding voting emojis / Creating tiny polls",
+        description = "Sometimes you just want to see everyone's opinion on something, so you "
+                      "add a thumbs up and thumbs down emoji to your message. But what if you "
+                      "want to cast a vote yourself too? Rina's got you covered.\n"
+                      "\n"
+                      "This command lets you add between 2 and 3 emojis, allowing you to get "
+                      "positive, negative, and neutral reactions. You can also run the command "
+                      "again for even more emojis! Reuse a previous emoji if you only want to "
+                      "add 1 new one.",
+        fields = [
+            (
+                "Parameters",
+                # /add_poll_reactions message_id: upvote_emoji: downvote_emoji: neutral_emoji:
+                "`message_id`: The message to add emojis to.\n"
+                "- A message ID. Right click a message and click \"Copy Message ID\". The command must be run in the same channel as this message.\n"
+                "`upvote_emoji`: The first emoji to add to the message.\n"
+                "- An emoji or emoji ID.\n"
+                "`downvote_emoji`: The last emoji to add to the message.\n"
+                "- An emoji or emoji ID.\n"
+                "`neutral_emoji`: A middle emoji to add to the message. Will be added after the upvote but before the downvote emoji.\n"
+                "- (optional) An emoji or emoji ID.\n"
+            ),
+            (
+                "Examples", # discord emojis don't work in code blocks :(, so gotta use unicode.
+                "- %%add_poll_reactions%% `message_id:1963131994116722778` `upvote_emoji:🐟` `downvote_emoji:🐢`\n"
+                "  - Adds a fish and then a turtle to a message with the id.\n"
+                "- %%add_poll_reactions%% `message_id:1134140122115838003` `upvote_emoji:👍` `downvote_emoji:👎` `neutral_emoji:🤷`"
+                "  - Adds a thumbs up, then a person shrugging, then a thumbs down emoji."
+            )
+        ]
     ),
     #endregion
     #region Utility commands
-    101 : HelpPage( # dice rolls
+    111 : HelpPage( # dice rolls
         title = "Rolling dice", # /roll
         description = "Have you ever wanted to roll virtual dice? Now you can!\n"
                       "Rina lets you roll dice with many kinds of faces. Rolling a 2-faced die (aka, a coin)? sure!\n"
@@ -85,29 +201,29 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             (
                 "Parameters",
                 "`dice`: How many dice do you want to roll?\n"
-                "- Any number between 1 and 999999\n"
+                "- Any number between 1 and 999999.\n"
                 "`faces`: How many sides does every die have?\n"
-                "- Any number between 1 and 999999\n"
+                "- Any number between 1 and 999999.\n"
                 "`mod`: Do you want to add a modifier? (eg. add 2 after rolling the dice)\n"
-                "- (optional) Any (negative) (decimal) number\n"
+                "- (optional) Any (negative) (decimal) number.\n"
                 "`advanced`: Roll more advanced! example: 1d20+3*2d4\n"
                 "- (optional) String of your advanced dice roll. See page __**102**__ for more info."
             ),
             (
                 "Examples",
                 "- %%roll%% `dice:3` `faces:6`\n"
-                "  - rolls 3 dice with 6 faces (3d6), aka rolling 3 normal dice\n"
+                "  - Rolls 3 dice with 6 faces (3d6), aka rolling 3 normal dice.\n"
                 "- %%roll%% `dice:6` `faces:2`\n"
-                "  - rolls 6 dice with 2 faces (6d2), aka flipping 6 coins\n"
+                "  - Rolls 6 dice with 2 faces (6d2), aka flipping 6 coins.\n"
                 "- %%roll%% `dice:3` `faces:2` `mod:4`\n"
-                "  - flip 3 coins, then add '4' to the final outcome.\n"
-                "  - eg. 1 + 2 + 2 = 5 (3 dice with 2 faces), then add 4 to the final result = 5 + 4 = 9\n"
+                "  - Flip 3 coins, then add '4' to the final outcome.\n"
+                "  - eg. 1 + 2 + 2 = 5 (3 dice with 2 faces), then add 4 to the final result = 5 + 4 = 9.\n"
                 "- %%roll%% `dice:1` `faces:1` `advanced:help`\n"
                 "  - See next page (__**102**__) for more information about advanced dice rolls."
             )
         ]
     ),
-    102 : HelpPage( # dice rolls advanced
+    112 : HelpPage( # dice rolls advanced
         title = "Advanced dice rolls", # /roll advanced: ...
         description = "In the case that the simple dice roll command is not enough, you can roll complexer combinations of dice rolls using the advanced option.\n"
                       "The advanced mode lets you use addition, subtraction, multiplication, and custom dice.\n"
@@ -127,31 +243,31 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
              )
         ]
     ),
-    103 : HelpPage( # reminders
+    113 : HelpPage( # reminders
         title = "Reminders", # /reminder
         description = "With this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n"
                       "This command lets you create, remove, and view your reminders.",
         fields = [
             (
                 "reminder remindme",
-                "> %%reminder remindme%% `time:` `reminder:`\n"
+                "- %%reminder remindme%% `time: ` `reminder: `\n"
                 "`time`: When do you want to be reminded?\n"
                 "- Use a format like 10d9h8m7s for days/hours/min/sec.\n" #TODO: clarify; copy paste ValueError help message?
                 "`reminder`: What would you like to be reminded of?"
             ),
             (
                 "reminder reminders",
-                "%%reminder reminders%% [`item:`]\n"
-                "- Show a list of active reminders. They each have a number. Use `item:number` to view more information about this reminder."
+                "- %%reminder reminders%% [`item: `]\n"
+                "  - Show a list of active reminders. They each have a number. Use `item:number` to view more information about this reminder."
             ),
             (
                 "reminder remove",
-                "%%reminder remove%% item:\n"
-                "- Remove a reminder. Use %%reminder reminders%% to see a list of reminders. Each has a number. Use that number to remove the reminder like so: `item:number`."
+                "- %%reminder remove%% `item: `\n"
+                "  - Remove a reminder. Use %%reminder reminders%% to see a list of reminders. Each has a number. Use that number to remove the reminder like so: `item:number`."
             )
         ]
     ),
-    104 : HelpPage( # convert unit
+    114 : HelpPage( # convert unit
         title = "Converting units",
         description = "Since international communities often share stories about temperature and speed, it's not uncommon to have to look up how many feet go in a centimeter. "
                       "This module lets you easily converty a large amount of units in multiple categories! Currencies are fetched live using an online website (api)!\n"
@@ -168,35 +284,35 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             ),
             (
                 "Examples",
-                "%%convert_unit%% `mode:Length (miles,km,inch)` `from:meter` `value:80` `to_unit:yard`\n"
-                "- Convert 80 meters to yards = about 87.5 yd\n"
+                "- %%convert_unit%% `mode:Length (miles,km,inch)` `from:meter` `value:80` `to_unit:yard`\n"
+                "  - Convert 80 meters to yards = about 87.5 yd\n"
                 ""
             )
         ]
     ),
-    105 : HelpPage( # to-do list
+    115 : HelpPage( # to-do list
         title = "Todo lists",
         description = "For the forgetful, or if you just want a nice grocery list, this command is for you! You can easily add and remove to-do notes, and they're saved throughout all servers with me (TransPlace, EnbyPlace, Transonance, etc.)",
         fields = [
             (
                 "Parameters",
-                "`mode`: Do you want to add, remove, or check (view) your to-do list?\n"
+                "`mode`: Do you want to __Add__, __Remove__, or __Check__ (view) your to-do list?\n"
                 "- if you want to add to / remove from your to-do list, you must also give the `todo` value below.\n"
                 "`todo`:\n"
-                "- Add: What to-do would you like to add?\n"
-                "- Remove: What to-do item would you like to remove from your list? Give the number of the to-do list as it's shown with %%todo%% `mode:Check`"
+                "- __Add__: What to-do would you like to add?\n"
+                "- __Remove__: What to-do item would you like to remove from your list? Give the number of the to-do list as it's shown with %%todo%% `mode:Check`"
             ),
             (
                 "Examples",
-                "%%todo%% `mode:Add something to your to-do list` `todo:Create a nice help command`\n"
-                "- Add \"Create a nice help command\"\n"
-                "%%todo%% `mode:Check`\n"
-                "- Your to-do list would look like this. Note how each item starts with a number. Use this number to remove them.\n"
-                "  - Found 4 to-do items:\n"
-                "  - `0`: Create a nice help command\n"
-                "%%todo%% `mode:Remove to-do` `todo:0`\n"
-                "- Remove to-do item number 0 from your list. Use %%todo%% `mode:Check` to see what number to use to remove the right item.\n"
-                "- Keep in mind that the order will shift after you've removed an item, so redo the `check` command to make sure you're removing the right command when removing multiple to-do items at once!"
+                "- %%todo%% `mode:Add something to your to-do list` `todo:Create a nice help command`\n"
+                "  - Add \"Create a nice help command\"\n"
+                "- %%todo%% `mode:Check`\n"
+                "  - Your to-do list would look like this. Note how each item starts with a number. Use this number to remove them.\n"
+                "    - Found 4 to-do items:\n"
+                "    - `0`: Create a nice help command\n"
+                "- %%todo%% `mode:Remove to-do` `todo:0`\n"
+                "  - Remove to-do item number 0 from your list. Use %%todo%% `mode:Check` to see what number to use to remove the right item.\n"
+                "  - Keep in mind that the order will shift after you've removed an item, so redo the `check` command to make sure you're removing the right command when removing multiple to-do items at once!"
             )
         ]
     )
@@ -209,7 +325,6 @@ assert sorted(list(help_pages)) == list(help_pages) # all help pages are sorted 
 assert all([all([j in ["title", "description", "fields"] for j in help_pages[i]]) for i in help_pages]) # all pages only have one of these attributes
 
 
-# TODO: move to own file
 def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
     """
     Helper command to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
@@ -246,6 +361,12 @@ class HelpCommand(commands.Cog):
         RinaDB = client.RinaDB
 
     async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
+        if requested_page not in help_pages:
+            await itx.response.send_message(replace_string_command_mentions(
+                f"This page ('{requested_page}')" + " does not exist! Try %%help%% `page:1` or use "
+                "the page keys to get to the right page number!"
+            ), ephemeral=True)
+            return
         embed = discord.Embed(color = discord.Color.from_hsv(180/360, 0.4, 1),
                               title = help_pages[requested_page]["title"],
                               description = replace_string_command_mentions(help_pages[requested_page]["description"], self.client))
