@@ -131,18 +131,21 @@ class DevRequest(commands.Cog):
             await itx.response.send_message("You need to be staff to do this! It just sends \"boop\" to every dev request thread lol.", ephemeral=True)
             return
         
-        await itx.response.defer(ephemeral=True)
+        await itx.response.send_message("`[   ]`: Fetching cached threads.", ephemeral=True)
         try:
             watchlist_channel = itx.client.get_channel(self.client.custom_ids["staff_dev_request"])
             threads: list[discord.Thread] = []
             pinged_thread_count = 0
             async for thread in watchlist_channel.archived_threads(limit=None):
                 threads.append(thread)
+
+            await itx.edit_original_response(content="`[#  ]`: Fetching archived threads...")
             archived_thread_ids = [t.id for t in threads]
             for thread in watchlist_channel.threads:
                 if thread.archived and thread.id not in archived_thread_ids:
                     threads.append(thread)
 
+            await itx.edit_original_response(content="`[## ]`: Sending messages in threads...")
             for thread in threads:
                 try:
                     starter_message = await watchlist_channel.fetch_message(thread.id)
@@ -162,7 +165,7 @@ class DevRequest(commands.Cog):
                     if thread.auto_archive_duration != 10080:
                         await thread.edit(auto_archive_duration=10080)
                     ############################################
-            await itx.followup.send(f"Pinged {pinged_thread_count} archived channel{'' if pinged_thread_count == 1 else 's'} successfully!", ephemeral=True)
+            await itx.edit_original_response(content=f"`[###]`: Pinged {pinged_thread_count} archived channel{'' if pinged_thread_count == 1 else 's'} successfully!")
         except:
             await itx.followup.send("Something went wrong!", ephemeral=True)
             raise

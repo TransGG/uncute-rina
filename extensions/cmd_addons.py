@@ -147,7 +147,7 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
-def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSentinel):
+def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSentinel) -> discord.Emoji | discord.PartialEmoji | None:
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
@@ -830,7 +830,7 @@ class OtherAddons(commands.Cog):
                            downvote_emoji="What emoji do you want to react second?",
                            neutral_emoji="Neutral emoji option (placed between the up/downvote)")
     async def add_poll_reactions(self, itx: discord.Interaction, message_id: str,
-                                 upvote_emoji: str, downvote_emoji: str, neutral_emoji: str = None):
+                                 upvote_emoji: str, downvote_emoji: str, neutral_emoji: str | None = None):
         if neutral_emoji is None:
             neutral_emoji = discord.utils.MISSING # neutral_emoji will be re-set to None if the input is not an emoji
         errors = []
@@ -847,16 +847,16 @@ class OtherAddons(commands.Cog):
         else:
             errors.append("- The message ID needs to be a number!")
 
-        upvote_emoji = get_emoji_from_str(self.client, upvote_emoji)
+        upvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = get_emoji_from_str(self.client, upvote_emoji)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
 
-        downvote_emoji = get_emoji_from_str(self.client, downvote_emoji)
+        downvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = get_emoji_from_str(self.client, downvote_emoji)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
 
         if neutral_emoji is not discord.utils.MISSING:
-            neutral_emoji = get_emoji_from_str(self.client, neutral_emoji)
+            neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = get_emoji_from_str(self.client, neutral_emoji)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 

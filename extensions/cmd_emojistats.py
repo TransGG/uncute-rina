@@ -69,7 +69,13 @@ class EmojiStats(commands.Cog):
             emoji = re.search("(?:[^\\\\]|^)<a?:[a-zA-Z_0-9]+:[0-9]+>", message.content[start_index:]) # get first instance of an emoji in the message slice (to get a list of all emojis)
             if emoji is None:
                 break
-            (animated, name, id) = emoji.group().replace(">","").split(":")
+            emoji_capture = emoji.group()
+            if not emoji_capture.startswith("<") and not emoji_capture.startswith("\\"):
+                # to test when an emoji is escaped (\:hello:), the regex tests the character in front of 
+                # the emoji. It also captures that character if it isn't a backslash, so we have to filter it out.
+                # Can also be fixed by using positive lookahead: changed "(?:[^" to "(?=:[^"
+                emoji_capture = emoji_capture[1:]
+            (animated, name, id) = emoji_capture.replace(">","").split(":")
             assert id.isdecimal(), f"Emoji `{emoji}` should have a numeric emoji id" # should be decimal due to regex
             animated = (animated.split("<")[-1] == "a")
 

@@ -3,18 +3,19 @@ from resources.customs.help import HelpPage
 from resources.customs.bot import Bot
 from resources.modals.help import JumpToPageModal_HelpCommands_Help
 from resources.utils.stringhelper import replace_string_command_mentions
+import typing # for casting to int
 
 
 class PageView_HelpCommands_Help(discord.ui.View):
     def __init__(self, pages: dict[int, HelpPage], start_page: int, client: Bot, timeout: float=None):
         super().__init__()
-        self.timeout = timeout
-        self.page    = start_page
-        self.pages   = pages
-        self.client = client
+        self.timeout: float | None = timeout
+        self.page: int = start_page
+        self.pages: dict[int, HelpPage] = pages
+        self.client: Bot = client
 
     async def update_page(self, itx: discord.Interaction):
-        page_details = self.pages[self.page]
+        page_details: HelpPage = self.pages[self.page]
 
         embed = discord.Embed(color= discord.Color.from_hsv((180 + self.page*10)/360, 0.4, 1),
                               title=page_details["title"],
@@ -38,9 +39,9 @@ class PageView_HelpCommands_Help(discord.ui.View):
     @discord.ui.button(emoji='◀️', style=discord.ButtonStyle.blurple) # previous
     async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
         # get current page, find the index of it, subtract 1 from that index, and find the related page to match
-        page_indexes = sorted(list(self.pages)) # sorting may be unnecessary, since it should already be sorted.
-        current_page_index = page_indexes.index(self.page)
-        if current_page_index - 1 < page_indexes[0]: # below lowest index
+        page_indexes: list[int] = sorted(list(self.pages)) # sorting may be unnecessary, since it should already be sorted.
+        current_page_index: int = page_indexes.index(self.page)
+        if self.page - 1 < page_indexes[0]: # below lowest index
             self.page = page_indexes[-1] # set to highest index
         else:
             self.page = page_indexes[current_page_index - 1]
@@ -52,7 +53,7 @@ class PageView_HelpCommands_Help(discord.ui.View):
         # get current page, find the index of it, add 1 to that index, and find the related page to match
         page_indexes = sorted(list(self.pages)) # sorting may be unnecessary, since it should already be sorted.
         current_page_index = page_indexes.index(self.page)
-        if current_page_index + 1 > page_indexes[-1]: # above highest index
+        if self.page + 1 > page_indexes[-1]: # above highest index
             self.page = page_indexes[0] # set to lowest index
         else:
             self.page = page_indexes[current_page_index + 1]
@@ -68,7 +69,7 @@ class PageView_HelpCommands_Help(discord.ui.View):
         if jump_page_modal.value == None:
             pass
         else:
-            self.page = jump_page_modal.page
+            self.page = typing.cast(int, jump_page_modal.page) # interpreter doesn't see it'll always be int
             await self.update_page(jump_page_modal.value)
 
     #endregion Buttons

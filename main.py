@@ -17,7 +17,7 @@ from resources.customs.reminders import ReminderObject # Reminders (/reminders r
 from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 
-BOT_VERSION = "1.2.9.4"
+BOT_VERSION = "1.2.9.5"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -300,21 +300,21 @@ if __name__ == '__main__':
             else:
                 await itx.response.send_message(message, ephemeral=True)
         
+        cmd_mention = client.get_command_mention("update")
         if isinstance(error, discord.app_commands.errors.CommandNotFound):
-            cmd_mention = client.get_command_mention("update")
             await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask {client.bot_owner} ({client.bot_owner.mention}) if she typed {cmd_mention}!")
         elif isinstance(error, discord.app_commands.errors.CommandSignatureMismatch):
-            await reply(itx, f"Error: CommandSignatureMismatch. Either Mia used GroupCog instead of Cog, or this command is out of date (try /update)")
+            await reply(itx, f"Error: CommandSignatureMismatch. Either Mia used GroupCog instead of Cog, or this command is out of date (try {cmd_mention})")
         else:
             if hasattr(error, 'original'):
-                error_reply = "Error "
+                error_reply = "Error"
                 if hasattr(error.original, 'status'):
-                    error_reply += str(error.original.status)
+                    error_reply += " " + str(error.original.status)
                     # if error.original.status == "403":
                     #     await reply(itx, f"Error 403: It seems like I didn't have permissions for this action! If you believe this is an error, please message or ping {client.bot_owner}} :)")
                 if hasattr(error.original, 'code'):
-                    error_reply += "(" + str(error.original.code) + "). "
-                await reply(itx, error_reply + f"Please report the error and details to {client.bot_owner} ({client.bot_owner.mention}) by pinging her or sending her a DM")
+                    error_reply += " (" + str(error.original.code) + ")"
+                await reply(itx, error_reply + f". Please report the error and details to {client.bot_owner} ({client.bot_owner.mention}) by pinging her or sending her a DM")
             else:
                 await reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
 
@@ -331,7 +331,9 @@ if __name__ == '__main__':
                 msg += f"    original error: {error.original.status}: {error.original.text}\n\n"
                     #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
-        await send_crash_message("AppCommand Error", msg, f"</{itx.command.name}:{itx.data.get('id')}>", discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
+        # details: /help `page:1` `param2:hey`
+        command_details = f"</{itx.command.name}:{itx.data.get('id')}> " + ' '.join([f"`{k}:{v}`" for k, v in itx.namespace.__dict__.items()])
+        await send_crash_message("AppCommand Error", msg, command_details, discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
         appcommanderror_cooldown = int(mktime(datetime.now().timetuple()))
 
     try:
