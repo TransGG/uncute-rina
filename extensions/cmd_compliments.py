@@ -47,7 +47,7 @@ async def choose_and_send_compliment(client: Bot, itx: discord.Interaction, user
             "Hey I have some leftover cookies.. \\*wink wink\\*",
             # "_Let me just hide this here-_ hey wait, are you looking?!", #it were meant to be cookies TwT
             "Would you like a hug?",
-            "Would you like to walk in the park with me? I gotta walk my catgirls",
+            # "Would you like to walk in the park with me? I gotta walk my catgirls", # got misinterpreted too
             "morb",
             "You look great today!",
             "You light up the room!",
