@@ -6,14 +6,19 @@ from resources.utils.utils import log_to_guild
 recently_renamed_vcs = {} # make your own vcs!
 
 class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s channel'):
-    channel_id = discord.ui.TextInput(label='Channel Id', placeholder="Which channel do you want to edit")#, required=True)
-    name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False)
-    limit = discord.ui.TextInput(label='Limit', placeholder="Give your voice channel a user limit", required=False)
 
-    def __init__(self, vcHub, vcLog, vcCategory):
+    def __init__(self, vcHub: int, vcLog, vcCategory):
+        super().__init__()
         self.vcHub = vcHub
         self.vcLog = vcLog
         self.vcCategory = vcCategory
+        
+        self.channel_id = discord.ui.TextInput(label='Channel Id', placeholder="Which channel do you want to edit")#, required=True)
+        self.name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False)
+        self.limit = discord.ui.TextInput(label='Limit', placeholder="Give your voice channel a user limit", required=False)
+        self.add_item(self.channel_id)
+        self.add_item(self.name)
+        self.add_item(self.limit)
 
     async def on_submit(self, itx: discord.Interaction):
         name = str(self.name)
@@ -41,6 +46,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
             channel = itx.guild.get_channel(channel_id)
             if type(channel) is not discord.VoiceChannel:
                 await itx.response.send_message("This isn't a voice channel. You can't edit this channel.", ephemeral=True)
+                return
         except discord.errors.HTTPException:
             await itx.response.send_message("Retrieving this channel failed. Perhaps a connection issue?", ephemeral=True)
             return
@@ -49,7 +55,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
             raise
 
         warning = ""
-        if channel.category.id not in [self.vcCategory] or channel.id == self.vcHub:
+        if getattr(channel.category, "id") not in [self.vcCategory] or channel.id == self.vcHub:
             await itx.response.send_message("You can't change that voice channel's name (not with this command, at least)!",ephemeral=True)
             return
 
@@ -64,14 +70,18 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
                 # ignore entirely, don't continue command
                 return
             else:
-                # clear and continue command
-                recently_renamed_vcs[channel.id] = []
+                # clear ratelimit and continue command
+                recently_renamed_vcs[channel.id] = recently_renamed_vcs[channel.id][2:]
         else:
             # create and continue command
             recently_renamed_vcs[channel.id] = []
         limit_info = ""
         old_name = channel.name
         old_limit = channel.user_limit
+        if old_name.startswith('〙') != name.startswith('〙'):
+            warning += "You're renaming a vc channel with a '〙' symbol. This symbol is used to blacklist " + \
+                       "voice channels from being automatically removed when the last user leaves. If you " + \
+                        "want a channel to stay (and not be deleted) when no-one is in it, you should start the channel with the symbol.\n"
         try:
             if limit is None:
                 if name is None:

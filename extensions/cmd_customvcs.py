@@ -7,8 +7,6 @@ from resources.customs.bot import Bot
 from resources.views.customvcs import ConfirmationView_VcTable_AutorizedMode
 from resources.modals.customvcs import CustomVcStaffEditorModal, recently_renamed_vcs
 
-VcTable_prefix = "[T] "
-
 
 class CustomVcs(commands.Cog):
     def __init__(self, client: Bot):
@@ -64,8 +62,8 @@ class CustomVcs(commands.Cog):
                         await user.move_to(before.channel)
                     await before.channel.send("This channel was converted from a VcTable back to a normal CustomVC because all the owners left")
                     # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
-                    if before.channel.name.startswith(VcTable_prefix):
-                        new_channel_name = before.channel.name[len(VcTable_prefix):]
+                    if before.channel.name.startswith(self.client.custom_ids["vctable_prefix"]):
+                        new_channel_name = before.channel.name[len(self.client.custom_ids["vctable_prefix"]):]
                         if before.channel.id not in recently_renamed_vcs:
                             recently_renamed_vcs[before.channel.id] = []
                         recently_renamed_vcs[before.channel.id].append(int(mktime(datetime.now().timetuple())))
@@ -112,12 +110,13 @@ class CustomVcs(commands.Cog):
     @app_commands.describe(name="Give your voice channel a name!",
                            limit="Give your voice channel a user limit!")
     async def editVc(self, itx: discord.Interaction, 
-                     name: app_commands.Range[str,4,35] = None, 
-                     limit: app_commands.Range[int, 0, 99] = None):
+                     name: app_commands.Range[str,4,35] | None = None, 
+                     limit: app_commands.Range[int, 0, 99] | None = None):
         global recently_renamed_vcs
         if not is_verified(itx.guild, itx.user):
             await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",ephemeral=True)
             return
+        
         
         cmd_mention = self.client.get_command_mention("editguildinfo")
         log = [itx, f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention} `mode:21`, `mode:22` or `mode:23`!"]
@@ -144,7 +143,7 @@ class CustomVcs(commands.Cog):
             if name == "Untitled voice chat":
                 warning += "Are you really going to change it to that..\n"
             if len(itx.user.voice.channel.overwrites) > len(itx.user.voice.channel.category.overwrites): # if VcTable, add prefix
-                name = VcTable_prefix + name
+                name = self.client.custom_ids["vctable_prefix"] + name
 
         if channel.id in recently_renamed_vcs:
             # if you have made 2 renames in the past 10 minutes already
@@ -572,7 +571,7 @@ class CustomVcs(commands.Cog):
         await log_to_guild(self.client, itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
         recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
         try:
-            await channel.edit(name=VcTable_prefix+channel.name)
+            await channel.edit(name = self.client.custom_ids["vctable_prefix"] + channel.name)
             await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n"+warning,ephemeral=True)
         except discord.errors.NotFound:
             await itx.followup.send("I was unable to name your VcTable, but I managed to set the permissions for it.")
@@ -866,8 +865,8 @@ class CustomVcs(commands.Cog):
             f"{itx.user.mention} disbanded the VcTable and turned it back to a normal CustomVC",allowed_mentions=discord.AllowedMentions.none())
         # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
         await itx.response.send_message("Successfully disbanded VcTable.", ephemeral=True)
-        if channel.name.startswith(VcTable_prefix):
-            new_channel_name = channel.name[len(VcTable_prefix):]
+        if channel.name.startswith(self.client.custom_ids["vctable_prefix"]):
+            new_channel_name = channel.name[len(self.client.custom_ids["vctable_prefix"]):]
             if channel.id not in recently_renamed_vcs:
                 recently_renamed_vcs[channel.id] = []
             recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))

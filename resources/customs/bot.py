@@ -42,6 +42,7 @@ class Bot(commands.Bot):
             "enbyplace_ticket_channel_id": 1186054373986537522,
             "transonance_ticket_channel_id": 1108789589558177812,
             "ban_appeal_webhook_ids": [1120832140758745199],
+            "vctable_prefix":"[T] "
         }
         development_ids = {
             "staff_server_id": 985931648094834798,
@@ -60,6 +61,7 @@ class Bot(commands.Bot):
             "enbyplace_ticket_channel_id": 1125108250426228826,     # + public dev server channel
             "transonance_ticket_channel_id": 1125108250426228826,    # + public dev server channel
             "ban_appeal_webhook_ids": [1262616416352338093],
+            "vctable_prefix":"[T] "
         }
         assert [i for i in production_ids] == [i for i in development_ids] # all keys match
 
