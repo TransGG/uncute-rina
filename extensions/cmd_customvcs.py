@@ -1,11 +1,9 @@
 import discord, discord.ext.commands as commands, discord.app_commands as app_commands
-from time import mktime # to abide to discord ratelimiting (see global variable recently_renamed_vcs)
-from datetime import datetime
 from resources.utils.utils import log_to_guild # to log custom vc changes
 from resources.utils.permissions import is_verified, is_staff, is_admin # to check permissions for staff commands
 from resources.customs.bot import Bot
 from resources.views.customvcs import ConfirmationView_VcTable_AutorizedMode
-from resources.modals.customvcs import CustomVcStaffEditorModal, recently_renamed_vcs
+from resources.modals.customvcs import CustomVcStaffEditorModal, clear_vc_rename_log, try_store_vc_rename
 
 
 class CustomVcs(commands.Cog):
@@ -17,8 +15,7 @@ class CustomVcs(commands.Cog):
         #  #General, #Private, #Quiet, and #Minecraft. Later, it also excludes channels starting with "〙"
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        global recently_renamed_vcs
+    async def on_voice_state_update(self, member:discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if member.guild.id == self.client.custom_ids["staff_server_id"]:
             return
         vcHub, vcLog, vcNoMic, vcCategory = await self.client.get_guild_info(member.guild, "vcHub", "vcLog", "vcNoMic", "vcCategory")
@@ -36,10 +33,7 @@ class CustomVcs(commands.Cog):
             elif len(before.channel.members) == 0:
                 # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
                 # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
-                try:
-                    del recently_renamed_vcs[before.channel.id]
-                except KeyError:
-                    pass #haven't edit the channel yet
+                clear_vc_rename_log(before.channel.id)
                 try:
                     await before.channel.delete()
                 except discord.errors.NotFound:
@@ -64,13 +58,14 @@ class CustomVcs(commands.Cog):
                     # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
                     if before.channel.name.startswith(self.client.custom_ids["vctable_prefix"]):
                         new_channel_name = before.channel.name[len(self.client.custom_ids["vctable_prefix"]):]
-                        if before.channel.id not in recently_renamed_vcs:
-                            recently_renamed_vcs[before.channel.id] = []
-                        recently_renamed_vcs[before.channel.id].append(int(mktime(datetime.now().timetuple())))
+                        try_store_vc_rename(before.channel.id, max_rename_limit=3)
+                        # same as `/vctable disband`
+                        # allow max 3 renamed: if a staff queued a rename due to rules, it'd be queued at 3.
+                        # it would be bad to have it be renamed back to the bad name right after.
                         try:
                             await before.channel.edit(name=new_channel_name)
                         except discord.errors.NotFound:
-                            pass
+                            pass # mia 2024-07-28: does this ever happen? channel shouldn't be deleted yet..
         if after.channel is not None:
             if after.channel.id == vcHub:
                 default_name = "Untitled voice chat"
@@ -112,7 +107,6 @@ class CustomVcs(commands.Cog):
     async def editVc(self, itx: discord.Interaction, 
                      name: app_commands.Range[str,4,35] | None = None, 
                      limit: app_commands.Range[int, 0, 99] | None = None):
-        global recently_renamed_vcs
         if not is_verified(itx.guild, itx.user):
             await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",ephemeral=True)
             return
@@ -145,47 +139,32 @@ class CustomVcs(commands.Cog):
             if len(itx.user.voice.channel.overwrites) > len(itx.user.voice.channel.category.overwrites): # if VcTable, add prefix
                 name = self.client.custom_ids["vctable_prefix"] + name
 
-        if channel.id in recently_renamed_vcs:
-            # if you have made 2 renames in the past 10 minutes already
-            if name is None:
-                # don't add cooldown if you only change the limit, not the name
-                pass
-            elif len(recently_renamed_vcs[channel.id]) < 2:
-                #ignore but still continue the command
-                pass
-            elif recently_renamed_vcs[channel.id][0]+600 > mktime(datetime.now().timetuple()):
+        if name is not None:
+            # don't add cooldown if you only change the limit, not the name
+            first_rename_time = try_store_vc_rename(channel.id)
+            if first_rename_time:
                 await itx.response.send_message(f"You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n" +
-                                                f"You can rename it again <t:{recently_renamed_vcs[channel.id][0] + 600}:R> (<t:{recently_renamed_vcs[channel.id][0] + 600}:t>).", ephemeral=True)
-                # ignore entirely, don't continue command
+                                                f"You can rename it again <t:{first_rename_time + 600}:R> (<t:{first_rename_time + 600}:t>).", ephemeral=True)
                 return
-            else:
-                # clear and continue command
-                recently_renamed_vcs[channel.id] = recently_renamed_vcs[channel.id][2:]
-        else:
-            # create and continue command
-            recently_renamed_vcs[channel.id] = []
+        
         limitInfo = ""
         oldName = channel.name
         oldLimit = channel.user_limit
         try:
-            if limit is None:
-                if name is None:
-                    await itx.response.send_message("You can edit your channel with this command. Set a value for the name or the maximum user limit.", ephemeral=True)
-                else:
-                    await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", name=name)
-                    await log_to_guild(self.client, itx.guild, f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})")
-                    await itx.response.send_message(warning+f"Voice channel successfully renamed to \"{name}\"", ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
-                recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
-            else:
-                if name is None:
-                    await channel.edit(reason=f"Voice channel limit edited from \"{oldLimit}\" to \"{limit}\"", user_limit=limit)
-                    await log_to_guild(self.client, itx.guild, f"Voice channel \"{oldName}\" ({channel.id}) edited the user limit from  \"{oldLimit}\" to \"{limit}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}")
-                    await itx.response.send_message(warning+f"Voice channel user limit for \"{oldName}\" successfully edited from \"{oldLimit}\" to \"{limit}\"", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
-                else:
-                    await channel.edit(reason=f"Voice channel edited from name: \"{channel.name}\" to \"{name}\" and user limit from: \"{limit}\" to \"{oldLimit}\"", user_limit=limit,name=name)
-                    await log_to_guild(self.client, itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{oldName}\" to \"{name}\" and user limit from \"{oldLimit}\" to \"{limit}\"{limitInfo}")
-                    await itx.response.send_message(warning+f"Voice channel name and user limit successfully edited.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
-                    recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
+            if not limit and not name:
+                await itx.response.send_message("You can edit your channel with this command. Set a value for the name or the maximum user limit.", ephemeral=True)
+            if not limit and name:
+                await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limitInfo}", name=name)
+                await log_to_guild(self.client, itx.guild, f"Voice channel ({channel.id}) renamed from \"{oldName}\" to \"{name}\" (by {itx.user.nick or itx.user.name}, {itx.user.id})")
+                await itx.response.send_message(warning+f"Voice channel successfully renamed to \"{name}\"", ephemeral=True)#allowed_mentions=discord.AllowedMentions.none())
+            if limit and not name:
+                await channel.edit(reason=f"Voice channel limit edited from \"{oldLimit}\" to \"{limit}\"", user_limit=limit)
+                await log_to_guild(self.client, itx.guild, f"Voice channel \"{oldName}\" ({channel.id}) edited the user limit from  \"{oldLimit}\" to \"{limit}\" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limitInfo}")
+                await itx.response.send_message(warning+f"Voice channel user limit for \"{oldName}\" successfully edited from \"{oldLimit}\" to \"{limit}\"", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+            if limit and name:
+                await channel.edit(reason=f"Voice channel edited from name: \"{channel.name}\" to \"{name}\" and user limit from: \"{limit}\" to \"{oldLimit}\"", user_limit=limit,name=name)
+                await log_to_guild(self.client, itx.guild, f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) name \"{oldName}\" to \"{name}\" and user limit from \"{oldLimit}\" to \"{limit}\"{limitInfo}")
+                await itx.response.send_message(warning+f"Voice channel name and user limit successfully edited.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
             await log_to_guild(self.client, itx.guild, f"Warning! >> "+ex_message+f" << {itx.user.nick or itx.user.name} ({itx.user.id}) tried to change {oldName} ({channel.id}) to {name}, but wasn't allowed to by discord, probably because it's in a banned word list for discord's discovery <@262913789375021056>")
@@ -536,21 +515,8 @@ class CustomVcs(commands.Cog):
         channel = await self.get_current_channel(itx, "create VcTable")
         if channel is None:
             return
-        if itx.user.voice.channel.id in recently_renamed_vcs:
-            # if the channel has been renamed 2 times in the past 10 minutes already
-            if len(recently_renamed_vcs[channel.id]) >= 2:
-                if recently_renamed_vcs[channel.id][0]+600 > mktime(datetime.now().timetuple()):
-                    await itx.response.send_message(f"This channel has been renamed too often in the past 10 minutes! (bcuz discord :P)\n" +
-                                                    f"You can turn this into a VcTable in <t:{recently_renamed_vcs[channel.id][0] + 600}:R> (<t:{recently_renamed_vcs[channel.id][0] + 600}:t>).", ephemeral=True)
-                    # ignore entirely, don't continue command
-                    return
-                else:
-                    recently_renamed_vcs[channel.id] = recently_renamed_vcs[channel.id][2:]
-            else:
-                pass
-        else:
-            recently_renamed_vcs[channel.id] = []
-
+        first_rename_time = try_store_vc_rename(itx.user.voice.channel.id)
+            
         await itx.response.defer(ephemeral=True)
         # if owner present: already VcTable -> stop
         for target in channel.overwrites:
@@ -559,7 +525,12 @@ class CustomVcs(commands.Cog):
                 await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to see who the owners of this table are!", ephemeral=True)
                 return
         
-        for owner_id in added_owners:
+        if first_rename_time:
+            await itx.followup.send(f"This channel has been renamed too often in the past 10 minutes! (bcuz discord :P)\n" +
+                                    f"You can turn this into a VcTable in <t:{first_rename_time + 600}:R> (<t:{first_rename_time + 600}:t>).", ephemeral=True)
+            return
+        
+        for owner_id in added_owners: # TODO: put all overwrites into 1 api call
             owner = itx.guild.get_member(int(owner_id))
             await channel.set_permissions(owner, overwrite=discord.PermissionOverwrite(connect=True,speak=True), reason="VcTable created: set as owner")
         owner_taglist = ', '.join([f'<@{id}>' for id in added_owners])
@@ -569,7 +540,7 @@ class CustomVcs(commands.Cog):
                            f"Made {owner_taglist} a VcTable Owner\n"
                            f"**:warning: If someone is breaking the rules, TELL A MOD** (don't try to moderate a vc yourself)",allowed_mentions=discord.AllowedMentions.none())
         await log_to_guild(self.client, itx.guild, f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
-        recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
+
         try:
             await channel.edit(name = self.client.custom_ids["vctable_prefix"] + channel.name)
             await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n"+warning,ephemeral=True)
@@ -867,9 +838,10 @@ class CustomVcs(commands.Cog):
         await itx.response.send_message("Successfully disbanded VcTable.", ephemeral=True)
         if channel.name.startswith(self.client.custom_ids["vctable_prefix"]):
             new_channel_name = channel.name[len(self.client.custom_ids["vctable_prefix"]):]
-            if channel.id not in recently_renamed_vcs:
-                recently_renamed_vcs[channel.id] = []
-            recently_renamed_vcs[channel.id].append(int(mktime(datetime.now().timetuple())))
+            try_store_vc_rename(channel.id, max_rename_limit=3)
+            # same as on_voice_state_update:
+            # allow max 3 renamed: if a staff queued a rename due to rules, it'd be queued at 3.
+            # it would be bad to have it be renamed back to the bad name right after.
             try:
                 await channel.edit(name=new_channel_name)
             except discord.errors.NotFound:
