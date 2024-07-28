@@ -5,6 +5,168 @@ from resources.customs.bot import Bot
 from resources.views.customvcs import ConfirmationView_VcTable_AutorizedMode
 from resources.modals.customvcs import CustomVcStaffEditorModal, clear_vc_rename_log, try_store_vc_rename
 
+def voice_channel_is_custom(
+        voice_channel: discord.VoiceChannel, 
+        customvc_category_id: int, 
+        customvc_hub_id: int, 
+        customvc_channel_blacklist: list[int]
+) -> bool:
+    """Check if a voice channel is custom-made by Rina through the customvc Hub.
+
+    Parameters
+    -----------
+    voice_channel: :class:`discord.VoiceChannel`:
+        The voice channel to test for customness
+    customvc_category_id: :class:`int`
+        The category id where custom voice channels are allowed to be created.
+    customvc_hub_id: :class:`int`
+        The voice channel id of the channel members should join to create a custom voice channel.
+    customvc_channel_blacklist: :class:`int`
+        A list of voice channel ids that may definitely not be removed when the last person leaves.
+
+    Returns
+    --------
+    :class:`bool`:
+        Whether the channel is a custom voice channel or not.
+    """
+    return (
+        voice_channel.category.id in [customvc_category_id] and
+        voice_channel.id != customvc_hub_id and # avoid deleting the hub channel
+        voice_channel.id not in customvc_channel_blacklist and
+        not voice_channel.name.startswith('〙') # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
+    )
+
+async def reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice_channel: discord.VoiceChannel):
+    """
+    Reset a voice channel's permission overrides if the 'owners' of the voice channel 
+    table are no longer present/connected to the channel.
+
+    Parameters
+    -----------
+    vctable_prefix: :class:`str`
+        The prefix of voice channel tables, to remove/rename it if the vctable owners left.
+
+    Regards
+    --------
+    This function does not check if the channel is actually a custom voice channel.
+    """
+    if len(voice_channel.overwrites) > len(voice_channel.category.overwrites):  # if VcTable, reset ownership; and all owners leave: reset all perms
+        reset_vctable = True #check if no owners left --> all members in the voice channel aren't owner
+        for target in voice_channel.overwrites:
+            if target not in voice_channel.members:
+                continue
+            if voice_channel.overwrites[target].connect:
+                reset_vctable = False
+                break
+        if not reset_vctable:
+            return
+        
+        await voice_channel.edit(overwrites=voice_channel.category.overwrites) #reset overrides
+        #update every user's permissions
+        for user in voice_channel.members:
+            await user.move_to(voice_channel)
+        await voice_channel.send("This channel was converted from a VcTable back to a normal CustomVC because all the owners left")
+        # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
+        if voice_channel.name.startswith(vctable_prefix):
+            new_channel_name = voice_channel.name[len(vctable_prefix):]
+            try_store_vc_rename(voice_channel.id, max_rename_limit=3)
+            # same as `/vctable disband`
+            # allow max 3 renamed: if a staff queued a rename due to rules, it'd be queued at 3.
+            # it would be bad to have it be renamed back to the bad name right after.
+            try:
+                await voice_channel.edit(name=new_channel_name)
+            except discord.errors.NotFound:
+                pass # mia 2024-07-28: does this ever happen? channel shouldn't be deleted yet..
+
+async def handle_delete_custom_vc(client: Bot, member: discord.Member, voice_channel: discord.VoiceChannel):
+    """
+    Handle the deletion of a custom voice channel (and error handling)
+
+    Parameters
+    -----------
+    client: :class:`Bot`
+        The bot instance to log to guild with.
+    member: :class:`discord.Member`
+        The member to log as last in vc.
+    voice_channel: :class:`discord.VoiceChannel`
+        The voice channel to remove.
+    """
+    # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
+    # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
+    clear_vc_rename_log(voice_channel.id)
+    try:
+        await voice_channel.delete()
+    except discord.errors.NotFound:
+        await log_to_guild(client, member.guild, 
+                           f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice "
+                           f"channel \"{voice_channel.name}\" ({voice_channel.id}), and was the last one in it, but it **could not be deleted**!")
+        raise
+    await log_to_guild(client, member.guild, f"{member.nick or member.name} ({member.id}) left voice channel \"{voice_channel.name}\" ({voice_channel.id}), and was the last one in it, so it was deleted.")
+
+async def handle_custom_voice_channel_leave_events(client: Bot, member: discord.Member, voice_channel: discord.VoiceChannel):
+    """
+    A helper function to handle the custom voice channel events when a user leaves a channel.
+    This includes: channel deletion, vctable disbanding.
+
+    Parameters
+    -----------
+    client: :class:`Bot):`
+        The client to send logs with, and for the vctable prefix.
+    member: :class:`discord.Member`
+        The member to trigger the leave event.
+    voice_channel: :class:`discord.VoiceChannel`
+        The voice channel that the member left from.
+    """
+    # The following events should only apply to custom voice channels:
+
+    if len(voice_channel.members) == 0:
+        await handle_delete_custom_vc(client, member, voice_channel)
+
+    await reset_voice_channel_permissions_if_vctable(client.custom_ids["vctable_prefix"], voice_channel)
+
+async def create_new_custom_vc(client: Bot, member: discord.Member, voice_channel: discord.VoiceChannel, customvc_category_id: int, customvc_hub_id: int):
+    """
+    A helper function to create a new custom voice channel
+
+    Args:
+        client (Bot): The Bot class to use for logging.
+        member (discord.Member): The member that triggered the event/function.
+        voice_channel (discord.VoiceChannel): The voice channel the user joined to trigger this function (the customvc hub)
+        customvc_category_id (int): The category id to create the custom voice channel in.
+        customvc_hub_id (int): The custom voice channel hub channel id.
+    """
+    
+    default_name = "Untitled voice chat"
+    warning = ""
+    vcCategory_for_vc = voice_channel.category
+    vcCategory_for_vc.id = customvc_category_id
+    cmd_mention = client.get_command_mention("editvc")
+
+    try:
+        vc = await vcCategory_for_vc.create_voice_channel(default_name,position=voice_channel.position+1)
+    except discord.errors.HTTPException:
+        await log_to_guild(client, member.guild, f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)")
+        raise
+
+    try:
+        await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.") 
+        await vc.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
+        for custom_vc in vcCategory_for_vc.voice_channels:
+            if custom_vc.id == customvc_hub_id or custom_vc.id == vc.id:
+                continue
+            await custom_vc.edit(position=custom_vc.position+1)
+    except Exception as ex:
+        warning = str(ex)+": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
+        try:
+            await member.move_to(None, reason=f"Couldn't create a new Custom voice channel so kicked them from their current vc to prevent them staying in the main customvc hub")
+            # no need to delete vc if they are kicked out of the channel, cause then the next event will notice that they left the channel.
+        except:
+            await vc.delete()
+        await client.log_channel.send(content=warning, allowed_mentions=discord.AllowedMentions.none())
+        raise
+    # nomicChannel = member.guild.get_channel(vcNoMic)
+    await log_to_guild(client, member.guild, warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).")
+
 
 class CustomVcs(commands.Cog):
     def __init__(self, client: Bot):
@@ -18,88 +180,15 @@ class CustomVcs(commands.Cog):
     async def on_voice_state_update(self, member:discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if member.guild.id == self.client.custom_ids["staff_server_id"]:
             return
-        vcHub, vcLog, vcNoMic, vcCategory = await self.client.get_guild_info(member.guild, "vcHub", "vcLog", "vcNoMic", "vcCategory")
-        if before.channel is None:
-            pass
-        elif before.channel in before.channel.guild.voice_channels:
-            if before.channel.category.id not in [vcCategory]:
-                pass
-            elif before.channel.id == vcHub: # avoid deleting the hub channel
-                pass
-            elif before.channel.id in self.blacklisted_channels or \
-                    before.channel.name.startswith('〙'):
-                # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
-                pass
-            elif len(before.channel.members) == 0:
-                # cmdChannel = discord.utils.find(lambda r: r.name == 'no-mic', before.channel.category.text_channels)
-                # await cmdChannel.send(f"{member.nick or member.name} left voice channel \"{before.channel.name}\", and was the last one in it, so it was deleted. ({member.id})",delete_after=32, allowed_mentions = discord.AllowedMentions.none())
-                clear_vc_rename_log(before.channel.id)
-                try:
-                    await before.channel.delete()
-                except discord.errors.NotFound:
-                    await log_to_guild(self.client, member.guild, f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, but it **could not be deleted**!")
-                    raise
-                await log_to_guild(self.client, member.guild, f"{member.nick or member.name} ({member.id}) left voice channel \"{before.channel.name}\" ({before.channel.id}), and was the last one in it, so it was deleted.")
-
-            elif len(before.channel.overwrites) > len(before.channel.category.overwrites):  # if VcTable, reset ownership; and all owners leave: reset all perms
-                reset_vctable = True #check if no owners left --> all members in the voice channel aren't owner
-                for target in before.channel.overwrites:
-                    if target not in before.channel.members:
-                        continue
-                    if before.channel.overwrites[target].connect:
-                        reset_vctable = False
-                        break
-                if reset_vctable:
-                    await before.channel.edit(overwrites=before.channel.category.overwrites) #reset overrides
-                    #update every user's permissions
-                    for user in before.channel.members:
-                        await user.move_to(before.channel)
-                    await before.channel.send("This channel was converted from a VcTable back to a normal CustomVC because all the owners left")
-                    # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
-                    if before.channel.name.startswith(self.client.custom_ids["vctable_prefix"]):
-                        new_channel_name = before.channel.name[len(self.client.custom_ids["vctable_prefix"]):]
-                        try_store_vc_rename(before.channel.id, max_rename_limit=3)
-                        # same as `/vctable disband`
-                        # allow max 3 renamed: if a staff queued a rename due to rules, it'd be queued at 3.
-                        # it would be bad to have it be renamed back to the bad name right after.
-                        try:
-                            await before.channel.edit(name=new_channel_name)
-                        except discord.errors.NotFound:
-                            pass # mia 2024-07-28: does this ever happen? channel shouldn't be deleted yet..
+        customvc_hub_id, customvc_category_id = await self.client.get_guild_info(member.guild, "vcHub", "vcCategory")
+        if before.channel is not None and before.channel in before.channel.guild.voice_channels:
+            if voice_channel_is_custom(before.channel, customvc_category_id, customvc_hub_id, self.blacklisted_channels):
+                # only run if this voice state regards a custom voice channel
+                await handle_custom_voice_channel_leave_events(self.client, member, before.channel)
+        
         if after.channel is not None:
-            if after.channel.id == vcHub:
-                default_name = "Untitled voice chat"
-                warning = ""
-                vcCategory_for_vc = after.channel.category
-                vcCategory_for_vc.id = vcCategory
-                cmd_mention = self.client.get_command_mention("editvc")
-                try:
-                    vc = await vcCategory_for_vc.create_voice_channel(default_name,position=after.channel.position+1)
-                except discord.errors.HTTPException:
-                    nomicChannel = member.guild.get_channel(vcNoMic)
-                    await nomicChannel.send(f"COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY", allowed_mentions=discord.AllowedMentions.none())
-                    await log_to_guild(self.client, member.guild, f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)")
-                    raise
-                try:
-                    await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.") 
-                    await vc.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
-                    for customVC in vcCategory_for_vc.voice_channels:
-                        if customVC.id == vcHub or customVC.id == vc.id:
-                            continue
-                        await customVC.edit(position=customVC.position+1)
-                except Exception as ex:
-                    warning = str(ex)+": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
-                    try:
-                        await member.move_to(None, reason=f"Couldn't create a new Custom voice channel so kicked them from their current vc to prevent them staying in the main customvc hub")
-                        # no need to delete vc if they are kicked out of the channel, cause then the next event will notice that they left the channel.
-                    except:
-                        await vc.delete()
-                    await self.client.log_channel.send(content=warning,allowed_mentions=discord.AllowedMentions.none())
-                    raise
-                    # pass
-                # nomicChannel = member.guild.get_channel(vcNoMic)
-                await log_to_guild(self.client, member.guild, warning+f"{member.nick or member.name} ({member.id}) created and joined voice channel {vc.id} (with the default name).")
-
+            if after.channel.id == customvc_hub_id:
+                await create_new_custom_vc(self.client, member, after.channel, customvc_category_id, customvc_hub_id)
 
     @app_commands.command(name="editvc",description="Edit your voice channel name or user limit")
     @app_commands.describe(name="Give your voice channel a name!",
