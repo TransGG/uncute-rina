@@ -1,6 +1,7 @@
 import discord, discord.ext.commands as commands # for main discord bot functionality
-from pymongo.database import Database as pydb # for MongoDB database
-import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
+from pymongo.database import Database as pymongodatabase # for MongoDB database typing
+import motor.motor_asyncio as motorasync # for making Mongo run asynchronously (during api calls)
+import motor.core as motorcore # for typing
 from datetime import datetime # for startup and crash logging, and Reminders
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling Reminders
 
@@ -15,12 +16,12 @@ class Bot(commands.Bot):
     running_on_production = True
 
     def __init__(self, api_tokens: dict, version: str,
-                 RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase,
+                 RinaDB: pymongodatabase, asyncRinaDB: motorcore.AgnosticDatabase,
                  *args, **kwargs):
         self.api_tokens: dict = api_tokens
         self.version: str = version
-        self.RinaDB: pydb = RinaDB
-        self.asyncRinaDB: motor.core.AgnosticDatabase = asyncRinaDB
+        self.RinaDB: pymongodatabase = RinaDB
+        self.asyncRinaDB: motorcore.AgnosticDatabase = asyncRinaDB
         super().__init__(*args, **kwargs)
 
     @property
@@ -69,22 +70,21 @@ class Bot(commands.Bot):
             return production_ids
         else:
             return development_ids
-
     
     def get_command_mention(self, command_string: str):
         """
         Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
 
-        ### Parameters
-        --------------
-        command_string:  :class:`str`
-            Command you want to convert into a mention (without slash in front of it)
-        ### Returns
+        Parameters
         -----------
-        command mention: :class:`str`
-            The command mention, or input if not found
+        command_string: :class:`str`
+            Command you want to convert into a mention (without slash in front of it).
+        
+        Returns
+        --------
+        :class:`str`
+            The command mention, or the input (:param:`command_string`) if no command with the name was found.
         """
-
         args = command_string.split(" ")+[None, None]
         command_name, subcommand, subcommand_group = args[0:3]
         # returns one of the following:
@@ -111,24 +111,26 @@ class Bot(commands.Bot):
 
     async def get_guild_info(self, guild_id: discord.Guild | int, *args: str, log: list[discord.Interaction | str] | None = None):
         """
-        Get a guild's server settings (from /editguildinfo, in cmd_customvcs)
+        Get a guild's server settings (from /editguildinfo, in cmd_customvcs).
 
-        ### Arguments:
-        --------------
-        guild_id: :class:`discord.Guild` or :class:`int`
-            guild or id from which you want to get the guild info / settings
-        *args: :class:`str`
-            settings (or multiple) that you want to fetch
-        log (optional): :class:`list[discord.Interaction, str]`
-            A list of [itx, error_message], and will reply this error message to the given interaction if there's a KeyError.
-
-        ### Returns:
-        ------------
-        `any` (whichever is given in the database)
-
-        ### Raises:
+        Parameters
         -----------
-        `KeyError` if guild is None, does not have data, or not the requested data.
+        guild_id: :class:`discord.Guild` | :class:`int`
+            The guild or id from which you want to get the guild info / settings.  
+        *args: :class:`str`
+            settings (or multiple) that you want to fetch.  
+        log: :class:`list[discord.Interaction, str]` | :class:`None`, optional
+            A list of [itx, error_message], and will reply this error message to the given interaction if there's a KeyError. Default: None.
+
+        Returns
+        --------
+        :class:`Any`
+            (whichever is given in the database)
+
+        Raises
+        -------
+        :class:`KeyError`
+            if guild is None, does not have data, or not the requested data.
         """
         if guild_id is None:
             raise KeyError(f"'{guild_id}' is not a valid guild or id!")

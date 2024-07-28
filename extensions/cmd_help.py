@@ -330,17 +330,18 @@ def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> d
     Helper command to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
     Page fields are appended after the description, in the order they are given in the list.
 
-    Parameters:
+    Parameters
     -----------
-    page: :class:`help_page`:
-        The help page to reference. This is a TypedDict{"title":str, "description":str, "fields":list[tuple[str,str]]}.
-    page_number: :class:`int`:
+    page: :class:`HelpPage`
+        The help page to reference.
+    page_number: :class:`int`
         The page number of the help page. This number is added as footer, but is also used for the hue (HSV) value of the embed color.
-    client: :class:`Bot`:
+    client: :class:`Bot`
         The bot instance for get_command_mention().
 
     Returns:
-    :class:`discord.Embed`: An embed of the given help page.
+    :class:`discord.Embed`:
+        An embed of the given help page.
     """
     embed = discord.Embed(color = discord.Color.from_hsv((180 + page_number*10)/360, 0.4, 1),
                           title = page["title"],

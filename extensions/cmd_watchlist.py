@@ -204,14 +204,14 @@ class WatchList(commands.Cog):
         if not is_staff(itx.guild, itx.user): # is already checked in the main command, but saves people's time
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
-        watchlist_reason_modal = WatchlistReasonModal(self, "Add user to watchlist", user, None, 300)
+        watchlist_reason_modal = WatchlistReasonModal(self.add_to_watchlist, "Add user to watchlist", user, None, 300)
         await itx.response.send_modal(watchlist_reason_modal)
 
     async def watchlist_ctx_message(self, itx, message: discord.Message):
         if not is_staff(itx.guild, itx.user): # is already checked in the main command, but saves people's time
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
-        watchlist_reason_modal = WatchlistReasonModal(self, "Add user to watchlist using message", message.author, message, 300)
+        watchlist_reason_modal = WatchlistReasonModal(self.add_to_watchlist, "Add user to watchlist using message", message.author, message, 300)
         await itx.response.send_modal(watchlist_reason_modal)
         
     @commands.Cog.listener()

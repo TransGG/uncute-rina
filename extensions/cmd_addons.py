@@ -113,15 +113,15 @@ def generateOutput(responses: list[str], author: discord.User):
     """
     Convert a list of verification follow-up questions into a nicely written message
 
-    ### Parameters
-    --------------
-    responses:  :class:`list[str]`
-        A list of questions to be asked to the user (parameter 'author')
-    author:  :class:`discord.User`
+    Parameters
+    -----------
+    responses: :class:`list[str]`
+        A list of questions to be asked to the user (parameter 'author')  
+    author: :class:`discord.User`
         The user to mention for the response
     
-    ### Returns
-    -----------
+    Returns
+    --------
     response: :class:`str`
         A nicely written response with fluff and pre/postfixes, as well as listing keywords (first of all / next / also).
     """
@@ -151,18 +151,21 @@ def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSenti
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
-    ### Parameters:
-    ---------------
+    Parameters
+    -----------
     client: :class:`Bot`
-        The client/bot whose servers to check for the emoji
-    emoji_str: :class:`str` | `discord.utils.MISSING`
-        The emoji (<a:emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
+        The client/bot whose servers to check for the emoji.
+    emoji_str: :class:`str` | :class:`discord.utils.MISSING`
+        The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
         
-    ### Returns:
-    ------------
-    - `None` if no emoji found or it can't be used by the bot (not in the server).
-    - `PartialEmoji` if emoji is unicode
-    - `Emoji` if emoji is valid and can be used but the bot.
+    Returns
+    --------
+    :class:`None`
+        if no emoji found or it can't be used by the bot (not in the server).
+    :class:`discord.PartialEmoji`
+        if emoji is unicode.
+    :class:`discord.Emoji`
+        if emoji is valid and can be used but the bot.
     """
     if emoji_str == discord.utils.MISSING:
         return None

@@ -8,17 +8,41 @@ if typing.TYPE_CHECKING:
 
 class WatchlistReasonModal(discord.ui.Modal):
     """
-    A modal allowing the user to add a user to the watchlist with a reason
+    A modal allowing the user to add a user to the watchlist with a reason.
+
+    Attributes
+    -----------
+    add_to_watchlist_func: :class:`typing.Coroutine[typing.Callable[[discord.Interaction, discord.User, str, str | None], None]]`
+        An async function from WatchList.add_to_watchlist(itx, user, reason, message_id) -> None to run with on_submit.
+    message: :class:`discord.Message` | :class:`None`
+        The message that was reported / marked for the watchlist.
+    reason_text: :class:`str`
+        The reason provided by the staff member to add the user to the watchlist.
+    timeout: :class:`int`
+        The timeout before the modal closes itself.
+    title: :class:`str`
+        The title of the embed.
+    user: :class:`discord.User`
+        The user that is being added to the watchlist.
+    value: :class:`int` | :class:`None`
+        1 if on_sumbit() was called, else None.
     """
 
-    def __init__(self, watchlist: WatchList, title: str, reported_user: discord.User, message: discord.Message = None, timeout=None):
+    def __init__(
+            self, 
+            add_to_watchlist_func: typing.Coroutine[typing.Callable[[discord.Interaction, discord.User, str, str | None], None]], 
+            title: str, 
+            reported_user: discord.User, 
+            message: discord.Message = None, 
+            timeout=None
+    ):
         super().__init__(title=title, timeout=timeout)
         self.value = None
         # self.timeout = timeout
         # self.title = title
         self.user = reported_user
         self.message = message
-        self.watchlist = watchlist
+        self.add_to_watchlist_func = add_to_watchlist_func
 
         self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}',
                                                 placeholder=f"not required but recommended",
@@ -28,5 +52,5 @@ class WatchlistReasonModal(discord.ui.Modal):
     
     async def on_submit(self, itx: discord.Interaction):
         self.value = 1
-        await self.watchlist.add_to_watchlist(itx, self.user, self.reason_text.value, str(getattr(self.message, "id", "")) or None)
+        await self.add_to_watchlist_func(itx, self.user, self.reason_text.value, str(getattr(self.message, "id", "")) or None)
         self.stop()

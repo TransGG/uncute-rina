@@ -10,7 +10,8 @@ def add_to_watchlist_cache(user_id: int, thread_id: int):
     """
     Add a user to the watchlist cache.
 
-    ### Parameters
+    Parameters
+    -----------
     user_id: :class:`int`
         The user id to add.
     thread_id: :class:`int`
@@ -22,13 +23,15 @@ async def get_or_fetch_watchlist_index(watch_channel: discord.TextChannel) -> di
     """
     Get or fetch a dictionary of all users currently on the watchlist, and their matching watchlist thread id.
 
-    ### Parameters
+    Parameters
+    -----------
     watch_channel: :class:`discord.TextChannel`
-        The text channel with all the stored watchout doubt messages and threads
+        The text channel with all the stored watchout doubt messages and threads.
 
-    ### Returns
+    Returns
+    --------
     :class:`dict[int, int]`
-        A dictionary with [user_id, thread_id] for the watchout doubts
+        A dictionary with [user_id, thread_id] for the watchout doubts.
     """
     global busy_updating_watchlist_index, local_watchlist_index
     if not busy_updating_watchlist_index and local_watchlist_index == {}:

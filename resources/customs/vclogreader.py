@@ -6,7 +6,8 @@ class CustomVoiceChannel:
         """
         Create a custom discord.VoiceChannel to reuse similar code.
 
-        ### Parameters
+        Parameters
+        -----------
         id: :class:`int`
             The id of the channel.
         name: :class:`str`
@@ -14,7 +15,8 @@ class CustomVoiceChannel:
         members: :class:`list[discord.Member]`
             A list of members currently connected to the voice channel.
 
-        ### Attributes
+        Attributes
+        -----------
         mention: :class:`str`
             A string representation of the channel as mention.
         """

@@ -22,21 +22,22 @@ class Tags: # TODO: move to own file
         """
         Send a tag message (un)publicly or (un)anonymously, given an embed.
         
-        ### Parameters
+        Parameters
+        -----------
         tag_name: :class:`str`
-            The tag's custom ID used in the code, and in logs
+            The tag's custom ID used in the code, and in logs.
         itx: :class:`discord.Interaction`
-            The interaction to reply to
+            The interaction to reply to.
         client: :class:`UncuteRina.Bot`
-            The Bot client, for logs
+            The Bot client, for logs.
         public: :class:`bool`
-            Whether to send the tag publicly or not
+            Whether to send the tag publicly or not.
         anonymous: :class:`bool`
-            Whether to make public tags show the executor's username or not (auomatically adds a log msg)
+            Whether to make public tags show the executor's username or not (auomatically adds a log msg).
         embed: :class:`discord.Embed`
-            The embed to send, with information about the selected tag
-        public_footer: :class:`bool`
-            Whether to add the pre-made 'misused command' footer to the embed if sent anonymously
+            The embed to send, with information about the selected tag.
+        public_footer: :class:`bool`, optional
+            Whether to add the pre-made 'misused command' footer to the embed if sent anonymously. Default: False.
         """
 
         embed.color = colours[tag_name]

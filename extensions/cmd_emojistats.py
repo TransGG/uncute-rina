@@ -5,6 +5,7 @@ import re # to find all emojis used in someone's message
 import pymongo # for pymongo.DESCENDING when sorting db query output
 import sys # for integer max value: sys.maxsize
 from resources.customs.bot import Bot
+from resources.customs.emojistats import EmojiSendSource
 
 
 #   Rina.emojistats                                     # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
@@ -17,15 +18,16 @@ from resources.customs.bot import Bot
 #          animated = false                             #  bool of emoji.animated
 # reactionUsedCount = 8                                 #  int  of how often messages have been replied to with this emoji
 
-async def add_to_data(emoji: tuple[bool, str, str], location: str):
-    """
-    Helper function to add emoji data to the mongo database when an emoji is sent/replied in chat
 
-    Parameters:
+async def add_to_data(emoji: tuple[bool, str, str], location: EmojiSendSource):
+    """
+    Helper function to add emoji data to the mongo database when an emoji is sent/replied in chat.
+
+    Parameters
     -----------
-    emoji: `tuple[animated, emoji_name, emoji_id]`
+    emoji: :class:`tuple[animated, emoji_name, emoji_id]`
         The emoji (kind of in format of <a:Emoji_Name1:0123456789>).
-    location: `enum["message", "reaction"]`
+    location: :class:`EmojiSendEnum`
         Whether the emoji was used in a message or as a reaction.
     """
 
@@ -36,9 +38,9 @@ async def add_to_data(emoji: tuple[bool, str, str], location: str):
     if data is None:
         await collection.insert_one(query)
 
-    if location == "message":
+    if location == EmojiSendSource.MESSAGE:
         location = "messageUsedCount"
-    elif location == "reaction":
+    elif location == EmojiSendSource.REACTION:
         location = "reactionUsedCount"
     else:
         raise ValueError("Cannot add to database since the location of the reaction isn't defined correctly.")
@@ -84,12 +86,12 @@ class EmojiStats(commands.Cog):
             start_index += emoji.span()[1] # (11,29) for example
 
         for emoji in emojis:
-            await add_to_data(emoji, location = "message")
+            await add_to_data(emoji, location = EmojiSendSource.MESSAGE)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction):
         if reaction.emoji.id is not None:
-            await add_to_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)), "reaction")
+            await add_to_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)), location=EmojiSendSource.REACTION)
 
     @emojistats.command(name="getemojidata",description="Get emoji usage data from an ID!")
     @app_commands.rename(emoji_name="emoji")

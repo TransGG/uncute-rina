@@ -17,18 +17,31 @@ class VCLogReader(commands.Cog):
         asyncRinaDB = client.asyncRinaDB
         self.client = client
 
-    async def get_vc_activity(self, voice_log_channel: discord.abc.Messageable, min_time: int, max_time: int, msg_limit: int):
+    async def get_vc_activity(
+            self, 
+            voice_log_channel: discord.abc.Messageable, 
+            min_time: int, 
+            max_time: int, 
+            msg_limit: int
+    ) -> list[tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None]]:
         """
         Retrieve the most recent voice channel activity from the logger channel and convert into neat string.
 
-        ### Arguments:
-        --------------
+        Parameters
+        -----------
         voice_log_channel: :class:`discord.abc.Messageable`
-            Channel from which you want to get the voice channel logs / information
+            Channel from which you want to get the voice channel logs / information.
+        min_time: :class:`int`
+            A unix epoch timestamp for the earliest logs to fetch (up to how long ago).
+        max_time: :class:`int`
+            A unix epoch timestamp for the latest logs to fetch (up to how recent).
+        msg_limit: :class:`int`
+            How many log messages to look through.
 
-        ### Returns:
-        ------------
-        `list[tuple[`event_time_unix, (user_id, username), (previous_channel_id, name) | None, (current_channel_id, name) | None `]]`
+        Returns
+        --------
+        :class:`list[tuple[event_time_unix, (user_id, username), (previous_channel_id, name) | None, (current_channel_id, name) | None ]]`  
+            A list of (timestamp, user, previous_channel?, new_channel?). Typically at least one of previous_channel or new_channel has a value.
         """
         output: list[tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None]] = [] # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
 
@@ -64,7 +77,8 @@ class VCLogReader(commands.Cog):
                     #             into " (Mia) joined voice channel: General."
                     #             into " (Mia) joined"
                     #             into "joined"
-                    # or, in the case there is no username: " joined", which is why you have to strip it too.
+                    # or, in the case there is no nickname/displayname: " joined", which is why you have to strip it too.
+                    # Note: this would break if a user has the nickname "a voice channel: b" since type would be "a"
                 except IndexError:
                     # this doesn't work if the user moved from one channel to another: 
                     #    "**mysticmia#0** (Mia) moved from ⁠〙 Quiet (〙 Quiet) to ⁠〙 General 2 (〙 General 2)."

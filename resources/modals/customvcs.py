@@ -17,17 +17,19 @@ def try_store_vc_rename(channel_id: int, max_rename_limit: int = 2) -> None | in
     """
     Store a new voice channel rename in the storage dictionary.
 
-    ### Parameters
+    Parameters
+    -----------
     channel: :class:`discord.VoiceChannel`
-        The voice channel that will be renamed.  
+        The voice channel that will be renamed.
     max_rename_limit: :class:`int`
         (optional) The amount of times to allow the channel to be renamed in 10 minutes. Default: 2
 
-    ### Returns
-    :class:`None`:
-        unix epoch of the first rename time if the voice channel has been renamed max_rename_limit times in 10 minutes already.  
-    :class:`int`:
-        if the voice channel's rename timestamp was successfully stored
+    Returns
+    --------
+    :class:`None`
+        unix epoch of the first rename time if the voice channel has been renamed max_rename_limit times in 10 minutes already.
+    :class:`int`
+        if the voice channel's rename timestamp was successfully stored.
     """
     global recently_renamed_vcs
     if channel_id in recently_renamed_vcs:

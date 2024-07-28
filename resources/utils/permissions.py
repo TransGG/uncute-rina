@@ -4,14 +4,16 @@ def is_verified(guild: discord.Guild, member: discord.Member | discord.User) -> 
     """
     Check if someone is verified.
 
-    ### Parameters
+    Parameters
+    -----------
     guild: :class:`discord.Guild`
         A guild with roles to cycle through.
     member: :class:`discord.Member` | :class:`discord.User`
         A discord user with or without roles attribute.
     
-    ### Returns
-    `bool`
+    Returns
+    --------
+    :class:`bool`
         Whether the user is verified.
     """
     if guild is None:
@@ -33,13 +35,15 @@ def is_staff(guild: discord.Guild, member: discord.Member | discord.User) -> boo
     """
     Check if someone is staff.
 
-    ### Parameters
+    Parameters
+    -----------
     guild: :class:`discord.Guild`
         A guild with roles to cycle through.
     member: :class:`discord.Member` | :class:`discord.User`
         A discord user with or without roles attribute.
     
-    ### Returns
+    Returns
+    --------
     :class:`bool`
         Whether the user has a staff role.
     """
@@ -62,13 +66,15 @@ def is_admin(guild: discord.Guild, member: discord.Member | discord.User) -> boo
     """
     Check if someone is an admin.
 
-    ### Parameters
+    Parameters
+    -----------
     guild: :class:`discord.Guild`
         A guild with roles to cycle through.
     member: :class:`discord.Member` | :class:`discord.User`
         A discord user with or without roles attribute.
     
-    ### Returns
+    Returns
+    --------
     `bool`
         Whether the user has an admin role.
     """

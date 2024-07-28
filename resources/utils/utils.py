@@ -17,16 +17,17 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
     """
     Log a message to the console
 
-    ### Parameters:
-    text: :class:`str`
+    Parameters
+    -----------
+    text: :class:`str`, optional
         The message you want to send to the console
-    color (optional): :class:`str`
+    color: :class:`str`, optional
         The color you want to give your message ('red' for example)
-    add_time (optional): :class:`bool`
+    add_time: :class:`bool`, optional
         If you want to start the message with a '[23:59:59.000001] [INFO]:'
-    end (optional): :class:`str`
+    end: :class:`str`, optional
         What to end the end of the message with (similar to print(end=''))
-    advanced (optional) :class:`bool`
+    advanced: :class:`bool`, optional
         Whether to interpret `text` as advanced text (like minecraft in-chat colors). Replaces "&4" to red, "&l" to bold, etc. and "&&4" to a red background.
     """
     if type(text) is not str:
@@ -124,14 +125,17 @@ def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | disco
     """
     Fetch the #contact-staff ticket channel for a specific guild.
 
-    ### Parameters:
+    Parameters
+    -----------
     client: :class:`Bot`
         Rina's Bot class to fetch ticket channel IDs (hardcoded).
     guild_id: :class:`int` | :class:`discord.Guild` | :class:`discord.Interaction`
         A class with a guild_id or guild property.
     
-    ### Returns:
-    :class:`int` The matching guild's ticket channel id.
+    Returns
+    --------
+    :class:`int`
+        The matching guild's ticket channel id.
     """
     if type(guild_id) is discord.Interaction:
         guild_id = guild_id.guild_id
@@ -165,7 +169,7 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
     """
     Log a message to a guild's logging channel (vcLog)
 
-    ### Parameters
+    Parameters
     --------------
     client: :class:`Uncute_Rina.Bot`
         The bot class with `client.get_guild_info()` to find logging channel.
@@ -174,14 +178,16 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
     msg: :class:`str`
         Message you want to send to this logging channel
 
-    ### Raises
+    Raises
     ----------
-    :class:`KeyError` if client.vcLog channel is undefined.
+    :class:`KeyError`
+        if client.vcLog channel is undefined.  
         Note: It still outputs the given messge to console and to the client's default log channel.
     
-    ### Returns
+    Returns
     -----------
-    :class:`discord.Message` if client.vcLog channel is defined
+    :class:`discord.Message`
+        if client.vcLog channel is defined
     """
     try:
         log_channel_id = await client.get_guild_info(guild, "vcLog")
@@ -206,16 +212,24 @@ async def executed_in_dms(itx: discord.Interaction = None,
     """
     Make a command guild-only by telling people in DMs that they can't use the command
 
-    ### Parameters:
-    itx: :class:`discord.Interaction` (used for interactions)
-        The interaction to check if it was used in a server - and to reply to
-    message: :class:`discord.Message` (used for events)
-        The message to check if it was used in a server
-    channel: DMChannel or Guild channel
-        The channel to check if it was used in a server
+    Parameters
+    -----------
+    itx: :class:`discord.Interaction`
+        (used for interactions) The interaction to check if it was used in a server - and to reply to.
+    message: :class:`discord.Message`
+        (used for events) The message to check if it was used in a server.
+    channel: :class:`discord.DMChannel` | :class:`discord.GuildChannel`
+        The channel to check if it was used in a server.
 
-    ### Returns:
-    :class:`bool` if command was executed in DMs (for 'if ... : continue')
+    Returns
+    --------
+    :class:`bool`
+        if command was executed in DMs (for 'if ... : continue')
+
+    Raises
+    -------
+    :class:`AssertionError`
+        if the user privided not **exactly one** of [itx, message, channel] parameters.
     """
     assert len([i for i in [itx, message, channel] if i is not None]) == 1, ValueError("Give an itx, message, or channel, not multiple!")
     id_object: discord.Message | discord.Interaction | discord.TextChannel = next(i for i in [itx, message, channel] if i is not None)

@@ -3,7 +3,8 @@ class EqualDexRegion:
         """
         Create a region shell to neatly encapsulate and separate api data.
 
-        ### Parameters
+        Parameters
+        -----------
         data: :class:`dict`
             A dictionary with keys 'region_id', 'name', 'continent', 'url', and 'issues'.
         """

@@ -17,13 +17,14 @@ async def delete_starboard_message(client: Bot, starboard_message: discord.Messa
     """
     Handles custom starboard message deletion messages and preventing double logging messages when the bot removes a starboard message.
 
-    ### Parameters
+    Parameters
+    -----------
     client: :class:`Bot`
         The bot, to get the correct logging channel.
     starboard_message: :class:`discord.Message`
         The starboard message to delete.
     reason: :class:`str`
-        The reason of deletion.
+        The reason for deletion.
     """
     await log_to_guild(client, starboard_message.guild, reason)
     starboard_message_ids_marked_for_deletion.append(starboard_message.id)
@@ -37,7 +38,8 @@ async def fetch_starboard_original_message(client: Bot, starboard_message: disco
     """
     Uses the 'jump to original' link in a starboard message to fetch its original author's message.
 
-    ### Parameters
+    Parameters
+    -----------
     client: :class:`Bot`
         The bot, to get the correct logging channel.
     starboard_message: :class:`discord.Message`
@@ -45,8 +47,16 @@ async def fetch_starboard_original_message(client: Bot, starboard_message: disco
     starboard_emoji: :class:`discord.Emoji`
         The starboard upvote emoji, used in logging messages.
 
-    ### Returns
-    The original author's message or None if not found (no permission, or can't be found). If the original message was deleted, it deletes its starboard message too.
+    Returns
+    --------
+    :class:`discord.Message`:
+        The original author's message.  
+    :class:`None`:
+        If the original author's message was not found (no permission, or can't be found).
+    
+    Regards
+    --------
+    If the original message was deleted, it deletes its starboard message too.
     """
     # find original message
     if len(starboard_message.embeds) == 0:
@@ -77,13 +87,14 @@ async def update_starboard_message_score(client: Bot, starboard_message: discord
     """
     Check a starboard message and original message's reactions and calculate its score. Negative scores can cause the message to be removed from the starboard.
     
-    ### Parameters
+    Parameters
+    -----------
     client: :class:`Bot`
         The bot, to get the correct logging channel.
     starboard_message: :class:`discord.Message`
         The starboard message to update.
     starboard_emoji: :class:`discord.Emoji`
-        The starboard upvote emoji (for scoring)
+        The starboard upvote emoji (for scoring).
     downvote_init_value: :class:`int`
         The minimum required votes before a negative score can cause the message to be deleted.
     """
@@ -151,13 +162,14 @@ async def get_or_fetch_starboard_messages(starboard_channel: discord.abc.GuildCh
     other instance of the fetching function is done and retrieves the cached list. The list is 
     stored for STARBOARD_REFRESH_DELAY seconds.
 
-    ### Parameters
-    starboard_channel: :class:`discord.abc.GuildChannel` | :class:`discord.abc.PrivateChannel` | :class:`discord.Thread` | `None`
+    Parameters
+    -----------
+    starboard_channel: :class:`discord.abc.GuildChannel` | :class:`discord.abc.PrivateChannel` | :class:`discord.Thread` | :class:`None`
         The starboard channel to fetch messages from.
     
-    ### Returns
+    Returns
     :class:`list[discord.Message]`:
-        A list of starboard messages (send by the bot) in the starboard channel.
+        A list of starboard messages (sent by the bot) in the starboard channel.
     """
     global busy_updating_starboard_messages, local_starboard_message_list, local_starboard_message_list_refresh_timestamp
     if not busy_updating_starboard_messages and mktime(datetime.now(timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > STARBOARD_REFRESH_DELAY: # refresh once every 1000 seconds

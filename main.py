@@ -7,9 +7,10 @@ import sys # to stop the program (and automatically restart, thanks to pterodact
 import logging # to set logging level to not DEBUG and hide unnecessary logs
 import traceback # for crash logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling Reminders
-from pymongo.database import Database as pydb # for MongoDB database
+from pymongo.database import Database as pymongodatabase # for MongoDB database typing
 from pymongo import MongoClient
-import motor.motor_asyncio as motor # for making Mongo run asynchronously (during api calls)
+import motor.motor_asyncio as motorasync # for making Mongo run asynchronously (during api calls)
+import motor.core as motorcore # for typing
 
 from resources.utils.utils import debug # for logging crash messages
 from resources.customs.bot import Bot
@@ -17,7 +18,7 @@ from resources.customs.reminders import ReminderObject # Reminders (/reminders r
 from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 
-BOT_VERSION = "1.2.9.9"
+BOT_VERSION = "1.2.9.10"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
@@ -57,13 +58,23 @@ EXTENSIONS = [
 #       use embeds (for starboard)
 #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
-def get_token_data() -> tuple[str, dict, pydb, motor.core.AgnosticDatabase]:
+def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.AgnosticDatabase]:
     """
     Ensures the api_keys.json file contains all of the bot's required keys, and uses these keys to start a link to the MongoDB.
 
-    Returns:
+    Returns
     --------
-    `tuple[discord_token, synchronous_db_connection, async_db_connection]` tuple of discord bot token and database client cluster connections
+    :class:`tuple[discord_token, other_api_keys, synchronous_db_connection, async_db_connection]`:
+        Tuple of discord bot token and database client cluster connections.
+
+    Raises
+    -------
+    :class:`FileNotFoundError`:
+        if the api_keys.json file does not exist.
+    :class:`json.decoder.JSONDecodeError`:
+        if the api_keys.json file is not in correct JSON format.
+    :class:`KeyError`:
+        if the api_keys.json file is missing the api key for an api used in the program.
     """
     debug(f"[#+   ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
     # debug(f"[+     ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
@@ -72,19 +83,25 @@ def get_token_data() -> tuple[str, dict, pydb, motor.core.AgnosticDatabase]:
             api_keys = json.loads(f.read())
         tokens = {}
         bot_token: str = api_keys['Discord']
+        missing_tokens: list[str] = []
         for key in ['MongoDB', 'Open Exchange Rates', 'Wolfram Alpha']:
             # copy every other key to new dictionary to check if every key is in the file.
+            if key not in api_keys:
+                missing_tokens.append(key)
+                continue
             tokens[key] = api_keys[key]
+    except FileNotFoundError:
+        raise
     except json.decoder.JSONDecodeError:
-        raise SyntaxError("Invalid JSON file. Please ensure it has correct formatting.").with_traceback(None)
-    except KeyError as ex:
-        raise KeyError("Missing API key for: " + str(ex)).with_traceback(None)
-    # mongoURI = open("mongo.txt","r").read()
+        raise json.decoder.JSONDecodeError("Invalid JSON file. Please ensure it has correct formatting.").with_traceback(None)
+    if missing_tokens:
+        raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
+    
     debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
-    cluster = MongoClient(tokens['MongoDB'])
-    RinaDB = cluster["Rina"]
-    cluster = motor.AsyncIOMotorClient(tokens['MongoDB'])
-    asyncRinaDB = cluster["Rina"]
+    cluster: MongoClient = MongoClient(tokens['MongoDB'])
+    RinaDB: pymongodatabase = cluster["Rina"]
+    cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(tokens['MongoDB'])
+    asyncRinaDB: motorcore.AgnosticDatabase = cluster["Rina"]
     debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
     return (bot_token, tokens, RinaDB, asyncRinaDB)
 
@@ -92,9 +109,10 @@ def get_version() -> str:
     """
     Dumb code for cool version updates. Reads version file and matches with current version string. Updates file if string is newer, and adds another ".%d" for how often the bot has been started in this version.
 
-    Returns:
+    Returns
     --------
-    `str` Current version/instance of the bot.
+    :class:`str`:
+        Current version/instance of the bot.
     """
     fileVersion = BOT_VERSION.split(".")
     try:
@@ -115,7 +133,7 @@ def get_version() -> str:
         f.write(f"{version}")
     return version
 
-def create_client(tokens: dict, RinaDB: pydb, asyncRinaDB: motor.core.AgnosticDatabase, version: str) -> Bot:
+def create_client(tokens: dict, RinaDB: pymongodatabase, asyncRinaDB: motorcore.AgnosticDatabase, version: str) -> Bot:
     debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
@@ -235,21 +253,28 @@ if __name__ == '__main__':
     #endregion
     
     #region Crash event handling
-    async def send_crash_message(error_type: str, traceback_text: str, error_source: str, color: discord.Colour, itx: discord.Interaction=None):
+    async def send_crash_message(
+            error_type: str,
+            traceback_text: str,
+            error_source: str,
+            color: discord.Colour,
+            itx: discord.Interaction | None = None
+    ) -> None:
         """
         Sends crash message to Rina's main logging channel
 
-        ### Parameters
+        Parameters
+        -----------
         error_type: :class:`str`
             Is it an 'Error' or an 'AppCommand Error'
         traceback_text: :class:`str`
-            What is the traceback?
+            The traceback to send.
         error_source: :class:`str`
             Name of the error source, displayed at the top of the message. Think of event or command.
         color: :class:`discord.Colour`
-            Color of the discord embed
-        itx (optional): :class:`discord.Interaction`
-            Interaction with a potential guild. This might allow Rina to send the crash log to that guild instead
+            Color of the discord embed.
+        itx: :class:`discord.Interaction` | :class:`None`, optional
+            Interaction with a potential guild. This might allow Rina to send the crash log to that guild instead. Default: None.
         """
 
         log_guild: discord.Guild
