@@ -1,7 +1,7 @@
 import discord
 
 
-class ConfirmationView_VcTable_AutorizedMode(discord.ui.View):
+class ConfirmationView_VcTable(discord.ui.View):
     def __init__(self, timeout=None):
         super().__init__()
         self.value = None
@@ -19,3 +19,4 @@ class ConfirmationView_VcTable_AutorizedMode(discord.ui.View):
     async def cancel(self, _itx: discord.Interaction, _button: discord.ui.Button):
         self.value = 0
         self.stop()
+        
