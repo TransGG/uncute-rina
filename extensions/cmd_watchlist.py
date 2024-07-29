@@ -83,10 +83,10 @@ class WatchList(commands.Cog):
                                         f"If you want to use this message anyway, add \" | overwrite\" after the message id\n"
                                         f"(example: \"1817305029878989603 | overwrite\")", ephemeral=True)
                 return
-            mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url})\n> {reported_message.content}\n"
+            mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url})\n>>> {reported_message.content}\n"
             if allow_different_report_author:
                 mentioned_msg_info = f"\n\n[Reported Message]({reported_message.jump_url}) (message " \
-                                        f"by {reported_message.author.mention})\n> {reported_message.content}\n"
+                                        f"by {reported_message.author.mention})\n>>> {reported_message.content}\n"
             if reported_message.attachments:
                 mentioned_msg_info += f"(:newspaper: Contains {len(reported_message.attachments)} attachments)\n"
 
@@ -130,7 +130,7 @@ class WatchList(commands.Cog):
             if allow_different_report_author:
                 a = await thread.send(f"Reported user: {user.mention} (`{user.id}`) (mentioned message author below)", allowed_mentions=discord.AllowedMentions.none())
             b = await thread.send(f"Reported message: {reported_message.author.mention} (`{reported_message.author.id}`) - {reported_message.jump_url}", allowed_mentions=discord.AllowedMentions.none())
-            await thread.send(f"> {reported_message.content}",allowed_mentions=discord.AllowedMentions.none())
+            await thread.send(f">>> {reported_message.content}",allowed_mentions=discord.AllowedMentions.none())
             
             if allow_different_report_author:
                 copyable_version = a
@@ -258,85 +258,20 @@ class WatchList(commands.Cog):
             private_notes = fields["private notes"]
         # action_name = message.channel.name
 
-        watch_channel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
-        for thread in watch_channel.threads:
-            try:
-                starter_message = await thread.parent.fetch_message(thread.id)
-            except discord.errors.NotFound:
-                # someone removed the message that the thread belongs to, without deleting the thread.
-                await log_to_guild(self.client, message.guild, ":octagonal_sign: :bangbang: Someone removed a watchlist message without deleting its matching thread!")
-                return
-            if len(starter_message.embeds) == 0:
-                continue
-            if starter_message.embeds[0].author.url is None and starter_message.embeds[0].timestamp is None:
-                # attempt to fix the embed message
-                reason: str = ""
-                reason_details_link: str = None
-                reported_user: discord.User = None
-                reported_message_link: str = None
-                reported_message_text: str = None
+        watch_channel: discord.TextChannel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
+        watchlist_index = await get_or_fetch_watchlist_index(watch_channel)
+        on_watchlist: bool = reported_user_id in watchlist_index
 
-                async for message in thread.history(limit=10, oldest_first=True):
-                    if message.author.id == self.client.user.id:
-                        if message.content.startswith("Reported user: ") or message.content.startswith("Reported message: "):
-                            user_id_start_index = message.content.index("`")
-                            user_id_end_index = message.content.index("`", user_id_start_index+1)
-                            user_id = int(message.content[user_id_start_index:user_id_end_index].replace("`", ""))
-                            reported_user = self.client.get_user(user_id)
-                        if message.content.startswith("Reported message: "):
-                            message_link_start_index = message.content.index("https://discord.com/channels/")
-                            reported_message_link = message.content[message_link_start_index:]
-                        if message.content.startswith("> "):
-                            reported_message_text = message.content[2:]
-                        if message.content.startswith("Reason: "):
-                            reason = message.content[7:].strip()
-                            reported_details_link = message.jump_url
+        # for thread in watch_channel.threads:
+        if on_watchlist:
+            thread: discord.Thread = watch_channel.guild.fetch_channel(watchlist_index[reported_user_id])
 
-                if reported_message_link is not None:
-                    reason += f"\n\n[Reported message]({reported_message_link})"
-                if reported_message_text is not None:
-                    reason += f"\n> {reported_message_text}\n"
-                if reason_details_link is not None:
-                    reason += f"\n\n[Jump to plain version]({reason_details_link})"
-
-                embed = discord.Embed(
-                    color=discord.Colour.from_rgb(r=0, g=0, b=0),
-                    title=f'',
-                    description=f"{reason}\n\n[Jump to plain version]({reported_details_link})",
-                    timestamp=starter_message.created_at
-                )
-                embed.set_author(
-                        name=f"{reported_user.name} - {reported_user.display_name}",
-                        url=f"https://warned.username/{reported_user.id}/",
-                        icon_url=reported_user.display_avatar.url
-                )
-                await starter_message.edit(embed=embed)
-                starter_message.embeds[0] = embed
-
-
-            #   0       1          2                     3
-            # https:  /  /  warned.username  /  262913789375021056  /
-            if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
-                await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
-                                    f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
-                                    f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
-                                    f"Private notes:\n> {private_notes}" * bool(private_notes), 
-                                  allowed_mentions=discord.AllowedMentions.none())
-                return
-        else:
-            async for thread in watch_channel.archived_threads(limit=None):
-                starter_message = await thread.parent.fetch_message(thread.id)
-                if len(starter_message.embeds) == 0:
-                    continue
-                #   0       1          2                     3
-                # https:  /  /  warned.username  /  262913789375021056  /
-                if starter_message.embeds[0].author.url.split("/")[3] == str(reported_user_id):
-                    await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
-                                        f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
-                                        f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
-                                        f"Private notes:\n> {private_notes}" * bool(private_notes), 
-                                    allowed_mentions=discord.AllowedMentions.none())
-                    return
+            await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
+                              f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
+                              f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
+                              f"Private notes:\n> {private_notes}" * bool(private_notes), 
+                              allowed_mentions=discord.AllowedMentions.none())
+            return
 
     # @app_commands.command(name="send_fake_log_embed",description="make a user report (fake).")
     # @app_commands.describe(target="User to add", reason="Reason for adding", rule="rule to punish for", private_notes="private notes to include")
