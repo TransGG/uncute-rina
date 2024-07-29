@@ -1174,7 +1174,9 @@ class CustomVcs(commands.Cog):
                           f"{self.client.get_command_mention('vctable owner')} `mode: ` `user: `: Add/Remove an owner to your table. If you want to check the owners, then it doesn't matter what you fill in for 'user'\n"
                           f"{self.client.get_command_mention('vctable mute')} `mode: ` `user: `: Mute/Unmute a user in your table. If you want to check the muted participants, see ^ (same as for checking owners)\n"
                           f"{self.client.get_command_mention('vctable make_authorized_only')}: Toggle the whitelist for speaking\n"
-                          f"{self.client.get_command_mention('vctable speaker')} `mode: ` `user: `: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted participants\n")
+                          f"{self.client.get_command_mention('vctable speaker')} `mode: ` `user: `: Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only is enabled. Checking speakers works the same as checking owners and muted users\n"
+                          f"{self.client.get_command_mention('vctable lock')}: Similar to make-authorized-only, but for viewing the voice channel and its message history.\n"
+                          f"{self.client.get_command_mention('vctable participant')} `mode: ` `user: `: Add/Remove a participant to your table. This user gets whitelisted to view the channel and message history when the 'lock' is activated.\n")
         await itx.response.send_message(embeds=[embed1,embed2], ephemeral=True)
     # endregion Custom VcTables
 

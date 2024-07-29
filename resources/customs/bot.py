@@ -71,7 +71,7 @@ class Bot(commands.Bot):
         else:
             return development_ids
     
-    def get_command_mention(self, command_string: str):
+    def get_command_mention(self, command_string: str) -> str:
         """
         Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
 

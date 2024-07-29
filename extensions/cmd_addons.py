@@ -891,6 +891,29 @@ class OtherAddons(commands.Cog):
         cmd_mention = self.client.get_command_mention("add_poll_reactions")
         await log_to_guild(self.client, itx.guild, f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
 
+    @app_commands.command(name="get_rina_command_mention", description="Sends a hidden command mention for your command")
+    @app_commands.describe(command="Command to get a mention for (with/out slash)")
+    async def find_command_mention_itx(self, itx: discord.Interaction, command: str):
+        command = command.removeprefix("/").lower()
+        unallowed_characters = []
+        try:
+            app_commands.commands.validate_name(command)
+        except ValueError:
+            await itx.response.send_message("Heads up: your command contains unavailable characters. Discord only allows "
+                                            "names to be between 1-32 characters and contain only lower-case letters, "
+                                            "numbers, hyphens, underscores, or spaces (for command groups).",
+                                            ephemeral=True)
+            return
+        
+        cmd_mention = self.client.get_command_mention(command)
+        await itx.response.send_message(
+            f"Your input: `{command}`.\n"
+            f"Command mention: {cmd_mention}.\n"
+            f"Raw command mention: `{cmd_mention}`\n"
+            "-# Did it not work? Try it with `help`",
+            ephemeral=True
+        )
+                                        
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))
