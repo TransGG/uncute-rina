@@ -2,8 +2,8 @@ import discord, discord.ext.commands as commands, discord.app_commands as app_co
 from resources.utils.utils import log_to_guild # to log custom vc changes
 from resources.utils.permissions import is_verified, is_staff, is_admin # to check permissions for staff commands
 from resources.customs.bot import Bot
-from resources.views.customvcs import ConfirmationView_VcTable
 from resources.modals.customvcs import CustomVcStaffEditorModal, clear_vc_rename_log, try_store_vc_rename
+from resources.views.generics import GenericTwoButtonView
 
 
 def voice_channel_is_custom(
@@ -1066,7 +1066,7 @@ class CustomVcs(commands.Cog):
                 return
 
         # if authorized-only is disabled:
-        view = ConfirmationView_VcTable()
+        view = GenericTwoButtonView(("Confirm", discord.ButtonStyle.green), ("Cancel", discord.ButtonStyle.red))
         cmd_mention = self.client.get_command_mention("vctable speaker")
         await itx.response.send_message(f"Enabling authorized-only (a whitelist) will make only owners and speakers (people that have been whitelisted) able to talk.\n"
                                         f"Please make sure everyone is aware of this change. "
@@ -1074,7 +1074,7 @@ class CustomVcs(commands.Cog):
                                         ephemeral=True,
                                         view=view)
         await view.wait()
-        if view.value == 1:
+        if view.value:
             perms_override = channel.overwrites[itx.guild.default_role].update(speak=False)
             await channel.set_permissions(itx.guild.default_role, overwrite=perms_override, reason="VcTable edited: enabled authorized-only for speaking")
             await channel.send(f"{itx.user.mention} enabled whitelist for speaking.", allowed_mentions=discord.AllowedMentions.none())
@@ -1105,7 +1105,7 @@ class CustomVcs(commands.Cog):
                 return
 
         # if lock is disabled:
-        view = ConfirmationView_VcTable()
+        view = GenericTwoButtonView(("Confirm", discord.ButtonStyle.green), ("Cancel", discord.ButtonStyle.red))
         cmd_mention = self.client.get_command_mention("vctable participant")
         await itx.response.send_message(f"Enabling the lock (a whitelist) will make only owners and participants (people that "
                                         f"have been whitelisted) able to see this server and message history.\n"
@@ -1114,7 +1114,7 @@ class CustomVcs(commands.Cog):
                                         ephemeral=True,
                                         view=view)
         await view.wait()
-        if view.value == 1:
+        if view.value:
             perms_override = channel.overwrites[itx.guild.default_role].update(view_channel=False, read_message_history=False)
             await channel.set_permissions(itx.guild.default_role, overwrite=perms_override, reason="VcTable edited: enabled viewing lock")
             await channel.send(f"{itx.user.mention} enabled whitelist for viewing the voice channel.", allowed_mentions=discord.AllowedMentions.none())
