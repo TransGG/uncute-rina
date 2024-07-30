@@ -33,14 +33,15 @@ class SendPublicly_TagView(discord.ui.View):
         await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)
         try:
             # try sending the message without replying to the previous ephemeral
-            msg = await itx.channel.send("", embed=self.embed, allowed_mentions=discord.AllowedMentions.none(), wait=True)
+            msg = await itx.channel.send("", embed=self.embed, allowed_mentions=discord.AllowedMentions.none())
         except discord.Forbidden:
-            msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none(), wait=True)
-        self.logmsg += f", in {itx.channel.mention} (`{itx.channel.id}`)\n[Jump to the tag message]({msg.jump_url})"
-        if self.value == 2 and self.logmsg is not None:
-            await log_to_guild(self.client, itx.guild, self.logmsg)
-            staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
-            await staff_message_reports_channel.send(self.logmsg)
+            msg = await itx.followup.send("", embed=self.embed, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
+        if self.logmsg:
+            self.logmsg += f", in {itx.channel.mention} (`{itx.channel.id}`)\n[Jump to the tag message]({msg.jump_url})"
+            if self.value == 2:
+                await log_to_guild(self.client, itx.guild, self.logmsg)
+                staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
+                await staff_message_reports_channel.send(self.logmsg)
         self.stop()
 
     async def on_timeout(self):

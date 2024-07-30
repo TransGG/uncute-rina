@@ -67,8 +67,8 @@ class Tags: # TODO: move to own file
             else:
                 view = SendPublicly_TagView(client, embed, timeout=60, tag_name=tag_name)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
-            if await view.wait():
-                await itx.edit_original_response(view=view)
+            # if await view.wait(): # TODO: remove commented-out code; it handles everything in view class already, why is it here?
+            #     await itx.edit_original_response(view=view)
 
     # region Tags
     async def send_report_info(self, tag_name: str, context: discord.Interaction | discord.TextChannel, client: Bot, additional_info: None | list[str, int]=None, public=False, anonymous=True):

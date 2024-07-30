@@ -18,7 +18,7 @@ from resources.customs.reminders import ReminderObject # Reminders (/reminders r
 from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 
-BOT_VERSION = "1.2.9.14"
+BOT_VERSION = "1.2.9.15"
 TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 appcommanderror_cooldown = 0
 
