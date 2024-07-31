@@ -264,7 +264,7 @@ class WatchList(commands.Cog):
 
         # for thread in watch_channel.threads:
         if on_watchlist:
-            thread: discord.Thread = watch_channel.guild.fetch_channel(watchlist_index[reported_user_id])
+            thread: discord.Thread = await watch_channel.guild.fetch_channel(watchlist_index[reported_user_id])
 
             await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
                               f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
@@ -273,20 +273,6 @@ class WatchList(commands.Cog):
                               allowed_mentions=discord.AllowedMentions.none())
             return
 
-    # @app_commands.command(name="send_fake_log_embed",description="make a user report (fake).")
-    # @app_commands.describe(target="User to add", reason="Reason for adding", rule="rule to punish for", private_notes="private notes to include")
-    # async def send_fake_log_embed(self, itx: discord.Interaction, target: discord.User, reason: str = "", rule: str = None, private_notes: str = ""):
-    #     embed = discord.Embed(title="did a log thing for x", color=16705372)
-    #     embed.add_field(name="User",value = f"{target.mention} (`{target.id}`)", inline=True)
-    #     embed.add_field(name="Moderator",value = f"{itx.user.mention}", inline=True)
-    #     embed.add_field(name="\u200b",value = f"\u200b", inline=False)
-    #     embed.add_field(name="Rule",value = f">>> {rule}", inline=True)
-    #     embed.add_field(name="\u200b",value = f"\u200b", inline=False)
-    #     embed.add_field(name="Reason",value = f">>> {reason}")
-    #     embed.add_field(name="\u200b",value = f"\u200b", inline=False)
-    #     embed.add_field(name="Private Notes",value = f">>> {private_notes}")
-    #     await self.client.get_channel(1143642283577725009).send(embed=embed)
 
-
-async def setup(client):
+async def setup(client: Bot):
     await client.add_cog(WatchList(client))

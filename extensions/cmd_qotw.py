@@ -2,7 +2,7 @@ import discord, discord.ext.commands as commands, discord.app_commands as app_co
 from datetime import datetime # to get embed send time for embed because cool (serves no real purpose)
 from resources.customs.bot import Bot
 from resources.utils.permissions import is_staff # for dev request thread ping
-
+from resources.utils.utils import get_mod_ticket_channel_id
 
 dev_request_emoji_color_options = {
     "🔴": discord.Colour.from_rgb(r=255,g=100,b=100),
@@ -19,8 +19,11 @@ class QOTW(commands.Cog):
     @app_commands.command(name="qotw",description="Suggest a question for the weekly queue!")
     @app_commands.describe(question="What question would you like to add?")
     async def qotw(self, itx: discord.Interaction, question: str):
-        if len(question) > 250:
-            await itx.response.send_message("Please make your question shorter! If you have a special request, please make a ticket (in #contact-staff)",ephemeral=True)
+        if len(question) > 400:
+            channel_id = get_mod_ticket_channel_id(self.client, guild_id=itx.guild.id)
+            await itx.response.send_message(f"Please make your question shorter! (400 characters) If you have a special request, please make a ticket (in <#{channel_id}>)",ephemeral=True)
+            await itx.followup.send("-# "+question, ephemeral=True)
+            return
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
@@ -69,9 +72,9 @@ class DevRequest(commands.Cog):
         self.client = client
     
     @app_commands.command(name="developer_request",description="Suggest a bot idea to the TransPlace developers!")
-    @app_commands.describe(question="What idea would you like to share?")
-    async def developer_request(self, itx: discord.Interaction, question: str):
-        if len(question) > 1500:
+    @app_commands.describe(suggestion="What idea would you like to share?")
+    async def developer_request(self, itx: discord.Interaction, suggestion: app_commands.Range[str, 25, 1500]):
+        if len(suggestion) > 1500:
             await itx.response.send_message("Your suggestion won't fit! Please make your suggestion shorter. "
                                             "If you have a special request, you could make a ticket too (in #contact-staff)",ephemeral=True)
             return
@@ -91,11 +94,11 @@ class DevRequest(commands.Cog):
                     allowed_mentions=discord.AllowedMentions.none(),
                 )
             #make and join a thread under the question
-            thread = await msg.create_thread(name=f"BotRQ-{question[:48]}", auto_archive_duration=10080)
+            thread = await msg.create_thread(name=f"BotRQ-{suggestion[:48]}", auto_archive_duration=10080)
             await thread.join()
-            question = question.replace("\\n", "\n")
+            suggestion = suggestion.replace("\\n", "\n")
             #send a plaintext version of the question, and copy a link to it
-            copyable_version = await thread.send(f"{question}",allowed_mentions=discord.AllowedMentions.none())
+            copyable_version = await thread.send(f"{suggestion}",allowed_mentions=discord.AllowedMentions.none())
 
             # mention developers in a message edit, adding them all to the thread without mentioning them
             # and do the same for the requester, though this will only work if they're in the staff server..
@@ -107,7 +110,7 @@ class DevRequest(commands.Cog):
             embed = discord.Embed(
                     color=discord.Colour.from_rgb(r=255, g=255, b=172),
                     title=f'',
-                    description=f"{question}\n[Jump to plain version]({copyable_version.jump_url})",
+                    description=f"{suggestion}\n[Jump to plain version]({copyable_version.jump_url})",
                     timestamp=datetime.now()
                 )
             embed.set_author(

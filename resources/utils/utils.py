@@ -121,7 +121,7 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
         end = end[:-2]
     print(f"{time}{text}{colors['default']}"+end.replace('\r','\033[F'))
 
-def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | discord.Interaction):
+def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | discord.Interaction) -> int:
     """
     Fetch the #contact-staff ticket channel for a specific guild.
 

@@ -1,7 +1,7 @@
 import discord, discord.ext.commands as commands, discord.app_commands as app_commands
 from resources.customs.bot import Bot
-from resources.views.help import PageView_HelpCommands_Help
-from resources.customs.help import HelpPage
+from resources.views.help import HelpPageView
+from resources.customs.help import HelpPage, generate_help_page_embed
 from resources.utils.stringhelper import replace_string_command_mentions
 
 
@@ -33,7 +33,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     #region Default pages (home / index)
     1 : HelpPage(
         title = "Rina's commands",
-        description = "Hey there. This is Rina. I'm a bot that does silly things for TransPlace and some linked servers. I'm being maintained by <@262913789375021056>.\n"
+        description = "Hey there. This is Rina. I'm a bot that does silly things for TransPlace and some linked servers. I'm mostly being maintained by <@262913789375021056>.\n"
                       "I can do many things like looking up tone indicators or words, or sharing server info and questions of the week. To share my commands, I've made this cool interactive menu.\n"
                       "\n"
                       "Use the buttons below to cycle through different categories of commands!\n"
@@ -43,7 +43,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       "▶️ Next page: Index\n"
                       "🔢 Jump to page\n"
                       "\n"
-                      "Do you have a cool bot idea? use %%developer_request%% to suggest them to staff!"
+                      "Do you have a cool bot idea? Use %%developer_request%% to suggest them to staff!"
     ),
     2 : HelpPage(
         title = "Index",
@@ -64,7 +64,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     #endregion
 
     ## ### Bot functions:
-    ## #      add_poll_reactions, version, help, commands
+    ## #      add_poll_reactions, version, help, commands, get_rina_command_mention
     ## ### Utility:
     ## #      roll, convert_unit, reminders, todo
     ## ### Suggestion commands:
@@ -82,15 +82,15 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
 
 
 
-
     #region Expanded index pages (commands)
     3 : HelpPage( # index: Bot functions
         title = "Bot functions",
-        description = "This section will list some commands that may help you:\n"
+        description = "This section will list some simple rina-related commands that may help you:\n"
                       "\n"
                       ". . **101:** /help and /commands\n"
                       ". . **102:** version\n"
-                      ". . **103:** add_poll_reactions\n"
+                      ". . **103:** get_rina_command_mention\n"
+                      ". . **105:** add_poll_reactions\n"
     ),
     4 : HelpPage( # index: Utility
         title = "Utility",
@@ -101,18 +101,25 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       ". . **114:** convert_unit\n"
                       ". . **115:** todo\n",
     ),
-    5 : HelpPage( # index: Suggestion commands
+    5: HelpPage( # index: Suggestion commands
+        title="Suggestion commands",
+        description = "Sometimes you just want to share your ideas with other people, you know?\b"
+                      "\n"
+                      ". . **121:** developer_request\n"
+                      ". . **122:** qotw (question of the week)\n"
+    ),
+    6 : HelpPage( 
         title = "Work in progress...",
         description = "This section is still being worked on! (help, so much text to write D: )\n"
                       "Scroll a few pages ahead to see what the rest of the help pages look like!"
     ),
-    6 : HelpPage( # index: Suggestion commands
+    7 : HelpPage( # index: Suggestion commands
         title = "placeholder (skip ahead)",
         description = "placeholder (skip ahead)"
     ),
     #endregion
     #region Bot Functions
-    101 : HelpPage( # /help ad /commands
+    101 : HelpPage( # /help and /commands
         title = "The help command and command list.",
         description = "Obviously the most important command on the bot, this command attempts to explain "
                       "every command and function in the bot. This page will also be the first page "
@@ -157,7 +164,37 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             )
         ]
     ),
-    103 : HelpPage( # /add_poll_reactions
+    103 : HelpPage( # get_rina_command_mention
+        title="Sharing Rina's commands the cooler way :sunglasses:",
+        description = "Rina has a lot of commands, all in a big list. Other bots may also have "
+                      "commands that are put in this same list.. Finding the right command "
+                      "between all those /help commands with the same name can be quite "
+                      "difficult.\n"
+                      "\n"
+                      "For that reason, this cool command lets you do things like -> %%help%% <- this "
+                      "for Rina!\n"
+                      "\n"
+                      "On a technical level, all commands have a name and unique ID, like "
+                      "so: `%%help%%`. Other bot commands with the same name have a different "
+                      "ID. Mismatched IDs will autofill incorrect on Android, and try to run "
+                      "a nonexisting command: </id_is_1234:1234> (`</id_is_1234:1234>`).",
+        fields = [
+            (
+                "Parameters",
+                "`command`: The command you want to convert into a cool mention.\n"
+                "- The name of one of Rina's commands.\n"
+                "- If it's an invalid command, rina will still give a response but it won't be in a mention format.\n"
+            ),
+            (
+                "Examples",
+                "- %%get_rina_command_mention%% `command:/version`\n"
+                "  - Gives you the input, a mention preview, and a copyable mention.\n"
+                "- %%get_rina_command_mention%% `command:add_poll_reactions`\n"
+                "  - Gives you the command mention information for /add_poll_reactions.\n"
+            )
+        ]
+    ),
+    104 : HelpPage( # /add_poll_reactions
         title = "Adding voting emojis / Creating tiny polls",
         description = "Sometimes you just want to see everyone's opinion on something, so you "
                       "add a thumbs up and thumbs down emoji to your message. But what if you "
@@ -258,7 +295,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             (
                 "reminder reminders",
                 "- %%reminder reminders%% [`item: `]\n"
-                "  - Show a list of active reminders. They each have a number. Use `item:number` to view more information about this reminder."
+                "  - Show a list of active reminders. They each have a number. Use `item:number` to view more information about a specific reminder."
             ),
             (
                 "reminder remove",
@@ -310,11 +347,66 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Your to-do list would look like this. Note how each item starts with a number. Use this number to remove them.\n"
                 "    - Found 4 to-do items:\n"
                 "    - `0`: Create a nice help command\n"
+                "    - `1`: Share cool command with everyone\n"
                 "- %%todo%% `mode:Remove to-do` `todo:0`\n"
                 "  - Remove to-do item number 0 from your list. Use %%todo%% `mode:Check` to see what number to use to remove the right item.\n"
                 "  - Keep in mind that the order will shift after you've removed an item, so redo the `check` command to make sure you're removing the right command when removing multiple to-do items at once!"
             )
         ]
+    ),
+    #endregion
+    #region Suggestion commands
+    121 : HelpPage( # developer_request
+        title = "Send suggestions for bot developers!",
+        description = "If you ever have any suggestions or ideas for any bots, feel free "
+                      "to use this command. This can include:\n"
+                      "- Bigger features like starboard,\n"
+                      "- Smaller features like a %%add_poll_reactions%%,\n"
+                      "- Silly features like %%compliment%%,\n"
+                      "- A spelling mistake of 1 mistyped character.\n"
+                      "It doesn't have to be much :) so long as you explain your ideas "
+                      "(or you would have to DM a staff member to give extra explanation).",
+        fields = (
+            (
+                "Parameters",
+                "`suggestion`: The idea you would like to share.\n"
+                "- A message between 20 and 1500 characters. Try to be detailed so we can figure "
+                  "out what you want without having to ask for more details :)\n"
+            ),
+            (
+                "Examples (real)",
+                "- %%developer_request%% `suggestion:idea for rina: make tags just post the message directly "
+                  "into the channel instead of as a command follow-up so it doesn't show the \"message could "
+                  "not be loaded\" error :3`\n"
+                "  - Sends a message to a developer channel on the staff server.\n"
+                "- %%developer_request%% `suggestion:For Amari, make voice channels not give xp if someone is "
+                  "alone in a voice channel, to prevent people camping in vc alone (or falling asleep in vc) for xp`\n"
+                "  - yeah, it does the thingy"
+            )
+        )
+    ),
+    122 : HelpPage( # qotw
+        title = "Questions of the week",
+        description = "You might have seen a Question of the Week pop up roughly once a week, \n"
+                      "If you have any cool questions you want to ask to the server, feel free to ask them!\n"
+                      "\n"
+                      "Questions will be sent in a channel on the staff server, where we can vote, discuss, "
+                      "or give suggestions. To give your questions a better chance of being picked, make "
+                      "sure they can be answered by everyone.",
+        fields=(
+            (
+                "Parameters",
+                "`question`: The question you want to suggest.\n"
+                " - A question of max 400 characters to propose to the staff server.\n"
+            ),
+            (
+                "Examples",
+                "- %%qotw%% `question:do you have a favourite flower or plant?`\n"
+                "  - Sends your question to the staff team to vote :D\n"
+                "- %%qotw%% `question:Should cleo make more qotws?`\n"
+                "  - yes"
+            )
+        )
     )
     #endregion
 }
@@ -325,41 +417,12 @@ assert sorted(list(help_pages)) == list(help_pages) # all help pages are sorted 
 assert all([all([j in ["title", "description", "fields"] for j in help_pages[i]]) for i in help_pages]) # all pages only have one of these attributes
 
 
-def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
-    """
-    Helper command to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
-    Page fields are appended after the description, in the order they are given in the list.
-
-    Parameters
-    -----------
-    page: :class:`HelpPage`
-        The help page to reference.
-    page_number: :class:`int`
-        The page number of the help page. This number is added as footer, but is also used for the hue (HSV) value of the embed color.
-    client: :class:`Bot`
-        The bot instance for get_command_mention().
-
-    Returns:
-    :class:`discord.Embed`:
-        An embed of the given help page.
-    """
-    embed = discord.Embed(color = discord.Color.from_hsv((180 + page_number*10)/360, 0.4, 1),
-                          title = page["title"],
-                          description = replace_string_command_mentions(page["description"], client))
-    if "fields" in page:
-        for field in page["fields"]:
-            embed.add_field(name  = replace_string_command_mentions(field[0], client), 
-                            value = replace_string_command_mentions(field[1], client), 
-                            inline = False)
-    embed.set_footer(text="page: "+str(page_number))
-    return embed
-
-
 class HelpCommand(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
+
 
     async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
         if requested_page not in help_pages:
@@ -368,52 +431,12 @@ class HelpCommand(commands.Cog):
                 "the page keys to get to the right page number!"
             ), ephemeral=True)
             return
-        embed = discord.Embed(color = discord.Color.from_hsv(180/360, 0.4, 1),
-                              title = help_pages[requested_page]["title"],
-                              description = replace_string_command_mentions(help_pages[requested_page]["description"], self.client))
-        if "fields" in help_pages[requested_page]:
-            for field in help_pages[requested_page]["fields"]:
-                embed.add_field(name  = replace_string_command_mentions(field[0], self.client),
-                                value = replace_string_command_mentions(field[1], self.client),
-                                inline = False)
-
-        embed.set_footer(text = f"page: {requested_page}")
-
+        
+        embed = generate_help_page_embed(help_pages[FIRST_PAGE], FIRST_PAGE, self.client)
         await itx.response.send_message(embed = embed,
-                                        view = PageView_HelpCommands_Help(help_pages, requested_page, self.client),
+                                        view = HelpPageView(self.client, FIRST_PAGE, help_pages),
                                         ephemeral = True)
 
-
-        #region old help command
-#         out = f"""\
-# Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
-# {self.client.get_command_mention('add_poll_reactions')}: Add an up-/downvote emoji to a message (for voting)
-# {self.client.get_command_mention('commands')} or {self.client.get_command_mention('help')}: See this help page
-# {self.client.get_command_mention('compliment')}: Rina can compliment others (matching their pronoun role)
-# {self.client.get_command_mention('convert_unit')}: Convert a value from one to another! Distance, speed, currency, etc.
-# {self.client.get_command_mention('dictionary')}: Search for an lgbtq+-related or dictionary term!
-# {self.client.get_command_mention('equaldex')}: See LGBTQ safety and rights in a country (with API)
-# {self.client.get_command_mention('math')}: Ask Wolfram|Alpha for math or science help
-# {self.client.get_command_mention('nameusage gettop')}: See how many people are using the same name
-# {self.client.get_command_mention('pronouns')}: See someone's pronouns or edit your own
-# {self.client.get_command_mention('qotw')} and {self.client.get_command_mention('developer_request')}: Suggest a Question Of The Week or Bot Suggestion to staff
-# {self.client.get_command_mention('reminder reminders')}: Make or see your reminders
-# {self.client.get_command_mention('roll')}: Roll some dice with a random result
-# {self.client.get_command_mention('tag')}: Get information about some of the server's extra features
-# {self.client.get_command_mention('todo')}: Make, add, or remove items from your to-do list
-# {self.client.get_command_mention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)
-
-# Make a custom voice channel by joining "Join to create VC" (use {self.client.get_command_mention('tag')} `tag:customvc` for more info)
-# {self.client.get_command_mention('editvc')}: edit the name or user limit of your custom voice channel
-# {self.client.get_command_mention('vctable about')}: Learn about making your voice chat more on-topic!
-# """
-# # Check out the #join-a-table channel: In this channel, you can claim a channel for roleplaying or tabletop games for you and your group!
-# # The first person that joins/creates a table gets a Table Owner role, and can lock, unlock, or close their table.
-# # {self.client.get_command_mention('table lock')}, {self.client.get_command_mention('table unlock')}, {self.client.get_command_mention('table close')}
-# # You can also transfer your table ownership to another table member, after they joined your table: {self.client.get_command_mention('table newowner')}\
-# # """
-#         await itx.response.send_message(out, ephemeral=True)
-        #endregion
 
     @app_commands.command(name="help", description="A help command to learn more about me!")
     @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")
