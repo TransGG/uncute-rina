@@ -264,7 +264,7 @@ class WatchList(commands.Cog):
 
         # for thread in watch_channel.threads:
         if on_watchlist:
-            thread: discord.Thread = watch_channel.guild.fetch_channel(watchlist_index[reported_user_id])
+            thread: discord.Thread = await watch_channel.guild.fetch_channel(watchlist_index[reported_user_id])
 
             await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
                               f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +

@@ -30,7 +30,7 @@ class WatchlistReasonModal(discord.ui.Modal):
 
     def __init__(
             self, 
-            add_to_watchlist_func: typing.Coroutine[typing.Callable[[discord.Interaction, discord.User, str, str | None], None]], 
+            add_to_watchlist_func: typing.Callable[[discord.Interaction, discord.User, str, str | None], typing.Awaitable[None]], 
             title: str, 
             reported_user: discord.User, 
             message: discord.Message = None, 

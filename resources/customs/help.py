@@ -17,3 +17,4 @@ class HelpPage(TypedDict):
     title: str
     description: str
     fields: list[tuple[str,str]]
+    staff_only: bool = False
