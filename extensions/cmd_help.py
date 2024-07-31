@@ -1,7 +1,7 @@
 import discord, discord.ext.commands as commands, discord.app_commands as app_commands
 from resources.customs.bot import Bot
-from resources.views.help import PageView_HelpCommands_Help
-from resources.customs.help import HelpPage
+from resources.views.help import HelpPageView
+from resources.customs.help import HelpPage, generate_help_page_embed
 from resources.utils.stringhelper import replace_string_command_mentions
 
 
@@ -417,41 +417,12 @@ assert sorted(list(help_pages)) == list(help_pages) # all help pages are sorted 
 assert all([all([j in ["title", "description", "fields"] for j in help_pages[i]]) for i in help_pages]) # all pages only have one of these attributes
 
 
-def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
-    """
-    Helper command to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
-    Page fields are appended after the description, in the order they are given in the list.
-
-    Parameters
-    -----------
-    page: :class:`HelpPage`
-        The help page to reference.
-    page_number: :class:`int`
-        The page number of the help page. This number is added as footer, but is also used for the hue (HSV) value of the embed color.
-    client: :class:`Bot`
-        The bot instance for get_command_mention().
-
-    Returns:
-    :class:`discord.Embed`:
-        An embed of the given help page.
-    """
-    embed = discord.Embed(color = discord.Color.from_hsv((180 + page_number*10)/360, 0.4, 1),
-                          title = page["title"],
-                          description = replace_string_command_mentions(page["description"], client))
-    if "fields" in page:
-        for field in page["fields"]:
-            embed.add_field(name  = replace_string_command_mentions(field[0], client), 
-                            value = replace_string_command_mentions(field[1], client), 
-                            inline = False)
-    embed.set_footer(text="page: "+str(page_number))
-    return embed
-
-
 class HelpCommand(commands.Cog):
     def __init__(self, client: Bot):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
+
 
     async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
         if requested_page not in help_pages:
@@ -460,52 +431,12 @@ class HelpCommand(commands.Cog):
                 "the page keys to get to the right page number!"
             ), ephemeral=True)
             return
-        embed = discord.Embed(color = discord.Color.from_hsv(180/360, 0.4, 1),
-                              title = help_pages[requested_page]["title"],
-                              description = replace_string_command_mentions(help_pages[requested_page]["description"], self.client))
-        if "fields" in help_pages[requested_page]:
-            for field in help_pages[requested_page]["fields"]:
-                embed.add_field(name  = replace_string_command_mentions(field[0], self.client),
-                                value = replace_string_command_mentions(field[1], self.client),
-                                inline = False)
-
-        embed.set_footer(text = f"page: {requested_page}")
-
+        
+        embed = generate_help_page_embed(help_pages[FIRST_PAGE], FIRST_PAGE, self.client)
         await itx.response.send_message(embed = embed,
-                                        view = PageView_HelpCommands_Help(help_pages, requested_page, self.client),
+                                        view = HelpPageView(self.client, FIRST_PAGE, help_pages),
                                         ephemeral = True)
 
-
-        #region old help command
-#         out = f"""\
-# Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
-# {self.client.get_command_mention('add_poll_reactions')}: Add an up-/downvote emoji to a message (for voting)
-# {self.client.get_command_mention('commands')} or {self.client.get_command_mention('help')}: See this help page
-# {self.client.get_command_mention('compliment')}: Rina can compliment others (matching their pronoun role)
-# {self.client.get_command_mention('convert_unit')}: Convert a value from one to another! Distance, speed, currency, etc.
-# {self.client.get_command_mention('dictionary')}: Search for an lgbtq+-related or dictionary term!
-# {self.client.get_command_mention('equaldex')}: See LGBTQ safety and rights in a country (with API)
-# {self.client.get_command_mention('math')}: Ask Wolfram|Alpha for math or science help
-# {self.client.get_command_mention('nameusage gettop')}: See how many people are using the same name
-# {self.client.get_command_mention('pronouns')}: See someone's pronouns or edit your own
-# {self.client.get_command_mention('qotw')} and {self.client.get_command_mention('developer_request')}: Suggest a Question Of The Week or Bot Suggestion to staff
-# {self.client.get_command_mention('reminder reminders')}: Make or see your reminders
-# {self.client.get_command_mention('roll')}: Roll some dice with a random result
-# {self.client.get_command_mention('tag')}: Get information about some of the server's extra features
-# {self.client.get_command_mention('todo')}: Make, add, or remove items from your to-do list
-# {self.client.get_command_mention('toneindicator')}: Look up which tone tag/indicator matches your input (eg. /srs)
-
-# Make a custom voice channel by joining "Join to create VC" (use {self.client.get_command_mention('tag')} `tag:customvc` for more info)
-# {self.client.get_command_mention('editvc')}: edit the name or user limit of your custom voice channel
-# {self.client.get_command_mention('vctable about')}: Learn about making your voice chat more on-topic!
-# """
-# # Check out the #join-a-table channel: In this channel, you can claim a channel for roleplaying or tabletop games for you and your group!
-# # The first person that joins/creates a table gets a Table Owner role, and can lock, unlock, or close their table.
-# # {self.client.get_command_mention('table lock')}, {self.client.get_command_mention('table unlock')}, {self.client.get_command_mention('table close')}
-# # You can also transfer your table ownership to another table member, after they joined your table: {self.client.get_command_mention('table newowner')}\
-# # """
-#         await itx.response.send_message(out, ephemeral=True)
-        #endregion
 
     @app_commands.command(name="help", description="A help command to learn more about me!")
     @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")
