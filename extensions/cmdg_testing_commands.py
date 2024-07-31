@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from resources.customs.bot import Bot
-from resources.modals.help import JumpToPageModal_HelpCommands_Help
 from resources.views.generics import PageView, create_simple_button
 
 import random
@@ -29,7 +28,7 @@ class TestingCog(commands.GroupCog,name="testing"):
 
     @app_commands.command(name="send_pageview_test", description="Send a test embed with page buttons")
     @app_commands.describe(page_count="The amount of pages to send/test")
-    async def send_pageview_test_embed(self, itx: discord.Interaction, page_count: int = 40):
+    async def send_pageview_test_embed(self, itx: discord.Interaction, page_count: app_commands.Range[int, 1, 10000] = 40):
         def getChars(len: int):
             letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/   "
             return (''.join(random.choice(letters) for i in range(len))).strip()

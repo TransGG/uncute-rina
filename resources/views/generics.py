@@ -111,10 +111,23 @@ class PageView(discord.ui.View):
             self.page == self.max_page_index and not self.loop_around_pages
         )
 
+    async def update_page(itx: discord.Interaction, view: PageView):
+        """
+        Update the page message. This typically involves calculating the message content for the message and updating the original message.
+        
+        Parameters
+        -----------
+        itx: :class:`discord.Interaction`
+            The interaction gained from the button or modal interaction by the user.
+        view: :class:`PageView`
+            The view class instance.
+        """
+        pass
+
     def __init__(
             self,
             starting_page: int,
-            pages: list[discord.Embed],
+            max_page_index: int,
             page_update_function: typing.Callable[[discord.Interaction, PageView], typing.Awaitable[None]],
             prepended_buttons: list[discord.ui.Button] = [],
             appended_buttons: list[discord.ui.Button] = [],
@@ -123,11 +136,10 @@ class PageView(discord.ui.View):
     ):
         super().__init__(timeout=timeout)
         self.page: int = starting_page
-        self.pages: list[discord.Embed] = pages
         self.update_page = page_update_function
         self.loop_around_pages = loop_around_pages
 
-        self.max_page_index: int = len(self.pages)-1
+        self.max_page_index: int = max_page_index
 
         for pre_button in prepended_buttons:
             self.add_item(pre_button)
@@ -144,13 +156,11 @@ class PageView(discord.ui.View):
 
     async def on_page_down(self, itx: discord.Interaction):
         if self.page - 1 < 0: # below lowest index
-            self.page = len(self.pages)-1 # set to highest index
+            self.page = self.max_page_index # set to highest index
         else:
             self.page -= 1
         
-        self.page_down_button.style, self.page_down_button.disabled = self.page_down_style
-        self.page_up_button.style, self.page_up_button.disabled = self.page_up_style
-
+        self.update_button_colors()
         await self.update_page(itx, self)
 
     async def on_page_up(self, itx: discord.Interaction):
@@ -159,7 +169,18 @@ class PageView(discord.ui.View):
         else:
             self.page += 1
 
+        self.update_button_colors()
+        await self.update_page(itx, self)
+
+
+    def update_button_colors(self) -> None:
+        """
+        Updates the buttons of the view to match the new page number: gray if 
+        it's the first/last page, else blurple. Gray buttons will also be 
+        disabled if loop_around_pages is False.
+
+        Update the message with the now-updated view to change the buttons in 
+        the message on discord.
+        """
         self.page_down_button.style, self.page_down_button.disabled = self.page_down_style
         self.page_up_button.style, self.page_up_button.disabled = self.page_up_style
-
-        await self.update_page(itx, self)
