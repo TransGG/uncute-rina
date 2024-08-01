@@ -1,5 +1,5 @@
 import discord
-from resources.customs.help import HelpPage, generate_help_page_embed
+from resources.customs.help import HelpPage, generate_help_page_embed, get_nearest_help_pages_from_page
 from resources.customs.bot import Bot
 from resources.modals.generics import SingleLineModal
 import random # for random help page jump page number placeholder
@@ -50,19 +50,8 @@ class HelpPageView(PageView):
             return
         
         if page_guess not in help_page_indexes:
-            # find closest pages to the given number
-            if page_guess > help_page_indexes[-1]:
-                relative_page_location_details = f" (nearest pages to `{page_guess}` are `{help_page_indexes[-1]}` and `{help_page_indexes[0]}`)"
-            elif page_guess < help_page_indexes[0]:
-                relative_page_location_details = f" (nearest pages to `{page_guess}` are `{help_page_indexes[0]}` and `{help_page_indexes[-1]}`)"
-            else: # page is between two other pages
-                min_index = page_guess
-                max_index = page_guess
-                while min_index not in help_page_indexes:
-                    min_index -= 1
-                while max_index not in help_page_indexes:
-                    max_index += 1
-                relative_page_location_details = f" (nearest pages to `{page_guess}` are `{min_index}` and `{max_index}`)"
+            min_index, max_index = get_nearest_help_pages_from_page(page_guess, help_page_indexes)
+            relative_page_location_details = f" (nearest pages to `{page_guess}` are `{min_index}` and `{max_index}`)"
             await itx.response.send_message(f"Error: Number invalid. Please go to a valid help page" + relative_page_location_details + ".", ephemeral=True)
             return
         

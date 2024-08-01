@@ -51,12 +51,17 @@ def is_staff(guild: discord.Guild, member: discord.Member | discord.User) -> boo
         return False
     if type(member) == discord.User or not hasattr(member, "roles"):
         return False
-    # case sensitive lol
-    roles = [discord.utils.find(lambda r: 'staff'     in r.name.lower(), guild.roles),
-             discord.utils.find(lambda r: 'moderator' in r.name.lower(), guild.roles),
-             discord.utils.find(lambda r: 'trial mod' in r.name.lower(), guild.roles),
-             discord.utils.find(lambda r: 'sr. mod'   in r.name.lower(), guild.roles),
-             discord.utils.find(lambda r: 'chat mod'  in r.name.lower(), guild.roles)]
+    roles = []
+    for role_name_comparison in ["staff", "moderator", "trial mod", "sr. mod", "chat mod"]:
+        for role in guild.roles:
+            # case sensitive lol
+            if role_name_comparison in role.name.lower():
+                roles.append(role)
+    # roles = [discord.utils.find(lambda r: 'staff'     in r.name.lower(), guild.roles),
+    #          discord.utils.find(lambda r: 'moderator' in r.name.lower(), guild.roles),
+    #          discord.utils.find(lambda r: 'trial mod' in r.name.lower(), guild.roles),
+    #          discord.utils.find(lambda r: 'sr. mod'   in r.name.lower(), guild.roles),
+    #          discord.utils.find(lambda r: 'chat mod'  in r.name.lower(), guild.roles)]
     user_role_ids = [role.id for role in member.roles]
     role_ids = [1069398630944997486,981735650971775077, #TransPlace: trial ; moderator
                 1108771208931049544] # Transonance: Staff

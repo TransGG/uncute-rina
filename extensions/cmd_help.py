@@ -1,7 +1,7 @@
 import discord, discord.ext.commands as commands, discord.app_commands as app_commands
 from resources.customs.bot import Bot
 from resources.views.help import HelpPageView
-from resources.customs.help import HelpPage, generate_help_page_embed
+from resources.customs.help import HelpPage, generate_help_page_embed, get_nearest_help_pages_from_page
 from resources.utils.stringhelper import replace_string_command_mentions
 
 
@@ -426,10 +426,16 @@ class HelpCommand(commands.Cog):
 
     async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
         if requested_page not in help_pages:
-            await itx.response.send_message(replace_string_command_mentions(
-                f"This page ('{requested_page}')" + " does not exist! Try %%help%% `page:1` or use "
-                "the page keys to get to the right page number!"
-            ), ephemeral=True)
+            min_index, max_index = get_nearest_help_pages_from_page(requested_page, list(help_pages))
+            relative_page_location_details = f"(nearest pages are `{min_index}` and `{max_index}`)."
+            await itx.response.send_message(
+                replace_string_command_mentions(
+                    f"This page (`{requested_page}`) does not exist! {relative_page_location_details} " + 
+                    "Try %%help%% `page:1` or use the page keys to get to the right page number!",
+                    self.client
+                ),
+                ephemeral=True
+            )
             return
         
         embed = generate_help_page_embed(help_pages[FIRST_PAGE], FIRST_PAGE, self.client)
