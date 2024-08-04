@@ -430,7 +430,8 @@ class HelpCommand(commands.Cog):
             relative_page_location_details = f"(nearest pages are `{min_index}` and `{max_index}`)."
             await itx.response.send_message(
                 replace_string_command_mentions(
-                    f"This page (`{requested_page}`) does not exist! {relative_page_location_details} " + 
+                    (f"This page (`{requested_page}`) does not exist! " if requested_page != 404 else "`404`: Page not found!") + # easter egg
+                    f" {relative_page_location_details} " + 
                     "Try %%help%% `page:1` or use the page keys to get to the right page number!",
                     self.client
                 ),

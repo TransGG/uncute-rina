@@ -4,6 +4,7 @@ from resources.customs.bot import Bot
 from resources.modals.generics import SingleLineModal
 import random # for random help page jump page number placeholder
 
+from resources.utils.stringhelper import replace_string_command_mentions
 from resources.views.generics import PageView, create_simple_button
 
 class HelpPageView(PageView):
@@ -41,7 +42,7 @@ class HelpPageView(PageView):
                 raise ValueError 
             page_guess = int(jump_page_modal.question_text.value)
         except ValueError:
-            await itx.response.send_message("Error: Invalid number.\n"
+            await jump_page_modal.itx.response.send_message("Error: Invalid number.\n"
                                             "\n"
                                             "This button lets you jump to a help page (number). To see what kinds of help pages there are, go to the index page (page 2, or click the 📋 button).\n"
                                             "An example of a help page is page 3: `Utility`. To go to this page, you can either use the previous/next buttons (◀️ and ▶️) to navigate there, or click the 🔢 button: This button opens a modal.\n"
@@ -51,8 +52,14 @@ class HelpPageView(PageView):
         
         if page_guess not in help_page_indexes:
             min_index, max_index = get_nearest_help_pages_from_page(page_guess, help_page_indexes)
-            relative_page_location_details = f" (nearest pages to `{page_guess}` are `{min_index}` and `{max_index}`)"
-            await itx.response.send_message(f"Error: Number invalid. Please go to a valid help page" + relative_page_location_details + ".", ephemeral=True)
+            relative_page_location_details = f" (nearest pages are `{min_index}` and `{max_index}`)."
+            await jump_page_modal.itx.response.send_message(
+                replace_string_command_mentions(
+                    (f"This page (`{page_guess}`) does not exist! " if page_guess != 404 else "`404`: Page not found!") + # easter egg
+                    f" {relative_page_location_details} " + 
+                    "Try %%help%% `page:1` or use the page keys to get to the right page number!",
+                    self.client),
+                ephemeral=True)
             return
         
         self.page = list(self.pages).index(page_guess)
