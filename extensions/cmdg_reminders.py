@@ -64,7 +64,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
                     for char in reminder_datetime:
                         if char not in "0123456789-t:+":
                             raise ValueError(f"`{char}` cannot be used for a reminder date/time.")
-                    
+
                     if reminder_datetime.count("t") > 1:
                         raise ValueError(
                             "You should only use 'T' once! Like so: 2023-12-31T23:59+0100. "
@@ -88,7 +88,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
                     else:
                         # mode = 1
                         raise ValueError("Because I don't know your timezone, I can't ensure it'll be sent at the right time. Please add the timezone like so '-0100' or '+0900'.")
-                    timestamp = datetime.strptime(reminder_datetime, 
+                    timestamp = datetime.strptime(reminder_datetime,
                         ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y-%m-%dt%H:%M%z"][mode]
                     )
                 except ValueError:
@@ -116,7 +116,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
                         return
                     distance = options[view.value]
                     itx = view.return_interaction
-                
+
                 # mode 0 is the date with time up to seconds and timezone
                 # mode 2 is the date, without time or timezone
                 # mode 3 is the date with time up to minutes and timezone
@@ -125,7 +125,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
             except ValueError as ex:
                 await itx.response.send_message(
                     f"Couldn't make new reminder:\n> {str(ex)}\n\n"
-                    "You can make a reminder for days in advance, like so: \"4d12h\" or \"4day 12hours\" or \"in 3 minutes and 2 seconds\"\n" 
+                    "You can make a reminder for days in advance, like so: \"4d12h\" or \"4day 12hours\" or \"in 3 minutes and 2 seconds\"\n"
                     "You can also use ISO8601 format, like '2023-12-31T23:59+0100', or just '2023-12-31'\n"
                     "\n"
                     "If you give a time but not a timezone, I don't want you to get reminded at the wrong time, so I'll say something went wrong.",

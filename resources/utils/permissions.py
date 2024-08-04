@@ -10,7 +10,7 @@ def is_verified(guild: discord.Guild, member: discord.Member | discord.User) -> 
         A guild with roles to cycle through.
     member: :class:`discord.Member` | :class:`discord.User`
         A discord user with or without roles attribute.
-    
+
     Returns
     --------
     :class:`bool`
@@ -41,7 +41,7 @@ def is_staff(guild: discord.Guild, member: discord.Member | discord.User) -> boo
         A guild with roles to cycle through.
     member: :class:`discord.Member` | :class:`discord.User`
         A discord user with or without roles attribute.
-    
+
     Returns
     --------
     :class:`bool`
@@ -77,7 +77,7 @@ def is_admin(guild: discord.Guild, member: discord.Member | discord.User) -> boo
         A guild with roles to cycle through.
     member: :class:`discord.Member` | :class:`discord.User`
         A discord user with or without roles attribute.
-    
+
     Returns
     --------
     `bool`
@@ -91,7 +91,7 @@ def is_admin(guild: discord.Guild, member: discord.Member | discord.User) -> boo
              discord.utils.find(lambda r: 'head staff' in r.name.lower(), guild.roles),
              discord.utils.find(lambda r: 'admin' in r.name.lower()     , guild.roles),
              #discord.utils.find(lambda r: r.name.lower() == 'admins'    , guild.roles),
-             discord.utils.find(lambda r: r.name.lower() in 'owner'     , guild.roles)] 
+             discord.utils.find(lambda r: r.name.lower() in 'owner'     , guild.roles)]
     user_role_ids = [role.id for role in member.roles]
     role_ids = [981735525784358962]  # TransPlace: Admin
     has_admin = any([role.permissions.administrator for role in member.roles])

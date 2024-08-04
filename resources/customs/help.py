@@ -29,8 +29,8 @@ def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> d
                           description = replace_string_command_mentions(page["description"], client))
     if "fields" in page:
         for field in page["fields"]:
-            embed.add_field(name  = replace_string_command_mentions(field[0], client), 
-                            value = replace_string_command_mentions(field[1], client), 
+            embed.add_field(name  = replace_string_command_mentions(field[0], client),
+                            value = replace_string_command_mentions(field[1], client),
                             inline = False)
     embed.set_footer(text="page: "+str(page_number))
     return embed
@@ -38,14 +38,14 @@ def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> d
 def get_nearest_help_pages_from_page(page: int, pages: list[int]) -> tuple[int, int]:
     """
     Get the two nearest page numbers to a given page number.
-    
+
     Parameters
     -----------
     page: :class:`int`
         The page number to get the two nearest page numbers for.
     pages: :class:`list[int]`
         A (sorted) list of page numbers to reference (e.g. `[1, 2, 3, 4, 5, 6, 10, 11, 12, 21, 22, 23, 31, 32, 101, 111, 112]`)
-    
+
     Returns
     --------
     :class:`tuple[int, int]`
@@ -76,11 +76,11 @@ class HelpPage(TypedDict):
     Parameters
     -----------
     title: :class:`str`
-        Typically the title of the embed.  
+        Typically the title of the embed.
     description: :class:`str`
         Typically the description of the embed.
     fields: :class:`list[tuple[name, value]]`
-        A list with tuples of the name and value of an embed field.  
+        A list with tuples of the name and value of an embed field.
         Note: Discord embeds only allow up to 10 fields.
     """
     title: str

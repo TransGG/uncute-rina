@@ -66,7 +66,7 @@ class Pronouns(commands.Cog):
             await itx.response.send_message(f"This person doesn't have any pronoun roles and hasn't added any custom pronouns. Ask them to add a role in #self-roles, or to use {cmd_mention} `mode:Add` `argument:<pronoun>`\nThey might also have pronouns mentioned in their About Me.. I can't see that sadly, so you'd have to check yourself.", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         else:
             await itx.response.send_message(f"{user.nick or user.name} ({user.id}) uses these pronouns:\n" + '\n'.join(list)+warning, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
-    
+
     async def pronoun_autocomplete(self, itx: discord.Interaction, current: str):
         if itx.namespace.mode == 1:
             results = []

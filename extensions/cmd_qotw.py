@@ -70,7 +70,7 @@ class QOTW(commands.Cog):
 class DevRequest(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
-    
+
     @app_commands.command(name="developer_request",description="Suggest a bot idea to the TransPlace developers!")
     @app_commands.describe(suggestion="What idea would you like to share?")
     async def developer_request(self, itx: discord.Interaction, suggestion: app_commands.Range[str, 25, 1500]):
@@ -134,7 +134,7 @@ class DevRequest(commands.Cog):
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You need to be staff to do this! It just sends \"boop\" to every dev request thread lol.", ephemeral=True)
             return
-        
+
         await itx.response.send_message("`[   ]`: Fetching cached threads.", ephemeral=True)
         try:
             watchlist_channel = itx.client.get_channel(self.client.custom_ids["staff_dev_request"])
@@ -155,7 +155,7 @@ class DevRequest(commands.Cog):
                     starter_message = await watchlist_channel.fetch_message(thread.id)
                 except discord.errors.NotFound:
                     continue # thread starter message was removed.
-                
+
                 if (starter_message is None or
                         starter_message.author.id != self.client.user.id or
                         len(starter_message.embeds) == 0):
@@ -180,7 +180,7 @@ class DevRequest(commands.Cog):
         if (payload.guild_id   != self.client.custom_ids["staff_server_id"] or
             payload.channel_id != self.client.custom_ids["staff_dev_request"]):
             return
-        
+
         emoji_color_selection = {
             "🔴": discord.Colour.from_rgb(r=255,g=100,b=100),
             "🟡": discord.Colour.from_rgb(r=255,g=255,b=172),

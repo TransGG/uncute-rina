@@ -50,10 +50,10 @@ async def fetch_starboard_original_message(client: Bot, starboard_message: disco
     Returns
     --------
     :class:`discord.Message`:
-        The original author's message.  
+        The original author's message.
     :class:`None`:
         If the original author's message was not found (no permission, or can't be found).
-    
+
     Regards
     --------
     If the original message was deleted, it deletes its starboard message too.
@@ -86,7 +86,7 @@ async def fetch_starboard_original_message(client: Bot, starboard_message: disco
 async def update_starboard_message_score(client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int) -> None:
     """
     Check a starboard message and original message's reactions and calculate its score. Negative scores can cause the message to be removed from the starboard.
-    
+
     Parameters
     -----------
     client: :class:`Bot`
@@ -158,15 +158,15 @@ async def update_starboard_message_score(client: Bot, starboard_message: discord
 
 async def get_or_fetch_starboard_messages(starboard_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None) -> list[discord.Message]:
     """
-    Fetch list of all starboard messages, unless it is already fetching: then it waits until the 
-    other instance of the fetching function is done and retrieves the cached list. The list is 
+    Fetch list of all starboard messages, unless it is already fetching: then it waits until the
+    other instance of the fetching function is done and retrieves the cached list. The list is
     stored for STARBOARD_REFRESH_DELAY seconds.
 
     Parameters
     -----------
     starboard_channel: :class:`discord.abc.GuildChannel` | :class:`discord.abc.PrivateChannel` | :class:`discord.Thread` | :class:`None`
         The starboard channel to fetch messages from.
-    
+
     Returns
     :class:`list[discord.Message]`:
         A list of starboard messages (sent by the bot) in the starboard channel.
@@ -231,8 +231,8 @@ class Starboard(commands.Cog):
                 return # only needs to update the message if it's a rina starboard message of course...
 
             starboard_original_message: discord.Message | None = await fetch_starboard_original_message(self.client, message, starboard_emoji)
-            if (starboard_original_message is not None and 
-                    starboard_original_message.author.id == payload.user_id and 
+            if (starboard_original_message is not None and
+                    starboard_original_message.author.id == payload.user_id and
                     payload.emoji.name == "❌"):
                 await delete_starboard_message(self.client, message, f"{starboard_emoji} :x: Starboard message {message.id} was removed (from {starboard_original_message.id}) (original author downvoted the starboard message!)")
                 return
@@ -266,7 +266,7 @@ class Starboard(commands.Cog):
                     except discord.errors.Forbidden:
                         # If "Reaction blocked", then maybe message author blocked Rina.
                         # Thus, I can't track if Rina added it to starboard already or not.
-                        await log_to_guild(self.client, self.client.get_guild(payload.guild_id), 
+                        await log_to_guild(self.client, self.client.get_guild(payload.guild_id),
                                      f'**:warning: Warning: **Couldn\'t add starboard emoji to {message.jump_url}. They might have blocked Rina...')
                         return
 
@@ -351,7 +351,7 @@ class Starboard(commands.Cog):
         ch = self.client.get_channel(payload.channel_id)
         message = await ch.fetch_message(payload.message_id)
 
-        
+
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
@@ -385,7 +385,7 @@ class Starboard(commands.Cog):
             return
         if message_payload.channel_id == star_channel.id:
             # check if the deleted message is a starboard message; if so, log it at starboard message deletion
-            await log_to_guild(self.client, star_channel.guild, 
+            await log_to_guild(self.client, star_channel.guild,
                          f"{starboard_emoji} :x: Starboard message was removed (from {message_payload.message_id}) "
                          f"(Starboard message was deleted manually).")
             return
@@ -403,7 +403,7 @@ class Starboard(commands.Cog):
                             msg_link = str(message_payload.message_id)+"  |  "+(await self.client.get_channel(message_payload.channel_id).fetch_message(message_payload.message_id)).jump_url
                         except discord.NotFound:
                             msg_link = str(message_payload.message_id)+" (couldn't get jump link)"
-                        
+
                         await delete_starboard_message(
                             self.client,
                             star_message,

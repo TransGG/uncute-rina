@@ -32,7 +32,7 @@ class TestingCog(commands.GroupCog,name="testing"):
         def getChars(len: int):
             letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/   "
             return (''.join(random.choice(letters) for i in range(len))).strip()
-        
+
         pages = []
         for page_index in range(page_count): # embeds
             e = discord.Embed(
@@ -48,7 +48,7 @@ class TestingCog(commands.GroupCog,name="testing"):
                 )
             e.set_footer(text=f"{page_index+1}/{page_count}")
             pages.append(e)
-        
+
         async def update_test_page(itx: discord.Interaction, view: PageView):
             e = view.pages[view.page]
             await itx.response.edit_message(
@@ -56,16 +56,16 @@ class TestingCog(commands.GroupCog,name="testing"):
                 embed=e,
                 view=view
             )
-        
+
 
         async def go_to_page_button_callback(itx: discord.Interaction):
             # view: PageView = view
             await itx.response.send_message(f"This embed has {view.max_page_index+1} pages!")
-        
+
         go_to_page_button = create_simple_button("🔢", discord.ButtonStyle.blurple, go_to_page_button_callback, label_is_emoji=True)
         view = PageView(0, pages, update_test_page, appended_buttons=[go_to_page_button])
         await itx.response.send_message("Sending this cool embed...", embed=pages[0], view=view)
-        
+
 
 
 async def setup(client):

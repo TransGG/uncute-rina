@@ -3,7 +3,7 @@ from time import mktime # for /delete_week_selfies (within 7 days), and /version
 from datetime import datetime, timedelta
 import requests # to fetch from GitHub and see Rina is running the latest version
 from resources.utils.permissions import is_staff # for checking staff roles
-from resources.utils.utils import log_to_guild # logging when a staff command is used 
+from resources.utils.utils import log_to_guild # logging when a staff command is used
 from resources.customs.bot import Bot
 
 
@@ -51,7 +51,7 @@ class StaffAddons(commands.Cog):
         if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
             await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
             return
-        
+
         output = "Attempting deletion...\n"
 
         await itx.response.send_message(output+"...", ephemeral=True)

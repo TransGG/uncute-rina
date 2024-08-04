@@ -6,7 +6,7 @@ import discord
 
 
 class ReminderObject:
-    def __init__(self, client: Bot, 
+    def __init__(self, client: Bot,
                        creationtime: datetime,
                        remindertime: datetime,
                        userID: int,

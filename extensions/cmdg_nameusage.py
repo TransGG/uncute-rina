@@ -102,7 +102,7 @@ class NameUsage(commands.GroupCog, name="nameusage",description="Get data about 
                 result_page = "_"
             pages.append(result_page)
         page = 0
-        
+
         result_page = pages[page]
         result_page2 = pages[page+1]
         embed_title = f'Most-used {"user" if mode==1 else "nick" if mode==2 else "usernames and nick"}names leaderboard!'

@@ -114,7 +114,7 @@ class ToneIndicator(commands.Cog):
             "not forced to answer" : ["/nfta","/nf"],
             "not for the attention" : ["/nfta"],
             "not mad / not upset" : ["/nm"],
-            "not mad at you, to specify that someone isnt mad at someone else (also see /nay)" : ["/nmay"], 
+            "not mad at you, to specify that someone isnt mad at someone else (also see /nay)" : ["/nmay"],
             "no pressure" : ["/np"],
             "no problem" : ["/np"],
             "not passive aggressive" : ["/npa"],

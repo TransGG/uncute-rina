@@ -7,9 +7,9 @@ from resources.views.generics import GenericTwoButtonView
 
 
 def voice_channel_is_custom(
-        voice_channel: discord.VoiceChannel, 
-        customvc_category_id: int, 
-        customvc_hub_id: int, 
+        voice_channel: discord.VoiceChannel,
+        customvc_category_id: int,
+        customvc_hub_id: int,
         customvc_channel_blacklist: list[int]
 ) -> bool:
     """Check if a voice channel is custom-made by Rina through the customvc Hub.
@@ -39,7 +39,7 @@ def voice_channel_is_custom(
 
 async def reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice_channel: discord.VoiceChannel):
     """
-    Reset a voice channel's permission overrides if the 'owners' of the voice channel 
+    Reset a voice channel's permission overrides if the 'owners' of the voice channel
     table are no longer present/connected to the channel.
 
     Parameters
@@ -61,7 +61,7 @@ async def reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice_
                 break
         if not reset_vctable:
             return
-        
+
         try:
             await voice_channel.edit(overwrites=voice_channel.category.overwrites) #reset overrides; error caught in try-except
             #update every user's permissions
@@ -98,7 +98,7 @@ async def handle_delete_custom_vc(client: Bot, member: discord.Member, voice_cha
     try:
         await voice_channel.delete()
     except discord.errors.NotFound:
-        await log_to_guild(client, member.guild, 
+        await log_to_guild(client, member.guild,
                            f":warning: **WARNING!! Couldn't delete CustomVC channel** {member.nick or member.name} ({member.id}) left voice "
                            f"channel \"{voice_channel.name}\" ({voice_channel.id}), and was the last one in it, but it **could not be deleted**!")
         raise
@@ -136,7 +136,7 @@ async def create_new_custom_vc(client: Bot, member: discord.Member, voice_channe
         customvc_category_id (int): The category id to create the custom voice channel in.
         customvc_hub_id (int): The custom voice channel hub channel id.
     """
-    
+
     default_name = "Untitled voice chat"
     warning = ""
     vcCategory_for_vc = voice_channel.category
@@ -150,7 +150,7 @@ async def create_new_custom_vc(client: Bot, member: discord.Member, voice_channe
         raise
 
     try:
-        await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.") 
+        await member.move_to(vc,reason=f"Opened a new voice channel through the vc hub thing.")
         await vc.send(f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). Use {cmd_mention} to edit the name/user limit.", allowed_mentions=discord.AllowedMentions.none())
         for custom_vc in vcCategory_for_vc.voice_channels:
             if custom_vc.id == customvc_hub_id or custom_vc.id == vc.id:
@@ -186,7 +186,7 @@ class CustomVcs(commands.Cog):
             if voice_channel_is_custom(before.channel, customvc_category_id, customvc_hub_id, self.blacklisted_channels):
                 # only run if this voice state regards a custom voice channel
                 await handle_custom_voice_channel_leave_events(self.client, member, before.channel)
-        
+
         if after.channel is not None:
             if after.channel.id == customvc_hub_id:
                 await create_new_custom_vc(self.client, member, after.channel, customvc_category_id, customvc_hub_id)
@@ -194,14 +194,13 @@ class CustomVcs(commands.Cog):
     @app_commands.command(name="editvc",description="Edit your voice channel name or user limit")
     @app_commands.describe(name="Give your voice channel a name!",
                            limit="Give your voice channel a user limit!")
-    async def editVc(self, itx: discord.Interaction, 
-                     name: app_commands.Range[str, 3, 35] | None = None, 
+    async def editVc(self, itx: discord.Interaction,
+                     name: app_commands.Range[str, 3, 35] | None = None,
                      limit: app_commands.Range[int, 0, 99] | None = None):
         if not is_verified(itx.guild, itx.user):
             await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",ephemeral=True)
             return
-        
-        
+
         cmd_mention = self.client.get_command_mention("editguildinfo")
         log = [itx, f"Not enough data is configured to do this action! Please ask an admin to fix this with {cmd_mention} `mode:21`, `mode:22` or `mode:23`!"]
         vcHub, vcLog, vcCategory = await self.client.get_guild_info(itx.guild, "vcHub", "vcLog", "vcCategory", log=log)
@@ -236,7 +235,7 @@ class CustomVcs(commands.Cog):
                 await itx.response.send_message(f"You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n" +
                                                 f"You can rename it again <t:{first_rename_time + 600}:R> (<t:{first_rename_time + 600}:t>).", ephemeral=True)
                 return
-        
+
         limitInfo = ""
         oldName = channel.name
         oldLimit = channel.user_limit
@@ -319,7 +318,7 @@ class CustomVcs(commands.Cog):
         if not is_admin(itx.guild, itx.user):
             await itx.response.send_message("You don't have sufficient permissions to execute this command! (don't want you to break the bot ofc.)",ephemeral=True)
             return
-        
+
         options = {
             "01" : "Help: Main server settings",
             "02" : "Help: Custom Voice Channels",
@@ -396,7 +395,7 @@ class CustomVcs(commands.Cog):
         if mode == 2:
             query = {"guild_id": itx.guild_id}
             collection = RinaDB["guildInfo"]
-            
+
             async def to_int(value, error_msg):
                 try:
                     return int(value)
@@ -527,7 +526,7 @@ class CustomVcs(commands.Cog):
                     await itx.response.send_message("The ID you gave wasn't for the type of channel I was looking for!", ephemeral=True)
                     return
                 collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
-            
+
             await itx.response.send_message(f"Edited value of '{options[option]}' successfully.",ephemeral=True)
 
 
@@ -576,12 +575,12 @@ class CustomVcs(commands.Cog):
                 return
             await itx.response.send_message(f"Couldn't {action}: This voice channel is not compatible with VcTables!", ephemeral=True)
             return
-        
+
         return channel
 
     async def get_channel_if_owner(self, itx: discord.Interaction | discord.Member, action: str, from_event: bool = False):
         """
-        Gets the voice channel of the command executer if they are in a custom voice channel that has 
+        Gets the voice channel of the command executer if they are in a custom voice channel that has
         turned into a vctable AND they are the owner of that table.
 
         Parameters
@@ -643,11 +642,11 @@ class CustomVcs(commands.Cog):
             for owner_id in owner_list:
                 if owner_id not in added_owners:
                     added_owners.append(owner_id)
-        
+
         channel = await self.get_current_channel(itx, "create VcTable")
         if channel is None:
             return
-        
+
         if name == channel.name:
             warning += ("Info: VcTables get a prefix, so the channel name is edited to include it. "
                         "Bots can only edit a channel's name twice every 10 minutes. If you wanted to also "
@@ -664,13 +663,13 @@ class CustomVcs(commands.Cog):
                 cmd_mention = self.client.get_command_mention("vctable owner")
                 await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to see who the owners of this table are!", ephemeral=True)
                 return
-        
+
         first_rename_time = try_store_vc_rename(itx.user.voice.channel.id)
         if first_rename_time:
             await itx.followup.send(f"This channel has been renamed too often in the past 10 minutes! (bcuz discord :P)\n" +
                                     f"You can turn this into a VcTable in <t:{first_rename_time + 600}:R> (<t:{first_rename_time + 600}:t>).", ephemeral=True)
             return
-        
+
         for owner_id in added_owners: # TODO: put all overwrites into 1 api call with channel.edit(overwrites=...)
             owner = itx.guild.get_member(int(owner_id))
             await channel.set_permissions(
@@ -683,7 +682,7 @@ class CustomVcs(commands.Cog):
                 ),
                 reason="VcTable created: set as owner"
             )
-        
+
         await channel.set_permissions( # make sure the bot can still see the channel for vc events, even if /vctable lock
             self.client.user,
             overwrite=discord.PermissionOverwrite(

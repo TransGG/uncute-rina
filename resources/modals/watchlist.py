@@ -29,11 +29,11 @@ class WatchlistReasonModal(discord.ui.Modal):
     """
 
     def __init__(
-            self, 
-            add_to_watchlist_func: typing.Callable[[discord.Interaction, discord.User, str, str | None], typing.Awaitable[None]], 
-            title: str, 
-            reported_user: discord.User, 
-            message: discord.Message = None, 
+            self,
+            add_to_watchlist_func: typing.Callable[[discord.Interaction, discord.User, str, str | None], typing.Awaitable[None]],
+            title: str,
+            reported_user: discord.User,
+            message: discord.Message = None,
             timeout=None
     ):
         super().__init__(title=title, timeout=timeout)
@@ -49,7 +49,7 @@ class WatchlistReasonModal(discord.ui.Modal):
                                                 style=discord.TextStyle.paragraph,
                                                 required=False)
         self.add_item(self.reason_text)
-    
+
     async def on_submit(self, itx: discord.Interaction):
         self.value = 1
         await self.add_to_watchlist_func(itx, self.user, self.reason_text.value, str(getattr(self.message, "id", "")) or None)

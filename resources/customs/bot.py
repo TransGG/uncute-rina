@@ -70,7 +70,7 @@ class Bot(commands.Bot):
             return production_ids
         else:
             return development_ids
-    
+
     def get_command_mention(self, command_string: str) -> str:
         """
         Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
@@ -79,7 +79,7 @@ class Bot(commands.Bot):
         -----------
         command_string: :class:`str`
             Command you want to convert into a mention (without slash in front of it).
-        
+
         Returns
         --------
         :class:`str`
@@ -116,9 +116,9 @@ class Bot(commands.Bot):
         Parameters
         -----------
         guild_id: :class:`discord.Guild` | :class:`int`
-            The guild or id from which you want to get the guild info / settings.  
+            The guild or id from which you want to get the guild info / settings.
         *args: :class:`str`
-            settings (or multiple) that you want to fetch.  
+            settings (or multiple) that you want to fetch.
         log: :class:`list[discord.Interaction, str]` | :class:`None`, optional
             A list of [itx, error_message], and will reply this error message to the given interaction if there's a KeyError. Default: None.
 

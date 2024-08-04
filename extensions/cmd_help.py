@@ -108,7 +108,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       ". . **121:** developer_request\n"
                       ". . **122:** qotw (question of the week)\n"
     ),
-    6 : HelpPage( 
+    6 : HelpPage(
         title = "Work in progress...",
         description = "This section is still being worked on! (help, so much text to write D: )\n"
                       "Scroll a few pages ahead to see what the rest of the help pages look like!"
@@ -431,14 +431,14 @@ class HelpCommand(commands.Cog):
             await itx.response.send_message(
                 replace_string_command_mentions(
                     (f"This page (`{requested_page}`) does not exist! " if requested_page != 404 else "`404`: Page not found!") + # easter egg
-                    f" {relative_page_location_details} " + 
+                    f" {relative_page_location_details} " +
                     "Try %%help%% `page:1` or use the page keys to get to the right page number!",
                     self.client
                 ),
                 ephemeral=True
             )
             return
-        
+
         embed = generate_help_page_embed(help_pages[FIRST_PAGE], FIRST_PAGE, self.client)
         await itx.response.send_message(embed = embed,
                                         view = HelpPageView(self.client, FIRST_PAGE, help_pages),

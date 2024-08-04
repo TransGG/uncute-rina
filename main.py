@@ -97,7 +97,7 @@ def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.Ag
         raise json.decoder.JSONDecodeError("Invalid JSON file. Please ensure it has correct formatting.").with_traceback(None)
     if missing_tokens:
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
-    
+
     debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
     cluster: MongoClient = MongoClient(tokens['MongoDB'])
     RinaDB: pymongodatabase = cluster["Rina"]
@@ -144,7 +144,7 @@ def create_client(tokens: dict, RinaDB: pymongodatabase, asyncRinaDB: motorcore.
 
     debug(f"[#      ]: Loaded bot" + " " * 30, color="green")
     debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
-    discord.VoiceClient.warn_nacl = False   
+    discord.VoiceClient.warn_nacl = False
     return Bot(
             api_tokens=tokens,
             version=version,
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         if watchlist_channel is not None: # if running on prod
             await get_or_fetch_watchlist_index(watchlist_channel)
         debug(f"[#]: Loaded watchlist threads."+" "*15, color="green")
-    
+
     @client.event
     async def setup_hook():
         logger = logging.getLogger("apscheduler")
@@ -244,15 +244,15 @@ if __name__ == '__main__':
             if message.content == ":kill now please stop" or any([message.content.startswith(item) for item in cool_keys]):
                 await message.add_reaction("🔄")
                 sys.exit(0)
-                # quitting the program also 
+                # quitting the program also
         # this will only run if it hasn't already quit, of course
-        if message.content.startswith(":sudo "): 
+        if message.content.startswith(":sudo "):
             await message.reply("Cleo.CommandManager.InsufficientPermissionError: Could not run command: No permission\nTryin to be part of the cool kids? Try reading this:\n1 4M 4 V3RY C001 K16!")
             await message.add_reaction("⚠")
         elif message.content.lower().startswith("i am a very cool kid"):
             await message.channel.send("Yes. Yes you are.")
     #endregion
-    
+
     #region Crash event handling
     async def send_crash_message(
             error_type: str,
@@ -295,7 +295,7 @@ if __name__ == '__main__':
                 vcLog = await client.get_guild_info(log_guild, "vcLog")
             except KeyError:
                 return # prevent infinite logging loops, i guess
-        
+
         error_caps = error_type.upper()
         debug_message = f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [{error_caps}]: {error_source}\n\n{traceback_text}\n"
         debug(f"{debug_message}",add_time=False)
@@ -319,13 +319,13 @@ if __name__ == '__main__':
         if int(mktime(datetime.now().timetuple())) - appcommanderror_cooldown < 60:
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if within 1 minute
             return
-        
+
         async def reply(itx: discord.Interaction, message: str):
             if itx.response.is_done():
                 await itx.followup.send(message, ephemeral=True)
             else:
                 await itx.response.send_message(message, ephemeral=True)
-        
+
         cmd_mention = client.get_command_mention("update")
         if isinstance(error, discord.app_commands.errors.CommandNotFound):
             await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask {client.bot_owner} ({client.bot_owner.mention}) if she typed {cmd_mention}!")
@@ -373,5 +373,5 @@ if __name__ == '__main__':
 # - (Unisex) compliment quotes
 # - Add error catch for when dictionaryapi.com is down
 # - make more three-in-one commands have optional arguments, explaining what to do if you don't fill in the optional argument
-        
+
 #endregion

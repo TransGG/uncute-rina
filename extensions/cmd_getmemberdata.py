@@ -67,7 +67,7 @@ class MemberData(commands.Cog):
             upper_bound = float(upper_bound)
             if lower_bound <= 0:
                 await itx.response.send_message("Your period (data in the past [x] days) has to be above 0!",ephemeral=True)
-                return  
+                return
             # if period < 0.035:
             #     await itx.response.send_message("Idk why but it seems to break when period is smaller than 0.0035, so better not use it.", ephemeral=True)
             #     return #todo: figure out why you can't fill in less than 0.0035: ValueError: All arrays must be of the same length
@@ -134,8 +134,8 @@ class MemberData(commands.Cog):
                     min_time = time_list[0]
                 if max_time < time_list[-1]:
                     max_time = time_list[-1]
-        
-        # if the lowest timestamps are lower than the lowest timestamp, then set all missing data to 0 (up until the graph has data)        
+
+        # if the lowest timestamps are lower than the lowest timestamp, then set all missing data to 0 (up until the graph has data)
         min_time_db = min_time
         for y in data:
             if type(data[y]) is not dict:
@@ -150,10 +150,10 @@ class MemberData(commands.Cog):
                     else:
                         results[y][min_time] = 0
                 min_time += accuracy
-        
+
         for i in results: # sort data by key
             results[i] = {timestamp: results[i][timestamp] for timestamp in sorted(results[i])}
-        
+
         await asyncio.sleep(0.1) # allow heartbeat or recognising other commands
 
         # make graph

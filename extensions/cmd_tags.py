@@ -17,11 +17,11 @@ class Tags: # TODO: move to own file
         self.no_politics_channel_id = 1126163144134361238
         self.no_venting_channel_id = 1126163020620513340
 
-    async def tag_message(self, tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool, 
+    async def tag_message(self, tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool,
                           embed: discord.Embed, public_footer: bool = False):
         """
         Send a tag message (un)publicly or (un)anonymously, given an embed.
-        
+
         Parameters
         -----------
         tag_name: :class:`str`
@@ -46,8 +46,8 @@ class Tags: # TODO: move to own file
         if public:
             if anonymous:
                 if public_footer:
-                    embed.set_footer(text = f"Note: If you believe that this command was misused or abused, " 
-                                            f"please do not argue in this channel. Instead, open a mod ticket " 
+                    embed.set_footer(text = f"Note: If you believe that this command was misused or abused, "
+                                            f"please do not argue in this channel. Instead, open a mod ticket "
                                             f"and explain the situation there. Thank you.")
                 await itx.response.send_message("sending...", ephemeral=True)
                 try:
@@ -191,7 +191,7 @@ class Tags: # TODO: move to own file
                         "harassment, and you could be warned."
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
-        
+
     async def send_avoidpolitics_info(self, tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
         cmd_mention = client.get_command_mention("remove-role")
         embed = discord.Embed(
@@ -231,7 +231,7 @@ class Tags: # TODO: move to own file
         )
         embed.set_footer(text="More info: https://www.nohello.net/, https://dontasktoask.com/")
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
- 
+
     async def send_pluralkit_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
             title="PluralKit and users with the [BOT] tag",
@@ -261,8 +261,8 @@ class Tags: # TODO: move to own file
                         "all server rules.\n"
                         f"Access the channel by making a ticket in <#{mod_ticket_channel_id}>!"
         )
-        await self.tag_message(tag_name, itx, client, public, anonymous, embed)    
-    
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+
     async def send_syscourse_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
             title="Please avoid system discourse",
@@ -311,7 +311,7 @@ class TagFunctions(commands.Cog):
     async def tag_autocomplete(self, itx: discord.Interaction, current: str):
         if current == "":
             return [app_commands.Choice(name="Show list of tags", value="help")]
-        
+
         options = [i.lower() for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
         return [
             app_commands.Choice(name=term, value=term)

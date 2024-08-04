@@ -11,7 +11,7 @@ def create_simple_button(
     ) -> discord.ui.Button:
     """
     Create a button for a view with a label/emoji, style, and callback.
-    
+
     Parameters
     -----------
     label: :class:`str` | :class:`discord.Emoji` | :class:`discord.PartialEmoji`
@@ -24,7 +24,7 @@ def create_simple_button(
         Whether the button is clickable by the user.
     label_is_emoji: :class:`bool`, optional
         Whether the given label should be used as button icon instead. Default: False.
-    
+
     Returns
     --------
     :class:`discord.ui.Button`
@@ -46,9 +46,9 @@ class GenericTwoButtonView(discord.ui.View):
             timeout: float | None = None
     ):
         """
-        Create a new view with two buttons. Clicking the first button will set self.value to True, and 
+        Create a new view with two buttons. Clicking the first button will set self.value to True, and
         the second button sets it to False. Timing out will leave it at None.
-        
+
         Parameters
         -----------
         button_true: :class:`tuple[str, discord.ButtonStyle]`, optional
@@ -72,16 +72,16 @@ class GenericTwoButtonView(discord.ui.View):
     async def on_button_false(self, _: discord.Interaction):
         self.value = False
         self.stop()
-        
+
 
 class PageView(discord.ui.View):
     @property
     def page_down_style(self) -> tuple[discord.ButtonStyle, bool]:
         """
-        Gives the button style depending on the current page: If decrementing the page index would 
-        make it out of bounds, make it gray; else blurple. If loop_around_pages is disabled, gray 
+        Gives the button style depending on the current page: If decrementing the page index would
+        make it out of bounds, make it gray; else blurple. If loop_around_pages is disabled, gray
         buttons will be disabled too.
-        
+
         Returns
         --------
         :class:`tuple[discord.ButtonStyle, bool]`
@@ -92,14 +92,14 @@ class PageView(discord.ui.View):
             discord.ButtonStyle.gray if self.page == 0 else discord.ButtonStyle.blurple,
             self.page == 0 and not self.loop_around_pages
         )
-    
+
     @property
     def page_up_style(self) -> tuple[discord.ButtonStyle, bool]:
         """
-        Gives the button style depending on the current page: If incrementing the page index would 
-        make it out of bounds, make it gray; else blurple. If loop_around_pages is disabled, gray 
+        Gives the button style depending on the current page: If incrementing the page index would
+        make it out of bounds, make it gray; else blurple. If loop_around_pages is disabled, gray
         buttons will be disabled too.
-        
+
         Returns
         --------
         :class:`tuple[discord.ButtonStyle, bool]`
@@ -114,7 +114,7 @@ class PageView(discord.ui.View):
     async def update_page(itx: discord.Interaction, view: PageView):
         """
         Update the page message. This typically involves calculating the message content for the message and updating the original message.
-        
+
         Parameters
         -----------
         itx: :class:`discord.Interaction`
@@ -159,7 +159,7 @@ class PageView(discord.ui.View):
             self.page = self.max_page_index # set to highest index
         else:
             self.page -= 1
-        
+
         self.update_button_colors()
         await self.update_page(itx, self)
 
@@ -175,11 +175,11 @@ class PageView(discord.ui.View):
 
     def update_button_colors(self) -> None:
         """
-        Updates the buttons of the view to match the new page number: gray if 
-        it's the first/last page, else blurple. Gray buttons will also be 
+        Updates the buttons of the view to match the new page number: gray if
+        it's the first/last page, else blurple. Gray buttons will also be
         disabled if loop_around_pages is False.
 
-        Update the message with the now-updated view to change the buttons in 
+        Update the message with the now-updated view to change the buttons in
         the message on discord.
         """
         self.page_down_button.style, self.page_down_button.disabled = self.page_down_style

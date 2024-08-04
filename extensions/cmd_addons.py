@@ -116,10 +116,10 @@ def generateOutput(responses: list[str], author: discord.User):
     Parameters
     -----------
     responses: :class:`list[str]`
-        A list of questions to be asked to the user (parameter 'author')  
+        A list of questions to be asked to the user (parameter 'author')
     author: :class:`discord.User`
         The user to mention for the response
-    
+
     Returns
     --------
     response: :class:`str`
@@ -157,7 +157,7 @@ def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSenti
         The client/bot whose servers to check for the emoji.
     emoji_str: :class:`str` | :class:`discord.utils.MISSING`
         The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
-        
+
     Returns
     --------
     :class:`None`
@@ -201,7 +201,7 @@ class SearchAddons(commands.Cog):
         if len(illegal_characters) > 1:
             await itx.response.send_message(f"You can't use the following characters for country_id!\n> {illegal_characters}", ephemeral=True)
             return
-        
+
         response_api = requests.get(
             f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true").text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
@@ -258,7 +258,7 @@ class SearchAddons(commands.Cog):
         view = EqualDex_AdditionalInfo(region.url)
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    @app_commands.command(name="math", description="Ask Wolfram Alpha a question")    
+    @app_commands.command(name="math", description="Ask Wolfram Alpha a question")
     async def math(self, itx: discord.Interaction, query: str):
         await itx.response.defer(ephemeral=True)
         if query.lower() in ["help", "what is this", "what is this?"]:
@@ -446,17 +446,17 @@ class FunAddons(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        
+
         # adding headpats every x messages
         added_pat = False
         self.headpat_wait += 1
         if self.headpat_wait >= 1000:
             if (
                     (type(message.channel) is discord.Thread and message.channel.parent == 987358841245151262) or # <#welcome-verify>
-                    message.channel.name.startswith('ticket-') or 
-                    message.channel.name.startswith('closed-') or 
+                    message.channel.name.startswith('ticket-') or
+                    message.channel.name.startswith('closed-') or
                     message.channel.category.id in [959584962443632700, 959590295777968128, 959928799309484032, 1041487583475138692,
-                                                    995330645901455380, 995330667665707108] or 
+                                                    995330645901455380, 995330667665707108] or
                     # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
                     message.guild.id in [981730502987898960] # don't send in Mod server
                 ):
@@ -542,9 +542,9 @@ class FunAddons(commands.Cog):
 
                 if superpower == "1":
                     response = requests.get('https://api.api-ninjas.com/v1/facts?limit=1', headers={
-                        # "X-Api-Key": "YOUR_API_KEY", 
+                        # "X-Api-Key": "YOUR_API_KEY",
                         "Origin": "https://api-ninjas.com",
-                        # "Host": "api.api-ninjas.com", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0", "Accept": "*/*", "Accept-Language": "en-US,en;q=0.5", 
+                        # "Host": "api.api-ninjas.com", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0", "Accept": "*/*", "Accept-Language": "en-US,en;q=0.5",
                         # "Accept-Encoding": "gzip, deflate, br", "Referer": "https://api-ninjas.com/", "Connection": "keep-alive", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "same-site", "Sec-GPC": "1", "TE": "trailers"
                     }).json()[0]["fact"]
                     starter = random.choice(["This conversation is cool and all, but did you know ", "Fun fact: "])
@@ -581,9 +581,9 @@ class FunAddons(commands.Cog):
                            faces="How many sides does every die have?",
                            mod="Do you want to add a modifier? (add 2 after rolling the dice)",
                            advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; 'help' for more") # TODO: actually add 'help' command
-    async def roll(self, itx: discord.Interaction, 
+    async def roll(self, itx: discord.Interaction,
                    dice: app_commands.Range[int, 1, 999999],
-                   faces: app_commands.Range[int, 1, 999999], 
+                   faces: app_commands.Range[int, 1, 999999],
                    public: bool = False, mod: int | None = None, advanced: str | None = None):
         hide = False
         if advanced is None:
@@ -733,7 +733,7 @@ class OtherAddons(commands.Cog):
         global RinaDB
         self.client = client
         RinaDB = client.RinaDB
-        
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         try: # mention targeted user if added to mod-ticket with /add target:@user
@@ -904,7 +904,7 @@ class OtherAddons(commands.Cog):
                                             "numbers, hyphens, underscores, or spaces (for command groups).",
                                             ephemeral=True)
             return
-        
+
         cmd_mention = self.client.get_command_mention(command)
         await itx.response.send_message(
             f"Your input: `{command}`.\n"
@@ -913,7 +913,7 @@ class OtherAddons(commands.Cog):
             "-# Did it not work? Try it with `help`",
             ephemeral=True
         )
-                                        
+
 
 async def setup(client):
     await client.add_cog(OtherAddons(client))

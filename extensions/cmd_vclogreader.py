@@ -18,10 +18,10 @@ class VCLogReader(commands.Cog):
         self.client = client
 
     async def get_vc_activity(
-            self, 
-            voice_log_channel: discord.abc.Messageable, 
-            min_time: int, 
-            max_time: int, 
+            self,
+            voice_log_channel: discord.abc.Messageable,
+            min_time: int,
+            max_time: int,
             msg_limit: int
     ) -> list[tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None]]:
         """
@@ -40,13 +40,13 @@ class VCLogReader(commands.Cog):
 
         Returns
         --------
-        :class:`list[tuple[event_time_unix, (user_id, username), (previous_channel_id, name) | None, (current_channel_id, name) | None ]]`  
+        :class:`list[tuple[event_time_unix, (user_id, username), (previous_channel_id, name) | None, (current_channel_id, name) | None ]]`
             A list of (timestamp, user, previous_channel?, new_channel?). Typically at least one of previous_channel or new_channel has a value.
         """
         output: list[tuple[int, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None]] = [] # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
 
         async for message in voice_log_channel.history(after  = datetime.fromtimestamp(min_time, tz=datetime.now().tzinfo),
-                                                       before = datetime.fromtimestamp(max_time, tz=datetime.now().tzinfo), 
+                                                       before = datetime.fromtimestamp(max_time, tz=datetime.now().tzinfo),
                                                        limit  = msg_limit,
                                                        oldest_first=True): # since "after" != None, oldest_first will be true anyway. Might as well make it definitive.
             # For context: the embed message sent by the Logger bot looks like this:
@@ -80,7 +80,7 @@ class VCLogReader(commands.Cog):
                     # or, in the case there is no nickname/displayname: " joined", which is why you have to strip it too.
                     # Note: this would break if a user has the nickname "a voice channel: b" since type would be "a"
                 except IndexError:
-                    # this doesn't work if the user moved from one channel to another: 
+                    # this doesn't work if the user moved from one channel to another:
                     #    "**mysticmia#0** (Mia) moved from ⁠〙 Quiet (〙 Quiet) to ⁠〙 General 2 (〙 General 2)."
                     #... honestly. i think it's probably safe to assume the user "moved" in this case. There isn't any fool-proof way to test otherwise
                     type = "moved"
@@ -124,7 +124,7 @@ class VCLogReader(commands.Cog):
                             raise Exception(f"First embed field '{embed.fields[0].value}' does not have hashtags for its ID!")
                         raise Exception(f"Embed field '{embed.fields[0].value}' has some other error or something D:")
 
-                
+
                 id_data = embed.fields[-1].value.replace("```ini","")[:-3].strip() # remove the ```ini\n  ...   ``` from the embed field
                 # print("id data = ", id_data)
                 for line in id_data.splitlines():
@@ -176,7 +176,7 @@ class VCLogReader(commands.Cog):
                 # print()
                 # print("\n"*2)
         return output
-            
+
 
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
@@ -213,7 +213,7 @@ class VCLogReader(commands.Cog):
         if log_channel is None:
             await itx.response.send_message(f"Error: The given log channel id ({log_channel_id}) yielded no valid channels!", ephemeral=True)
             return
-        
+
         if upper_bound is None:
             upper_bound = 0 # 0 minutes from now
         try:
@@ -241,7 +241,7 @@ class VCLogReader(commands.Cog):
         # max_time = int((current_time-upper_bound)/accuracy)*accuracy
         min_time: float = current_time-lower_bound
         max_time: float = current_time-upper_bound
-        
+
         events = await self.get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
 
         if max_time == current_time: # current_time - 0 == current_time
@@ -283,7 +283,7 @@ class VCLogReader(commands.Cog):
                 data["Finish"].append(time_tuple[1])
 
         # print("\n\nEvents:\n  ", events,
-        #       "\n\nIntermediate data:\n  ", intermediate_data, 
+        #       "\n\nIntermediate data:\n  ", intermediate_data,
         #       "\n\nData:\n  ", data)
 
         df = pd.DataFrame(data=data)
@@ -321,7 +321,7 @@ class VCLogReader(commands.Cog):
         #               rotation=30)
         # xfmt = md.DateFormatter('%H:%M')
         # ax.xaxis.set_major_formatter(xfmt)
-        
+
         ax.set_yticks(range(len(labels)))
         ax.set_yticklabels(labels)
         ax.set_xlabel("time (utc+0)")

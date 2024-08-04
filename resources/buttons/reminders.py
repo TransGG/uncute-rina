@@ -8,7 +8,7 @@ class TimeOfDayButton(discord.ui.Button):
         self._view = view
         self.return_interaction = None
         super().__init__(label=label, **kwargs)
-    
+
     async def callback(self, interaction: discord.Interaction):
         self._view.value = self._label
         self._view.return_interaction = interaction

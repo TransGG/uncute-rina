@@ -55,7 +55,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
         self.vcHub = vcHub
         self.vcLog = vcLog
         self.vcCategory = vcCategory
-        
+
         self.channel_id = discord.ui.TextInput(label='Channel Id', placeholder="Which channel do you want to edit", required=True)
         self.name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False)
         self.limit = discord.ui.TextInput(label='Limit', placeholder="Give your voice channel a user limit", required=False)

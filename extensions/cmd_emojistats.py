@@ -73,7 +73,7 @@ class EmojiStats(commands.Cog):
                 break
             emoji_capture = emoji.group()
             if not emoji_capture.startswith("<") and not emoji_capture.startswith("\\"):
-                # to test when an emoji is escaped (\:hello:), the regex tests the character in front of 
+                # to test when an emoji is escaped (\:hello:), the regex tests the character in front of
                 # the emoji. It also captures that character if it isn't a backslash, so we have to filter it out.
                 # Can also be fixed by using positive lookahead: changed "(?:[^" to "(?=:[^"
                 emoji_capture = emoji_capture[1:]
@@ -194,7 +194,7 @@ class EmojiStats(commands.Cog):
                     break
             else:
                 continue # emoji doesn't exist anymore?
-            
+
             unused_emojis.append(f"<{ 'a'*emoji.animated }:{ emoji.name }:{ emoji.id }>"+
                                  f"({ emoji_stat.get('messageUsedCount',0) },{ emoji_stat.get('reactionUsedCount',0) })")
 

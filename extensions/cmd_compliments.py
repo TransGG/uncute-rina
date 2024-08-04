@@ -33,7 +33,7 @@ async def choose_and_send_compliment(client: Bot, itx: discord.Interaction, user
             "You always know how to make people feel welcome and included :D",
             "Your intelligence and knowledge never cease to amaze me :O",
             "Beep boop :zap: Oh no! my circuits overloaded! His aura was so strong that I couldn't generate a cool compliment!",
-            
+
 
         ],
         "they_quotes": [
@@ -139,7 +139,7 @@ class Compliments(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:
             return
-        
+
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
             if ((("cute" or "cutie" or "adorable" in msg) and "not" in msg) or "uncute" in msg) and "not uncute" not in msg:
@@ -319,7 +319,7 @@ class Compliments(commands.Cog):
                 return
             collection.update_one(query, {"$set":{db_location:blacklist}}, upsert=True)
             await itx.response.send_message(f"Successfully removed `{string}` from your blacklist. Your blacklist now contains {len(blacklist)} string{'s'*(len(blacklist)!=1)}.", ephemeral=True)
-        
+
         elif mode == 3: # check
             collection = RinaDB["complimentblacklist"]
             query = {"user": itx.user.id}

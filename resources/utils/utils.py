@@ -32,7 +32,7 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
     """
     if type(text) is not str:
         text = repr(text)
-    
+
     colors = {
         "default":"\033[0m",
         "black":"\033[30m",
@@ -131,7 +131,7 @@ def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | disco
         Rina's Bot class to fetch ticket channel IDs (hardcoded).
     guild_id: :class:`int` | :class:`discord.Guild` | :class:`discord.Interaction`
         A class with a guild_id or guild property.
-    
+
     Returns
     --------
     :class:`int`
@@ -181,9 +181,9 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
     Raises
     ----------
     :class:`KeyError`
-        if client.vcLog channel is undefined.  
+        if client.vcLog channel is undefined.
         Note: It still outputs the given messge to console and to the client's default log channel.
-    
+
     Returns
     -----------
     :class:`discord.Message`
@@ -206,7 +206,7 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
         return
     return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
 
-async def executed_in_dms(itx: discord.Interaction = None, 
+async def executed_in_dms(itx: discord.Interaction = None,
                           message: discord.Message = None,
                           channel: discord.DMChannel    | discord.GroupChannel | discord.TextChannel |
                                    discord.StageChannel | discord.VoiceChannel | discord.Thread      = None) -> bool:
@@ -279,7 +279,7 @@ def parse_date(time_string, now: datetime):
         else:
             raise ValueError(f"You can't use '{date}' as unit for your date/time")
         return time
-    
+
     index = 0 #for making my IDE happy
     for index in range(len(time_string)):
         # for index in "14days7hours": get index of the first number, the last number, and the last letter before the next number:
@@ -307,20 +307,20 @@ def parse_date(time_string, now: datetime):
         # timedelta. This is required cause the datetime() doesn't let you set "0" for days. (cuz a month starts
         # at day 1)
     }
-    
+
     # add values to each timedict key
     for unit in time_units:
         if unit[1] == "w":
             timedict["d"] += 7*unit[0]
         else:
             timedict[unit[1]] += unit[0]
-    
+
     # check non-whole numbers, and shift "0.2m" to 0.2*60 = 12 seconds
     def decimals(time):
         return time - int(time)
     def is_whole(time):
         return time - int(time) == 0
-    
+
     if not is_whole(timedict["y"]):
         timedict["M"] += decimals(timedict["y"]) * 12
         timedict["y"] = int(timedict["y"])
@@ -339,7 +339,7 @@ def parse_date(time_string, now: datetime):
     if not is_whole(timedict["s"]):
         timedict["f"] += decimals(timedict["s"]) * 1000000
         timedict["s"] = int(timedict["s"])
-    
+
     # check overflows
     while timedict["s"] >= 60:
         timedict["s"] -= 60
@@ -355,9 +355,9 @@ def parse_date(time_string, now: datetime):
         timedict["y"] += 1
     if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
         raise ValueError("I don't think I can remind you in that long!")
-    
+
     timedict = {i:int(timedict[i]) for i in timedict}
-    
+
     distance = datetime(timedict["y"],timedict["M"],1,timedict["h"],timedict["m"],timedict["s"])
     # cause you cant have >31 days in a month, but if overflow is given, then let this timedelta calculate the new months/years
     distance += timedelta(days=timedict["d"])
