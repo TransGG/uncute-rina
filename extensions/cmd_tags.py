@@ -236,7 +236,7 @@ class Tags: # TODO: move to own file
         embed = discord.Embed(
             title="PluralKit and users with the [BOT] tag",
             description="PluralKit is a Discord bot that allows users to proxy their messages via Discord webhooks. This allows for "
-                        "one discord account to have multiple psudo accounts, without the need to have alts in the server.\n"
+                        "one discord account to have multiple pseudo accounts, without the need to have alts in the server.\n"
                         "\n"
                         "These messages are sent via the bot and get a [BOT] tag, but the user behind them is **not** a bot.\n"
                         "\n"

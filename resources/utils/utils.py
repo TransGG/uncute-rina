@@ -5,13 +5,16 @@ import warnings # for debug (if given wrong color)
 from resources.customs.bot import Bot
 
 __all__ = [
+    "TESTING_ENVIRONMENT",
     "debug",
-    "EnabledServers",
     "get_mod_ticket_channel_id",
     "thousand_space",
     "log_to_guild",
-    "executed_in_dms"
+    "executed_in_dms",
+    "parse_date",
 ]
+
+TESTING_ENVIRONMENT = 2 # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 
 def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> None:
     """
