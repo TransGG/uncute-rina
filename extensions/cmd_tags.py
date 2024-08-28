@@ -143,7 +143,7 @@ class Tags: # TODO: move to own file
                         "aspects of our community. Currently, this involves the selfies channel, but may be "
                         "expanded to other channels in future.\n"
                         "\n"
-                        "You can obtain the trusted role by sending 500 messages or after gaining the "
+                        "You can obtain the trusted role by reaching level 6 by sending messages or after gaining the "
                         "equivalent XP from voice channel usage. If you rejoin the server you can always "
                         "ask for the role back too!"
         )
