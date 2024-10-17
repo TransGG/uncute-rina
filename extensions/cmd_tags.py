@@ -234,11 +234,11 @@ class Tags: # TODO: move to own file
 
     async def send_pluralkit_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
         embed = discord.Embed(
-            title="PluralKit and users with the [BOT] tag",
+            title="PluralKit and users with the [APP] tag",
             description="PluralKit is a Discord bot that allows users to proxy their messages via Discord webhooks. This allows for "
                         "one discord account to have multiple pseudo accounts, without the need to have alts in the server.\n"
                         "\n"
-                        "These messages are sent via the bot and get a [BOT] tag, but the user behind them is **not** a bot.\n"
+                        "These messages are sent via the bot and get a [APP] tag, but the user behind them is **not** a bot.\n"
                         "\n"
                         "PluralKit can have multiple uses in other communities. However, in ours it should only be used for plurality, "
                         "self-identity purposes, or as a mental health aid.\n"
