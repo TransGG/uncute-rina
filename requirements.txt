@@ -1,6 +1,6 @@
 discord
-pymongo[srv]
-motor
+motor==3.4.0
+pymongo==4.8.0
 pandas
 apscheduler
 matplotlib
