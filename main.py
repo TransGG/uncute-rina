@@ -17,7 +17,7 @@ from resources.customs.reminders import ReminderObject # Reminders (/reminders r
 from resources.customs.watchlist import get_or_fetch_watchlist_index # for fetching all watchlists on startup
 
 
-BOT_VERSION = "1.2.9.18"
+BOT_VERSION = "1.2.9.19"
 
 EXTENSIONS = [
     "cmd_addons",

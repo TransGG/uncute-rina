@@ -12,8 +12,13 @@ class TestingCog(commands.GroupCog,name="testing"):
         self.client = client
 
     @app_commands.command(name="send_fake_watchlist_modlog", description="make a fake user modlog report")
-    @app_commands.describe(target="User to add", reason="Reason for adding", rule="rule to punish for", private_notes="private notes to include")
-    async def send_fake_watchlist_mod_log(self, itx: discord.Interaction, target: discord.User, reason: str = "", rule: str = None, private_notes: str = ""):
+    @app_commands.describe(
+        target="User to add",
+        reason="Reason for adding",
+        rule="rule to punish for",
+        private_notes="private notes to include",
+        role_changes="role changes ([[\\n]] converts to newline)")
+    async def send_fake_watchlist_mod_log(self, itx: discord.Interaction, target: discord.User, reason: str = "", rule: str = None, private_notes: str = "", role_changes: str = ""):
         embed = discord.Embed(title="did a log thing for x", color=16705372)
         embed.add_field(name="User",value = f"{target.mention} (`{target.id}`)", inline=True)
         embed.add_field(name="Moderator",value = f"{itx.user.mention}", inline=True)
@@ -23,6 +28,8 @@ class TestingCog(commands.GroupCog,name="testing"):
         embed.add_field(name="Reason",value = f">>> {reason}")
         embed.add_field(name="\u200b",value = f"\u200b", inline=False)
         embed.add_field(name="Private Notes",value = f">>> {private_notes}")
+        embed.add_field(name="\u200b",value = f"\u200b", inline=False)
+        embed.add_field(name="Role Changes",value = role_changes.replace("[[\\n]]", "\n"))
         # any channel in self.client.custom_ids["staff_logs_category"] should work.
         await self.client.get_channel(1143642283577725009).send(embed=embed)
 

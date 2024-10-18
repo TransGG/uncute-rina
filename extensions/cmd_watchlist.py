@@ -227,10 +227,12 @@ class WatchList(commands.Cog):
             return
         if type(message.channel) is discord.Thread: # ignore the #rules channel with its threads
             return
+        if len(message.embeds) == 0:
+            return # ignore messages without embeds (if the bot (or in dev env. rina herself) sends a chat message or reponse in this channel)
 
         for embed in message.embeds:
             reported_user_id = None
-            fields = {"rule":None, "reason":None, "private notes":None}
+            fields = {"rule":None, "reason":None, "private notes":None, "role changes":None}
             for field in embed.fields:
                 if field.name.lower() == "user":
                     reported_user_id = field.value.split("`")[1]
@@ -251,11 +253,15 @@ class WatchList(commands.Cog):
                     elif field.value.startswith("> "):
                         pass # already has the desired format.
                     else:
-                        fields[field.name.lower()] = field.value.replace("\n", "\n> ")
+                        if field.name.lower() == "role changes": # don't add quote for role changes (diff code block ;|)
+                            fields[field.name.lower()] = field.value
+                        else:
+                            fields[field.name.lower()] = field.value.replace("\n", "\n> ")
 
             punish_rule = fields["rule"]
             punish_reason = fields["reason"]
             private_notes = fields["private notes"]
+            role_changes = fields["role changes"]
         # action_name = message.channel.name
 
         watch_channel: discord.TextChannel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
@@ -269,7 +275,12 @@ class WatchList(commands.Cog):
             await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an [infraction]({message.jump_url}) in {message.channel.mention}:\n" +
                               f"Rule:\n> {punish_rule}\n" * bool(punish_rule) +
                               f"Reason:\n> {punish_reason}\n" * bool(punish_reason) +
-                              f"Private notes:\n> {private_notes}" * bool(private_notes),
+                              f"Private notes:\n> {private_notes}\n" * bool(private_notes) +
+                              (f"Role changes:" +
+                                    "\n"*(not (role_changes if role_changes else "").startswith("```")) + 
+                                    f"{role_changes}\n"
+                                ) * bool(role_changes) +
+                              f"",
                               allowed_mentions=discord.AllowedMentions.none())
             return
 
