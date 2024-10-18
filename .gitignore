@@ -3,3 +3,4 @@ outputs/*
 setup.cfg
 __pycache__
 .idea
+.vscode

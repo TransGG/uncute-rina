@@ -9,6 +9,7 @@ from pymongo.database import Database as pymongodatabase # for MongoDB database 
 from pymongo import MongoClient
 import motor.motor_asyncio as motorasync # for making Mongo run asynchronously (during api calls)
 import motor.core as motorcore # for typing
+import os; # for creating outputs/ directory
 
 from resources.utils.utils import debug, TESTING_ENVIRONMENT # for logging crash messages
 from resources.customs.bot import Bot
@@ -114,6 +115,7 @@ def get_version() -> str:
     """
     fileVersion = BOT_VERSION.split(".")
     try:
+        os.makedirs("outputs", exist_ok=True)
         with open("outputs/version.txt", "r") as f:
             version = f.read().split(".")
     except FileNotFoundError:
