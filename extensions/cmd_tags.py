@@ -279,6 +279,19 @@ class Tags: # TODO: move to own file
                         "need to take action and mute you. Thank you for your cooperation."
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
+
+    async def send_pksettag_info(self, tag_name: str, itx:discord.Interaction, client, public, anonymous):
+        embed = discord.Embed(
+            title="Please set a PluralKit server tag",
+            description="Please set a server tag via PluralKit. You can do that by doing `pk;system servertag [tag]`"
+                        " in the bot commands channel.\n\n"
+                        "A tag is an emoji or word that represents your system to make it easier "
+                        "for moderators and users to identify what system you are a part of without "
+                        "needing to use commands or ask you.\n\n"
+                        "Example: Apocalypse System uses ☣️ as a system tag, but \"[Mod]\" as a server "
+                        "tag to be easily identifiable as a moderator."
+        )
+        await self.tag_message(tag_name, itx, client, public, anonymous, embed)
     #endregion Tags
 
 
@@ -395,7 +408,8 @@ tag_info_dict: dict[str, tuple[tuple[int,int,int], typing.Callable, int]] = {
     "tone indicators"                      : ([180,  40, 100], t.send_toneindicator_info,          EnabledServers.all_server_ids()),
     "trigger warnings"                     : ([200,  40, 100], t.send_triggerwarning_info,         EnabledServers.all_server_ids()),
     "trusted role"                         : ([220,  40, 100], t.send_trustedrole_info,            EnabledServers.transplace_etc_ids()),
-    "system discourse"                     : ([240,  40, 100], t.send_syscourse_info,              EnabledServers.all_server_ids())
+    "set pk server tag"                    : ([260,  40, 100], t.send_pksettag_info,               EnabledServers.all_server_ids()),
+    "system discourse"                     : ([240,  40, 100], t.send_syscourse_info,              EnabledServers.all_server_ids()),
 }
 colours = {k: discord.Colour.from_hsv(v[0][0]/360, v[0][1]/100, v[0][2]/100) for k, v in tag_info_dict.items()}
 
