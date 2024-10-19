@@ -40,7 +40,7 @@ EXTENSIONS = [
     "cmd_starboard",
     "cmdg_nameusage",
     "cmdg_reminders",
-    "cmdg_testing_commands",
+    #"cmdg_testing_commands",
 ]
 
 # Permission requirements:

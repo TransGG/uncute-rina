@@ -19,7 +19,7 @@ from resources.customs.emojistats import EmojiSendSource
 # reactionUsedCount = 8                                 #  int  of how often messages have been replied to with this emoji
 
 
-async def add_to_data(emoji: tuple[bool, str, str], location: EmojiSendSource):
+async def add_to_emoji_data(emoji: tuple[bool, str, str], location: EmojiSendSource):
     """
     Helper function to add emoji data to the mongo database when an emoji is sent/replied in chat.
 
@@ -51,6 +51,31 @@ async def add_to_data(emoji: tuple[bool, str, str], location: EmojiSendSource):
     # collection.update_one( query, {"$set":{"name":emojiName}})
     #debug(f"Successfully added new data for {emojiID} as {location.replace('UsedCount','')}",color="blue")
 
+async def add_to_sticker_data(sticker_name: str, sticker_id: str):
+    """
+    Helper function to add sticker data to the mongo database when a sticker is sent in chat.
+
+    Parameters
+    -----------
+    sticker_name: string
+        The sticker name :P
+    sticker_id: str
+        The sticker id, as string
+    """
+    collection = asyncRinaDB["stickerstats"]
+    query = {"id": sticker_id}
+    data = await collection.find_one(query)
+    if data is None:
+        await collection.insert_one(query)
+
+    location = "messageUsedCount"
+
+    #increment the usage of the sticker in the dictionary
+    await collection.update_one(query, {"$inc" : {location:1}} , upsert=True)
+    await collection.update_one(query, {"$set":{"lastUsed": mktime(datetime.now(timezone.utc).timetuple()) , "name":sticker_name}}, upsert=True)
+
+    #debug(f"Successfully added new data for {sticker_id} as {location.replace('UsedCount','')}",color="blue")
+
 
 class EmojiStats(commands.Cog):
     def __init__(self, client: Bot):
@@ -61,7 +86,7 @@ class EmojiStats(commands.Cog):
     emojistats = app_commands.Group(name='emojistats', description='Get information about emoji usage in messages and reactions')
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
         emojis: list[tuple[bool, str, str]] = []
@@ -86,12 +111,12 @@ class EmojiStats(commands.Cog):
             start_index += emoji.span()[1] # (11,29) for example
 
         for emoji in emojis:
-            await add_to_data(emoji, location = EmojiSendSource.MESSAGE)
+            await add_to_emoji_data(emoji, location = EmojiSendSource.MESSAGE)
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, reaction):
+    async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
         if reaction.emoji.id is not None:
-            await add_to_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)), location=EmojiSendSource.REACTION)
+            await add_to_emoji_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)), location=EmojiSendSource.REACTION)
 
     @emojistats.command(name="getemojidata",description="Get emoji usage data from an ID!")
     @app_commands.rename(emoji_name="emoji")
@@ -128,7 +153,7 @@ class EmojiStats(commands.Cog):
                                         f"Animated: {animated}\n" +
                                         f"Last used: {datetime.utcfromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
 
-    @emojistats.command(name="getunusedemojis",description="Get the least-used emojis")
+    @emojistats.command(name="get_unused_emojis",description="Get the least-used emojis")
     @app_commands.describe(public="Do you want everyone in this channel to be able to see this result?",
                            max_results="How many emojis do you want to retrieve at most? (may return fewer)",
                            used_max="Up to how many times may the emoji have been used? (= min_msg + min_react)(default: 10)",
@@ -212,9 +237,9 @@ class EmojiStats(commands.Cog):
     async def get_emoji_top_10(self, itx: discord.Interaction):
         collection = asyncRinaDB["emojistats"]
         output = ""
-        for type in ["messageUsedCount","reactionUsedCount"]:
+        for source_type in ["messageUsedCount","reactionUsedCount"]:
             results = []
-            async for emoji in collection.find({},limit=10,sort=[(type,pymongo.DESCENDING)]):
+            async for emoji in collection.find({},limit=10,sort=[(source_type,pymongo.DESCENDING)]):
                 animated = 0
                 try:
                     animated = emoji['animated']
@@ -225,11 +250,128 @@ class EmojiStats(commands.Cog):
 
                 emoji_full = "<"+("a"*animated)+":"+emoji["name"]+":"+emoji["id"]+">"
                 try:
-                    results.append(f"> **{emoji[type]}**: {emoji_full}")
+                    results.append(f"> **{emoji[source_type]}**: {emoji_full}")
                 except KeyError:
                     # leftover emoji doesn't have a value for messageUsedCount or reactionUsedCount yet
                     pass
-            output += "\nTop 10 for "+type.replace("UsedCount","")+"s:\n"
+            output += "\nTop 10 emojis for "+source_type.replace("UsedCount","")+"s:\n"
+            output += '\n'.join(results)
+        await itx.response.send_message(output,ephemeral=True)
+
+
+class StickerStats(commands.Cog):
+    def __init__(self, client: Bot):
+        global asyncRinaDB
+        asyncRinaDB = client.asyncRinaDB
+        self.client = client
+
+    stickerstats = app_commands.Group(name='stickertats', description='Get information about sticker usage in messages and reactions')
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+
+        for sticker in message.stickers:
+            # if sticker in message.guild.stickers: # only track if it's actually a guild's sticker; not some outsider one
+                await add_to_sticker_data(sticker.name, str(sticker.id))
+
+    @stickerstats.command(name="getstickerdata",description="Get sticker usage data from an ID!")
+    @app_commands.rename(sticker_name="sticker")
+    @app_commands.describe(sticker_name="Sticker you want to get data of")
+    async def get_sticker_data(self, itx: discord.Interaction, sticker_name: str):
+        if ":" in sticker_name: # idk why people would, but idk the format for stickers so ill just assume <name:id> or something idk
+            sticker_name = sticker_name.strip().split(":")[1][:-1]
+        sticker_id = sticker_name
+        if not sticker_id.isdecimal():
+            await itx.response.send_message("You need to fill in the ID of the sticker. This ID can't contain other characters. Only numbers.",ephemeral=True)
+            return
+
+        collection = asyncRinaDB["stickerstats"]
+        query = {"id": sticker_id}
+        sticker_response = await collection.find_one(query)
+        if sticker_response is None:
+            await itx.response.send_message("That sticker doesn't have data yet. It hasn't been used since we started tracking the data yet. (<t:1729311000:R>, <t:1729311000:F>)", ephemeral=True)
+            return
+
+        msg_used = sticker_response.get('messageUsedCount',0)
+
+        sticker_search = (sticker_response["name"]+":"+sticker_response["id"])
+        sticker = sticker_search
+
+        await itx.response.send_message(f"Data for {sticker}"+f"  ".replace(':','\\:') + f"(`{sticker}`)\n"
+                                        f"messageUsedCount: {msg_used}\n" +
+                                        f"Last used: {datetime.fromtimestamp(sticker_response['lastUsed'], tz=timezone.utc).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",ephemeral=True)
+
+
+    @stickerstats.command(name="get_unused_stickers",description="Get the least-used stickers")
+    @app_commands.describe(public="Do you want everyone in this channel to be able to see this result?",
+                           max_results="How many stickers do you want to retrieve at most? (may return fewer)",
+                           used_max="Up to how many times may the sticker have been used? (default: 10)")
+    async def get_unused_stickers(self, itx: discord.Interaction, public: bool = False,
+                                  max_results: int = 10, used_max: int = 10):
+        await itx.response.defer(ephemeral = not public)
+
+        unused_stickers = []
+
+        collection = asyncRinaDB["stickerstats"]
+        query = {
+            "$expr": {
+                "$lte": [
+                    {"$add": [
+                        {"$ifNull":["$messageUsedCount", 0]}
+                        ]},
+                    used_max
+                ]
+            }
+        }
+
+        if max_results > 50:
+            max_results = 50
+        if used_max < 0:
+            used_max = 0
+
+        sticker_stats: list[dict[str, str | int | bool]] = [x async for x in collection.find(query)]
+        sticker_stat_ids: list[str] = await collection.distinct("id")
+
+        for sticker in await itx.guild.fetch_stickers():
+            if str(sticker.id) not in sticker_stat_ids:
+                unused_stickers.append(f"<{sticker.name}\\:{sticker.id}> (0)")
+                continue
+
+            for sticker_stat in sticker_stats:
+                if sticker_stat["id"] == str(sticker.id): # assumes the db ID column is unique (grabs first matching result)
+                    break
+            else:
+                continue # sticker doesn't exist anymore?
+
+            unused_stickers.append(f"<{ sticker.name }\\:{ sticker.id }>"+
+                                 f"({sticker_stat.get('messageUsedCount',0)})")
+
+            if len(unused_stickers) > max_results:
+                break
+
+        header = "These stickers have been used very little (x used in msg):\n"
+        output = ', '.join(unused_stickers)
+        if len(output) > 1850:
+            warning = "\nShortened to be able to be sent."
+            output = output[:(2000 - len(header) - len(warning)-5)] + warning
+        await itx.followup.send(content = header + output)
+
+    @stickerstats.command(name="getstickertop10",description="Get top 10 most used stickers")
+    async def get_sticker_top_10(self, itx: discord.Interaction):
+        collection = asyncRinaDB["stickerstats"]
+        output = ""
+        for source_type in ["messageUsedCount"]:
+            results = []
+            async for sticker in collection.find({},limit=10,sort=[(source_type,pymongo.DESCENDING)]):
+                sticker_full = "<"+sticker["name"]+"\\:"+sticker["id"]+">"
+                try:
+                    results.append(f"> **{sticker[source_type]}**: {sticker_full}")
+                except KeyError:
+                    # leftover sticker doesn't have a value for messageUsedCount yet
+                    pass
+            output += "\nTop 10 stickers for "+source_type.replace("UsedCount","")+"s:\n"
             output += '\n'.join(results)
         await itx.response.send_message(output,ephemeral=True)
 
@@ -237,3 +379,4 @@ class EmojiStats(commands.Cog):
 async def setup(client):
     # client.add_command(getMemberData)
     await client.add_cog(EmojiStats(client))
+    await client.add_cog(StickerStats(client))
