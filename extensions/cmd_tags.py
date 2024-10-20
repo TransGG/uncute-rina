@@ -143,8 +143,8 @@ class Tags: # TODO: move to own file
                         "aspects of our community. Currently, this involves the selfies channel, but may be "
                         "expanded to other channels in future.\n"
                         "\n"
-                        "You can obtain the trusted role by sending 500 messages or after gaining the "
-                        "equivalent XP from voice channel usage. If you rejoin the server you can always "
+                        "You can obtain the trusted role by reaching level 6 by sending messages or talking in "
+                        "voice channels. If you rejoin the server you can always "
                         "ask for the role back too!"
         )
         await self.tag_message(tag_name, itx, client, public, anonymous, embed)
@@ -173,7 +173,7 @@ class Tags: # TODO: move to own file
             title="Selfies and the #selfies channel",
             description="For your own and other's safety, the selfies channel is hidden behind the "
                         "trusted role. This role is granted automatically when you've been active in "
-                        "the server for long enough. We grant the role after 500 messages or 9 hours "
+                        "the server for long enough. We grant the role at level six which can be obtaine by sending messages or chatting"
                         "in VC or a combination of both.\n"
                         "\n"
                         "The selfies channel automatically deletes all messages after 7 days to ensure "
