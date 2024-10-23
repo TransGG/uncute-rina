@@ -23,7 +23,7 @@ async def handle_reminder_timestamp_parsing(itx: discord.Interaction, reminder_d
         for char in reminder_datetime:
             if char not in "0123456789-t:+":
                 raise ValueError(f"`{char}` cannot be used for a reminder date/time.")
-        
+
         date, time = reminder_datetime.split("t")
         if date.count("-") != 2:
             raise ValueError("Incorrect date given! Please format the date as YYYY-MM-DD, like 2023-12-31")
@@ -89,7 +89,7 @@ async def handle_reminder_timestamp_parsing(itx: discord.Interaction, reminder_d
 
 class RemindersCog(commands.GroupCog,name="reminder"):
     def __init__(self, client: Bot):
-        self.client = client
+        self.client: Bot = client
 
     @app_commands.command(name="remindme",description="Add a reminder for yourself!")
     @app_commands.describe(reminder_datetime="When would you like me to remind you? (1d2h, 5 weeks, 1mo10d)",
@@ -131,7 +131,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
         now = _now.astimezone(tz=datetime.now().tzinfo)
         try:
             if reminder_datetime.startswith("<t:"):
-                possible_timestamp_datetime = reminder_datetime.replace("<t:","").replace(">","")
+                possible_timestamp_datetime = reminder_datetime.replace("<t:","").split(":")[0].replace(">","")
                 if possible_timestamp_datetime.isdecimal():
                     if int(possible_timestamp_datetime) < mktime(datetime.timetuple(now)):
                         await itx.response.send_message(
@@ -149,7 +149,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
                 await itx.response.send_message(
                     f"Couldn't make new reminder:\n> {str(ex)}\n"
                     "You can only use a format like [number][letter], or yyyy-mm-ddThh:mm:ss+0000. Some examples:\n"
-                    '    "3mo 0.5d", "in 2 hours, 3.5 mins", "1 year and 3 seconds", "3day4hour", "4d1m", "2023-12-31T23:59+0100"\n'
+                    '    "3mo 0.5d", "in 2 hours, 3.5 mins", "1 year and 3 seconds", "3day4hour", "4d1m", "2023-12-31T23:59+0100", "<t:12345678>\n'
                     "Words like \"in\" and \"and\" are ignored, so you can use those for readability if you'd like.\n"
                     '    year = y, year, years\n'
                     '    month = mo, month, months\n'
@@ -157,7 +157,8 @@ class RemindersCog(commands.GroupCog,name="reminder"):
                     '    day = d, day, days\n'
                     '    hour = h, hour, hours\n'
                     '    minute = m, min, mins, minute, minutes\n'
-                    '    second = s, sec, secs, second, seconds\n',
+                    '    second = s, sec, secs, second, seconds\n'
+                    f'For more info, type {self.client.get_command_mention("help")} `page:113`',
                     ephemeral=True)
                 return
 

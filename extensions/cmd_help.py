@@ -28,7 +28,9 @@ help_pages: dict[int, HelpPage] = {
 Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:customvc` for more info)
 %%editvc%%: edit the name or user limit of your custom voice channel
 %%vctable about%%: Learn about making your voice chat more on-topic!
-"""
+""",
+        fields=[],
+        staff_only=False,
     ),
     #region Default pages (home / index)
     1 : HelpPage(
@@ -43,7 +45,9 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       "▶️ Next page: Index\n"
                       "🔢 Jump to page\n"
                       "\n"
-                      "Do you have a cool bot idea? Use %%developer_request%% to suggest them to staff!"
+                      "Do you have a cool bot idea? Use %%developer_request%% to suggest them to staff!",
+        fields=[],
+        staff_only=False,
     ),
     2 : HelpPage(
         title = "Index",
@@ -59,9 +63,11 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       ". . **7:** Server search commands\n"
                       ". . **8:** Chat actions\n"
                       ". . **9:** Server functions\n"
-                      ". . **10:** Voice channels"
+                      ". . **10:** Voice channels",
+        fields=[],
+        staff_only=False,
     ),
-    #endregion
+    # endregion
 
     ## ### Bot functions:
     ## #      add_poll_reactions, version, help, commands, get_rina_command_mention
@@ -72,7 +78,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     ## ### Internet search commands:
     ## #      equaldex, math, dictionary, toneindicator (kinda not really API / internet but oh well)
     ## ### Server search commands:
-    ## #      getemojidata, getunusedemojis, getemojitop10, getmemberdata, nameusage name/gettop
+    ## #      getemojidata, getunusedemojis, getemojitop10, getstickerdata, getunusedstickers, getstickertop10, getmemberdata, nameusage name/gettop
     ## ### Chat actions:
     ## #      abababa/awawawa, headpats, not cute, compliment, complimentblacklist
     ## ### Server functions:
@@ -90,7 +96,9 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       ". . **101:** /help and /commands\n"
                       ". . **102:** version\n"
                       ". . **103:** get_rina_command_mention\n"
-                      ". . **105:** add_poll_reactions\n"
+                      ". . **105:** add_poll_reactions\n",
+        fields=[],
+        staff_only=False,
     ),
     4 : HelpPage( # index: Utility
         title = "Utility",
@@ -100,22 +108,30 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       ". . **113:** reminder\n"
                       ". . **114:** convert_unit\n"
                       ". . **115:** todo\n",
+        fields=[],
+        staff_only=False,
     ),
     5: HelpPage( # index: Suggestion commands
         title="Suggestion commands",
         description = "Sometimes you just want to share your ideas with other people, you know?\b"
                       "\n"
                       ". . **121:** developer_request\n"
-                      ". . **122:** qotw (question of the week)\n"
+                      ". . **122:** qotw (question of the week)\n",
+        fields=[],
+        staff_only=False,
     ),
     6 : HelpPage(
         title = "Work in progress...",
         description = "This section is still being worked on! (help, so much text to write D: )\n"
-                      "Scroll a few pages ahead to see what the rest of the help pages look like!"
+                      "Scroll a few pages ahead to see what the rest of the help pages look like!",
+        fields=[],
+        staff_only=False,
     ),
     7 : HelpPage( # index: Suggestion commands
         title = "placeholder (skip ahead)",
-        description = "placeholder (skip ahead)"
+        description = "placeholder (skip ahead)",
+        fields=[],
+        staff_only=False,
     ),
     #endregion
     #region Bot Functions
@@ -147,7 +163,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%commands%% `page:3`\n"
                 "  - An alias for this command. Brings you to the Bot Functions index page."
             )
-        ]
+        ],
+        staff_only=False,
     ),
     102 : HelpPage( # /version
         title = "Bot version",
@@ -162,7 +179,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%version%%\n"
                 "  - Gives Rina's current version, and if there is a newer version."
             )
-        ]
+        ],
+        staff_only=False,
     ),
     103 : HelpPage( # get_rina_command_mention
         title="Sharing Rina's commands the cooler way :sunglasses:",
@@ -192,7 +210,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%get_rina_command_mention%% `command:add_poll_reactions`\n"
                 "  - Gives you the command mention information for /add_poll_reactions.\n"
             )
-        ]
+        ],
+        staff_only=False,
     ),
     104 : HelpPage( # /add_poll_reactions
         title = "Adding voting emojis / Creating tiny polls",
@@ -224,7 +243,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%add_poll_reactions%% `message_id:1134140122115838003` `upvote_emoji:👍` `downvote_emoji:👎` `neutral_emoji:🤷`"
                 "  - Adds a thumbs up, then a person shrugging, then a thumbs down emoji."
             )
-        ]
+        ],
+        staff_only=False,
     ),
     #endregion
     #region Utility commands
@@ -258,7 +278,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%roll%% `dice:1` `faces:1` `advanced:help`\n"
                 "  - See next page (__**102**__) for more information about advanced dice rolls."
             )
-        ]
+        ],
+        staff_only=False,
     ),
     112 : HelpPage( # dice rolls advanced
         title = "Advanced dice rolls", # /roll advanced: ...
@@ -278,11 +299,12 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%roll%% `dice:1` `faces:1` `advanced:5d6*2d6-3d6`\n"
                 "  - Multiply the outcome of 5 dice with the outcome of 2 dice, and subtract the outcome of 3 dice."
              )
-        ]
+        ],
+        staff_only=False,
     ),
     113 : HelpPage( # reminders
         title = "Reminders", # /reminder
-        description = "With this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n"
+        description = "Wi" + "th this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n" # for some reason, Rider interpreted this string as an SQL query
                       "This command lets you create, remove, and view your reminders.",
         fields = [
             (
@@ -290,6 +312,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%reminder remindme%% `time: ` `reminder: `\n"
                 "`time`: When do you want to be reminded?\n"
                 "- Use a format like 10d9h8m7s for days/hours/min/sec.\n" #TODO: clarify; copy paste ValueError help message?
+                "- Use a format like 2026-12-01 or 2026-12-01T15:43:23 for a reminder in December 2026.\n"
+                "- Use a format like <t:01234567> or just 01234567 to use a Unix timestamp.\n"
                 "`reminder`: What would you like to be reminded of?"
             ),
             (
@@ -302,7 +326,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%reminder remove%% `item: `\n"
                 "  - Remove a reminder. Use %%reminder reminders%% to see a list of reminders. Each has a number. Use that number to remove the reminder like so: `item:number`."
             )
-        ]
+        ],
+        staff_only=False,
     ),
     114 : HelpPage( # convert unit
         title = "Converting units",
@@ -325,7 +350,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Convert 80 meters to yards = about 87.5 yd\n"
                 ""
             )
-        ]
+        ],
+        staff_only=False,
     ),
     115 : HelpPage( # to-do list
         title = "Todo lists",
@@ -352,7 +378,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Remove to-do item number 0 from your list. Use %%todo%% `mode:Check` to see what number to use to remove the right item.\n"
                 "  - Keep in mind that the order will shift after you've removed an item, so redo the `check` command to make sure you're removing the right command when removing multiple to-do items at once!"
             )
-        ]
+        ],
+        staff_only=False,
     ),
     #endregion
     #region Suggestion commands
@@ -366,7 +393,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       "- A spelling mistake of 1 mistyped character.\n"
                       "It doesn't have to be much :) so long as you explain your ideas "
                       "(or you would have to DM a staff member to give extra explanation).",
-        fields = (
+        fields = [
             (
                 "Parameters",
                 "`suggestion`: The idea you would like to share.\n"
@@ -383,7 +410,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                   "alone in a voice channel, to prevent people camping in vc alone (or falling asleep in vc) for xp`\n"
                 "  - yeah, it does the thingy"
             )
-        )
+        ],
+        staff_only=False,
     ),
     122 : HelpPage( # qotw
         title = "Questions of the week",
@@ -393,7 +421,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                       "Questions will be sent in a channel on the staff server, where we can vote, discuss, "
                       "or give suggestions. To give your questions a better chance of being picked, make "
                       "sure they can be answered by everyone.",
-        fields=(
+        fields=[
             (
                 "Parameters",
                 "`question`: The question you want to suggest.\n"
@@ -406,7 +434,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%qotw%% `question:Should cleo make more qotws?`\n"
                 "  - yes"
             )
-        )
+        ],
+        staff_only=False,
     )
     #endregion
 }

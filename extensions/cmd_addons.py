@@ -147,7 +147,7 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
-def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSentinel) -> discord.Emoji | discord.PartialEmoji | None:
+def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING) -> discord.Emoji | discord.PartialEmoji | None:
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
@@ -184,6 +184,58 @@ def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSenti
         if not emoji.is_usable():
             return None
         return emoji
+
+def product_in_list(mult_list: list):
+    a = 1
+    for x in mult_list:
+        a *= x
+    return a
+
+def generate_roll(query: str) -> list[int]:
+    # print(query)
+    temp: list[str | int] = query.split("d")
+    ## 2d4 = ["2","4"]
+    ## 2d3d4 = ["2","3","4"] (huh?)
+    ## 4 = 4
+    ## [] (huh?)
+    if len(temp) > 2:
+        raise ValueError("Can't have more than 1 'd' in the query of your die!")
+    if len(temp) == 1:
+        try:
+            temp[0] = int(temp[0])
+        except ValueError:
+            raise TypeError(f"You can't do operations with '{temp[0]}'")
+        return [temp[0]]
+    if len(temp) < 1:
+        raise ValueError(f"I couldn't understand what you meant with {query} ({str(temp)})")
+    dice = temp[0]
+    negative = dice.startswith("-")
+    if negative:
+        dice = dice.replace("-", "", 1)
+    faces = ""
+    for x in temp[1]:
+        if x in "0123456789":
+            faces += x
+        else:
+            break
+    remainder = temp[1][len(faces):] # (take the length of the now-still-string faces variable)
+    try:
+        dice = int(dice)
+    except ValueError:
+        raise ValueError(f"You have to roll a numerical number of dice! (You tried to roll '{dice}' dice)")
+    try:
+        faces = int(faces)
+    except ValueError:
+        raise TypeError(
+            f"You have to roll a die with a numerical number of faces! (You tried to roll {dice} dice with '{faces}' faces)")
+    if len(remainder) > 0:
+        raise TypeError("Idk what happened, but you probably filled something in incorrectly.")
+    if dice >= 1000000:
+        raise OverflowError(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...")
+    if faces >= 1000000:
+        raise OverflowError(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...")
+
+    return [(negative*-2+1)*random.randint(1, faces) for _ in range(dice)]
 
 
 class SearchAddons(commands.Cog):
@@ -442,13 +494,21 @@ class FunAddons(commands.Cog):
         self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
         self.rude_comments_opinion_cooldown = 0
 
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-
+    def handle_random_pat_reaction(self, message: discord.Message) -> bool:
+        """
+        A helper function to handle on_message events by users and randomly add a pat reaction to it.
+        
+        Parameters
+        ----------
+        message :class:`discord.Message`
+            The message to (per chance) add a pat reaction to.
+        
+        Returns
+        -------
+        :class:`bool`:
+            Whether or not a reaction was added to the message. 
+        """
         # adding headpats every x messages
-        added_pat = False
         self.headpat_wait += 1
         if self.headpat_wait >= 1000:
             if (
@@ -459,40 +519,41 @@ class FunAddons(commands.Cog):
                                                     995330645901455380, 995330667665707108] or
                     # <#Bulletin Board>, <#Moderation Logs>, <#Verifier Archive>, <#Events>, <#Open Tickets>, <#Closed Tickets>
                     message.guild.id in [981730502987898960] # don't send in Mod server
-                ):
+            ):
                 pass
             else:
                 self.headpat_wait = 0
-                return # people asked for no random headpats anymore; or make it opt-in. See GitHub #23 # TODO: re-enable code someday
+                # people asked for no random headpats anymore; or make it opt-in. See GitHub #23 # TODO: re-enable code someday
+                # try:
+                #     added_pat = True
+                #     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
+                # except discord.errors.Forbidden:
+                #     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url} (Forbidden): They might have blocked Rina...')
+                # except discord.errors.HTTPException as ex:
+                #     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
+                return True
+        return False
 
-
-
-
-
-
-
-                try:
-                    added_pat = True
-                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
-                except discord.errors.Forbidden:
-                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url} (Forbidden): They might have blocked Rina...')
-                except discord.errors.HTTPException as ex:
-                    await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat reaction to {message.jump_url}. (HTTP/{ex.code}) They might have blocked Rina...')
-
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        added_pat = False
+        if not message.author.bot:
+            added_pat = self.handle_random_pat_reaction(message)
+            
         # adding headpats on abababa or awawawawa
         if not added_pat and len(_temp := message.content.lower()) > 5 and (_temp.startswith("aba") or _temp.startswith("awa")):
-                _temp = _temp.replace("ab","").replace("aw","")
-                if _temp == "a":
-                    try:
-                        added_pat = True
-                        await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
-                    except discord.errors.Forbidden: # blocked rina :(
-                        pass
-                    except discord.errors.HTTPException as ex:
-                        if ex.code == 10014: # bad request (emoji doesnt exist: cause it's dev testing environment)
-                            await message.add_reaction("☺") # :relaxed:
-                        else:
-                            raise
+            _temp = _temp.replace("ab","").replace("aw","")
+            if _temp == "a":
+                try:
+                    added_pat = True
+                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
+                except discord.errors.Forbidden: # blocked rina :(
+                    pass
+                except discord.errors.HTTPException as ex:
+                    if ex.code == 10014: # bad request (emoji doesnt exist: cause it's dev testing environment)
+                        await message.add_reaction("☺") # :relaxed:
+                    else:
+                        raise
         if not added_pat and len(_temp := message.content.lower()) > 9 and _temp.startswith("a"):
             for char in _temp:
                 if char not in "abw":
@@ -508,6 +569,9 @@ class FunAddons(commands.Cog):
                         await message.add_reaction("☺") # :relaxed:
                     else:
                         raise
+
+        if message.author.bot:
+            return
 
         # embed "This conversation was powered by friendship" every x messages # TODO: re-enable code someday
         if False:#self.staff_contact_check_wait == 0 or (self.staff_contact_check_wait < -10 and self.staff_contact_check_wait % 6 == 0): # make sure it only sends once (and <-10 for backup)
@@ -634,58 +698,6 @@ class FunAddons(commands.Cog):
                 cmd_mention = self.client.get_command_mention("help")
                 await itx.response.send(f"I don't think I ever implemented this... Ping mysticmia for more information about this command, or run {cmd_mention} `page:112` for more information.")
 
-            def prod(list: list):
-                a = 1
-                for x in list:
-                    a *= x
-                return a
-
-            def generate_roll(query: str):
-                # print(query)
-                temp = query.split("d")
-                ## 2d4 = ["2","4"]
-                ## 2d3d4 = ["2","3","4"] (huh?)
-                ## 4 = 4
-                ## [] (huh?)
-                if len(temp) > 2:
-                    raise ValueError("Can't have more than 1 'd' in the query of your die!")
-                if len(temp) == 1:
-                    try:
-                        temp[0] = int(temp[0])
-                    except ValueError:
-                        raise TypeError(f"You can't do operations with '{temp[0]}'")
-                    return [temp[0]]
-                if len(temp) < 1:
-                    raise ValueError(f"I couldn't understand what you meant with {query} ({str(temp)})")
-                dice = temp[0]
-                negative = dice.startswith("-")
-                if negative:
-                    dice = dice.replace("-", "", 1)
-                faces = ""
-                for x in temp[1]:
-                    if x in "0123456789":
-                        faces += x
-                    else:
-                        break
-                remainder = temp[1][len(faces):] # (take the length of the now-still-string faces variable)
-                try:
-                    dice = int(dice)
-                except ValueError:
-                    raise ValueError(f"You have to roll a numerical number of dice! (You tried to roll '{dice}' dice)")
-                try:
-                    faces = int(faces)
-                except ValueError:
-                    raise TypeError(
-                        f"You have to roll a die with a numerical number of faces! (You tried to roll {dice} dice with '{faces}' faces)")
-                if len(remainder) > 0:
-                    raise TypeError("Idk what happened, but you probably filled something in incorrectly.")
-                if dice >= 1000000:
-                    raise OverflowError(f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop responding to commands. Please stay below 1 million dice...")
-                if faces >= 1000000:
-                    raise OverflowError(f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. Please bowl with a sphere of fewer than 1 million faces...")
-
-                return [(negative*-2+1)*random.randint(1, faces) for _ in range(dice)]
-
             for char in advanced:
                 if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
                     if public:
@@ -714,8 +726,8 @@ class FunAddons(commands.Cog):
             if "*" in advanced:
                 out += [' + '.join([' * '.join([str(x) for x in section]) for section in result])]
             if "+" in advanced or '-' in advanced:
-                out += [' + '.join([str(prod(section)) for section in result])]
-            out += [str(sum([prod(section) for section in result]))]
+                out += [' + '.join([str(product_in_list(section)) for section in result])]
+            out += [str(sum([product_in_list(section) for section in result]))]
             output = discord.utils.escape_markdown('\n= '.join(out))
             if len(output) >= 1950:
                 output = "Your result was too long! I couldn't send it. Try making your rolls a bit smaller, perhaps by splitting it into multiple operations..."
