@@ -74,6 +74,19 @@ class TestingCog(commands.GroupCog,name="testing"):
         await itx.response.send_message("Sending this cool embed...", embed=pages[0], view=view)
 
 
+    @app_commands.command(name="send_srmod_appeal_test", description="Send a test embed of a ban appeal")
+    @app_commands.describe(username="The username you want to fill in")
+    async def send_pageview_test_embed(self, itx: discord.Interaction, username: str):
+        embed: discord.Embed = discord.Embed(title="New Ban Appeal")
+        embed.add_field(name="Which of the following are you appealing?", value="Discord Ban")
+        embed.add_field(name="What is your discord username?", value=username)
+        embed.add_field(name="Why were you banned?", value="I spammed this chanel D:")
+        embed.add_field(name="Why do you wish to be unbanned?", value="i was promisd cokies :cookie:")
+        embed.add_field(name="Do you have anything else to add?", value="me eepy")
+        await itx.channel.send("Sending this cool embed...", embed=embed)
+
+
+
 
 async def setup(client):
     await client.add_cog(TestingCog(client))

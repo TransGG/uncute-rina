@@ -61,7 +61,7 @@ class Bot(commands.Bot):
             "transplace_ticket_channel_id": 1175669542412877824,    # - private dev server channel
             "enbyplace_ticket_channel_id": 1125108250426228826,     # + public dev server channel
             "transonance_ticket_channel_id": 1125108250426228826,    # + public dev server channel
-            "ban_appeal_webhook_ids": [1262616416352338093],
+            "ban_appeal_webhook_ids": [979057304752254976],
             "vctable_prefix":"[T] "
         }
         assert [i for i in production_ids] == [i for i in development_ids] # all keys match
