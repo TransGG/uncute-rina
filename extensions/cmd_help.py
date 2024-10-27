@@ -436,14 +436,43 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             )
         ],
         staff_only=False,
-    )
+    ),
     #endregion
+    # region Internet search commands
+    131 : HelpPage( # equaldex
+        title = "Get LGBTQ laws from countries!",
+        description = "There's many countries in the world, and each has different "
+                      "laws, of course. One website put these laws together and made "
+                      "a nice overview for it :D. This command retrieves and shows you "
+                      "some of their data.",
+        fields = [
+            (
+                "Parameters",
+                "`country_id`: The ID of the country you want to look up.\n"
+                "- The short ID form of a country. Some examples: America: US, \n"
+            ),
+            (
+                "Examples (real)",
+                "- %%developer_request%% `suggestion:idea for rina: make tags just post the message directly "
+                "into the channel instead of as a command follow-up so it doesn't show the \"message could "
+                "not be loaded\" error :3`\n"
+                "  - Sends a message to a developer channel on the staff server.\n"
+                "- %%developer_request%% `suggestion:For Amari, make voice channels not give xp if someone is "
+                "alone in a voice channel, to prevent people camping in vc alone (or falling asleep in vc) for xp`\n"
+                "  - yeah, it does the thingy"
+            )
+        ],
+        staff_only=False,
+    )
+    # endregion
 }
+
 FIRST_PAGE: int = sorted(list(help_pages))[0]
 
-assert all([type(i) is int for i in help_pages]) # all help pages have an integer key
-assert sorted(list(help_pages)) == list(help_pages) # all help pages are sorted by default
-assert all([all([j in ["title", "description", "fields"] for j in help_pages[i]]) for i in help_pages]) # all pages only have one of these attributes
+assert all([type(i) is int for i in help_pages]), "All help pages should have an integer key."
+assert sorted(list(help_pages)) == list(help_pages), "All help pages should be sorted by default."
+assert all([all([j in ["title", "description", "fields", "staff_only"] for j in help_pages[i]]) for i in help_pages]), \
+    "All pages should only have fields that are one of these attributes: title, description, fields, staff_only"
 
 
 class HelpCommand(commands.Cog):
