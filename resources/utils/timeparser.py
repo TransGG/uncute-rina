@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import re
 
+
 class TimeParser:
     @staticmethod
     def parse_time_string(input_string: str) -> list[tuple[int, str]]:
@@ -28,7 +29,7 @@ class TimeParser:
         if input_string[0] not in "0123456789.":
             raise ValueError("Time strings should begin with a number: \"10min\"")
         # This regex captures one or more digits followed by one or more alphabetic characters.
-        pattern = r"([.\d]+)([a-zA-Z]+)" # :o i see two capture groups
+        pattern = r"([.\d]+)([a-zA-Z]+)"  # :o i see two capture groups
 
         # Find all matches in the input string
         matches = re.findall(pattern, input_string)
@@ -39,13 +40,14 @@ class TimeParser:
         # result = [(int(num), unit) for num, unit in matches] # :o you can split the capture groups
         for (num, unit) in matches:
             try:
-                result.append( (int(num), unit) )
-            except: # re-raise
-                raise ValueError(f"Invalid number '{num}' in '{input_string}'! You can use decimals, but the number should be valid.")
+                result.append((int(num), unit))
+            except:  # re-raise
+                raise ValueError(
+                    f"Invalid number '{num}' in '{input_string}'! You can use decimals, but the number should be valid.")
         return result
 
     @staticmethod
-    def shrink_time_terms(time_units: list[tuple[int,str]]) -> list[tuple[int,str]]:
+    def shrink_time_terms(time_units: list[tuple[int, str]]) -> list[tuple[int, str]]:
         """
         Helper function to convert time strings from "year" to "y", etc.
 
@@ -58,21 +60,31 @@ class TimeParser:
         --------
         :class:`list[tuple[int,str]]`:
             A list of tuples with shrunk time strings: (4, "d").
+            
+        Raises
+        -------
+        :class:`ValueError`:
+            Input contains unrecognised datetime unit(s).
         """
         timeterms = {
-            "y":["y","year","years"],
-            "M":["mo","month","months"],
-            "w":["w","week","weeks"],
-            "d":["d","day","days"],
-            "h":["h","hour","hours"],
-            "m":["m","min","mins","minute","minutes"],
-            "s":["s","sec", "secs","second","seconds"]
+            "y": ["y", "year", "years"],
+            "M": ["mo", "month", "months"],
+            "w": ["w", "week", "weeks"],
+            "d": ["d", "day", "days"],
+            "h": ["h", "hour", "hours"],
+            "m": ["m", "min", "mins", "minute", "minutes"],
+            "s": ["s", "sec", "secs", "second", "seconds"]
         }
-        for time_unit in time_units:
+        for unit_index in range(len(time_units)):
+            # use index instead of iterating tuples in list because of the tuple component reassignment 3 lines down.
             for timeterm in timeterms:
-                if time_unit[1] in timeterms[timeterm]:
-                    time_unit = (time_unit[0], timeterm) # tuple does not support item assignment like (1,2)[0]=2
-                    continue
+                if time_units[unit_index][1] in timeterms[timeterm]:
+                    time_units[unit_index] = (time_units[unit_index][0], timeterm)
+                    # tuple does not support item assignment like (1,2)[0]=2
+                    # Also assigning to tuples doesn't save in list, so need list ref too.
+                    break
+            else:
+                raise ValueError(f"Datetime unit '{time_unit[1]}' not recognised!")
         return time_units
 
     @staticmethod
@@ -96,6 +108,7 @@ class TimeParser:
         -------
         :class:`ValueError`:
             If the input is invalid.  
+            If the input contains unrecognised datetime units.  
             If the "year" unit exceeds 3999 or if the "day" offset exceeds 1500000.
         """
         # - "next thursday at 3pm"
@@ -107,17 +120,17 @@ class TimeParser:
         # - "<t:293847839273>"
         if "-" in time_string:
             raise ValueError("Tried parsing input as timestring when it should be parsed as ISO8601 or Unix instead.")
-        
-        time_units = TimeParser.shrink_time_terms(TimeParser.parse_time_string(time_string))
+
+        time_units = TimeParser.shrink_time_terms(TimeParser.parse_time_string(time_string))  # can raise ValueError
         # raises ValueError if invalid input
         timedict = {
-            "y":start_date.year,
-            "M":start_date.month,
-            "d":start_date.day-1,
-            "h":start_date.hour,
-            "m":start_date.minute,
-            "s":start_date.second,
-            "f":0, # microseconds can only be set with "0.04s" eg.
+            "y": start_date.year,
+            "M": start_date.month,
+            "d": start_date.day - 1,
+            "h": start_date.hour,
+            "m": start_date.minute,
+            "s": start_date.second,
+            "f": 0,  # microseconds can only be set with "0.04s" eg.
             # now.day-1 for _timedict["d"] because later, datetime(day=...) starts with 1, and adds this value with
             # timedelta. This is required cause the datetime() doesn't let you set "0" for days. (cuz a month starts
             # at day 1)
@@ -126,13 +139,14 @@ class TimeParser:
         # add values to each timedict key
         for unit in time_units:
             if unit[1] == "w":
-                timedict["d"] += 7*unit[0]
+                timedict["d"] += 7 * unit[0]
             else:
                 timedict[unit[1]] += unit[0]
 
         # check non-whole numbers, and shift "0.2m" to 0.2*60 = 12 seconds
         def decimals(time):
             return time - int(time)
+
         def is_whole(time):
             return time - int(time) == 0
 
@@ -171,10 +185,11 @@ class TimeParser:
         if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
             raise ValueError("I don't think I can remind you in that long!")
 
-        timedict = {i:int(timedict[i]) for i in timedict} # round everything down to the nearest whole number
+        timedict = {i: int(timedict[i]) for i in timedict}  # round everything down to the nearest whole number
 
-        distance = datetime(timedict["y"],timedict["M"],1,timedict["h"],timedict["m"],timedict["s"])
-        # cause you cant have >31 days in a month, but if overflow is given, then let this timedelta calculate the new months/years
+        distance = datetime(timedict["y"], timedict["M"], 1, timedict["h"], timedict["m"], timedict["s"])
+        # cause you cant have >31 days in a month, but if overflow is given, then let
+        # this timedelta calculate the new months/years
         distance += timedelta(days=timedict["d"])
 
         return distance
