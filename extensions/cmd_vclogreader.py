@@ -13,8 +13,8 @@ channel_separator_table = str.maketrans({"<":"", "#":"", ">":""})
 
 class VCLogReader(commands.Cog):
     def __init__(self, client: Bot):
-        global asyncRinaDB
-        asyncRinaDB = client.asyncRinaDB
+        global async_rina_db
+        async_rina_db = client.async_rina_db
         self.client = client
 
     async def get_vc_activity(

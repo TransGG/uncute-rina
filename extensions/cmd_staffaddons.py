@@ -9,9 +9,9 @@ from resources.customs.bot import Bot
 
 class StaffAddons(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
 
     @app_commands.command(name="say",description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?",

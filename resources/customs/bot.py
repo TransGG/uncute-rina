@@ -16,12 +16,12 @@ class Bot(commands.Bot):
     running_on_production = True
 
     def __init__(self, api_tokens: dict, version: str,
-                 RinaDB: pymongodatabase, asyncRinaDB: motorcore.AgnosticDatabase,
+                 rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase,
                  *args, **kwargs):
         self.api_tokens: dict = api_tokens
         self.version: str = version
-        self.RinaDB: pymongodatabase = RinaDB
-        self.asyncRinaDB: motorcore.AgnosticDatabase = asyncRinaDB
+        self.rina_db: pymongodatabase = rina_db
+        self.async_rina_db: motorcore.AgnosticDatabase = async_rina_db
         super().__init__(*args, **kwargs)
 
     @property
@@ -61,7 +61,7 @@ class Bot(commands.Bot):
             "transplace_ticket_channel_id": 1175669542412877824,    # - private dev server channel
             "enbyplace_ticket_channel_id": 1125108250426228826,     # + public dev server channel
             "transonance_ticket_channel_id": 1125108250426228826,    # + public dev server channel
-            "ban_appeal_webhook_ids": [1262616416352338093],
+            "ban_appeal_webhook_ids": [979057304752254976],
             "vctable_prefix":"[T] "
         }
         assert [i for i in production_ids] == [i for i in development_ids] # all keys match
@@ -137,7 +137,7 @@ class Bot(commands.Bot):
         if isinstance(guild_id, discord.Guild):
             guild_id = guild_id.id
         try:
-            collection = self.RinaDB["guildInfo"]
+            collection = self.rina_db["guildInfo"]
             query = {"guild_id": guild_id}
             guild_data = collection.find_one(query)
             if guild_data is None:

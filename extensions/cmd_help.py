@@ -9,7 +9,7 @@ help_pages: dict[int, HelpPage] = {
     0 : HelpPage( # fallback default page
         title="Rina's fallback help page",
         description="""Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
-%%add_poll_reactions%%: Add an up-/downvote emoji to a message (for voting)
+%%add_poll_reactions%%: Add an up-/down-vote emoji to a message (for voting)
 %%commands%% or %%help%%: See this help page
 %%compliment%%: Rina can compliment others (matching their pronoun role)
 %%convert_unit%%: Convert a value from one to another! Distance, speed, currency, etc.
@@ -477,10 +477,7 @@ assert all([all([j in ["title", "description", "fields", "staff_only"] for j in 
 
 class HelpCommand(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
         self.client = client
-        RinaDB = client.RinaDB
-
 
     async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
         if requested_page not in help_pages:

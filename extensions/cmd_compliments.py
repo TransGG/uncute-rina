@@ -80,7 +80,7 @@ async def choose_and_send_compliment(client: Bot, itx: discord.Interaction, user
         else:
             quotes[x] += quotes["unisex_quotes"]
 
-    collection = RinaDB["complimentblacklist"]
+    collection = rina_db["complimentblacklist"]
     query = {"user": user.id}
     search: dict[str,int|list] = collection.find_one(query)
     blacklist: list = []
@@ -131,9 +131,9 @@ async def send_confirm_gender_modal(client: Bot, itx: discord.Interaction, user:
 
 class Compliments(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
 
     @commands.Cog.listener() # Rina reflecting cuteness compliments
     async def on_message(self, message):
@@ -282,7 +282,7 @@ class Compliments(commands.Cog):
             if len(string) > 150:
                 await itx.response.send_message("Please make strings shorter than 150 characters...",ephemeral=True)
                 return
-            collection = RinaDB["complimentblacklist"]
+            collection = rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -303,7 +303,7 @@ class Compliments(commands.Cog):
             except ValueError:
                 await itx.response.send_message("To remove a string from your blacklist, you must give the id of the string you want to remove. This should be a number... You didn't give a number...", ephemeral=True)
                 return
-            collection = RinaDB["complimentblacklist"]
+            collection = rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -321,7 +321,7 @@ class Compliments(commands.Cog):
             await itx.response.send_message(f"Successfully removed `{string}` from your blacklist. Your blacklist now contains {len(blacklist)} string{'s'*(len(blacklist)!=1)}.", ephemeral=True)
 
         elif mode == 3: # check
-            collection = RinaDB["complimentblacklist"]
+            collection = rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search: dict[str,int|list] = collection.find_one(query)
             if search is None:

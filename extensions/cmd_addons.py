@@ -147,7 +147,7 @@ Thank you in advance :)"""
         output += "\n:warning: Couldn't think of any responses."
     return output
 
-def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING) -> discord.Emoji | discord.PartialEmoji | None:
+def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils._MissingSentinel) -> discord.Emoji | discord.PartialEmoji | None:
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
@@ -155,7 +155,7 @@ def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING) -> d
     -----------
     client: :class:`Bot`
         The client/bot whose servers to check for the emoji.
-    emoji_str: :class:`str` | :class:`discord.utils.MISSING`
+    emoji_str: :class:`str` | :class:`discord.utils._MissingSenitel`
         The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
 
     Returns
@@ -167,7 +167,7 @@ def get_emoji_from_str(client: Bot, emoji_str: str | discord.utils.MISSING) -> d
     :class:`discord.Emoji`
         if emoji is valid and can be used but the bot.
     """
-    if emoji_str == discord.utils.MISSING:
+    if emoji_str == discord.utils._MissingSentinel:
         return None
     elif emoji_str.isdecimal():
         return client.get_emoji(int(emoji_str)) # returns None if not found
@@ -246,7 +246,7 @@ class SearchAddons(commands.Cog):
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
     async def equaldex(self, itx: discord.Interaction, country_id: str):
         illegal_characters = ""
-        for char in country_id:
+        for char in country_id.lower():
             if char not in "abcdefghijklmnopqrstuvwxyz":
                 if char not in illegal_characters:
                     illegal_characters += char
@@ -331,7 +331,7 @@ class SearchAddons(commands.Cog):
         api_key = self.client.api_tokens['Wolfram Alpha']
         try:
             data = requests.get(
-                f"http://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
+                f"https://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
         except requests.exceptions.JSONDecodeError:
             await itx.followup.send("Your input gave a malformed result! Perhaps it took too long to calculate...", ephemeral=True)
             return
@@ -482,14 +482,14 @@ class SearchAddons(commands.Cog):
                                         "It appears you filled in something for which I can't get extra feedback..\n"
                                         "Feel free to report the situation to MysticMia#7612", ephemeral=True)
                 return
-        await itx.followup.send("debug; It seems you reached the end of the function without "
-                                "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
+        # await itx.followup.send("debug; It seems you reached the end of the function without "
+        #                         "actually getting a response! Please report the query to MysticMia#7612", ephemeral=True)
 
 class FunAddons(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
         self.headpat_wait = 0
         self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
         self.rude_comments_opinion_cooldown = 0
@@ -541,9 +541,10 @@ class FunAddons(commands.Cog):
             added_pat = self.handle_random_pat_reaction(message)
             
         # adding headpats on abababa or awawawawa
-        if not added_pat and len(_temp := message.content.lower()) > 5 and (_temp.startswith("aba") or _temp.startswith("awa")):
-            _temp = _temp.replace("ab","").replace("aw","")
-            if _temp == "a":
+        msg_content = message.content.lower()
+        if not added_pat and len(msg_content) > 5 and (msg_content.startswith("aba") or msg_content.startswith("awa")):
+            msg_content = msg_content.replace("ab","").replace("aw","")
+            if msg_content == "a":
                 try:
                     added_pat = True
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
@@ -554,8 +555,8 @@ class FunAddons(commands.Cog):
                         await message.add_reaction("☺") # :relaxed:
                     else:
                         raise
-        if not added_pat and len(_temp := message.content.lower()) > 9 and _temp.startswith("a"):
-            for char in _temp:
+        if not added_pat and len(msg_content) > 9 and msg_content.startswith("a"):
+            for char in msg_content:
                 if char not in "abw":
                     break
             else:
@@ -742,9 +743,9 @@ class FunAddons(commands.Cog):
 
 class OtherAddons(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
