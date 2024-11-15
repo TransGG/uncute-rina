@@ -28,10 +28,21 @@ class BanAppealReactionsAddon(commands.Cog):
             await message.add_reaction("👎")
             
             # get appeal person's username (expected username)
-            assert "discord username" in appeal_embed.fields[1].name.lower(), f"Embed field 2 name of ban appeal webhook should contain 'discord username' but was '{appeal_embed.fields[2].name}' / '{appeal_embed.fields[2].value}' instead!"
+            platform_field_name = appeal_embed.fields[1].name.lower()
+            if "reddit username" in platform_field_name:
+                platform = "reddit"
+            elif "minecraft username" in platform_field_name:
+                platform = "minecraft"
+            elif "revolt username" in platform_field_name:
+                platform = "revolt"
+            elif "discord username" in platform_field_name:
+                platform = "discord"
+            else:
+                raise AssertionError(f"Embed field 2 name of ban appeal webhook should contain 'discord/reddit/revolt/minecraft username' but was '{appeal_embed.fields[1].name}' / '{appeal_embed.fields[1].value}' instead!")
+
             username: str = appeal_embed.fields[1].value
             try:
-                await message.create_thread(name=f"Appeal-{username}", auto_archive_duration=10080)
+                await message.create_thread(name=f"App-{platform[0]}-{username}", auto_archive_duration=10080)
             except discord.errors.Forbidden:
                 raise # no permission to send message (should be reported to staff server owner i suppose)
             except discord.errors.HTTPException:

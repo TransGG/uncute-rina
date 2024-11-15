@@ -8,7 +8,7 @@ from resources.customs.bot import Bot
 
 
 async def add_to_data(member, type):
-    collection = asyncRinaDB["data"]
+    collection = async_rina_db["data"]
     query = {"guild_id": member.guild.id}
     data = await collection.find_one(query)
     if data is None:
@@ -29,9 +29,9 @@ async def add_to_data(member, type):
 
 class MemberData(commands.Cog):
     def __init__(self, client: Bot):
-        global asyncRinaDB
+        global async_rina_db
         self.client = client
-        asyncRinaDB = client.asyncRinaDB
+        async_rina_db = client.async_rina_db
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -93,7 +93,7 @@ class MemberData(commands.Cog):
         min_time = int((current_time-lower_bound)/accuracy)*accuracy
         max_time = int((current_time-upper_bound)/accuracy)*accuracy
 
-        collection = asyncRinaDB["data"]
+        collection = async_rina_db["data"]
         query = {"guild_id": itx.guild_id}
         data = await collection.find_one(query)
         if data is None:

@@ -487,9 +487,9 @@ class SearchAddons(commands.Cog):
 
 class FunAddons(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
         self.headpat_wait = 0
         self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
         self.rude_comments_opinion_cooldown = 0
@@ -743,9 +743,9 @@ class FunAddons(commands.Cog):
 
 class OtherAddons(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

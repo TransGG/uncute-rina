@@ -171,9 +171,9 @@ async def create_new_custom_vc(client: Bot, member: discord.Member, voice_channe
 
 class CustomVcs(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
         self.blacklisted_channels = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
         #  #General, #Private, #Quiet, and #Minecraft. Later, it also excludes channels starting with "〙"
 
@@ -394,7 +394,7 @@ class CustomVcs(commands.Cog):
                                             str(value), ephemeral=True)
         if mode == 2:
             query = {"guild_id": itx.guild_id}
-            collection = RinaDB["guildInfo"]
+            collection = rina_db["guildInfo"]
 
             async def to_int(value, error_msg):
                 try:

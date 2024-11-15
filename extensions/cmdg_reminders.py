@@ -108,7 +108,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
             await itx.response.send_message("Please keep reminder text below 1500 characters... Otherwise I can't send you a message about it!",ephemeral=True)
             return
         # Check if user has an entry in database yet.
-        collection = self.client.RinaDB["reminders"]
+        collection = self.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
@@ -192,7 +192,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
     @app_commands.command(name="reminders",description="Check your list of reminders!")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
     async def reminders(self, itx: discord.Interaction, item: int = None):
-        collection = self.client.RinaDB["reminders"]
+        collection = self.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
@@ -236,7 +236,7 @@ class RemindersCog(commands.GroupCog,name="reminder"):
     @app_commands.command(name="remove",description="Remove of your reminders")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
     async def remove(self, itx: discord.Interaction, item: int):
-        collection = self.client.RinaDB["reminders"]
+        collection = self.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
@@ -270,7 +270,7 @@ class BumpReminder(commands.Cog):
         if len(message.embeds) > 0:
             if message.embeds[0].description is not None:
                 if message.embeds[0].description.startswith("Bump done!"):
-                    # collection = self.client.RinaDB["guildInfo"]
+                    # collection = self.client.rina_db["guildInfo"]
                     # query = {"guild_id": message.guild.id}
                     # guild_data = collection.find_one(query)
                     # bump_bot_id = guild_data["bumpBot"]

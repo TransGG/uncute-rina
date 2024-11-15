@@ -39,7 +39,7 @@ class ReminderObject:
                 except RuntimeError:
                     pass
                 return
-            collection = self.client.RinaDB["reminders"]
+            collection = self.client.rina_db["reminders"]
             reminder_data = {
                 "creationtime":int(mktime(creationtime.timetuple())),
                 "remindertime":int(mktime(remindertime.timetuple())),
@@ -62,7 +62,7 @@ class ReminderObject:
             await user.send(f"{self.alert}On <t:{creationtime}:F>, you asked to be reminded of \"{self.reminder}\".")
         except discord.errors.Forbidden:
             pass # I guess this user has no servers in common with Rina anymore. Sucks for them.
-        collection = self.client.RinaDB["reminders"]
+        collection = self.client.rina_db["reminders"]
         query = {"userID": self.userID}
         db_data = collection.find_one(query)
         index_subtraction = 0

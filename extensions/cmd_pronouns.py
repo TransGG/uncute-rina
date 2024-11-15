@@ -5,8 +5,8 @@ from resources.customs.bot import Bot
 
 class Pronouns(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
-        RinaDB = client.RinaDB
+        global rina_db
+        rina_db = client.rina_db
         self.client = client
 
         # setting ContextMenu here, because apparently you can't use that decorator in classes..?
@@ -22,7 +22,7 @@ class Pronouns(commands.Cog):
         self.client.tree.add_command(self.ctx_menu_message)
 
     async def get_pronouns(self, itx, user):
-        collection = RinaDB["members"]
+        collection = rina_db["members"]
         query = {"member_id": user.id}
         data = collection.find_one(query)
         warning = ""
@@ -142,7 +142,7 @@ class Pronouns(commands.Cog):
                 if len(sections) == 2:
                     try:
                         user_id = int(sections[0])
-                        collection = RinaDB["members"]
+                        collection = rina_db["members"]
                         query = {"member_id": user_id}
                         data = collection.find_one(query)
                         staff_overwrite = True
@@ -151,7 +151,7 @@ class Pronouns(commands.Cog):
                         pass
             if not staff_overwrite:
                 # find results in database
-                collection = RinaDB["members"]
+                collection = rina_db["members"]
                 query = {"member_id": itx.user.id}
                 data = collection.find_one(query)
             if data is None:
@@ -213,7 +213,7 @@ class Pronouns(commands.Cog):
             warning = ""
             if not ("/" in pronoun or pronoun.startswith(":")):
                 warning = "Warning: Others may not be able to know what you mean with these pronouns (it doesn't use an `x/y` or `:x` format)\n"
-            collection = RinaDB["members"]
+            collection = rina_db["members"]
             query = {"member_id": itx.user.id}
             data = collection.find_one(query)
             if data is None:
@@ -247,7 +247,7 @@ class Pronouns(commands.Cog):
                 warning + f"Successfully added `{pronoun}`. Use {cmd_mention} `mode:Check` to see your custom pronouns, and use {cmd_mention} `mode:Remove` `argument:pronoun` to remove one",
                 ephemeral=True)
         elif mode == 3: # Remove
-            collection = RinaDB["members"]
+            collection = rina_db["members"]
             query = {"member_id": itx.user.id}
             data = collection.find_one(query)
             if data is None:

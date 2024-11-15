@@ -16,12 +16,12 @@ class Bot(commands.Bot):
     running_on_production = True
 
     def __init__(self, api_tokens: dict, version: str,
-                 RinaDB: pymongodatabase, asyncRinaDB: motorcore.AgnosticDatabase,
+                 rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase,
                  *args, **kwargs):
         self.api_tokens: dict = api_tokens
         self.version: str = version
-        self.RinaDB: pymongodatabase = RinaDB
-        self.asyncRinaDB: motorcore.AgnosticDatabase = asyncRinaDB
+        self.rina_db: pymongodatabase = rina_db
+        self.async_rina_db: motorcore.AgnosticDatabase = async_rina_db
         super().__init__(*args, **kwargs)
 
     @property
@@ -137,7 +137,7 @@ class Bot(commands.Bot):
         if isinstance(guild_id, discord.Guild):
             guild_id = guild_id.id
         try:
-            collection = self.RinaDB["guildInfo"]
+            collection = self.rina_db["guildInfo"]
             query = {"guild_id": guild_id}
             guild_data = collection.find_one(query)
             if guild_data is None:

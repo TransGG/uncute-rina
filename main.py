@@ -93,9 +93,9 @@ def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.Ag
             tokens[key] = api_keys[key]
     except FileNotFoundError:
         raise
-    except json.decoder.JSONDecodeError:
+    except json.decoder.JSONDecodeError as ex:
         raise json.decoder.JSONDecodeError(
-            "Invalid JSON file. Please ensure it has correct formatting.").with_traceback(None)
+            "Invalid JSON file. Please ensure it has correct formatting.", ex.doc, ex.pos).with_traceback(None)
     if missing_tokens:
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
 
@@ -106,7 +106,6 @@ def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.Ag
     async_rina_db: motorcore.AgnosticDatabase = cluster["Rina"]
     debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
     return bot_token, tokens, rina_db, async_rina_db
-
 
 def get_version() -> str:
     """
@@ -138,7 +137,7 @@ def get_version() -> str:
     return rina_version
 
 
-def create_client(tokens: dict, RinaDB: pymongodatabase, asyncRinaDB: motorcore.AgnosticDatabase, version: str) -> Bot:
+def create_client(tokens: dict, rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase, version: str) -> Bot:
     debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
@@ -152,8 +151,8 @@ def create_client(tokens: dict, RinaDB: pymongodatabase, asyncRinaDB: motorcore.
     return Bot(
         api_tokens=tokens,
         version=version,
-        RinaDB=RinaDB,
-        asyncRinaDB=asyncRinaDB,
+        rina_db=rina_db,
+        async_rina_db=async_rina_db,
 
         intents=intents,
         command_prefix="/!\"@:\\#",
@@ -163,10 +162,11 @@ def create_client(tokens: dict, RinaDB: pymongodatabase, asyncRinaDB: motorcore.
         allowed_mentions=discord.AllowedMentions(everyone=False)
     )
 
-
-(TOKEN, tokens, RinaDB, asyncRinaDB) = get_token_data()
-version = get_version()
-client = create_client(tokens, RinaDB, asyncRinaDB, version)
+def start_app():
+    (token, tokens, rina_db, async_rina_db) = get_token_data()
+    version = get_version()
+    client = create_client(tokens, rina_db, async_rina_db, version)
+    client.run(token, log_level=logging.WARNING)
 
 
 # region Client events
@@ -219,31 +219,26 @@ async def setup_hook():
 
     debug(f"[####   ]: Loaded server settings" + " " * 30, color="green")
     debug(f"[####+  ]: Restarting ongoing reminders" + " " * 30, color="light_blue", end="\r")
-    collection = RinaDB["reminders"]
+    collection = rina_db["reminders"]
     query = {}
     db_data = collection.find(query)
     for user in db_data:
         try:
             for reminder in user['reminders']:
-                creationtime = datetime.fromtimestamp(reminder['creationtime'])  #, timezone.utc)
-                remindertime = datetime.fromtimestamp(reminder['remindertime'])  #, timezone.utc)
-                ReminderObject(client, creationtime, remindertime, user['userID'], reminder['reminder'], user,
+                creation_time = datetime.fromtimestamp(reminder['creationtime'])  #, timezone.utc)
+                reminder_time = datetime.fromtimestamp(reminder['remindertime'])  #, timezone.utc)
+                ReminderObject(client, creation_time, reminder_time, user['userID'], reminder['reminder'], user,
                                continued=True)
         except KeyError:
             pass
     debug(f"[#####  ]: Finished setting up reminders" + " " * 30, color="green")
     debug(f"[#####+ ]: Caching bot's command names and their ids", color="light_blue", end='\r')
-    commandList = await client.tree.fetch_commands()
-    client.commandList = commandList
+    client.commandList = await client.tree.fetch_commands()
     debug(f"[###### ]: Cached bot's command names and their ids" + " " * 30, color="green")
     debug(f"[######+]: Starting..." + " " * 30, color="light_blue", end='\r')
 
-    # debug(f"[{'#'*extID}{' '*(len(extensions)-extID-1)} ]: Syncing command tree"+ " "*30,color="light_blue",end='\r')
-    # await client.tree.sync()
-
-
 try:
-    client.run(TOKEN, log_level=logging.WARNING)
+    start_app()
 except SystemExit:
     print("Exited the program forcefully using the kill switch")
 # endregion

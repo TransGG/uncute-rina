@@ -4,8 +4,8 @@ from resources.customs.bot import Bot
 
 class TodoList(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
-        RinaDB = client.RinaDB
+        global rina_db
+        rina_db = client.rina_db
         self.client = client
 
     @app_commands.command(name="todo",description="Add or remove a to-do!")
@@ -28,7 +28,7 @@ class TodoList(commands.Cog):
             if len(todo) > 500:
                 itx.response.send_message("I.. don't think having such a big to-do message is gonna be very helpful..",ephemeral=True)
                 return
-            collection = RinaDB["todoList"]
+            collection = rina_db["todoList"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -52,7 +52,7 @@ class TodoList(commands.Cog):
             except ValueError:
                 await itx.response.send_message("To remove an item from your to-do list, you must give the id of the item you want to remove. This should be a number... You didn't give a number...", ephemeral=True)
                 return
-            collection = RinaDB["todoList"]
+            collection = rina_db["todoList"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -69,7 +69,7 @@ class TodoList(commands.Cog):
             collection.update_one(query, {"$set":{f"list":list}}, upsert=True)
             await itx.response.send_message(f"Successfully removed '{todo}' from your to-do list. Your list now contains {len(list)} item{'s'*(len(list)!=1)}.", ephemeral=True)
         elif mode == 3:
-            collection = RinaDB["todoList"]
+            collection = rina_db["todoList"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:

@@ -15,8 +15,8 @@ del_separators_table = str.maketrans({" ":"", "-":"", "_":""})
 
 class TermDictionary(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
-        RinaDB = client.RinaDB
+        global rina_db
+        rina_db = client.rina_db
         self.client = client
 
     # @dictionary.autocomplete('term')
@@ -31,7 +31,7 @@ class TermDictionary(commands.Cog):
             return []
 
         # find results in custom dictionary
-        collection = RinaDB["termDictionary"]
+        collection = rina_db["termDictionary"]
         query = {"synonyms": simplify(current)}
         search = collection.find(query)
         for item in search:
@@ -100,7 +100,7 @@ class TermDictionary(commands.Cog):
         result_str = ""  # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
         results: list[any]
         if source == 1 or source == 2:
-            collection = RinaDB["termDictionary"]
+            collection = rina_db["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
 
@@ -393,7 +393,7 @@ class TermDictionary(commands.Cog):
             if type(q) is list:
                 return [text.lower().translate(del_separators_table) for text in q]
         # Test if this term is already defined in this dictionary.
-        collection = RinaDB["termDictionary"]
+        collection = rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is not None:
@@ -430,7 +430,7 @@ class TermDictionary(commands.Cog):
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You can't add words to the dictionary without staff roles!", ephemeral=True)
             return
-        collection = RinaDB["termDictionary"]
+        collection = rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
@@ -448,7 +448,7 @@ class TermDictionary(commands.Cog):
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You can't remove words to the dictionary without staff roles!", ephemeral=True)
             return
-        collection = RinaDB["termDictionary"]
+        collection = rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
@@ -472,7 +472,7 @@ class TermDictionary(commands.Cog):
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You can't add synonyms to the dictionary without staff roles!", ephemeral=True)
             return
-        collection = RinaDB["termDictionary"]
+        collection = rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:

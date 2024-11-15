@@ -9,9 +9,9 @@ from resources.modals.watchlist import WatchlistReasonModal
 
 class WatchList(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
 
         # setting ContextMenu here, because apparently you can't use that decorator in classes..?
         self.ctx_menu_user = app_commands.ContextMenu(

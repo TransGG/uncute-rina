@@ -188,9 +188,9 @@ async def get_or_fetch_starboard_messages(starboard_channel: discord.abc.GuildCh
 
 class Starboard(commands.Cog):
     def __init__(self, client: Bot):
-        global RinaDB
+        global rina_db
         self.client: Bot = client
-        RinaDB = client.RinaDB
+        rina_db = client.rina_db
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
