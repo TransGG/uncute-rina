@@ -1,4 +1,5 @@
 from datetime import datetime  # for startup and crash logging, and Reminders
+
 program_start = datetime.now()  # first startup time datetime; for logging startup duration
 
 from time import mktime  # to convert datetime to unix epoch time to store in database
@@ -104,8 +105,9 @@ def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.Ag
     rina_db: pymongodatabase = cluster["Rina"]
     cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(tokens['MongoDB'])
     async_rina_db: motorcore.AgnosticDatabase = cluster["Rina"]
-    debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
+    debug(f"[###  ]: Loaded database clusters" + " " * 30, color="green", end='r')
     return bot_token, tokens, rina_db, async_rina_db
+
 
 def get_version() -> str:
     """
@@ -116,6 +118,7 @@ def get_version() -> str:
     :class:`str`:
         Current version/instance of the bot.
     """
+    debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
     file_version = BOT_VERSION.split(".")
     try:
         os.makedirs("outputs", exist_ok=True)
@@ -134,21 +137,22 @@ def get_version() -> str:
     rina_version = '.'.join(rina_version)
     with open("outputs/version.txt", "w") as f:
         f.write(f"{rina_version}")
+    debug(f"[#### ]: Loaded version" + " " * 30, color="green", end='\r')
     return rina_version
 
 
-def create_client(tokens: dict, rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase, version: str) -> Bot:
-    debug(f"[#### ]: Loading Bot" + " " * 30, color="light_blue", end='\r')
+def create_client(
+        tokens: dict, rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase, version: str
+) -> Bot:
+    debug(f"[####+]: Creating bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
     intents.members = True  #apparently this needs to be additionally defined cause it's not included in Intents.default()?
     intents.message_content = True  #apparently it turned off my default intent or something: otherwise i can't send 1984, ofc.
     #setup default discord bot client settings, permissions, slash commands, and file paths
 
-    debug(f"[#      ]: Loaded bot" + " " * 30, color="green")
-    debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
     discord.VoiceClient.warn_nacl = False
-    return Bot(
+    bot: Bot = Bot(
         api_tokens=tokens,
         version=version,
         rina_db=rina_db,
@@ -161,87 +165,93 @@ def create_client(tokens: dict, rina_db: pymongodatabase, async_rina_db: motorco
         activity=discord.Game(name="with slash (/) commands!"),
         allowed_mentions=discord.AllowedMentions(everyone=False)
     )
+    debug(f"[#      ]: Created Bot" + " " * 30, color="green")
+    return bot
+
 
 def start_app():
     (token, tokens, rina_db, async_rina_db) = get_token_data()
     version = get_version()
     client = create_client(tokens, rina_db, async_rina_db, version)
+    debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
+
+    # this can probably be done better
+    # region Client events
+    @client.event
+    async def on_ready():
+        debug(f"[#######]: Logged in as {client.user}, in version {version} (in {datetime.now() - program_start})",
+              color="green")
+        await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
+
+        debug(f"[+]: Pre-loading all watchlist threads", color="light_blue", end="\r")
+        watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
+        if watchlist_channel is not None:  # if running on prod
+            await get_or_fetch_watchlist_index(watchlist_channel)
+        debug(f"[#]: Loaded watchlist threads." + " " * 15, color="green")
+
+    @client.event
+    async def setup_hook():
+        debug(f"[##     ]: Started Bot" + " " * 30, color="green")
+        debug(f"[##+    ]: Load extensions and scheduler", color="light_blue", end="\r")
+        logger = logging.getLogger("apscheduler")
+        logger.setLevel(logging.WARNING)
+        # remove annoying 'Scheduler started' message on sched.start()
+        client.sched = AsyncIOScheduler(logger=logger)
+        client.sched.start()
+
+        ## cache server settings into client, to prevent having to load settings for every extension
+        ## activate the extensions/programs/code for slash commands
+
+        extension_loading_start_time = datetime.now()
+        for extID in range(len(EXTENSIONS)):
+            debug(f"[{'#' * extID}+{' ' * (len(EXTENSIONS) - extID - 1)}]: Loading {EXTENSIONS[extID]}" + " " * 15,
+                  color="light_blue", end='\r')
+            await client.load_extension("extensions." + EXTENSIONS[extID])
+        debug(f"[###    ]: Loaded extensions successfully (in {datetime.now() - extension_loading_start_time})",
+              color="green")
+
+        debug(f"[###+   ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
+        try:
+            client.log_channel = await client.fetch_channel(988118678962860032)
+        except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound,
+                discord.errors.Forbidden):  # one of these
+            client.running_on_production = False
+            if TESTING_ENVIRONMENT == 1:
+                client.log_channel = await client.fetch_channel(986304081234624554)
+            else:
+                client.log_channel = await client.fetch_channel(1062396920187863111)
+        client.bot_owner = await client.fetch_user(262913789375021056)  #  (await client.application_info()).owner
+        # can't use the commented out code because Rina is owned by someone else in the main server than
+        # the dev server (=not me).
+
+        debug(f"[####   ]: Loaded server settings" + " " * 30, color="green")
+        debug(f"[####+  ]: Restarting ongoing reminders" + " " * 30, color="light_blue", end="\r")
+        collection = rina_db["reminders"]
+        query = {}
+        db_data = collection.find(query)
+        for user in db_data:
+            try:
+                for reminder in user['reminders']:
+                    creation_time = datetime.fromtimestamp(reminder['creationtime'])  #, timezone.utc)
+                    reminder_time = datetime.fromtimestamp(reminder['remindertime'])  #, timezone.utc)
+                    ReminderObject(client, creation_time, reminder_time, user['userID'], reminder['reminder'], user,
+                                   continued=True)
+            except KeyError:
+                pass
+        debug(f"[#####  ]: Finished setting up reminders" + " " * 30, color="green")
+        debug(f"[#####+ ]: Caching bot's command names and their ids", color="light_blue", end='\r')
+        client.commandList = await client.tree.fetch_commands()
+        debug(f"[###### ]: Cached bot's command names and their ids" + " " * 30, color="green")
+        debug(f"[######+]: Starting..." + " " * 30, color="light_blue", end='\r')
+    # endregion
+    
     client.run(token, log_level=logging.WARNING)
 
-
-# region Client events
-@client.event
-async def on_ready():
-    debug(f"[#######]: Logged in as {client.user}, in version {version} (in {datetime.now() - program_start})",
-          color="green")
-    await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
-
-    debug(f"[+]: Pre-loading all watchlist threads", color="light_blue", end="\r")
-    watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
-    if watchlist_channel is not None:  # if running on prod
-        await get_or_fetch_watchlist_index(watchlist_channel)
-    debug(f"[#]: Loaded watchlist threads." + " " * 15, color="green")
-
-
-@client.event
-async def setup_hook():
-    logger = logging.getLogger("apscheduler")
-    logger.setLevel(logging.WARNING)
-    # remove annoying 'Scheduler started' message on sched.start()
-    client.sched = AsyncIOScheduler(logger=logger)
-    client.sched.start()
-
-    ## cache server settings into client, to prevent having to load settings for every extension
-    debug(f"[##     ]: Started Bot" + " " * 30, color="green")
-    ## activate the extensions/programs/code for slash commands
-
-    extension_loading_start_time = datetime.now()
-    for extID in range(len(EXTENSIONS)):
-        debug(f"[{'#' * extID}+{' ' * (len(EXTENSIONS) - extID - 1)}]: Loading {EXTENSIONS[extID]}" + " " * 15,
-              color="light_blue", end='\r')
-        await client.load_extension("extensions." + EXTENSIONS[extID])
-    debug(f"[###    ]: Loaded extensions successfully (in {datetime.now() - extension_loading_start_time})",
-          color="green")
-
-    debug(f"[###+   ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
-    try:
-        client.log_channel = await client.fetch_channel(988118678962860032)
-    except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound,
-            discord.errors.Forbidden):  # one of these
-        client.running_on_production = False
-        if TESTING_ENVIRONMENT == 1:
-            client.log_channel = await client.fetch_channel(986304081234624554)
-        else:
-            client.log_channel = await client.fetch_channel(1062396920187863111)
-    client.bot_owner = await client.fetch_user(262913789375021056)  #  (await client.application_info()).owner
-    # can't use the commented out code because Rina is owned by someone else in the main server than
-    # the dev server (=not me).
-
-    debug(f"[####   ]: Loaded server settings" + " " * 30, color="green")
-    debug(f"[####+  ]: Restarting ongoing reminders" + " " * 30, color="light_blue", end="\r")
-    collection = rina_db["reminders"]
-    query = {}
-    db_data = collection.find(query)
-    for user in db_data:
-        try:
-            for reminder in user['reminders']:
-                creation_time = datetime.fromtimestamp(reminder['creationtime'])  #, timezone.utc)
-                reminder_time = datetime.fromtimestamp(reminder['remindertime'])  #, timezone.utc)
-                ReminderObject(client, creation_time, reminder_time, user['userID'], reminder['reminder'], user,
-                               continued=True)
-        except KeyError:
-            pass
-    debug(f"[#####  ]: Finished setting up reminders" + " " * 30, color="green")
-    debug(f"[#####+ ]: Caching bot's command names and their ids", color="light_blue", end='\r')
-    client.commandList = await client.tree.fetch_commands()
-    debug(f"[###### ]: Cached bot's command names and their ids" + " " * 30, color="green")
-    debug(f"[######+]: Starting..." + " " * 30, color="light_blue", end='\r')
 
 try:
     start_app()
 except SystemExit:
     print("Exited the program forcefully using the kill switch")
-# endregion
 
 # region TODO:
 # - Translator
