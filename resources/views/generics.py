@@ -2,13 +2,16 @@ from __future__ import annotations
 import discord
 import typing
 
+
 def create_simple_button(
         label: str,
         style: discord.ButtonStyle,
-        callback: typing.Callable[[discord.ui.View, discord.Interaction], typing.Awaitable[None]],
+        callback: typing.Callable[
+            [discord.ui.View, discord.Interaction],
+            typing.Coroutine[typing.Any, typing.Any, None]],
         disabled: bool = False,
         label_is_emoji: bool = False,
-    ) -> discord.ui.Button:
+) -> discord.ui.Button:
     """
     Create a button for a view with a label/emoji, style, and callback.
 
@@ -62,8 +65,8 @@ class GenericTwoButtonView(discord.ui.View):
         self.value: bool | None = None
         self.timeout: float | None = timeout
 
-        self.add_item(create_simple_button(button_true[0], button_true[1], self.on_button_true))
-        self.add_item(create_simple_button(button_false[0], button_false[1], self.on_button_false))
+        self.add_item(create_simple_button(button_true[0], button_true[1], on_button_true))
+        self.add_item(create_simple_button(button_false[0], button_false[1], on_button_false))
 
     async def on_button_true(self, _: discord.Interaction):
         self.value = True
@@ -111,9 +114,10 @@ class PageView(discord.ui.View):
             self.page == self.max_page_index and not self.loop_around_pages
         )
 
-    async def update_page(itx: discord.Interaction, view: PageView):
+    async def update_page(self, itx: discord.Interaction, view: PageView):
         """
-        Update the page message. This typically involves calculating the message content for the message and updating the original message.
+        Update the page message. This typically involves calculating the message content for the message and updating
+        the original message.
 
         Parameters
         -----------
@@ -129,12 +133,17 @@ class PageView(discord.ui.View):
             starting_page: int,
             max_page_index: int,
             page_update_function: typing.Callable[[discord.Interaction, PageView], typing.Awaitable[None]],
-            prepended_buttons: list[discord.ui.Button] = [],
-            appended_buttons: list[discord.ui.Button] = [],
+            prepended_buttons: list[discord.ui.Button] = None,
+            appended_buttons: list[discord.ui.Button] = None,
             loop_around_pages: bool = True,
-            timeout = None
+            timeout=None
     ):
         super().__init__(timeout=timeout)
+        if prepended_buttons is None:
+            # putting [] as default param makes it mutable, shared across instances -_-
+            prepended_buttons = []
+        if appended_buttons is None:
+            appended_buttons = []
         self.page: int = starting_page
         self.update_page = page_update_function
         self.loop_around_pages = loop_around_pages
@@ -146,8 +155,10 @@ class PageView(discord.ui.View):
 
         page_up_style: tuple[discord.ButtonStyle, bool] = self.page_up_style
         page_down_style: tuple[discord.ButtonStyle, bool] = self.page_down_style
-        self.page_down_button = create_simple_button("◀️", page_down_style[0], self.on_page_down, disabled=page_down_style[1])
-        self.page_up_button = create_simple_button("▶️", page_up_style[0], self.on_page_up, disabled=page_up_style[1])
+        self.page_down_button = create_simple_button(
+            "◀️", page_down_style[0], on_page_down, disabled=page_down_style[1])
+        self.page_up_button = create_simple_button(
+            "▶️", page_up_style[0], on_page_up, disabled=page_up_style[1])
         self.add_item(self.page_down_button)
         self.add_item(self.page_up_button)
 
@@ -155,8 +166,8 @@ class PageView(discord.ui.View):
             self.add_item(post_button)
 
     async def on_page_down(self, itx: discord.Interaction):
-        if self.page - 1 < 0: # below lowest index
-            self.page = self.max_page_index # set to highest index
+        if self.page - 1 < 0:  # below lowest index
+            self.page = self.max_page_index  # set to highest index
         else:
             self.page -= 1
 
@@ -164,14 +175,13 @@ class PageView(discord.ui.View):
         await self.update_page(itx, self)
 
     async def on_page_up(self, itx: discord.Interaction):
-        if self.page + 1 > self.max_page_index: # above highest index
-            self.page = 0 # set to lowest index
+        if self.page + 1 > self.max_page_index:  # above highest index
+            self.page = 0  # set to the lowest index
         else:
             self.page += 1
 
         self.update_button_colors()
         await self.update_page(itx, self)
-
 
     def update_button_colors(self) -> None:
         """

@@ -24,16 +24,17 @@ def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> d
     :class:`discord.Embed`:
         An embed of the given help page.
     """
-    embed = discord.Embed(color = discord.Color.from_hsv((180 + page_number*10)/360, 0.4, 1),
-                          title = page["title"],
-                          description = replace_string_command_mentions(page["description"], client))
+    embed = discord.Embed(color=discord.Color.from_hsv((180 + page_number * 10) / 360, 0.4, 1),
+                          title=page["title"],
+                          description=replace_string_command_mentions(page["description"], client))
     if "fields" in page:
         for field in page["fields"]:
-            embed.add_field(name  = replace_string_command_mentions(field[0], client),
-                            value = replace_string_command_mentions(field[1], client),
-                            inline = False)
-    embed.set_footer(text="page: "+str(page_number))
+            embed.add_field(name=replace_string_command_mentions(field[0], client),
+                            value=replace_string_command_mentions(field[1], client),
+                            inline=False)
+    embed.set_footer(text="page: " + str(page_number))
     return embed
+
 
 def get_nearest_help_pages_from_page(page: int, pages: list[int]) -> tuple[int, int]:
     """
@@ -44,7 +45,8 @@ def get_nearest_help_pages_from_page(page: int, pages: list[int]) -> tuple[int, 
     page: :class:`int`
         The page number to get the two nearest page numbers for.
     pages: :class:`list[int]`
-        A (sorted) list of page numbers to reference (e.g. `[1, 2, 3, 4, 5, 6, 10, 11, 12, 21, 22, 23, 31, 32, 101, 111, 112]`)
+        A (sorted) list of page numbers to reference (e.g.
+        `[1, 2, 3, 4, 5, 6, 10, 11, 12, 21, 22, 23, 31, 32, 101, 111, 112]`)
 
     Returns
     --------
@@ -55,8 +57,8 @@ def get_nearest_help_pages_from_page(page: int, pages: list[int]) -> tuple[int, 
     if page > pages[-1]:
         return pages[-1], pages[0]
     elif page < pages[0]:
-        return pages[0], [-1]
-    else: # page is between two other pages
+        return pages[0], -1
+    else:  # page is between two other pages
         min_index = page
         max_index = page
         while min_index not in pages:
@@ -85,5 +87,5 @@ class HelpPage(TypedDict):
     """
     title: str
     description: str
-    fields: list[tuple[str,str]]
+    fields: list[tuple[str, str]]
     staff_only: bool

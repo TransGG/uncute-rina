@@ -2,10 +2,11 @@ import discord
 from resources.customs.help import HelpPage, generate_help_page_embed, get_nearest_help_pages_from_page
 from resources.customs.bot import Bot
 from resources.modals.generics import SingleLineModal
-import random # for random help page jump page number placeholder
+import random  # for random help page jump page number placeholder
 
 from resources.utils.stringhelper import replace_string_command_mentions
 from resources.views.generics import PageView, create_simple_button
+
 
 class HelpPageView(PageView):
     async def update_page(self, itx: discord.Interaction, view: PageView) -> None:
@@ -19,10 +20,9 @@ class HelpPageView(PageView):
     # region buttons
     @discord.ui.button(emoji="📋", style=discord.ButtonStyle.gray)
     async def go_to_index(self, itx: discord.Interaction, _: discord.ui.Button):
-        self.page = 1 # page 2, but index 1
+        self.page = 1  # page 2, but index 1
         self.update_button_colors()
         await self.update_page(itx, self)
-
 
     @discord.ui.button(emoji="🔢", style=discord.ButtonStyle.gray)
     async def jump_to_page(self, itx: discord.Interaction, _: discord.ui.Button):
@@ -34,7 +34,7 @@ class HelpPageView(PageView):
         )
         await itx.response.send_modal(jump_page_modal)
         await jump_page_modal.wait()
-        if jump_page_modal.itx == None:
+        if jump_page_modal.itx is None:
             return
 
         try:
@@ -42,12 +42,17 @@ class HelpPageView(PageView):
                 raise ValueError
             page_guess = int(jump_page_modal.question_text.value)
         except ValueError:
-            await jump_page_modal.itx.response.send_message("Error: Invalid number.\n"
-                                            "\n"
-                                            "This button lets you jump to a help page (number). To see what kinds of help pages there are, go to the index page (page 2, or click the 📋 button).\n"
-                                            "An example of a help page is page 3: `Utility`. To go to this page, you can either use the previous/next buttons (◀️ and ▶️) to navigate there, or click the 🔢 button: This button opens a modal.\n"
-                                            "In this modal, you can put in the page number you want to jump to. Following from our example, if you type in '3', it will bring you to page 3; `Utility`.\n"
-                                            "Happy browsing!", ephemeral=True)
+            await jump_page_modal.itx.response.send_message(
+                "Error: Invalid number.\n"
+                "\n"
+                "This button lets you jump to a help page (number). To see what kinds of help "
+                "pages there are, go to the index page (page 2, or click the 📋 button).\n"
+                "An example of a help page is page 3: `Utility`. To go to this page, you can "
+                "either use the previous/next buttons (◀️ and ▶️) to navigate there, or click "
+                "the 🔢 button: This button opens a modal.\n"
+                "In this modal, you can put in the page number you want to jump to. Following "
+                "from our example, if you type in '3', it will bring you to page 3; `Utility`.\n"
+                "Happy browsing!", ephemeral=True)
             return
 
         if page_guess not in help_page_indexes:
@@ -55,9 +60,10 @@ class HelpPageView(PageView):
             relative_page_location_details = f" (nearest pages are `{min_index}` and `{max_index}`)."
             await jump_page_modal.itx.response.send_message(
                 replace_string_command_mentions(
-                    (f"This page (`{page_guess}`) does not exist! " if page_guess != 404 else "`404`: Page not found!") + # easter egg
-                    f" {relative_page_location_details} " +
-                    "Try %%help%% `page:1` or use the page keys to get to the right page number!",
+                    (f"This page (`{page_guess}`) does not exist! "
+                     if page_guess != 404 else "`404`: Page not found!") +  # easter egg
+                    f" {relative_page_location_details} Try %%help%% `page:1` or use the page keys "
+                    f"to get to the right page number!",
                     self.client),
                 ephemeral=True)
             return

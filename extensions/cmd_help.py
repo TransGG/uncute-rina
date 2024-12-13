@@ -1,12 +1,14 @@
-import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+import discord
+import discord.app_commands as app_commands
+import discord.ext.commands as commands
+
 from resources.customs.bot import Bot
-from resources.views.help import HelpPageView
 from resources.customs.help import HelpPage, generate_help_page_embed, get_nearest_help_pages_from_page
 from resources.utils.stringhelper import replace_string_command_mentions
-
+from resources.views.help import HelpPageView
 
 help_pages: dict[int, HelpPage] = {
-    0 : HelpPage( # fallback default page
+    0: HelpPage(  # fallback default page
         title="Rina's fallback help page",
         description="""Hi there! This bot has a whole bunch of commands. Let me introduce you to some:
 %%add_poll_reactions%%: Add an up-/down-vote emoji to a message (for voting)
@@ -32,123 +34,125 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         fields=[],
         staff_only=False,
     ),
-    #region Default pages (home / index)
-    1 : HelpPage(
-        title = "Rina's commands",
-        description = "Hey there. This is Rina. I'm a bot that does silly things for TransPlace and some linked servers. I'm mostly being maintained by <@262913789375021056>.\n"
-                      "I can do many things like looking up tone indicators or words, or sharing server info and questions of the week. To share my commands, I've made this cool interactive menu.\n"
-                      "\n"
-                      "Use the buttons below to cycle through different categories of commands!\n"
-                      "\n"
-                      "📋 Index (page 2)\n"
-                      "◀️ Previous page:\n"
-                      "▶️ Next page: Index\n"
-                      "🔢 Jump to page\n"
-                      "\n"
-                      "Do you have a cool bot idea? Use %%developer_request%% to suggest them to staff!",
+    # region Default pages (home / index)
+    1: HelpPage(
+        title="Rina's commands",
+        description="Hey there. This is Rina. I'm a bot that does silly things for TransPlace and some linked servers. "
+                    "I'm mostly being maintained by <@262913789375021056>.\n"
+                    "I can do many things like looking up tone indicators or words, or sharing server info and "
+                    "questions of the week. To share my commands, I've made this cool interactive menu.\n"
+                    "\n"
+                    "Use the buttons below to cycle through different categories of commands!\n"
+                    "\n"
+                    "📋 Index (page 2)\n"
+                    "◀️ Previous page:\n"
+                    "▶️ Next page: Index\n"
+                    "🔢 Jump to page\n"
+                    "\n"
+                    "Do you have a cool bot idea? Use %%developer_request%% to suggest them to staff!",
         fields=[],
         staff_only=False,
     ),
-    2 : HelpPage(
-        title = "Index",
-        description = "Here's a list of all the categories. You can use the :1234: button to quickly hop "
-                      "between these pages. Press :clipboard: to quickly go back to this index page.\n"
-                      "\n"
-                      ". . **1:** Welcome page\n"
-                      ". . **2:** Index\n"
-                      ". . **3:** Bot functions\n"
-                      ". . **4:** Utility\n"
-                      ". . **5:** Suggestion commands\n"
-                      ". . **6:** Internet search commands\n"
-                      ". . **7:** Server search commands\n"
-                      ". . **8:** Chat actions\n"
-                      ". . **9:** Server functions\n"
-                      ". . **10:** Voice channels",
+    2: HelpPage(
+        title="Index",
+        description="Here's a list of all the categories. You can use the :1234: button to quickly hop "
+                    "between these pages. Press :clipboard: to quickly go back to this index page.\n"
+                    "\n"
+                    ". . **1:** Welcome page\n"
+                    ". . **2:** Index\n"
+                    ". . **3:** Bot functions\n"
+                    ". . **4:** Utility\n"
+                    ". . **5:** Suggestion commands\n"
+                    ". . **6:** Internet search commands\n"
+                    ". . **7:** Server search commands\n"
+                    ". . **8:** Chat actions\n"
+                    ". . **9:** Server functions\n"
+                    ". . **10:** Voice channels",
         fields=[],
         staff_only=False,
     ),
     # endregion
 
-    ## ### Bot functions:
-    ## #      add_poll_reactions, version, help, commands, get_rina_command_mention
-    ## ### Utility:
-    ## #      roll, convert_unit, reminders, todo
-    ## ### Suggestion commands:
-    ## #      qotw, developer_request
-    ## ### Internet search commands:
-    ## #      equaldex, math, dictionary, toneindicator (kinda not really API / internet but oh well)
-    ## ### Server search commands:
-    ## #      getemojidata, getunusedemojis, getemojitop10, getstickerdata, getunusedstickers, getstickertop10, getmemberdata, nameusage name/gettop
-    ## ### Chat actions:
-    ## #      abababa/awawawa, headpats, not cute, compliment, complimentblacklist
-    ## ### Server functions:
-    ## #      tags, remove_role
-    ## ### Voice channels:
-    ## #      editvc and vctable
+    # ### Bot functions:
+    # #      add_poll_reactions, version, help, commands, get_rina_command_mention
+    # ### Utility:
+    # #      roll, convert_unit, reminders, todo
+    # ### Suggestion commands:
+    # #      qotw, developer_request
+    # ### Internet search commands:
+    # #      equaldex, math, dictionary, toneindicator (kinda not really API / internet but oh well)
+    # ### Server search commands:
+    # #      getemojidata, getunusedemojis, getemojitop10,
+    # #      getstickerdata, getunusedstickers, getstickertop10,
+    # #      getmemberdata, nameusage name/gettop
+    # ### Chat actions:
+    # #      abababa/awawawa, headpats, not cute, compliment, complimentblacklist
+    # ### Server functions:
+    # #      tags, remove_role
+    # ### Voice channels:
+    # #      editvc and vctable
 
-
-
-    #region Expanded index pages (commands)
-    3 : HelpPage( # index: Bot functions
-        title = "Bot functions",
-        description = "This section will list some simple rina-related commands that may help you:\n"
-                      "\n"
-                      ". . **101:** /help and /commands\n"
-                      ". . **102:** version\n"
-                      ". . **103:** get_rina_command_mention\n"
-                      ". . **105:** add_poll_reactions\n",
+    # region Expanded index pages (commands)
+    3: HelpPage(  # index: Bot functions
+        title="Bot functions",
+        description="This section will list some simple rina-related commands that may help you:\n"
+                    "\n"
+                    ". . **101:** /help and /commands\n"
+                    ". . **102:** version\n"
+                    ". . **103:** get_rina_command_mention\n"
+                    ". . **105:** add_poll_reactions\n",
         fields=[],
         staff_only=False,
     ),
-    4 : HelpPage( # index: Utility
-        title = "Utility",
-        description = "Some commands help in your daily life, like the following commands:\n"
-                      "\n"
-                      ". . **111:** roll\n"
-                      ". . **113:** reminder\n"
-                      ". . **114:** convert_unit\n"
-                      ". . **115:** todo\n",
+    4: HelpPage(  # index: Utility
+        title="Utility",
+        description="Some commands help in your daily life, like the following commands:\n"
+                    "\n"
+                    ". . **111:** roll\n"
+                    ". . **113:** reminder\n"
+                    ". . **114:** convert_unit\n"
+                    ". . **115:** todo\n",
         fields=[],
         staff_only=False,
     ),
-    5: HelpPage( # index: Suggestion commands
+    5: HelpPage(  # index: Suggestion commands
         title="Suggestion commands",
-        description = "Sometimes you just want to share your ideas with other people, you know?\b"
-                      "\n"
-                      ". . **121:** developer_request\n"
-                      ". . **122:** qotw (question of the week)\n",
+        description="Sometimes you just want to share your ideas with other people, you know?\b"
+                    "\n"
+                    ". . **121:** developer_request\n"
+                    ". . **122:** qotw (question of the week)\n",
         fields=[],
         staff_only=False,
     ),
-    6 : HelpPage(
-        title = "Work in progress...",
-        description = "This section is still being worked on! (help, so much text to write D: )\n"
-                      "Scroll a few pages ahead to see what the rest of the help pages look like!",
+    6: HelpPage(
+        title="Work in progress...",
+        description="This section is still being worked on! (help, so much text to write D: )\n"
+                    "Scroll a few pages ahead to see what the rest of the help pages look like!",
         fields=[],
         staff_only=False,
     ),
-    7 : HelpPage( # index: Suggestion commands
-        title = "placeholder (skip ahead)",
-        description = "placeholder (skip ahead)",
+    7: HelpPage(  # index: Suggestion commands
+        title="placeholder (skip ahead)",
+        description="placeholder (skip ahead)",
         fields=[],
         staff_only=False,
     ),
-    #endregion
-    #region Bot Functions
-    101 : HelpPage( # /help and /commands
-        title = "The help command and command list.",
-        description = "Obviously the most important command on the bot, this command attempts to explain "
-                      "every command and function in the bot. This page will also be the first page "
-                      "to show the layout of these commands.\n"
-                      "\n"
-                      "After running the command, Rina replies with an embed showing information about "
-                      "the bot or command. There are interactable buttons to go back to start, jump to the "
-                      "previous or next page, or jump to a specific page number. You can also provide a "
-                      "`page ` argument to jump to a page immediately. Useful for sharing help command "
-                      "pages.\n"
-                      ""
-                      "Running /help and /commands both bring up this embed.",
-        fields = [
+    # endregion
+    # region Bot Functions
+    101: HelpPage(  # /help and /commands
+        title="The help command and command list.",
+        description="Obviously the most important command on the bot, this command attempts to explain "
+                    "every command and function in the bot. This page will also be the first page "
+                    "to show the layout of these commands.\n"
+                    "\n"
+                    "After running the command, Rina replies with an embed showing information about "
+                    "the bot or command. There are interactable buttons to go back to start, jump to the "
+                    "previous or next page, or jump to a specific page number. You can also provide a "
+                    "`page ` argument to jump to a page immediately. Useful for sharing help command "
+                    "pages.\n"
+                    ""
+                    "Running /help and /commands both bring up this embed.",
+        fields=[
             (
                 "Parameters",
                 "`page`: The page to immediately jump to. Useful for sharing commands with other users.\n"
@@ -166,14 +170,14 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
         staff_only=False,
     ),
-    102 : HelpPage( # /version
-        title = "Bot version",
-        description = "You can run %%version%% at any time. It will show you the bot's current "
-                      "version and when it was started up. The message will only be visible for "
-                      "you, unless you are a staff member.\n"
-                      "This might someties also show that there is a new version available. Rina "
-                      "will automatically update to it when she restarts.",
-        fields = [
+    102: HelpPage(  # /version
+        title="Bot version",
+        description="You can run %%version%% at any time. It will show you the bot's current "
+                    "version and when it was started up. The message will only be visible for "
+                    "you, unless you are a staff member.\n"
+                    "This might someties also show that there is a new version available. Rina "
+                    "will automatically update to it when she restarts.",
+        fields=[
             (
                 "Examples",
                 "- %%version%%\n"
@@ -182,21 +186,21 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
         staff_only=False,
     ),
-    103 : HelpPage( # get_rina_command_mention
+    103: HelpPage(  # get_rina_command_mention
         title="Sharing Rina's commands the cooler way :sunglasses:",
-        description = "Rina has a lot of commands, all in a big list. Other bots may also have "
-                      "commands that are put in this same list.. Finding the right command "
-                      "between all those /help commands with the same name can be quite "
-                      "difficult.\n"
-                      "\n"
-                      "For that reason, this cool command lets you do things like -> %%help%% <- this "
-                      "for Rina!\n"
-                      "\n"
-                      "On a technical level, all commands have a name and unique ID, like "
-                      "so: `%%help%%`. Other bot commands with the same name have a different "
-                      "ID. Mismatched IDs will autofill incorrect on Android, and try to run "
-                      "a nonexisting command: </id_is_1234:1234> (`</id_is_1234:1234>`).",
-        fields = [
+        description="Rina has a lot of commands, all in a big list. Other bots may also have "
+                    "commands that are put in this same list.. Finding the right command "
+                    "between all those /help commands with the same name can be quite "
+                    "difficult.\n"
+                    "\n"
+                    "For that reason, this cool command lets you do things like -> %%help%% <- this "
+                    "for Rina!\n"
+                    "\n"
+                    "On a technical level, all commands have a name and unique ID, like "
+                    "so: `%%help%%`. Other bot commands with the same name have a different "
+                    "ID. Mismatched IDs will autofill incorrect on Android, and try to run "
+                    "a nonexisting command: </id_is_1234:1234> (`</id_is_1234:1234>`).",
+        fields=[
             (
                 "Parameters",
                 "`command`: The command you want to convert into a cool mention.\n"
@@ -213,48 +217,52 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
         staff_only=False,
     ),
-    104 : HelpPage( # /add_poll_reactions
-        title = "Adding voting emojis / Creating tiny polls",
-        description = "Sometimes you just want to see everyone's opinion on something, so you "
-                      "add a thumbs up and thumbs down emoji to your message. But what if you "
-                      "want to cast a vote yourself too? Rina's got you covered.\n"
-                      "\n"
-                      "This command lets you add between 2 and 3 emojis, allowing you to get "
-                      "positive, negative, and neutral reactions. You can also run the command "
-                      "again for even more emojis! Reuse a previous emoji if you only want to "
-                      "add 1 new one.",
-        fields = [
+    104: HelpPage(  # /add_poll_reactions
+        title="Adding voting emojis / Creating tiny polls",
+        description="Sometimes you just want to see everyone's opinion on something, so you "
+                    "add a thumbs up and thumbs down emoji to your message. But what if you "
+                    "want to cast a vote yourself too? Rina's got you covered.\n"
+                    "\n"
+                    "This command lets you add between 2 and 3 emojis, allowing you to get "
+                    "positive, negative, and neutral reactions. You can also run the command "
+                    "again for even more emojis! Reuse a previous emoji if you only want to "
+                    "add 1 new one.",
+        fields=[
             (
                 "Parameters",
                 # /add_poll_reactions message_id: upvote_emoji: downvote_emoji: neutral_emoji:
                 "`message_id`: The message to add emojis to.\n"
-                "- A message ID. Right click a message and click \"Copy Message ID\". The command must be run in the same channel as this message.\n"
+                "- A message ID. Right click a message and click \"Copy Message ID\". The command must be run in the "
+                "same channel as this message.\n"
                 "`upvote_emoji`: The first emoji to add to the message.\n"
                 "- An emoji or emoji ID.\n"
                 "`downvote_emoji`: The last emoji to add to the message.\n"
                 "- An emoji or emoji ID.\n"
-                "`neutral_emoji`: A middle emoji to add to the message. Will be added after the upvote but before the downvote emoji.\n"
+                "`neutral_emoji`: A middle emoji to add to the message. Will be added after the upvote but before "
+                "the downvote emoji.\n"
                 "- (optional) An emoji or emoji ID.\n"
             ),
             (
-                "Examples", # discord emojis don't work in code blocks :(, so gotta use unicode.
+                "Examples",  # discord emojis don't work in code blocks :(, so gotta use unicode.
                 "- %%add_poll_reactions%% `message_id:1963131994116722778` `upvote_emoji:🐟` `downvote_emoji:🐢`\n"
                 "  - Adds a fish and then a turtle to a message with the id.\n"
-                "- %%add_poll_reactions%% `message_id:1134140122115838003` `upvote_emoji:👍` `downvote_emoji:👎` `neutral_emoji:🤷`"
+                "- %%add_poll_reactions%% `message_id:1134140122115838003` "
+                "`upvote_emoji:👍` `downvote_emoji:👎` `neutral_emoji:🤷`\n"
                 "  - Adds a thumbs up, then a person shrugging, then a thumbs down emoji."
             )
         ],
         staff_only=False,
     ),
-    #endregion
-    #region Utility commands
-    111 : HelpPage( # dice rolls
-        title = "Rolling dice", # /roll
-        description = "Have you ever wanted to roll virtual dice? Now you can!\n"
-                      "Rina lets you roll dice with many kinds of faces. Rolling a 2-faced die (aka, a coin)? sure!\n"
-                      "\n"
-                      "Because this command also allows an __advanced input__, go to the next page for more info: __**102**__\n",
-        fields = [
+    # endregion
+    # region Utility commands
+    111: HelpPage(  # dice rolls
+        title="Rolling dice",  # /roll
+        description="Have you ever wanted to roll virtual dice? Now you can!\n"
+                    "Rina lets you roll dice with many kinds of faces. Rolling a 2-faced die (aka, a coin)? sure!\n"
+                    "\n"
+                    "Because this command also allows an __advanced input__, go to the next page for "
+                    "more info: __**102**__\n",
+        fields=[
             (
                 "Parameters",
                 "`dice`: How many dice do you want to roll?\n"
@@ -281,13 +289,16 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
         staff_only=False,
     ),
-    112 : HelpPage( # dice rolls advanced
-        title = "Advanced dice rolls", # /roll advanced: ...
-        description = "In the case that the simple dice roll command is not enough, you can roll complexer combinations of dice rolls using the advanced option.\n"
-                      "The advanced mode lets you use addition, subtraction, multiplication, and custom dice.\n"
-                      "To use the advanced function, you must give a value to the required parameters first ('dice' and 'faces') (the inserted value is ignored).\n"
-                      "Supported characters are: `0123456789d+*-`. Spaces are ignored. Multiplication goes before addition/subtraction.",
-        fields = [
+    112: HelpPage(  # dice rolls advanced
+        title="Advanced dice rolls",  # /roll advanced: ...
+        description="In the case that the simple dice roll command is not enough, you can roll complexer combinations "
+                    "of dice rolls using the advanced option.\n"
+                    "The advanced mode lets you use addition, subtraction, multiplication, and custom dice.\n"
+                    "To use the advanced function, you must give a value to the required parameters first ('dice' and "
+                    "'faces') (the inserted value is ignored).\n"
+                    "Supported characters are: `0123456789d+*-`. Spaces are ignored. Multiplication goes before "
+                    "addition/subtraction.",
+        fields=[
             (
                 "Examples",
                 "- %%roll%% `dice:1` `faces:1` `advanced:3d2 + 1`\n"
@@ -298,20 +309,22 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Same as the above.\n"
                 "- %%roll%% `dice:1` `faces:1` `advanced:5d6*2d6-3d6`\n"
                 "  - Multiply the outcome of 5 dice with the outcome of 2 dice, and subtract the outcome of 3 dice."
-             )
+            )
         ],
         staff_only=False,
     ),
-    113 : HelpPage( # reminders
-        title = "Reminders", # /reminder
-        description = "Wi" + "th this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n" # for some reason, Rider interpreted this string as an SQL query
-                      "This command lets you create, remove, and view your reminders.",
-        fields = [
+    113: HelpPage(  # reminders
+        title="Reminders",  # /reminder
+        # for some reason, Rider interpreted this string 'With' as an SQL query
+        description="Wi"+"th this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n"
+                    "This command lets you create, remove, and view your reminders.",
+        fields=[
             (
                 "reminder remindme",
                 "- %%reminder remindme%% `time: ` `reminder: `\n"
                 "`time`: When do you want to be reminded?\n"
-                "- Use a format like 10d9h8m7s for days/hours/min/sec.\n" #TODO: clarify; copy paste ValueError help message?
+                "- Use a format like 10d9h8m7s for days/hours/min/sec.\n"
+                    # TODO: clarify; copy paste ValueError help message?
                 "- Use a format like 2026-12-01 or 2026-12-01T15:43:23 for a reminder in December 2026.\n"
                 "- Use a format like <t:01234567> or just 01234567 to use a Unix timestamp.\n"
                 "`reminder`: What would you like to be reminded of?"
@@ -319,22 +332,26 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             (
                 "reminder reminders",
                 "- %%reminder reminders%% [`item: `]\n"
-                "  - Show a list of active reminders. They each have a number. Use `item:number` to view more information about a specific reminder."
+                "  - Show a list of active reminders. They each have a number. Use `item:number` to view more "
+                "information about a specific reminder."
             ),
             (
                 "reminder remove",
                 "- %%reminder remove%% `item: `\n"
-                "  - Remove a reminder. Use %%reminder reminders%% to see a list of reminders. Each has a number. Use that number to remove the reminder like so: `item:number`."
+                "  - Remove a reminder. Use %%reminder reminders%% to see a list of reminders. Each has a number. "
+                "Use that number to remove the reminder like so: `item:number`."
             )
         ],
         staff_only=False,
     ),
-    114 : HelpPage( # convert unit
-        title = "Converting units",
-        description = "Since international communities often share stories about temperature and speed, it's not uncommon to have to look up how many feet go in a centimeter. "
-                      "This module lets you easily converty a large amount of units in multiple categories! Currencies are fetched live using an online website (api)!\n"
-                      "The units (`from` and `to_unit`) will autocomplete depending on the selected category.",
-        fields = [
+    114: HelpPage(  # convert unit
+        title="Converting units",
+        description="Since international communities often share stories about temperature and speed, it's not "
+                    "uncommon to have to look up how many feet go in a centimeter. This module lets you easily "
+                    "converty a large amount of units in multiple categories! Currencies are fetched live using "
+                    "an online website (api)!\n"
+                    "The units (`from` and `to_unit`) will autocomplete depending on the selected category.",
+        fields=[
             (
                 "Parameters",
                 "`mode`: What type of unit do you want to compare? length/time/currency/...\n"
@@ -353,74 +370,80 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
         staff_only=False,
     ),
-    115 : HelpPage( # to-do list
-        title = "Todo lists",
-        description = "For the forgetful, or if you just want a nice grocery list, this command is for you! You can easily add and remove to-do notes, and they're saved throughout all servers with me (TransPlace, EnbyPlace, Transonance, etc.)",
-        fields = [
+    115: HelpPage(  # to-do list
+        title="Todo lists",
+        description="For the forgetful, or if you just want a nice grocery list, this command is for you! You can "
+                    "easily add and remove to-do notes, and they're saved throughout all servers with me "
+                    "(TransPlace, EnbyPlace, Transonance, etc.)",
+        fields=[
             (
                 "Parameters",
                 "`mode`: Do you want to __Add__, __Remove__, or __Check__ (view) your to-do list?\n"
                 "- if you want to add to / remove from your to-do list, you must also give the `todo` value below.\n"
                 "`todo`:\n"
                 "- __Add__: What to-do would you like to add?\n"
-                "- __Remove__: What to-do item would you like to remove from your list? Give the number of the to-do list as it's shown with %%todo%% `mode:Check`"
+                "- __Remove__: What to-do item would you like to remove from your list? Give the number of the to-do "
+                "list as it's shown with %%todo%% `mode:Check`"
             ),
             (
                 "Examples",
                 "- %%todo%% `mode:Add something to your to-do list` `todo:Create a nice help command`\n"
                 "  - Add \"Create a nice help command\"\n"
                 "- %%todo%% `mode:Check`\n"
-                "  - Your to-do list would look like this. Note how each item starts with a number. Use this number to remove them.\n"
+                "  - Your to-do list would look like this. Note how each item starts with a number. Use this number "
+                "to remove them.\n"
                 "    - Found 4 to-do items:\n"
                 "    - `0`: Create a nice help command\n"
                 "    - `1`: Share cool command with everyone\n"
                 "- %%todo%% `mode:Remove to-do` `todo:0`\n"
-                "  - Remove to-do item number 0 from your list. Use %%todo%% `mode:Check` to see what number to use to remove the right item.\n"
-                "  - Keep in mind that the order will shift after you've removed an item, so redo the `check` command to make sure you're removing the right command when removing multiple to-do items at once!"
+                "  - Remove to-do item number 0 from your list. Use %%todo%% `mode:Check` to see what number to use "
+                "to remove the right item.\n"
+                "  - Keep in mind that the order will shift after you've removed an item, so redo the `check` command "
+                "to make sure you're removing the right command when removing multiple to-do items at once!"
             )
         ],
         staff_only=False,
     ),
-    #endregion
-    #region Suggestion commands
-    121 : HelpPage( # developer_request
-        title = "Send suggestions for bot developers!",
-        description = "If you ever have any suggestions or ideas for any bots, feel free "
-                      "to use this command. This can include:\n"
-                      "- Bigger features like starboard,\n"
-                      "- Smaller features like a %%add_poll_reactions%%,\n"
-                      "- Silly features like %%compliment%%,\n"
-                      "- A spelling mistake of 1 mistyped character.\n"
-                      "It doesn't have to be much :) so long as you explain your ideas "
-                      "(or you would have to DM a staff member to give extra explanation).",
-        fields = [
+    # endregion
+    # region Suggestion commands
+    121: HelpPage(  # developer_request
+        title="Send suggestions for bot developers!",
+        description="If you ever have any suggestions or ideas for any bots, feel free "
+                    "to use this command. This can include:\n"
+                    "- Bigger features like starboard,\n"
+                    "- Smaller features like a %%add_poll_reactions%%,\n"
+                    "- Silly features like %%compliment%%,\n"
+                    "- A spelling mistake of 1 mistyped character.\n"
+                    "It doesn't have to be much :) so long as you explain your ideas "
+                    "(or you would have to DM a staff member to give extra explanation).",
+        fields=[
             (
                 "Parameters",
                 "`suggestion`: The idea you would like to share.\n"
                 "- A message between 20 and 1500 characters. Try to be detailed so we can figure "
-                  "out what you want without having to ask for more details :)\n"
+                "out what you want without having to ask for more details :)\n"
             ),
             (
                 "Examples (real)",
                 "- %%developer_request%% `suggestion:idea for rina: make tags just post the message directly "
-                  "into the channel instead of as a command follow-up so it doesn't show the \"message could "
-                  "not be loaded\" error :3`\n"
+                "into the channel instead of as a command follow-up so it doesn't show the \"message could "
+                "not be loaded\" error :3`\n"
                 "  - Sends a message to a developer channel on the staff server.\n"
                 "- %%developer_request%% `suggestion:For Amari, make voice channels not give xp if someone is "
-                  "alone in a voice channel, to prevent people camping in vc alone (or falling asleep in vc) for xp`\n"
+                "alone in a voice channel, to prevent people camping in vc alone (or falling asleep in vc) for xp`\n"
                 "  - yeah, it does the thingy"
             )
         ],
         staff_only=False,
     ),
-    122 : HelpPage( # qotw
-        title = "Questions of the week",
-        description = "You might have seen a Question of the Week pop up roughly once a week, \n"
-                      "If you have any cool questions you want to ask to the server, feel free to ask them!\n"
-                      "\n"
-                      "Questions will be sent in a channel on the staff server, where we can vote, discuss, "
-                      "or give suggestions. To give your questions a better chance of being picked, make "
-                      "sure they can be answered by everyone.",
+    122: HelpPage(  # qotw
+        title="Questions of the week",
+        description="You might have seen a Question of the Week pop up roughly once a week, \n"
+                    "If you have any cool questions you want to ask to the server, feel free to ask them!\n"
+                    "\n"
+                    "Questions will be sent in a channel on the staff server, where we can vote, discuss, "
+                    "or give suggestions. To give your questions a better chance of being picked, make "
+                    "sure they can be answered by everyone.",
         fields=[
             (
                 "Parameters",
@@ -437,13 +460,15 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
         staff_only=False,
     )
-    #endregion
+    # endregion
 }
 FIRST_PAGE: int = sorted(list(help_pages))[0]
 
 assert all([type(i) is int for i in help_pages])  # all help pages have an integer key
 assert sorted(list(help_pages)) == list(help_pages)  # all help pages are sorted by default
-assert all([all([j in ["title", "description", "fields", "staff_only"] for j in help_pages[i]]) for i in help_pages]) 
+assert all([all([j in ["title", "description", "fields", "staff_only"] for j in help_pages[i]]) for i in help_pages])
+
+
 #    all pages only have one of these attributes
 
 
@@ -457,7 +482,9 @@ class HelpCommand(commands.Cog):
             relative_page_location_details = f"(nearest pages are `{min_index}` and `{max_index}`)."
             await itx.response.send_message(
                 replace_string_command_mentions(
-                    (f"This page (`{requested_page}`) does not exist! " if requested_page != 404 else "`404`: Page not found!") + # easter egg
+                    (
+                        f"This page (`{requested_page}`) does not exist! " if requested_page != 404 else
+                        "`404`: Page not found!") +  # easter egg
                     f" {relative_page_location_details} " +
                     "Try %%help%% `page:1` or use the page keys to get to the right page number!",
                     self.client
@@ -467,10 +494,9 @@ class HelpCommand(commands.Cog):
             return
 
         embed = generate_help_page_embed(help_pages[FIRST_PAGE], FIRST_PAGE, self.client)
-        await itx.response.send_message(embed = embed,
-                                        view = HelpPageView(self.client, FIRST_PAGE, help_pages),
-                                        ephemeral = True)
-
+        await itx.response.send_message(embed=embed,
+                                        view=HelpPageView(self.client, FIRST_PAGE, help_pages),
+                                        ephemeral=True)
 
     @app_commands.command(name="help", description="A help command to learn more about me!")
     @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")

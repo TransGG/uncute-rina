@@ -10,6 +10,7 @@ class EqualDex_AdditionalInfo(discord.ui.View):
                               url = url)
         self.add_item(link_button)
 
+
 class SendPublicButton_Math(discord.ui.View):
     def __init__(self, client: Bot, timeout=180):
         super().__init__()

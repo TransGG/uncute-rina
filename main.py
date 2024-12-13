@@ -29,7 +29,7 @@ EXTENSIONS = [
     "cmd_emojistats",
     "cmd_help",
     "cmd_getmemberdata",
-    #"cmd_pronouns", # depreciated
+    # "cmd_pronouns", # depreciated
     "cmd_qotw",
     "cmd_staffaddons",
     "cmd_tags",
@@ -41,7 +41,7 @@ EXTENSIONS = [
     "cmd_starboard",
     "cmdg_nameusage",
     "cmdg_reminders",
-    #"cmdg_testing_commands",
+    # "cmdg_testing_commands",
 ]
 
 
@@ -54,7 +54,8 @@ EXTENSIONS = [
 #       read channel history (locate previous starboard message, for example)
 #       move users between voice channels (custom vc)
 #       manage roles (for removing NPA and NVA roles)
-#       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently) NEEDS TO BE GLOBAL?
+#       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently)
+#           NEEDS TO BE GLOBAL?
 #           Create and Delete voice channels
 #       use embeds (for starboard)
 #       use (external) emojis (for starboard, if you have external starboard reaction...?)
@@ -111,7 +112,8 @@ def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.Ag
 
 def get_version() -> str:
     """
-    Dumb code for cool version updates. Reads version file and matches with current version string. Updates file if string is newer, and adds another ".%d" for how often the bot has been started in this version.
+    Dumb code for cool version updates. Reads version file and matches with current version string. Updates file if
+    string is newer, and adds another ".%d" for how often the bot has been started in this version.
 
     Returns
     --------
@@ -147,9 +149,9 @@ def create_client(
     debug(f"[####+]: Creating bot" + " " * 30, color="light_blue", end='\r')
 
     intents = discord.Intents.default()
-    intents.members = True  #apparently this needs to be additionally defined cause it's not included in Intents.default()?
-    intents.message_content = True  #apparently it turned off my default intent or something: otherwise i can't send 1984, ofc.
-    #setup default discord bot client settings, permissions, slash commands, and file paths
+    intents.members = True  # apparently this needs to be defined because it's not included in Intents.default()?
+    intents.message_content = True  # to send 1984, and to otherwise read message content.
+    # setup default discord bot client settings, permissions, slash commands, and file paths
 
     discord.VoiceClient.warn_nacl = False
     bot: Bot = Bot(
@@ -199,8 +201,8 @@ def start_app():
         client.sched = AsyncIOScheduler(logger=logger)
         client.sched.start()
 
-        ## cache server settings into client, to prevent having to load settings for every extension
-        ## activate the extensions/programs/code for slash commands
+        # Cache server settings into client, to prevent having to load settings for every extension
+        # Activate the extensions/programs/code for slash commands
 
         extension_loading_start_time = datetime.now()
         for extID in range(len(EXTENSIONS)):
@@ -220,7 +222,7 @@ def start_app():
                 client.log_channel = await client.fetch_channel(986304081234624554)
             else:
                 client.log_channel = await client.fetch_channel(1062396920187863111)
-        client.bot_owner = await client.fetch_user(262913789375021056)  #  (await client.application_info()).owner
+        client.bot_owner = await client.fetch_user(262913789375021056)  # (await client.application_info()).owner
         # can't use the commented out code because Rina is owned by someone else in the main server than
         # the dev server (=not me).
 
@@ -232,8 +234,8 @@ def start_app():
         for user in db_data:
             try:
                 for reminder in user['reminders']:
-                    creation_time = datetime.fromtimestamp(reminder['creationtime'])  #, timezone.utc)
-                    reminder_time = datetime.fromtimestamp(reminder['remindertime'])  #, timezone.utc)
+                    creation_time = datetime.fromtimestamp(reminder['creationtime'])  # , timezone.utc)
+                    reminder_time = datetime.fromtimestamp(reminder['remindertime'])  # , timezone.utc)
                     ReminderObject(client, creation_time, reminder_time, user['userID'], reminder['reminder'], user,
                                    continued=True)
             except KeyError:
@@ -243,8 +245,9 @@ def start_app():
         client.commandList = await client.tree.fetch_commands()
         debug(f"[###### ]: Cached bot's command names and their ids" + " " * 30, color="green")
         debug(f"[######+]: Starting..." + " " * 30, color="light_blue", end='\r')
+
     # endregion
-    
+
     client.run(token, log_level=logging.WARNING)
 
 
@@ -257,6 +260,7 @@ except SystemExit:
 # - Translator
 # - (Unisex) compliment quotes
 # - Add error catch for when dictionaryapi.com is down
-# - make more three-in-one commands have optional arguments, explaining what to do if you don't fill in the optional argument
+# - make more three-in-one commands have optional arguments, explaining what to do if you don't
+#       fill in the optional argument
 
 # endregion

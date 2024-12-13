@@ -39,7 +39,7 @@ class DictionaryApi_PageView(discord.ui.View):
     async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
         self.value = 1
         embed = self.pages[self.page]
-        await itx.response.edit_message(content="Sent successfully!",embed=None)
+        await itx.response.edit_message(content="Sent successfully!", embed=None)
         await itx.followup.send(f"{itx.user.mention} shared a dictionary entry!", embed=embed,
                                 ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
         self.stop()
@@ -55,17 +55,17 @@ class DictionaryApi_PageView(discord.ui.View):
         if send_one.value in [None, 9]:
             pass
         else:
-            ## pages_detailed = [ [result_id: int,   term: str,   type: str,   value: str],    [...], [...] ]
+            # # pages_detailed = [ [result_id: int,   term: str,   type: str,   value: str],    [...], [...] ]
             page = self.pages_detailed[self.page][send_one.id]
-            ## page = [result_id: int,   term: str,   type: str,   value: str]
+            # # page = [result_id: int,   term: str,   type: str,   value: str]
             embed = discord.Embed(color=8481900, title=page[1])
             embed.add_field(name=page[2],
                             value=page[3],
                             inline=False)
-            await itx.followup.send(f"{itx.user.mention} shared a section of a dictionary entry! (item {page[0]})",embed=embed,
-                                    allowed_mentions=discord.AllowedMentions.none())
+            await itx.followup.send(f"{itx.user.mention} shared a section of a dictionary entry! (item {page[0]})",
+                                    embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
-        #only let someone send 3 of the entries in a dictionary before disabling to prevent spam
+        # only let someone send 3 of the entries in a dictionary before disabling to prevent spam
         if self.printouts == 3:
             self.stop()
 

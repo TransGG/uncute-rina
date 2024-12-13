@@ -12,18 +12,19 @@ class GetNameModal_NameUsage_GetTop(discord.ui.Modal, title="Search page with wo
 
         self.word = None
         self.question_text = discord.ui.TextInput(label='What word to look up in the server name list?',
-                                                    placeholder=f"The word you want to look up",
-                                                    # style=discord.TextStyle.short,
-                                                    # required=True
-                                                    )
+                                                  placeholder=f"The word you want to look up",
+                                                  # style=discord.TextStyle.short,
+                                                  # required=True
+                                                  )
         self.add_item(self.question_text)
 
     async def on_submit(self, itx: discord.Interaction):
         self.value = 9  # failed; placeholder
         self.word = self.question_text.value.lower()
         for page_id in range(len(self.pages)):
-            # self.pages[page_id] returns ['15 nora\n13 rose\n9 brand\n8 george\n4 rina\n3 grace\n3 chroma\n2 eliza\n','1 cleo','_']
-            # split at \n and " " to get [["15", "nora"], ["13", "rose"], ["9", "brand"], ["8", "george"]] and compare self.word with the names
+            # self.pages[page_id] returns ['15 nora\n13 rose\n9 brand\n8 george\n4 rina\n3 grace\n2 eliza\n','_']
+            # split at \n and " " to get [["15", "nora"], ["13", "rose"], ["9", "brand"], ["8", "george"]] and
+            # compare self.word with the names
             if self.word in [name.split(" ")[-1] for name in self.pages[page_id].split("\n")]:
                 self.page = int(page_id / 2)
                 break
@@ -32,9 +33,9 @@ class GetNameModal_NameUsage_GetTop(discord.ui.Modal, title="Search page with wo
                 content=f"I couldn't find '{self.word}' in any of the pages! Perhaps nobody chose this name!",
                 ephemeral=True)
             return
-        result_page  = self.pages[self.page * 2]
+        result_page = self.pages[self.page * 2]
         result_page2 = self.pages[self.page * 2 + 1]
-        result_page   = result_page.replace(f" {self.word}\n", f" **__{self.word}__**\n")
+        result_page = result_page.replace(f" {self.word}\n", f" **__{self.word}__**\n")
         result_page2 = result_page2.replace(f" {self.word}\n", f" **__{self.word}__**\n")
         embed = discord.Embed(color=8481900, title=self.embed_title)
         embed.add_field(name="Column 1", value=result_page)
