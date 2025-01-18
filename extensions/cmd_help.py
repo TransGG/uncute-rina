@@ -7,6 +7,7 @@ from resources.customs.help import HelpPage, generate_help_page_embed, get_neare
 from resources.utils.stringhelper import replace_string_command_mentions
 from resources.views.help import HelpPageView
 
+# noinspection SqlNoDataSourceInspection
 help_pages: dict[int, HelpPage] = {
     0: HelpPage(  # fallback default page
         title="Rina's fallback help page",
@@ -315,16 +316,15 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     ),
     113: HelpPage(  # reminders
         title="Reminders",  # /reminder
-        # for some reason, Rider interpreted this string 'With' as an SQL query
-        description="Wi"+"th this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n"
+        description="With this feature, you'll never forget your tasks anymore! (so long as Rina is online...).\n"
                     "This command lets you create, remove, and view your reminders.",
         fields=[
             (
                 "reminder remindme",
                 "- %%reminder remindme%% `time: ` `reminder: `\n"
                 "`time`: When do you want to be reminded?\n"
-                "- Use a format like 10d9h8m7s for days/hours/min/sec.\n"
-                    # TODO: clarify; copy paste ValueError help message?
+                "- Use a format like 1mo10d9h8m7s for years/months/weeks/days/hours/min/sec.\n"
+                # TODO: clarify; copy paste ValueError help message?
                 "- Use a format like 2026-12-01 or 2026-12-01T15:43:23 for a reminder in December 2026.\n"
                 "- Use a format like <t:01234567> or just 01234567 to use a Unix timestamp.\n"
                 "`reminder`: What would you like to be reminded of?"
@@ -476,7 +476,7 @@ class HelpCommand(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
 
-    async def send_help_menu(self, itx: discord.Interaction, requested_page: int):
+    async def send_help_menu(self, itx: discord.Interaction, requested_page: int = FIRST_PAGE):
         if requested_page not in help_pages:
             min_index, max_index = get_nearest_help_pages_from_page(requested_page, list(help_pages))
             relative_page_location_details = f"(nearest pages are `{min_index}` and `{max_index}`)."
@@ -493,9 +493,9 @@ class HelpCommand(commands.Cog):
             )
             return
 
-        embed = generate_help_page_embed(help_pages[FIRST_PAGE], FIRST_PAGE, self.client)
+        embed = generate_help_page_embed(help_pages[requested_page], requested_page, self.client)
         await itx.response.send_message(embed=embed,
-                                        view=HelpPageView(self.client, FIRST_PAGE, help_pages),
+                                        view=HelpPageView(self.client, requested_page, help_pages),
                                         ephemeral=True)
 
     @app_commands.command(name="help", description="A help command to learn more about me!")

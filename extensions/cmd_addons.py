@@ -93,7 +93,7 @@ conversion_rates = {  # [default 0, incrementation]
     "currency": currency_options,
     "time": {
         # 365.2421896698-6.15359\cdot10^{-6}a-7.29\cdot10^{-10}a^{2}+2.64\cdot10^{-10}a^{3}
-        #     where a is centuries of 36525 SI days
+        #     where `a` is centuries of 36525 SI days
         # 31556925.1 <- this will hold up for 3 years (until 2025-7-13T21:48:21.351744),
         #     after which it will be 31556925.0
         # 31556925.0 will hold up for another 18 years (until 2044); after which it will be
@@ -117,7 +117,7 @@ conversion_rates = {  # [default 0, incrementation]
 
 
 def get_emoji_from_str(
-        client: Bot, emoji_str: str | discord.utils._MissingSentinel
+        client: Bot, emoji_str: str | None
 ) -> discord.Emoji | discord.PartialEmoji | None:
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
@@ -126,19 +126,19 @@ def get_emoji_from_str(
     -----------
     client: :class:`Bot`
         The client/bot whose servers to check for the emoji.
-    emoji_str: :class:`str` | :class:`discord.utils._MissingSenitel`
+    emoji_str: :class:`str` | :class:`None`
         The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
 
     Returns
     --------
     :class:`None`
-        if no emoji found or it can't be used by the bot (not in the server).
+        if no emoji found, or it can't be used by the bot (not in the server).
     :class:`discord.PartialEmoji`
         if emoji is unicode.
     :class:`discord.Emoji`
         if emoji is valid and can be used but the bot.
     """
-    if emoji_str == discord.utils._MissingSentinel:
+    if emoji_str is None:
         return None
     elif emoji_str.isdecimal():
         return client.get_emoji(int(emoji_str))  # returns None if not found
@@ -236,7 +236,7 @@ class SearchAddons(commands.Cog):
         response_api = requests.get(
             f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true").text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
-        # it also has some <br \/>\r\n strings in there for some reason..? so uh
+        # it also has some <br \/>\r\n strings in there for some reason...? so uh
         jsonizing_table = {
             r"<br \/>\r\n": r"\n",
             "<pre>": "",
@@ -311,7 +311,7 @@ class SearchAddons(commands.Cog):
             return
         query = query.replace("+",
                               " plus ")
-        # plusses are interpreted as a spacebar in urls. In LaTeX, that can mean multiply
+        # pluses are interpreted as a space (`%20`) in urls. In LaTeX, that can mean multiply
         api_key = self.client.api_tokens['Wolfram Alpha']
         try:
             data = requests.get(
@@ -479,9 +479,7 @@ class SearchAddons(commands.Cog):
 
 class FunAddons(commands.Cog):
     def __init__(self, client: Bot):
-        global rina_db
         self.client = client
-        rina_db = client.rina_db
         self.headpat_wait = 0
         self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
         self.rude_comments_opinion_cooldown = 0
@@ -577,15 +575,19 @@ class FunAddons(commands.Cog):
             return
 
         # embed "This conversation was powered by friendship" every x messages # TODO: re-enable code someday
-        if False:  # self.staff_contact_check_wait == 0 or (self.staff_contact_check_wait < -10 and self.staff_contact_check_wait % 6 == 0): # make sure it only sends once (and <-10 for backup)
+        if False:  # (self.staff_contact_check_wait == 0 or
+            #     (self.staff_contact_check_wait < -10 and  # make sure it only sends once (and <-10 for backup)
+            #      self.staff_contact_check_wait % 6 == 0)):
             if message.channel.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
-                # TransPlace [general, trans masc treehouse, trans fem forest, enby enclave] # TODO: when cleo adds "report" func to EnbyPlace (or other servers in general), add those server's channel IDs too.
+                # TransPlace [general, trans masc treehouse, trans fem forest, enby enclave]
+                # TODO: when cleo adds "report" func to EnbyPlace (or other servers in general),
+                #  add those server's channel IDs too.
 
                 if message.guild.id == self.client.custom_ids.get("enbyplace_server_id"):
                     mod_ticket_channel_id = 1186054373986537522
                 elif message.guild.id == self.client.custom_ids.get("transonance_server_id"):
                     mod_ticket_channel_id = 1108789589558177812
-                else:  #elif context.guild_id == client.custom_ids.get("transplace_server_id"):
+                else:  # elif context.guild_id == client.custom_ids.get("transplace_server_id"):
                     mod_ticket_channel_id = 995343855069175858
                 cmd_mention = self.client.get_command_mention("tag")
 
@@ -597,26 +599,41 @@ class FunAddons(commands.Cog):
                     "This conversation was brought to you by trans rights"
                     "This conversation was brought to you by the dwindling patience of the mods.",
                     "This conversation has been trying to reach you about your car's extended warranty.",
-                    "This conversation was sponsored by Raid Shadow Legends, one of the biggest mobile role-playing gam...",
+                    "This conversation was sponsored by Raid Shadow Legends, one of the biggest mobile role-"
+                    "playing gam...",
                     "This conversation was sponsored by Spotify; Want a break from the ads?",
                     "This conversation was sponsored by Homestuck",
-                    "This conversation was brought to you by Flex Seal! To show the power of Flex Tape, I sawed this boat in half!",
+                    "This conversation was brought to you by Flex Seal! To show the power of Flex Tape, I sawed "
+                    "this boat in half!",
                     "Want to advertise? Call 0900 0000 to place an AD!",
                     "Do you have suggestions for what to place here? Ping mysticmia and share!",
-                    "1",  #"Fun fact: ",
+                    "1",  # "Fun fact: ",
                 ]
                 superpower = random.choice(options)
 
                 if superpower == "1":
                     response = requests.get('https://api.api-ninjas.com/v1/facts?limit=1', headers={
-                        # "X-Api-Key": "YOUR_API_KEY",
+                        # These were headers that were in the browser testing api, but apparently I
+                        # only need this one to make it work lol
                         "Origin": "https://api-ninjas.com",
-                        # "Host": "api.api-ninjas.com", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0", "Accept": "*/*", "Accept-Language": "en-US,en;q=0.5",
-                        # "Accept-Encoding": "gzip, deflate, br", "Referer": "https://api-ninjas.com/", "Connection": "keep-alive", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "same-site", "Sec-GPC": "1", "TE": "trailers"
+                        # "X-Api-Key": "YOUR_API_KEY",
+                        # "Host": "api.api-ninjas.com",
+                        # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 "
+                        #               "Firefox/123.0",
+                        # "Accept": "*/*",
+                        # "Accept-Language": "en-US,en;q=0.5",
+                        # "Accept-Encoding": "gzip, deflate, br",
+                        # "Referer": "https://api-ninjas.com/",
+                        # "Connection": "keep-alive",
+                        # "Sec-Fetch-Dest": "empty",
+                        # "Sec-Fetch-Mode": "cors",
+                        # "Sec-Fetch-Site": "same-site",
+                        # "Sec-GPC": "1",
+                        # "TE": "trailers"
                     }).json()[0]["fact"]
                     starter = random.choice(["This conversation is cool and all, but did you know ", "Fun fact: "])
-                    response = starter + response[0].lower() + response[
-                                                               1:]  # make first letter lowercase so it fits with the rest of the sentence
+                    response = starter + response[0].lower() + response[1:]
+                    # make first letter lowercase, so it fits with the rest of the sentence
                     if len(response) > 256:  # embed title length limit is 256 chars.
                         header = options[0]
                     else:
@@ -627,9 +644,10 @@ class FunAddons(commands.Cog):
                 embed = discord.Embed(
                     color=discord.Color.from_hsv(205 / 360, 65 / 100, 100 / 100),
                     title=header,
-                    description=f"See someone breaking the rules? Unsure about a situation? You can always contact staff! Reach us in "
-                                f"<#{mod_ticket_channel_id}>, or report a user/message with our bot (more info: {cmd_mention} `tag:report`) "
-                                f"(Gives staff a bit more context :). You may always ping/dm a staff member or Moderators if necessary."
+                    description=f"See someone breaking the rules? Unsure about a situation? You can always "
+                                f"contact staff! Reach us in <#{mod_ticket_channel_id}>, or report a user/message "
+                                f"with our bot (more info: {cmd_mention} `tag:report`) (Gives staff a bit more "
+                                f"context :). You may always ping/dm a staff member or Moderators if necessary."
                 )
                 await message.channel.send(embed=embed)
                 self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN,
@@ -778,9 +796,7 @@ async def unit_autocomplete(itx: discord.Interaction, current: str):
 
 class OtherAddons(commands.Cog):
     def __init__(self, client: Bot):
-        global rina_db
         self.client = client
-        rina_db = client.rina_db
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -883,10 +899,8 @@ class OtherAddons(commands.Cog):
             self, itx: discord.Interaction, message_id: str,
             upvote_emoji: str, downvote_emoji: str, neutral_emoji: str | None = None
     ):
-        if neutral_emoji is None:
-            neutral_emoji = discord.utils.MISSING  # neutral_emoji will be re-set to None if the input is not an emoji
         errors = []
-        message = None  # happy IDE
+        message: None | discord.Message = None  # happy IDE
         if message_id.isdecimal():
             message_id = int(message_id)
             try:
@@ -908,7 +922,7 @@ class OtherAddons(commands.Cog):
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
 
-        if neutral_emoji is not discord.utils.MISSING:
+        if neutral_emoji is None:
             neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = get_emoji_from_str(self.client,
                                                                                               neutral_emoji)
             if neutral_emoji is None:
@@ -919,7 +933,7 @@ class OtherAddons(commands.Cog):
             if itx.channel.id in blacklisted_channels:
                 errors.append("- :no_entry: You are not allowed to use this command in this channel!")
 
-        if message:
+        if errors or not message:
             await itx.response.send_message("Couldn't add poll reactions:\n" + '\n'.join(errors), ephemeral=True)
             return
 

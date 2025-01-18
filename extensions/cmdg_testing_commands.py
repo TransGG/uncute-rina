@@ -67,7 +67,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             e.set_footer(text=f"{page_index + 1}/{page_count}")
             pages.append(e)
 
-        async def go_to_page_button_callback(_: discord.ui.View, itx1: discord.Interaction):
+        async def go_to_page_button_callback(itx1: discord.Interaction):
             # view: PageView = view
             await itx1.response.send_message(f"This embed has {view.max_page_index + 1} pages!")
 

@@ -1,9 +1,13 @@
-import discord, discord.ext.commands as commands, discord.app_commands as app_commands
-from resources.utils.permissions import is_staff  # to check staff for removing a user's custom pronouns.
+import discord
+import discord.app_commands as app_commands
+import discord.ext.commands as commands
+from pymongo.database import Database
+
 from resources.customs.bot import Bot
+from resources.utils.permissions import is_staff  # to check staff for removing a user's custom pronouns.
 
 
-async def pronoun_autocomplete(itx: discord.Interaction, current: str):
+async def pronoun_autocomplete(itx: discord.Interaction, rina_db: Database, current: str):
     if itx.namespace.mode == 1:
         results = []
         for member in itx.guild.members:
@@ -117,8 +121,6 @@ async def pronoun_autocomplete(itx: discord.Interaction, current: str):
 
 class Pronouns(commands.Cog):
     def __init__(self, client: Bot):
-        global rina_db
-        rina_db = client.rina_db
         self.client = client
 
         # setting ContextMenu here, because apparently you can't use that decorator in classes..?

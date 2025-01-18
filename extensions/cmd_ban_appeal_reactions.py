@@ -46,7 +46,7 @@ class BanAppealReactionsAddon(commands.Cog):
             try:
                 await message.create_thread(name=f"App-{platform[0]}-{username}", auto_archive_duration=10080)
             except discord.errors.Forbidden:
-                raise  # no permission to send message (should be reported to staff server owner i suppose)
+                raise  # no permission to send message (should be reported to staff server owner I suppose)
             except discord.errors.HTTPException:
                 # I expect this HTTP exception to have code=400 "BAD REQUEST"
                 await message.create_thread(name=f"Appeal-Malformed username", auto_archive_duration=10080)

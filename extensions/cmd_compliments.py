@@ -8,11 +8,15 @@ from resources.customs.bot import Bot
 from resources.utils.utils import \
     log_to_guild  # to warn when bot can't add headpat reaction (typically cause used blocked the user)
 from resources.views.compliments import ConfirmPronounsView
+from pymongo.database import Database  # for MongoDB database typing
 
 
-async def choose_and_send_compliment(itx: discord.Interaction,
-                                     user: discord.User | discord.Member,
-                                     compliment_type: str):
+async def choose_and_send_compliment(
+        itx: discord.Interaction,
+        user: discord.User | discord.Member,
+        compliment_type: str,
+        rina_db: Database
+):
     quotes = {
         "fem_quotes": [
             # "Was the sun always this hot? or is it because of you?",
@@ -78,7 +82,7 @@ async def choose_and_send_compliment(itx: discord.Interaction,
         "he/him": "masc_quotes",
         "they/them": "they_quotes",
         "it/its": "it_quotes",
-        "unisex": "unisex_quotes",  # todo
+        "unisex": "unisex_quotes",
     }[compliment_type]
 
     for x in quotes:
@@ -145,14 +149,12 @@ async def send_confirm_gender_modal(itx: discord.Interaction, user: discord.User
     if view.value is None:
         await itx.edit_original_response(content=':x: Timed out...', view=None)
     else:
-        await choose_and_send_compliment(itx, user, view.value)
+        await choose_and_send_compliment(itx, user, view.value, self.client.rina_db)
 
 
 class Compliments(commands.Cog):
     def __init__(self, client: Bot):
-        global rina_db
         self.client = client
-        rina_db = client.rina_db
 
     @commands.Cog.listener()  # Rina reflecting cuteness compliments
     async def on_message(self, message: discord.Message):
@@ -172,36 +174,24 @@ class Compliments(commands.Cog):
                                        f"**:warning: Warning: **Couldn't add pat reaction to {message.jump_url}")
                     raise
             elif "cutie" in msg or "cute" in msg:
-                # TODO: I should probably check people's roles for whether they have she/her and/or would like to
-                #  be told they're cute. Perhaps check complimentblacklist too.
                 responses = [
                     "I'm not cute >_<",
                     "I'm not cute! I'm... Tough! Badass!",
                     "Nyaa~",
                     "Who? Me? No you're mistaken.",
                     "I very much deny the cuteness of someone like myself",
-                    "If you think I'm cute, then you must be uber-cute!!",
                     "I don't think so.",
                     "Haha. Good joke. Tell me another tomorrow",
-                    "Ehe, cutie what do u need help with?",
                     "No, I'm !cute.",
-                    "You too!",
-                    "No, you are <3",
                     "[shocked] Wha- w. .. w what?? .. NOo? no im nott?\nwhstre you tslking about?",
                     "Oh you were talking to me? I thought you were talking about everyone else here,",
-                    "Nope. I doubt it. There's no way I can be as cute as you",
                     "Maybe.. Maybe I am cute.",
                     "If the sun was dying, would you still think I was cute?",
                     "Awww. Thanks sweety, but you've got the wrong number",
                     ":joy: You *reaaally* think so? You've gotta be kidding me.",
                     "If you're gonna be spamming this, .. maybe #general isn't the best channel for that.",
-                    "You gotta praise those around you as well. " + (
-                                message.author.nick or message.author.name) + ", for example, is very cute.",
-                    "Oh by the way, did I say " + (
-                                message.author.nick or message.author.name) + " was cute yet? I probably didn't. " + (
-                                message.author.nick or message.author.name) + "? You're very cute",
                     "Such nice weather outside, isn't it? What- you asked me a question?\nNo you didn't, you're just "
-                    "talking to youself.",
+                    "talking to yourself.",
                     "".join(random.choice("acefgilrsuwnop" * 3 + ";;  " * 2) for _ in range(random.randint(10, 25))),
                     # 3:2 letters to symbols
                     "Oh I heard about that! That's a way to get randomized passwords from a transfem!",
@@ -210,17 +200,37 @@ class Compliments(commands.Cog):
                     "...",
                     "Hey that's not how it works!",
                     "Hey my lie detector said you are lying.",
-                    "You know i'm not a mirror, right?",
-                    "*And the oscar for cutest responses goes to..  YOU!!*",
                     "No I am not cute",
                     "k",
                     (message.author.nick or message.author.name) + ", stop lying >:C",
                     "BAD!",
-                    "You're also part of the cuties set",
                     "https://cdn.discordapp.com/emojis/920918513969950750.webp?size=4096&quality=lossless",
                     "[Checks machine]; Huh? Is my lie detector broken? I should fix that..",
+                ]
+                femme_responses = [
+                    "If you think I'm cute, then you must be uber-cute!!",
+                    "Ehe, cutie what do u need help with?",
+                    "You too!",
+                    "No, you are <3",
+                    "Nope. I doubt it. There's no way I can be as cute as you",
+                    "You gotta praise those around you as well. " + (message.author.nick or message.author.name) +
+                    ", for example, is very cute.",
+                    "Oh by the way, did I say " + (message.author.nick or message.author.name) +
+                    " was cute yet? I probably didn't. " + (message.author.nick or message.author.name) +
+                    "? You're very cute",
+                    "You know I'm not a mirror, right?",
+                    "*And the oscar for cutest responses goes to..  YOU!!*",
+                    "You're also part of the cuties set",
                     "Hey, you should be talking about yourself first! After all, how do you keep up with being such "
-                    "a cutie all the time?"]
+                    "a cutie all the time?"
+                ]
+                # check if user would like femme responses telling them they're cute
+                for role in message.author.roles:
+                    if role.name.lower() == "she/her":
+                        # TODO: I should probably check people's roles for whether they have she/her and/or would
+                        #  like to be told they're cute. Perhaps check complimentblacklist too.
+                        responses += femme_responses
+
                 respond = random.choice(responses)
                 if respond == "BAD!":
                     await message.channel.send(
@@ -272,7 +282,7 @@ class Compliments(commands.Cog):
     @app_commands.command(name="compliment", description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
     async def compliment(self, itx: discord.Interaction, user: discord.User):
-        # discord.User because discord.Member gets errors.TransformerError in DMs (dunno why i'm accounting for that..)
+        # discord.User because discord.Member gets errors.TransformerError in DMs (dunno why I'm accounting for that...)
         try:
             user: discord.Member  # make IDE happy, i guess
             userroles = user.roles[:]
@@ -286,7 +296,7 @@ class Compliments(commands.Cog):
         random.shuffle(userroles)  # pick a random order for which pronoun role to pick
         for role in userroles:
             if role.name.lower() in roles:
-                await choose_and_send_compliment(itx, user, role.name.lower())
+                await choose_and_send_compliment(itx, user, role.name.lower(), self.client.rina_db)
                 return
         await send_confirm_gender_modal(itx, user)
 
@@ -323,7 +333,7 @@ class Compliments(commands.Cog):
             if len(string) > 150:
                 await itx.response.send_message("Please make strings shorter than 150 characters...", ephemeral=True)
                 return
-            collection = rina_db["complimentblacklist"]
+            collection = self.client.rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -352,7 +362,7 @@ class Compliments(commands.Cog):
                     "This should be a number... You didn't give a number...",
                     ephemeral=True)
                 return
-            collection = rina_db["complimentblacklist"]
+            collection = self.client.rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -377,7 +387,7 @@ class Compliments(commands.Cog):
                 ephemeral=True)
 
         elif mode == 3:  # check
-            collection = rina_db["complimentblacklist"]
+            collection = self.client.rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search: dict[str, int | list] = collection.find_one(query)
             if search is None:

@@ -7,7 +7,7 @@ def create_simple_button(
         label: str,
         style: discord.ButtonStyle,
         callback: typing.Callable[
-            [discord.ui.View, discord.Interaction],
+            [discord.Interaction],
             typing.Coroutine[typing.Any, typing.Any, None]],
         disabled: bool = False,
         label_is_emoji: bool = False,
@@ -156,9 +156,9 @@ class PageView(discord.ui.View):
         page_up_style: tuple[discord.ButtonStyle, bool] = self.page_up_style
         page_down_style: tuple[discord.ButtonStyle, bool] = self.page_down_style
         self.page_down_button = create_simple_button(
-            "◀️", page_down_style[0], on_page_down, disabled=page_down_style[1])
+            "◀️", page_down_style[0], self.on_page_down, disabled=page_down_style[1])
         self.page_up_button = create_simple_button(
-            "▶️", page_up_style[0], on_page_up, disabled=page_up_style[1])
+            "▶️", page_up_style[0], self.on_page_up, disabled=page_up_style[1])
         self.add_item(self.page_down_button)
         self.add_item(self.page_up_button)
 
@@ -167,7 +167,7 @@ class PageView(discord.ui.View):
 
     async def on_page_down(self, itx: discord.Interaction):
         if self.page - 1 < 0:  # below lowest index
-            self.page = self.max_page_index  # set to highest index
+            self.page = self.max_page_index  # set to the highest index
         else:
             self.page -= 1
 

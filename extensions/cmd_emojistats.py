@@ -6,6 +6,7 @@ import pymongo  # for pymongo.DESCENDING when sorting db query output
 import sys  # for integer max value: sys.maxsize
 from resources.customs.bot import Bot
 from resources.customs.emojistats import EmojiSendSource
+import motor.core as motorcore  # for typing
 
 
 #   Rina.emojistats         # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
@@ -19,7 +20,11 @@ from resources.customs.emojistats import EmojiSendSource
 # reactionUsedCount = 8                             #  int  of how often messages have been replied to with this emoji
 
 
-async def add_to_emoji_data(emoji: tuple[bool, str, str], location: EmojiSendSource):
+async def add_to_emoji_data(
+        emoji: tuple[bool, str, str],
+        async_rina_db: motorcore.AgnosticDatabase,
+        location: EmojiSendSource,
+):
     """
     Helper function to add emoji data to the mongo database when an emoji is sent/replied in chat.
 
@@ -27,6 +32,8 @@ async def add_to_emoji_data(emoji: tuple[bool, str, str], location: EmojiSendSou
     -----------
     emoji: :class:`tuple[animated, emoji_name, emoji_id]`
         The emoji (kind of in format of <a:Emoji_Name1:0123456789>).
+    async_rina_db: :class:`AgnosticDatabase`
+        An async connection to Rina's MongoDb.
     location: :class:`EmojiSendEnum`
         Whether the emoji was used in a message or as a reaction.
     """
@@ -54,16 +61,18 @@ async def add_to_emoji_data(emoji: tuple[bool, str, str], location: EmojiSendSou
                                 upsert=True)
 
 
-async def add_to_sticker_data(sticker_name: str, sticker_id: str):
+async def add_to_sticker_data(sticker_name: str, async_rina_db: motorcore.AgnosticDatabase, sticker_id: str):
     """
     Helper function to add sticker data to the mongo database when a sticker is sent in chat.
 
     Parameters
     -----------
     sticker_name: string
-        The sticker name :P
+        The sticker name.
+    async_rina_db: :class:`AgnosticDatabase`:
+        An async link to the MongoDB.
     sticker_id: str
-        The sticker id, as string
+        The sticker id, as string.
     """
     collection = async_rina_db["stickerstats"]
     query = {"id": sticker_id}
@@ -81,8 +90,6 @@ async def add_to_sticker_data(sticker_name: str, sticker_id: str):
 
 class EmojiStats(commands.Cog):
     def __init__(self, client: Bot):
-        global async_rina_db
-        async_rina_db = client.async_rina_db
         self.client = client
 
     emojistats = app_commands.Group(name='emojistats',
@@ -117,12 +124,13 @@ class EmojiStats(commands.Cog):
             start_index += emoji.span()[1]  # (11,29) for example
 
         for emoji in emojis:
-            await add_to_emoji_data(emoji, location=EmojiSendSource.MESSAGE)
+            await add_to_emoji_data(emoji, self.client.async_rina_db, location=EmojiSendSource.MESSAGE)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
         if reaction.emoji.id is not None:
             await add_to_emoji_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)),
+                                    self.client.async_rina_db,
                                     location=EmojiSendSource.REACTION)
 
     @emojistats.command(name="getemojidata", description="Get emoji usage data from an ID!")
@@ -138,7 +146,7 @@ class EmojiStats(commands.Cog):
                 ephemeral=True)
             return
 
-        collection = async_rina_db["emojistats"]
+        collection = self.client.async_rina_db["emojistats"]
         query = {"id": emoji_id}
         emoji = await collection.find_one(query)
         if emoji is None:
@@ -183,7 +191,7 @@ class EmojiStats(commands.Cog):
     async def get_unused_emojis(
             self, itx: discord.Interaction, public: bool = False,
             max_results: int = 10,
-            used_max: int = sys.max_size,
+            used_max: int = sys.maxsize,
             msg_max: int = sys.maxsize,
             react_max: int = sys.maxsize,
             animated: int = 3
@@ -192,7 +200,7 @@ class EmojiStats(commands.Cog):
 
         unused_emojis = []
 
-        collection = async_rina_db["emojistats"]
+        collection = self.client.async_rina_db["emojistats"]
         query = {
             "$expr": {
                 "$lte": [
@@ -261,7 +269,7 @@ class EmojiStats(commands.Cog):
 
     @emojistats.command(name="getemojitop10", description="Get top 10 most used emojis")
     async def get_emoji_top_10(self, itx: discord.Interaction):
-        collection = async_rina_db["emojistats"]
+        collection = self.client.async_rina_db["emojistats"]
         output = ""
         for source_type in ["messageUsedCount", "reactionUsedCount"]:
             results = []
@@ -287,8 +295,6 @@ class EmojiStats(commands.Cog):
 
 class StickerStats(commands.Cog):
     def __init__(self, client: Bot):
-        global async_rina_db
-        async_rina_db = client.async_rina_db
         self.client = client
 
     stickerstats = app_commands.Group(name='stickertats',
@@ -302,7 +308,7 @@ class StickerStats(commands.Cog):
         for sticker in message.stickers:
             # if sticker in message.guild.stickers:
             #     # only track if it's actually a guild's sticker; not some outsider one
-            await add_to_sticker_data(sticker.name, str(sticker.id))
+            await add_to_sticker_data(sticker.name, self.client.async_rina_db, str(sticker.id))
 
     @stickerstats.command(name="getstickerdata", description="Get sticker usage data from an ID!")
     @app_commands.rename(sticker_name="sticker")
@@ -318,7 +324,7 @@ class StickerStats(commands.Cog):
                 ephemeral=True)
             return
 
-        collection = async_rina_db["stickerstats"]
+        collection = self.client.async_rina_db["stickerstats"]
         query = {"id": sticker_id}
         sticker_response = await collection.find_one(query)
         if sticker_response is None:
@@ -354,7 +360,7 @@ class StickerStats(commands.Cog):
 
         unused_stickers = []
 
-        collection = async_rina_db["stickerstats"]
+        collection = self.client.async_rina_db["stickerstats"]
         query = {
             "$expr": {
                 "$lte": [
@@ -408,7 +414,7 @@ class StickerStats(commands.Cog):
 
     @stickerstats.command(name="getstickertop10", description="Get top 10 most used stickers")
     async def get_sticker_top_10(self, itx: discord.Interaction):
-        collection = async_rina_db["stickerstats"]
+        collection = self.client.async_rina_db["stickerstats"]
         output = ""
         for source_type in ["messageUsedCount"]:
             results = []
