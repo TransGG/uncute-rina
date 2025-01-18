@@ -1,26 +1,29 @@
-import discord, discord.ext.commands as commands # for main discord bot functionality
-from pymongo.database import Database as pymongodatabase # for MongoDB database typing
-import motor.motor_asyncio as motorasync # for making Mongo run asynchronously (during api calls)
-import motor.core as motorcore # for typing
-from datetime import datetime # for startup and crash logging, and Reminders
-from apscheduler.schedulers.asyncio import AsyncIOScheduler # for scheduling Reminders
+from datetime import datetime  # for startup and crash logging, and Reminders
+
+import discord  # for main discord bot functionality
+import discord.ext.commands as commands
+import motor.core as motorcore  # for typing
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
+from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 
 
 class Bot(commands.Bot):
-    startup_time = datetime.now() # bot uptime start, used in /version in cmd_staffaddons
+    startup_time = datetime.now()  # bot uptime start, used in /version in cmd_staffaddons
 
     commandList: list[discord.app_commands.AppCommand]
     log_channel: discord.TextChannel | discord.Thread
-    bot_owner: discord.User # for AllowedMentions in on_appcommand_error()
-    reminder_scheduler: AsyncIOScheduler # for Reminders
+    bot_owner: discord.User  # for AllowedMentions in on_appcommand_error()
+    reminder_scheduler: AsyncIOScheduler  # for Reminders
     running_on_production = True
 
-    def __init__(self, api_tokens: dict, version: str,
-                 rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase,
-                 *args, **kwargs):
+    def __init__(
+            self, api_tokens: dict, version: str,
+            rina_db: PyMongoDatabase, async_rina_db: motorcore.AgnosticDatabase,
+            *args, **kwargs
+    ):
         self.api_tokens: dict = api_tokens
         self.version: str = version
-        self.rina_db: pymongodatabase = rina_db
+        self.rina_db: PyMongoDatabase = rina_db
         self.async_rina_db: motorcore.AgnosticDatabase = async_rina_db
         super().__init__(*args, **kwargs)
 
@@ -43,28 +46,28 @@ class Bot(commands.Bot):
             "enbyplace_ticket_channel_id": 1186054373986537522,
             "transonance_ticket_channel_id": 1108789589558177812,
             "ban_appeal_webhook_ids": [1120832140758745199],
-            "vctable_prefix":"[T] "
+            "vctable_prefix": "[T] "
         }
         development_ids = {
             "staff_server_id": 985931648094834798,
             "staff_qotw_channel": 1260504768611352637,
             "staff_dev_request": 1260504504743362574,
             "staff_watch_channel": 1143642388670202086,
-            "badeline_bot": 979057304752254976, # Rina herself
+            "badeline_bot": 979057304752254976,  # Rina herself
             "staff_logs_category": 1143642220231131156,
             "staff_reports_channel": 1260505477364711547,
-            "active_staff_role": 986022587756871711, # @Developers
+            "active_staff_role": 986022587756871711,  # @Developers
             "staff_developer_role": 986022587756871711,
-            "transplace_server_id": 985931648094834798,             # - private dev server
-            "enbyplace_server_id": 981615050664075404,              # + public dev server
-            "transonance_server_id": 981615050664075404,            # + public dev server
-            "transplace_ticket_channel_id": 1175669542412877824,    # - private dev server channel
-            "enbyplace_ticket_channel_id": 1125108250426228826,     # + public dev server channel
-            "transonance_ticket_channel_id": 1125108250426228826,    # + public dev server channel
+            "transplace_server_id": 985931648094834798,  # - private dev server
+            "enbyplace_server_id": 981615050664075404,  # + public dev server
+            "transonance_server_id": 981615050664075404,  # + public dev server
+            "transplace_ticket_channel_id": 1175669542412877824,  # - private dev server channel
+            "enbyplace_ticket_channel_id": 1125108250426228826,  # + public dev server channel
+            "transonance_ticket_channel_id": 1125108250426228826,  # + public dev server channel
             "ban_appeal_webhook_ids": [979057304752254976],
-            "vctable_prefix":"[T] "
+            "vctable_prefix": "[T] "
         }
-        assert [i for i in production_ids] == [i for i in development_ids] # all keys match
+        assert [i for i in production_ids] == [i for i in development_ids]  # all keys match
 
         if self.running_on_production:
             return production_ids
@@ -85,7 +88,7 @@ class Bot(commands.Bot):
         :class:`str`
             The command mention, or the input (:param:`command_string`) if no command with the name was found.
         """
-        args = command_string.split(" ")+[None, None]
+        args = command_string.split(" ") + [None, None]
         command_name, subcommand, subcommand_group = args[0:3]
         # returns one of the following:
         # </COMMAND:COMMAND_ID>
@@ -100,16 +103,18 @@ class Bot(commands.Bot):
                     if subgroup.name == subcommand:
                         if subcommand_group is None:
                             return subgroup.mention
-                        #now it techinically searches subcommand in subcmdgroup.options
-                        #but to remove additional renaming of variables, it stays as is.
+                        # now it techinically searches subcommand in subcmdgroup.options
+                        # but to remove additional renaming of variables, it stays as is.
                         # subcmdgroup = subgroup # hm
                         for subcmdgroup in subgroup.options:
                             if subcmdgroup.name == subcommand_group:
                                 return subcmdgroup.mention
                                 # return f"</{command.name} {subgroup.name} {subcmdgroup.name}:{command.id}>"
-        return "/"+command_string
+        return "/" + command_string
 
-    async def get_guild_info(self, guild_id: discord.Guild | int, *args: str, log: list[discord.Interaction | str] | None = None):
+    async def get_guild_info(
+            self, guild_id: discord.Guild | int, *args: str, log: list[discord.Interaction | str] | None = None
+    ):
         """
         Get a guild's server settings (from /editguildinfo, in cmd_customvcs).
 
@@ -120,7 +125,8 @@ class Bot(commands.Bot):
         *args: :class:`str`
             settings (or multiple) that you want to fetch.
         log: :class:`list[discord.Interaction, str]` | :class:`None`, optional
-            A list of [itx, error_message], and will reply this error message to the given interaction if there's a KeyError. Default: None.
+            A list of [itx, error_message], and will reply this error message to the given interaction if there's a
+             KeyError. Default: None.
 
         Returns
         --------
@@ -153,7 +159,7 @@ class Bot(commands.Bot):
                     unavailable.append(key)
             if unavailable:
                 raise KeyError("Guild " + str(guild_id) + " does not have data for: " + ', '.join(unavailable))
-            if len(output) == 1: # prevent outputting [1] (one item as list)
+            if len(output) == 1:  # prevent outputting [1] (one item as list)
                 return output[0]
             return output
         except KeyError:

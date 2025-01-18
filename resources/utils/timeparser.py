@@ -41,9 +41,10 @@ class TimeParser:
         for (num, unit) in matches:
             try:
                 result.append((int(num), unit))
-            except:  # re-raise
+            except ValueError:  # re-raise
                 raise ValueError(
-                    f"Invalid number '{num}' in '{input_string}'! You can use decimals, but the number should be valid.")
+                    f"Invalid number '{num}' in '{input_string}'! You can use decimals, but "
+                    f"the number should be valid.")
         return result
 
     @staticmethod
@@ -60,7 +61,7 @@ class TimeParser:
         --------
         :class:`list[tuple[int,str]]`:
             A list of tuples with shrunk time strings: (4, "d").
-            
+
         Raises
         -------
         :class:`ValueError`:
