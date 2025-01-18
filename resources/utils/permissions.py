@@ -19,16 +19,17 @@ def is_verified(guild: discord.Guild, member: discord.Member | discord.User) -> 
     """
     if guild is None:
         return False
-    if type(member) == discord.User or not hasattr(member, "roles"):
+    if member is discord.User or not hasattr(member, "roles"):
         return False
     roles = [discord.utils.find(lambda r: r.name.lower() == 'verified', guild.roles)]
     user_role_ids = [role.id for role in member.roles]
-    role_ids = [959748411844874240,   # Transplace: Verified
+    role_ids = [959748411844874240,  # Transplace: Verified
                 1109907941454258257]  # Transonance: Verified
     # TODO: add role ids for enbyplace as backup as well
     return (len(set(roles).intersection(member.roles)) > 0 or
             is_staff(guild, member) or
             len(set(role_ids).intersection(user_role_ids)) > 0)
+
 
 # def isVerifier(itx: discord.Interaction):
 #     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
@@ -67,7 +68,7 @@ def is_staff(guild: discord.Guild, member: discord.Member | discord.User) -> boo
     #          discord.utils.find(lambda r: 'sr. mod'   in r.name.lower(), guild.roles),
     #          discord.utils.find(lambda r: 'chat mod'  in r.name.lower(), guild.roles)]
     user_role_ids = [role.id for role in member.roles]
-    role_ids = [1069398630944997486, 981735650971775077,  #TransPlace: trial ; moderator
+    role_ids = [1069398630944997486, 981735650971775077,  # TransPlace: trial ; moderator
                 1108771208931049544]  # Transonance: Staff
     return (len(set(roles).intersection(member.roles)) > 0 or
             is_admin(guild, member)

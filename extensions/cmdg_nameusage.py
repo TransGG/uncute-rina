@@ -5,7 +5,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.views.nameusage import PageView_NameUsage_GetTop
+from resources.views.nameusage import PageViewNameUsageGetTop
 
 
 class NameUsage(commands.GroupCog, name="nameusage", description="Get data about which names are used in which server"):
@@ -109,13 +109,13 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
 
         result_page = pages[page]
         result_page2 = pages[page + 1]
-        embed_title = (f'Most-used {"user" if mode == 1 else "nick" if mode == 2
-                       else "usernames and nick"}names leaderboard!')
+        mode_text = "usernames" if mode == 1 else "nicknames" if mode == 2 else "usernames and nicknames"
+        embed_title = f'Most-used {mode_text} leaderboard!'
         embed = discord.Embed(color=8481900, title=embed_title)
         embed.add_field(name="Column 1", value=result_page)
         embed.add_field(name="Column 2", value=result_page2)
         embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages) / 2)))
-        view = PageView_NameUsage_GetTop(pages, embed_title, timeout=60)
+        view = PageViewNameUsageGetTop(pages, embed_title, timeout=60)
         await itx.followup.send(f"", embed=embed, view=view, ephemeral=True)
         await view.wait()
         if view.value is None:

@@ -1,14 +1,18 @@
-import discord, discord.ext.commands as commands, discord.app_commands as app_commands
-from time import mktime
-from datetime import datetime  # to make report tag auto-trigger at most once every 15 minutes
 import typing  # for typing.Callable: for list of [tag send functions].
+from datetime import datetime  # to make report tag auto-trigger at most once every 15 minutes
+from time import mktime
+
+import discord
+import discord.app_commands as app_commands
+import discord.ext.commands as commands
+
+from resources.customs.bot import Bot
+from resources.customs.utils import \
+    EnabledServers  # to specify which tags can be used in which servers (e.g. Mature role not in EnbyPlace)
 from resources.utils.utils import (
     log_to_guild,  # for logging when people send tags anonymously (in case someone abuses the anonymity)
     get_mod_ticket_channel_id)  # for ticket channel id in Report tag
-from resources.customs.utils import \
-    EnabledServers  # to specify which tags can be used in which servers (e.g. Mature role not in EnbyPlace)
-from resources.customs.bot import Bot
-from resources.views.tags import SendPublicly_TagView
+from resources.views.tags import SendPubliclyTagView
 
 report_message_reminder_unix = 0  # int(mktime(datetime.now().timetuple()))
 
@@ -18,8 +22,10 @@ class Tags:  # TODO: move to own file
     no_venting_channel_id = 1126163020620513340
 
     @staticmethod
-    async def tag_message(tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool,
-                          embed: discord.Embed, public_footer: bool = False):
+    async def tag_message(
+            tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool,
+            embed: discord.Embed, public_footer: bool = False
+    ):
         """
         Send a tag message (un)publicly or (un)anonymously, given an embed.
 
@@ -64,10 +70,10 @@ class Tags:  # TODO: move to own file
                 await itx.response.send_message(embed=embed)
         else:
             if anonymous:
-                view = SendPublicly_TagView(client, embed, timeout=60, public_footer=public_footer, log_msg=log_msg,
-                                            tag_name=tag_name)
+                view = SendPubliclyTagView(client, embed, timeout=60, public_footer=public_footer, log_msg=log_msg,
+                                           tag_name=tag_name)
             else:
-                view = SendPublicly_TagView(client, embed, timeout=60, tag_name=tag_name)
+                view = SendPubliclyTagView(client, embed, timeout=60, tag_name=tag_name)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
 
     # region Tags

@@ -7,7 +7,8 @@ from resources.utils.stringhelper import replace_string_command_mentions
 
 def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
     """
-    Helper function to generate an embed for a specific help page. This command is mainly to prevent inconsistencies between the /help calling and updating functions.
+    Helper function to generate an embed for a specific help page. This command is mainly to
+     prevent inconsistencies between the /help calling and updating functions.
     Page fields are appended after the description, in the order they are given in the list.
 
     Parameters
@@ -15,7 +16,8 @@ def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> d
     page: :class:`HelpPage`
         The help page to reference.
     page_number: :class:`int`
-        The page number of the help page. This number is added as footer, but is also used for the hue (HSV) value of the embed color.
+        The page number of the help page. This number is added as footer, but is also used for the
+         hue (HSV) value of the embed color.
     client: :class:`Bot`
         The bot instance for get_command_mention().
 

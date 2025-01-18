@@ -17,9 +17,12 @@ class TestingCog(commands.GroupCog, name="testing"):
         reason="Reason for adding",
         rule="rule to punish for",
         private_notes="private notes to include",
-        role_changes="role changes ([[\\n]] converts to newline)")
-    async def send_fake_watchlist_mod_log(self, itx: discord.Interaction, target: discord.User, reason: str = "",
-                                          rule: str = None, private_notes: str = "", role_changes: str = ""):
+        role_changes="role changes ([[\\n]] converts to newline)"
+    )
+    async def send_fake_watchlist_mod_log(
+            self, itx: discord.Interaction, target: discord.User, reason: str = "",
+            rule: str = None, private_notes: str = "", role_changes: str = ""
+    ):
         embed = discord.Embed(title="did a log thing for x", color=16705372)
         embed.add_field(name="User", value=f"{target.mention} (`{target.id}`)", inline=True)
         embed.add_field(name="Moderator", value=f"{itx.user.mention}", inline=True)
@@ -73,7 +76,7 @@ class TestingCog(commands.GroupCog, name="testing"):
 
         go_to_page_button = create_simple_button("🔢", discord.ButtonStyle.blurple, go_to_page_button_callback,
                                                  label_is_emoji=True)
-        view = PageView(0, pages, update_test_page, appended_buttons=[go_to_page_button])
+        view = PageView(0, len(pages), update_test_page, appended_buttons=[go_to_page_button])
         await itx.response.send_message("Sending this cool embed...", embed=pages[0], view=view)
 
     @app_commands.command(name="send_srmod_appeal_test", description="Send a test embed of a ban appeal")

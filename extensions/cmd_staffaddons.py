@@ -1,11 +1,15 @@
-import discord, discord.ext.commands as commands, discord.app_commands as app_commands
+from datetime import datetime, timedelta
 from time import \
     mktime  # for /delete_week_selfies (within 7 days), and /version startup time parsing to discord unix <t:1234:F>
-from datetime import datetime, timedelta
+
+import discord
+import discord.app_commands as app_commands
+import discord.ext.commands as commands
 import requests  # to fetch from GitHub and see Rina is running the latest version
+
+from resources.customs.bot import Bot
 from resources.utils.permissions import is_staff  # for checking staff roles
 from resources.utils.utils import log_to_guild  # logging when a staff command is used
-from resources.customs.bot import Bot
 
 
 class StaffAddons(commands.Cog):

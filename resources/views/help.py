@@ -77,5 +77,5 @@ class HelpPageView(PageView):
         self.client = client
         self.pages = page_dict
         first_page_index = list(self.pages).index(first_page_key)
-        super().__init__(first_page_index, len(self.pages)-1, self.update_page)
+        super().__init__(first_page_index, len(self.pages) - 1, self.update_page)
         self._children.append(self._children.pop(1))

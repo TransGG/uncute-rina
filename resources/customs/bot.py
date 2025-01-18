@@ -1,9 +1,10 @@
-import discord, discord.ext.commands as commands  # for main discord bot functionality
-from pymongo.database import Database as pymongodatabase  # for MongoDB database typing
-import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
-import motor.core as motorcore  # for typing
 from datetime import datetime  # for startup and crash logging, and Reminders
+
+import discord  # for main discord bot functionality
+import discord.ext.commands as commands
+import motor.core as motorcore  # for typing
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
+from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 
 
 class Bot(commands.Bot):
@@ -17,12 +18,12 @@ class Bot(commands.Bot):
 
     def __init__(
             self, api_tokens: dict, version: str,
-            rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase,
+            rina_db: PyMongoDatabase, async_rina_db: motorcore.AgnosticDatabase,
             *args, **kwargs
     ):
         self.api_tokens: dict = api_tokens
         self.version: str = version
-        self.rina_db: pymongodatabase = rina_db
+        self.rina_db: PyMongoDatabase = rina_db
         self.async_rina_db: motorcore.AgnosticDatabase = async_rina_db
         super().__init__(*args, **kwargs)
 
@@ -57,11 +58,11 @@ class Bot(commands.Bot):
             "staff_reports_channel": 1260505477364711547,
             "active_staff_role": 986022587756871711,  # @Developers
             "staff_developer_role": 986022587756871711,
-            "transplace_server_id": 985931648094834798,            # - private dev server
-            "enbyplace_server_id": 981615050664075404,             # + public dev server
-            "transonance_server_id": 981615050664075404,           # + public dev server
-            "transplace_ticket_channel_id": 1175669542412877824,   # - private dev server channel
-            "enbyplace_ticket_channel_id": 1125108250426228826,    # + public dev server channel
+            "transplace_server_id": 985931648094834798,  # - private dev server
+            "enbyplace_server_id": 981615050664075404,  # + public dev server
+            "transonance_server_id": 981615050664075404,  # + public dev server
+            "transplace_ticket_channel_id": 1175669542412877824,  # - private dev server channel
+            "enbyplace_ticket_channel_id": 1125108250426228826,  # + public dev server channel
             "transonance_ticket_channel_id": 1125108250426228826,  # + public dev server channel
             "ban_appeal_webhook_ids": [979057304752254976],
             "vctable_prefix": "[T] "
@@ -124,7 +125,8 @@ class Bot(commands.Bot):
         *args: :class:`str`
             settings (or multiple) that you want to fetch.
         log: :class:`list[discord.Interaction, str]` | :class:`None`, optional
-            A list of [itx, error_message], and will reply this error message to the given interaction if there's a KeyError. Default: None.
+            A list of [itx, error_message], and will reply this error message to the given interaction if there's a
+             KeyError. Default: None.
 
         Returns
         --------

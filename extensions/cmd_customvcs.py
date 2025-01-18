@@ -38,8 +38,7 @@ def voice_channel_is_custom(
             voice_channel.id != customvc_hub_id and  # avoid deleting the hub channel
             voice_channel.id not in customvc_channel_blacklist and
             not voice_channel.name.startswith('〙')
-        # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
-    )
+    )  # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
 
 
 async def reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice_channel: discord.VoiceChannel):
@@ -253,9 +252,7 @@ async def edit_guild_info_autocomplete(itx: discord.Interaction, current: str) -
 
 class CustomVcs(commands.Cog):
     def __init__(self, client: Bot):
-        global rina_db
         self.client = client
-        rina_db = client.rina_db
         self.blacklisted_channels = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
         #  # General, #Private, #Quiet, and #Minecraft. Later, it also excludes channels starting with "〙"
 
@@ -486,7 +483,7 @@ class CustomVcs(commands.Cog):
                 str(value), ephemeral=True)
         if mode == 2:
             query = {"guild_id": itx.guild_id}
-            collection = rina_db["guildInfo"]
+            collection = self.client.rina_db["guildInfo"]
 
             async def to_int(non_int, error_msg):
                 try:
@@ -791,7 +788,8 @@ class CustomVcs(commands.Cog):
         if first_rename_time:
             await itx.followup.send(
                 f"This channel has been renamed too often in the past 10 minutes! (bcuz discord :P)\n" +
-                f"You can turn this into a VcTable in <t:{first_rename_time + 600}:R> (<t:{first_rename_time + 600}:t>).",
+                f"You can turn this into a VcTable in <t:{first_rename_time + 600}:R> "
+                f"(<t:{first_rename_time + 600}:t>).",
                 ephemeral=True)
             return
 
@@ -817,7 +815,7 @@ class CustomVcs(commands.Cog):
             reason="VcTable created: auto-set as participent"
         )
 
-        owner_taglist = ', '.join([f'<@{id}>' for id in added_owners])
+        owner_taglist = ', '.join([f'<@{user_id}>' for user_id in added_owners])
         cmd_mention = self.client.get_command_mention("vctable about")
         await channel.send(f"CustomVC converted to VcTable\n"
                            f"Use {cmd_mention} to learn more!\n"
@@ -872,11 +870,9 @@ class CustomVcs(commands.Cog):
                     return
             except KeyError:
                 pass
-            perms_override = channel.overwrites[user].update(connect=True, speak=True, view_channel=True,
-                                                             read_message_history=True)
-            # todo: figure out why this still works even tho perms_override is None.
-            # todo: same with similar occurances below
-            await channel.set_permissions(user, overwrite=perms_override,
+            channel.overwrites[user].update(connect=True, speak=True, view_channel=True,
+                                            read_message_history=True)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
                                           reason="VcTable edited: set as owner (+speaker)")
             await channel.send(f"{itx.user.mention} added {user.mention} as VcTable owner.",
                                allowed_mentions=discord.AllowedMentions.none())
@@ -904,8 +900,9 @@ class CustomVcs(commands.Cog):
                     return
             except KeyError:
                 pass
-            perms_override = channel.overwrites[user].update(connect=None)  # todo: see earlier todo
-            await channel.set_permissions(user, overwrite=perms_override, reason="VcTable edited: removed as owner")
+            channel.overwrites[user].update(connect=None)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
+                                          reason="VcTable edited: removed as owner")
             await channel.send(f"{itx.user.mention} removed {user.mention} as VcTable owner",
                                allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully removed {user.mention} as owner. Keep in mind "
@@ -962,8 +959,9 @@ class CustomVcs(commands.Cog):
                     warning += f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             except KeyError:
                 pass
-            perms_override = channel.overwrites[user].update(speak=True)  # todo: see earlier todo
-            await channel.set_permissions(user, overwrite=perms_override, reason="VcTable edited: set as speaker")
+            channel.overwrites[user].update(speak=True)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
+                                          reason="VcTable edited: set as speaker")
             await channel.send(f"{itx.user.mention} made {user.mention} a speaker.",
                                allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully made {user.mention} a speaker." + warning, ephemeral=True)
@@ -1004,8 +1002,9 @@ class CustomVcs(commands.Cog):
                     warning = f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             except KeyError:
                 pass
-            perms_override = channel.overwrites[user].update(speak=None)  # todo: see earlier todo
-            await channel.set_permissions(user, overwrite=perms_override, reason="VcTable edited: removed as speaker")
+            channel.overwrites[user].update(speak=None)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
+                                          reason="VcTable edited: removed as speaker")
             await channel.send(f"{itx.user.mention} removed {user.mention} as speaker.",
                                allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully removed {user.mention} as speaker." + warning,
@@ -1064,9 +1063,9 @@ class CustomVcs(commands.Cog):
                     warning += f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             except KeyError:
                 pass
-            perms_override = channel.overwrites[user].update(view_channel=True, read_message_history=True)
-            # todo: see earlier todo
-            await channel.set_permissions(user, overwrite=perms_override, reason="VcTable edited: set as participant")
+            channel.overwrites[user].update(view_channel=True, read_message_history=True)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
+                                          reason="VcTable edited: set as participant")
             await channel.send(f"{itx.user.mention} made {user.mention} a participant.",
                                allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully made {user.mention} a participant." + warning,
@@ -1116,9 +1115,8 @@ class CustomVcs(commands.Cog):
                     warning = f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             except KeyError:
                 pass
-            perms_override = channel.overwrites[user].update(view_channel=None, read_message_history=None)
-            # todo: see earlier todo
-            await channel.set_permissions(user, overwrite=perms_override,
+            channel.overwrites[user].update(view_channel=None, read_message_history=None)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
                                           reason="VcTable edited: removed as participant")
             await channel.send(f"{itx.user.mention} removed {user.mention} as participant.",
                                allowed_mentions=discord.AllowedMentions.none())
@@ -1182,8 +1180,9 @@ class CustomVcs(commands.Cog):
                     "You can't mute staff members! If you have an issue with staff, make a ticket or DM an admin!",
                     ephemeral=True)
                 return
-            perms_override = channel.overwrites[user].update(speak=False, stream=False)  # todo: see earlier todo
-            await channel.set_permissions(user, overwrite=perms_override, reason="VcTable edited: muted participant")
+            channel.overwrites[user].update(speak=False, stream=False)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
+                                          reason="VcTable edited: muted participant")
             await channel.send(f"{itx.user.mention} muted {user.mention}.",
                                allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully muted {user.mention}." + warning, ephemeral=True)
@@ -1210,8 +1209,9 @@ class CustomVcs(commands.Cog):
                 await itx.response.send_message(
                     f"This user is already unmuted! Let people be silent if they wanna be >:(", ephemeral=True)
                 return
-            perms_override = channel.overwrites[user].update(speak=None, stream=None)  # todo: see earlier todo
-            await channel.set_permissions(user, overwrite=perms_override, reason="VcTable edited: unmuted participant")
+            channel.overwrites[user].update(speak=None, stream=None)
+            await channel.set_permissions(user, overwrite=channel.overwrites[user],
+                                          reason="VcTable edited: unmuted participant")
             await channel.send(f"{itx.user.mention} unmuted {user.mention}.",
                                allowed_mentions=discord.AllowedMentions.none())
             await itx.response.send_message(f"Successfully unmuted {user.mention}.", ephemeral=True)
@@ -1240,8 +1240,9 @@ class CustomVcs(commands.Cog):
         # if authorized-only is enabled -> (the role overwrite is not nonexistant and is False):
         if channel.overwrites.get(itx.guild.default_role, False):
             if channel.overwrites[itx.guild.default_role].speak is False:
-                perms_override = channel.overwrites[itx.guild.default_role].update(speak=None)  # todo: see earlier todo
-                await channel.set_permissions(itx.guild.default_role, overwrite=perms_override,
+                channel.overwrites[itx.guild.default_role].update(speak=None)
+                await channel.set_permissions(itx.guild.default_role,
+                                              overwrite=channel.overwrites[itx.guild.default_role],
                                               reason="VcTable edited: disaled authorized-only for speaking")
                 await channel.send(f"{itx.user.mention} disabled whitelist for speaking.",
                                    allowed_mentions=discord.AllowedMentions.none())
@@ -1259,8 +1260,9 @@ class CustomVcs(commands.Cog):
                                         view=view)
         await view.wait()
         if view.value:
-            perms_override = channel.overwrites[itx.guild.default_role].update(speak=False)  # todo: see earlier todo
-            await channel.set_permissions(itx.guild.default_role, overwrite=perms_override,
+            channel.overwrites[itx.guild.default_role].update(speak=False)
+            await channel.set_permissions(itx.guild.default_role,
+                                          overwrite=channel.overwrites[itx.guild.default_role],
                                           reason="VcTable edited: enabled authorized-only for speaking")
             await channel.send(f"{itx.user.mention} enabled whitelist for speaking.",
                                allowed_mentions=discord.AllowedMentions.none())
@@ -1285,10 +1287,9 @@ class CustomVcs(commands.Cog):
         # if lock is enabled -> (the role overwrite is not nonexistant and is False):
         if channel.overwrites.get(itx.guild.default_role, False):
             if channel.overwrites[itx.guild.default_role].view_channel is False:
-                perms_override = channel.overwrites[itx.guild.default_role].update(view_channel=None,
-                                                                                   read_message_history=None)
-                # todo: see earlier todo
-                await channel.set_permissions(itx.guild.default_role, overwrite=perms_override,
+                channel.overwrites[itx.guild.default_role].update(view_channel=None, read_message_history=None)
+                await channel.set_permissions(itx.guild.default_role,
+                                              overwrite=channel.overwrites[itx.guild.default_role],
                                               reason="VcTable edited: disabled viewing lock")
                 await channel.send(f"{itx.user.mention} disabled whitelist for viewing this channel.",
                                    allowed_mentions=discord.AllowedMentions.none())
@@ -1307,10 +1308,9 @@ class CustomVcs(commands.Cog):
             view=view)
         await view.wait()
         if view.value:
-            perms_override = channel.overwrites[itx.guild.default_role].update(view_channel=False,
-                                                                               read_message_history=False)
-            # todo: see earlier todo
-            await channel.set_permissions(itx.guild.default_role, overwrite=perms_override,
+            channel.overwrites[itx.guild.default_role].update(view_channel=False, read_message_history=False)
+            await channel.set_permissions(itx.guild.default_role,
+                                          overwrite=channel.overwrites[itx.guild.default_role],
                                           reason="VcTable edited: enabled viewing lock")
             await channel.send(f"{itx.user.mention} enabled whitelist for viewing the voice channel.",
                                allowed_mentions=discord.AllowedMentions.none())
@@ -1353,9 +1353,9 @@ class CustomVcs(commands.Cog):
             color=discord.Colour.from_rgb(r=255, g=153, b=204),
             title='Custom VC Tables',
             description="Tables are a system to help keep a focused voice channel on-topic. For example, a watch "
-                        "party or a group gaming session might welcome people joining to participate but not "
-                        "want people to derail/disrupt it. VcTables allow you to have a bit more control "
-                        "over your vc by letting you mute disruptive people or make speaking permissions whitelist-only")
+                        "party or a group gaming session might welcome people joining to participate but not want "
+                        "people to derail/disrupt it. VcTables allow you to have a bit more control over your vc "
+                        "by letting you mute disruptive people or make speaking permissions whitelist-only")
         embed2 = discord.Embed(
             color=discord.Colour.from_rgb(r=255, g=153, b=204),
             title='Command documentation and explanation',

@@ -3,8 +3,11 @@ from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild
 
 
-class SendPublicly_TagView(discord.ui.View):
-    def __init__(self, client: Bot, embed: discord.Embed, timeout=None, public_footer=None, log_msg=None, tag_name=None):
+class SendPubliclyTagView(discord.ui.View):
+    def __init__(
+            self, client: Bot, embed: discord.Embed, timeout=None,
+            public_footer=None, log_msg=None, tag_name=None
+    ):
         super().__init__()
         if embed.footer.text is None:
             self.footer = ""

@@ -76,7 +76,8 @@ class MemberData(commands.Cog):
             # if period < 0.035:
             #     await itx.response.send_message("Idk why but it seems to break when period is smaller than 0.0035, "
             #                                     "so better not use it.", ephemeral=True)
-            #     return #todo: figure out why you can't fill in less than 0.0035: ValueError: All arrays must be of the same length
+            #     return
+            # todo: figure out why you can't fill in less than 0.0035: ValueError: All arrays must be of the same length
             if lower_bound > 10958:
                 await itx.response.send_message("... I doubt you'll be needing to look 30 years into the past..",
                                                 ephemeral=True)
@@ -246,7 +247,8 @@ class MemberData(commands.Cog):
         except KeyError:
             pass
         await itx.followup.send(
-            f"From {lower_bound / 86400} to {upper_bound / 86400} days ago, {output} (with{'out' * (1 - doubles)} doubles)" + warning,
+            f"From {lower_bound / 86400} to {upper_bound / 86400} days ago, {output} "
+            f"(with{'out' * (1 - doubles)} doubles)" + warning,
             file=discord.File('outputs/userJoins.png'))
 
 

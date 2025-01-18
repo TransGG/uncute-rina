@@ -1,13 +1,10 @@
 from datetime import datetime  # for startup and crash logging, and Reminders
-
-program_start = datetime.now()  # first startup time datetime; for logging startup duration
-
 from time import mktime  # to convert datetime to unix epoch time to store in database
 import discord  # for main discord bot functionality
 import json  # for loading the API keys file
 import logging  # to set logging level to not DEBUG and hide unnecessary logs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from pymongo.database import Database as pymongodatabase  # for MongoDB database typing
+from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 from pymongo import MongoClient
 import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
 import motor.core as motorcore  # for typing
@@ -17,6 +14,8 @@ from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging cras
 from resources.customs.bot import Bot
 from resources.customs.reminders import ReminderObject  # Reminders (/reminders remindme)
 from resources.customs.watchlist import get_or_fetch_watchlist_index  # for fetching all watchlists on startup
+
+program_start = datetime.now()  # startup time after local imports
 
 BOT_VERSION = "1.2.9.22"
 
@@ -60,7 +59,7 @@ EXTENSIONS = [
 #       use embeds (for starboard)
 #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
-def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.AgnosticDatabase]:
+def get_token_data() -> tuple[str, dict[str, str], PyMongoDatabase, motorcore.AgnosticDatabase]:
     """
     Ensures the api_keys.json file contains all the bot's required keys, and
     uses these keys to start a link to the MongoDB.
@@ -103,7 +102,7 @@ def get_token_data() -> tuple[str, dict[str, str], pymongodatabase, motorcore.Ag
 
     debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
     cluster: MongoClient = MongoClient(tokens['MongoDB'])
-    rina_db: pymongodatabase = cluster["Rina"]
+    rina_db: PyMongoDatabase = cluster["Rina"]
     cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(tokens['MongoDB'])
     async_rina_db: motorcore.AgnosticDatabase = cluster["Rina"]
     debug(f"[###  ]: Loaded database clusters" + " " * 30, color="green", end='r')
@@ -144,7 +143,7 @@ def get_version() -> str:
 
 
 def create_client(
-        tokens: dict, rina_db: pymongodatabase, async_rina_db: motorcore.AgnosticDatabase, version: str
+        tokens: dict, rina_db: PyMongoDatabase, async_rina_db: motorcore.AgnosticDatabase, version: str
 ) -> Bot:
     debug(f"[####+]: Creating bot" + " " * 30, color="light_blue", end='\r')
 

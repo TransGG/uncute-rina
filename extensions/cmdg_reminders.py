@@ -1,11 +1,15 @@
-import discord, discord.ext.commands as commands, discord.app_commands as app_commands
-from time import mktime  # for reminder times
+import enum
 from datetime import datetime, timedelta
+from time import mktime  # for reminder times
+
+import discord
+import discord.app_commands as app_commands
+import discord.ext.commands as commands
+
 from resources.customs.bot import Bot
 from resources.customs.reminders import ReminderObject, BumpReminderObject
 from resources.utils.timeparser import TimeParser
 from resources.views.reminders import TimeOfDaySelection
-import enum
 
 
 class TimestampFormats(enum.Enum):
@@ -235,7 +239,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                         index += 1
                     cmd_mention = self.client.get_command_mention("reminder reminders")
                     out_msg = ((f"You have {len(db_data['reminders'])} reminders "
-                               f"(use {cmd_mention} `item: ` to get more info about a reminder):\n") +
+                                f"(use {cmd_mention} `item: ` to get more info about a reminder):\n") +
                                '\n'.join(out)[:1996])
                 await itx.response.send_message(out_msg, ephemeral=True)
             else:

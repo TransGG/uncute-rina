@@ -17,71 +17,68 @@ from resources.views.dictionary import DictionaryApi_PageView, UrbanDictionary_P
 del_separators_table = str.maketrans({" ": "", "-": "", "_": ""})
 
 
-async def dictionary_autocomplete(_: discord.Interaction, current: str):
-    def simplify(q):
-        if type(q) is str:
-            return q.lower().translate(del_separators_table)
-        if type(q) is list:
-            return [text.lower().translate(del_separators_table) for text in q]
-
-    terms = []
-    if current == '':
-        return []
-
-    # find results in custom dictionary
-    collection = rina_db["termDictionary"]
-    query = {"synonyms": simplify(current)}
-    search = collection.find(query)
-    for item in search:
-        if simplify(current) in simplify(item["synonyms"]):
-            terms.append(item["term"])
-
-    # get list of choices from online
-    response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
-    data = json.loads(response_api)
-    # find exact results online
-    if len(data) != 0:
-        for item in data:
-            if item['term'].split("|")[0] not in terms:
-                if simplify(current) in simplify(item['term'].split('|')):
-                    terms.append(item['term'].split('|')[0])
-
-        # then, find whichever other terms are there (append / last) online
-        for item in data:
-            if item['term'].split("|")[0] not in terms:
-                terms.append(item['term'].split("|")[0])
-
-    # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
-    # but only if there aren't already 7 responses; to prevent extra loading time
-    if len(terms) < 7:
-        response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{current}').text
-        data = json.loads(response_api)
-        if type(data) is not dict:
-            for result in data:
-                if result["word"].capitalize() not in terms:
-                    terms.append(result["word"].capitalize())
-    # same for Urban Dictionary, searching only if there are no results for the others
-    if len(terms) < 1:
-        response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
-        data = json.loads(response_api)['list']
-        for result in data:
-            if result["word"].capitalize() + " ([from UD])" not in terms:
-                terms.append(result["word"].capitalize() + " ([from UD])")
-
-    # limit choices to the first 7
-    terms = terms[:7]
-
-    return [
-        app_commands.Choice(name=term, value=term.replace(" ([from UD])", ""))
-        for term in terms
-    ]
-
-
 class TermDictionary(commands.Cog):
     def __init__(self, client: Bot):
-        global rina_db
-        rina_db = client.rina_db
         self.client = client
+
+    async def dictionary_autocomplete(self, _: discord.Interaction, current: str):
+        def simplify(q):
+            if type(q) is str:
+                return q.lower().translate(del_separators_table)
+            if type(q) is list:
+                return [text.lower().translate(del_separators_table) for text in q]
+
+        terms = []
+        if current == '':
+            return []
+
+        # find results in custom dictionary
+        collection = self.client.rina_db["termDictionary"]
+        query = {"synonyms": simplify(current)}
+        search = collection.find(query)
+        for item in search:
+            if simplify(current) in simplify(item["synonyms"]):
+                terms.append(item["term"])
+
+        # get list of choices from online
+        response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
+        data = json.loads(response_api)
+        # find exact results online
+        if len(data) != 0:
+            for item in data:
+                if item['term'].split("|")[0] not in terms:
+                    if simplify(current) in simplify(item['term'].split('|')):
+                        terms.append(item['term'].split('|')[0])
+
+            # then, find whichever other terms are there (append / last) online
+            for item in data:
+                if item['term'].split("|")[0] not in terms:
+                    terms.append(item['term'].split("|")[0])
+
+        # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
+        # but only if there aren't already 7 responses; to prevent extra loading time
+        if len(terms) < 7:
+            response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{current}').text
+            data = json.loads(response_api)
+            if type(data) is not dict:
+                for result in data:
+                    if result["word"].capitalize() not in terms:
+                        terms.append(result["word"].capitalize())
+        # same for Urban Dictionary, searching only if there are no results for the others
+        if len(terms) < 1:
+            response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
+            data = json.loads(response_api)['list']
+            for result in data:
+                if result["word"].capitalize() + " ([from UD])" not in terms:
+                    terms.append(result["word"].capitalize() + " ([from UD])")
+
+        # limit choices to the first 7
+        terms = terms[:7]
+
+        return [
+            app_commands.Choice(name=term, value=term.replace(" ([from UD])", ""))
+            for term in terms
+        ]
 
     @app_commands.command(name="dictionary", description="Look for the definition of a trans-related term!")
     @app_commands.describe(term="This is your search query. What do you want to look for?",
@@ -108,7 +105,7 @@ class TermDictionary(commands.Cog):
         # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
         results: list[any]
         if source == 1 or source == 2:
-            collection = rina_db["termDictionary"]
+            collection = self.client.rina_db["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
 
@@ -145,10 +142,9 @@ class TermDictionary(commands.Cog):
                                    f":warning: **!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary "
                                    f"search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 3 or source == 4:
+            http_safe_term = term.lower().replace("/", " ").replace("%", " ")
             response_api = requests.get(
-                f'https://en.pronouns.page/api/terms/search/{term.lower()
-                                                                 .replace("/", " ")
-                                                                 .replace("%", " ")}'
+                f'https://en.pronouns.page/api/terms/search/{http_safe_term}'
             ).text
             data = json.loads(response_api)
             if len(data) == 0:
@@ -190,7 +186,7 @@ class TermDictionary(commands.Cog):
                     for item in results:
                         result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
                     result_str += f"{len(search) - len(results)} other non-exact results found." * (
-                                (len(search) - len(results)) > 0)
+                            (len(search) - len(results)) > 0)
                     if len(result_str) > 1999:
                         result_str = (f"Your search ('{term}') returned a too-long result! (discord has a "
                                       f"2000-character message length D:). To still let you get better results, "
@@ -426,7 +422,7 @@ class TermDictionary(commands.Cog):
                 return [text.lower().translate(del_separators_table) for text in q]
 
         # Test if this term is already defined in this dictionary.
-        collection = rina_db["termDictionary"]
+        collection = self.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is not None:
@@ -472,7 +468,7 @@ class TermDictionary(commands.Cog):
             await itx.response.send_message("You can't add words to the dictionary without staff roles!",
                                             ephemeral=True)
             return
-        collection = rina_db["termDictionary"]
+        collection = self.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
@@ -496,7 +492,7 @@ class TermDictionary(commands.Cog):
             await itx.response.send_message("You can't remove words to the dictionary without staff roles!",
                                             ephemeral=True)
             return
-        collection = rina_db["termDictionary"]
+        collection = self.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
@@ -524,7 +520,7 @@ class TermDictionary(commands.Cog):
             await itx.response.send_message("You can't add synonyms to the dictionary without staff roles!",
                                             ephemeral=True)
             return
-        collection = rina_db["termDictionary"]
+        collection = self.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:

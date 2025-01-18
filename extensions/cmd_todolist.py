@@ -7,8 +7,6 @@ from resources.customs.bot import Bot
 
 class TodoList(commands.Cog):
     def __init__(self, client: Bot):
-        global rina_db
-        rina_db = client.rina_db
         self.client = client
 
     @app_commands.command(name="todo", description="Add or remove a to-do!")
@@ -32,7 +30,7 @@ class TodoList(commands.Cog):
                 itx.response.send_message("I.. don't think having such a big to-do message is gonna be very helpful..",
                                           ephemeral=True)
                 return
-            collection = rina_db["todoList"]
+            collection = self.client.rina_db["todoList"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -63,7 +61,7 @@ class TodoList(commands.Cog):
                     "This should be a number... You didn't give a number...",
                     ephemeral=True)
                 return
-            collection = rina_db["todoList"]
+            collection = self.client.rina_db["todoList"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -87,7 +85,7 @@ class TodoList(commands.Cog):
                 f"Your list now contains {len(todo_list)} item{'s' * (len(todo_list) != 1)}.",
                 ephemeral=True)
         elif mode == 3:
-            collection = rina_db["todoList"]
+            collection = self.client.rina_db["todoList"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:

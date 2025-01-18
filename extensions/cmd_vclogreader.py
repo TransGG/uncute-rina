@@ -1,11 +1,15 @@
-import discord, discord.ext.commands as commands, discord.app_commands as app_commands
-from datetime import datetime, timezone  # to plot and sort voice chat logs
 import traceback  # to pass traceback into error return message
-import pandas as pd  # to plot voice channel timeline graph
+from datetime import datetime, timezone  # to plot and sort voice chat logs
+
+import discord
+import discord.app_commands as app_commands
+import discord.ext.commands as commands
 import matplotlib.pyplot as plt
-from resources.utils.permissions import is_staff  # to check staff roles
+import pandas as pd  # to plot voice channel timeline graph
+
 from resources.customs.bot import Bot
 from resources.customs.vclogreader import CustomVoiceChannel, VcLogGraphData
+from resources.utils.permissions import is_staff  # to check staff roles
 
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
 
@@ -70,10 +74,10 @@ async def get_vc_activity(
             data: tuple[float, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None] = [
                 embed.timestamp.timestamp()  # unix timestamp of event
             ]
-            # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second 
+            # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second
             # variable if this works too. (long live python?)
             # todo, use dedicated variables to declare data as (a,b,c) instead.
-            
+
             username = embed.description.split("**", 2)[1].split("#", 1)[0]
             # split **mysticmia#0** to mysticmia (taking discord usernames can't contain hashtags (cuz they can't))
             # print("Username = ", username)
@@ -193,8 +197,6 @@ async def get_vc_activity(
 
 class VCLogReader(commands.Cog):
     def __init__(self, client: Bot):
-        global async_rina_db
-        async_rina_db = client.async_rina_db
         self.client = client
 
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
@@ -345,16 +347,17 @@ class VCLogReader(commands.Cog):
         plt.tight_layout()
         plt.savefig('outputs/vcLogs.png', dpi=300)
         await itx.followup.send(
-            warning + f"VC activity from {voice_channel.mention} (`{voice_channel.id}`) from {lower_bound / 60} to "
-                      f"{upper_bound / 60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
-                      (
-                          "\nNote: If you're looking in the past, people that joined before and left after the "
-                          "given timeframes may not show up on the graph. To ensure you get a good representation, "
-                          "be sure to add a bit of margin around the edges!" if max_time != current_time else ""
-                      ) + (
-                          f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})"
-                          if len(events) * 2 >= msg_log_limit else ""
-                      ),
+            warning +
+            f"VC activity from {voice_channel.mention} (`{voice_channel.id}`) from {lower_bound / 60} to "
+            f"{upper_bound / 60} minutes ago ({(lower_bound - upper_bound) / 60} minutes)" +
+            (
+                "\nNote: If you're looking in the past, people that joined before and left after the "
+                "given timeframes may not show up on the graph. To ensure you get a good representation, "
+                "be sure to add a bit of margin around the edges!" if max_time != current_time else ""
+            ) + (
+                f"\nBasing data off of {len(events)} data points. (current limit: {msg_log_limit})"
+                if len(events) * 2 >= msg_log_limit else ""
+            ),
             file=discord.File('outputs/vcLogs.png'))
 
 

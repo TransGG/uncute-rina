@@ -26,8 +26,8 @@ class CustomVoiceChannel:
         self.mention = "<#" + str(channel_id) + ">"
         self.members = members
 
+
 class VcLogGraphData(TypedDict):
     User: list[str]
     Start: list[float]
     Finish: list[float]
-    

@@ -9,7 +9,7 @@ import requests  # to read api calls
 from resources.customs.addons import EqualDexRegion
 from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
-from resources.views.addons import EqualDex_AdditionalInfo, SendPublicButton_Math
+from resources.views.addons import EqualDexAdditionalInfo, SendPublicButtonMath
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -287,7 +287,7 @@ class SearchAddons(commands.Cog):
                             value=value,
                             inline=False)
         embed.set_footer(text=f"For more info, click the button below,")
-        view = EqualDex_AdditionalInfo(region.url)
+        view = EqualDexAdditionalInfo(region.url)
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @app_commands.command(name="math", description="Ask Wolfram Alpha a question")
@@ -414,7 +414,7 @@ class SearchAddons(commands.Cog):
                 warnings = "\nWarnings:\n> " + '\n> '.join(warnings)
             else:
                 warnings = ""
-            view = SendPublicButton_Math(self.client)
+            view = SendPublicButtonMath(self.client)
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
                 f"Result:\n> {output}" +

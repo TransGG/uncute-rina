@@ -1,5 +1,5 @@
 import discord
-from resources.modals.dictionary import DictionaryAPI_SendPageModal
+from resources.modals.dictionary import DictionaryAPISendPageModal
 
 
 class DictionaryApi_PageView(discord.ui.View):
@@ -49,7 +49,7 @@ class DictionaryApi_PageView(discord.ui.View):
         self.value = 2
         self.printouts += 1
 
-        send_one = DictionaryAPI_SendPageModal(self.pages_detailed[self.page])
+        send_one = DictionaryAPISendPageModal(self.pages_detailed[self.page])
         await itx.response.send_modal(send_one)
         await send_one.wait()
         if send_one.value in [None, 9]:

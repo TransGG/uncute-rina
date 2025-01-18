@@ -1,8 +1,8 @@
 import discord
-from resources.modals.nameusage import GetNameModal_NameUsage_GetTop
+from resources.modals.nameusage import GetNameModalNameUsageGetTop
 
 
-class PageView_NameUsage_GetTop(discord.ui.View):
+class PageViewNameUsageGetTop(discord.ui.View):
     def __init__(self, pages, embed_title, timeout=None):
         super().__init__()
         self.value = None
@@ -43,7 +43,7 @@ class PageView_NameUsage_GetTop(discord.ui.View):
 
     @discord.ui.button(label='Find my name', style=discord.ButtonStyle.blurple)
     async def find_name(self, itx: discord.Interaction, _button: discord.ui.Button):
-        send_one = GetNameModal_NameUsage_GetTop(self.pages, self.embed_title)
+        send_one = GetNameModalNameUsageGetTop(self.pages, self.embed_title)
         await itx.response.send_modal(send_one)
         await send_one.wait()
         if send_one.value in [None, 9]:

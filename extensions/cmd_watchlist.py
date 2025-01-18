@@ -43,20 +43,22 @@ class WatchList(commands.Cog):
         #   used in case you want to report someone but want to use someone else's
         #   message as evidence or context.
 
-        if message_id is None:
-            pass
-        elif message_id.isdecimal():
-            # required cuz discord client doesn't let you fill in message IDs as ints; too large
-            message_id = int(message_id)
-        else:
-            if message_id.endswith(" | overwrite"):
-                message_id = message_id.split(" | ")[0]
-            if message_id.isdecimal():
+        if message_id is str:
+            if message_id is None:
+                pass
+            elif message_id.isdecimal():
+                # required cuz discord client doesn't let you fill in message IDs as ints; too large
                 message_id = int(message_id)
-                allow_different_report_author = True
             else:
-                await itx.response.send_message("Your message_id must be a number (the message id..)!", ephemeral=True)
-                return
+                if message_id.endswith(" | overwrite"):
+                    message_id = message_id.split(" | ")[0]
+                if message_id.isdecimal():
+                    message_id = int(message_id)
+                    allow_different_report_author = True
+                else:
+                    await itx.response.send_message("Your message_id must be a number (the message id..)!",
+                                                    ephemeral=True)
+                    return
         if len(reason) > 2000:  # todo: embed has higher limits (?)
             await itx.response.send_message("Your watchlist reason won't fit! Please make your reason shorter. "
                                             "You can also expand your reason / add details in the thread",
@@ -66,11 +68,11 @@ class WatchList(commands.Cog):
 
         # await itx.response.defer(ephemeral=True)
         await itx.response.send_message(
-                "Adding user to watchlist...\n\n"
-                "Please wait while rina checks if this user has been added to the watch list before. \n"
-                "This may take a minute. (feel free to not add them to the watch list again, for that might make a "
-                "duplicate thread for the user, :)",
-                ephemeral=True
+            "Adding user to watchlist...\n\n"
+            "Please wait while rina checks if this user has been added to the watch list before. \n"
+            "This may take a minute. (feel free to not add them to the watch list again, for that might make a "
+            "duplicate thread for the user, :)",
+            ephemeral=True
         )
         # get channel of where this message has to be sent
         watch_channel = itx.client.get_channel(self.client.custom_ids["staff_watch_channel"])
@@ -88,11 +90,11 @@ class WatchList(commands.Cog):
                 raise
             if reported_message.author.id != user.id and not allow_different_report_author:
                 await itx.followup.send(
-                        f":warning: The given message didn't match the mentioned user!\n"
-                        f"(message author: {reported_message.author}, mentioned user: {user})\n"
-                        f"If you want to use this message anyway, add \" | overwrite\" after the message id\n"
-                        f"(example: \"1817305029878989603 | overwrite\")",
-                        ephemeral=True
+                    f":warning: The given message didn't match the mentioned user!\n"
+                    f"(message author: {reported_message.author}, mentioned user: {user})\n"
+                    f"If you want to use this message anyway, add \" | overwrite\" after the message id\n"
+                    f"(example: \"1817305029878989603 | overwrite\")",
+                    ephemeral=True
                 )
                 return
             mentioned_msg_info = (f"\n\n[Reported Message]({reported_message.jump_url})\n"

@@ -57,5 +57,5 @@ class WatchlistReasonModal(discord.ui.Modal):
     async def on_submit(self, itx: discord.Interaction):
         self.value = 1
         await self.add_to_watchlist_func(itx, self.user, self.reason_text.value,
-                                         str(getattr(self.message, "id", "")) or None)
+                                         str(getattr(self.message, "id", "")) or None, self.message.id)
         self.stop()

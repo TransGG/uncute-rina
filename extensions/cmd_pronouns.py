@@ -7,118 +7,6 @@ from resources.customs.bot import Bot
 from resources.utils.permissions import is_staff  # to check staff for removing a user's custom pronouns.
 
 
-async def pronoun_autocomplete(itx: discord.Interaction, rina_db: Database, current: str):
-    if itx.namespace.mode == 1:
-        results = []
-        for member in itx.guild.members:
-            if member.nick is not None:
-                nick = current.lower() in member.nick.lower()
-            else:
-                nick = False
-            if current.lower() in member.name.lower():
-                name = str(member)
-                results.append(app_commands.Choice(name=name, value=member.mention))
-            elif nick:
-                name = f"{member.nick}     ({member})"
-                results.append(app_commands.Choice(name=name, value=member.mention))
-            if len(results) >= 10:
-                return results
-        return results
-
-    if itx.namespace.mode == 2:
-        def get_pronouns():
-            part = [
-                "She",
-                "Her",
-                "He",
-                "Him",
-                "They",
-                "Them",
-                "It",
-                "Its",
-            ]
-            part_loose = [
-                "Any",
-                "Any pronouns",
-                "Ask",
-                "Ask for pronouns",
-                "Hee/hee"
-            ]
-            autocompletes = []
-            autocomplete_sections = current.lower().split("/")
-            if len(autocomplete_sections) < 2:
-                suggestions = part_loose
-                for x in part:
-                    for y in part:
-                        suggestions.append(x + "/" + y)
-                for suggestion in suggestions:
-                    if current.lower() in suggestion.lower():
-                        autocompletes.append(suggestion)
-            for pronoun_part in part_loose:
-                if current.lower() in pronoun_part.lower():
-                    autocompletes.append(pronoun_part)
-            for pronoun_part in part:
-                if autocomplete_sections[-1].lower() in pronoun_part.lower():
-                    suggestion = "/".join(autocomplete_sections[:-1]) + "/" + pronoun_part
-                    autocompletes.append(suggestion)
-            autocompletes.append(current)
-            return autocompletes
-
-        _results = get_pronouns()
-        _temp = []
-        results = []
-
-        for result in _results:
-            if result not in _temp:
-                results.append(app_commands.Choice(name=result, value=result))
-                _temp.append(result)
-            if len(results) >= 10:
-                break
-        return results
-
-    if itx.namespace.mode == 3:
-        staff_overwrite = False
-        data = None
-        if is_staff(itx.guild, itx.user) and " |" in current:
-            sections = current.split(" |")
-            if len(sections) == 2:
-                try:
-                    user_id = int(sections[0])
-                    collection = rina_db["members"]
-                    query = {"member_id": user_id}
-                    data = collection.find_one(query)
-                    staff_overwrite = True
-                    current = sections[1].strip()
-                except ValueError:
-                    pass
-        if not staff_overwrite:
-            # find results in database
-            collection = rina_db["members"]
-            query = {"member_id": itx.user.id}
-            data = collection.find_one(query)
-        if data is None:
-            return []
-        else:
-            pronouns = data['pronouns']
-
-        if len(pronouns) == 0:
-            return []
-        if staff_overwrite:
-            return [
-                app_commands.Choice(name=pronouns[index], value=str(index))
-                for index in range(len(pronouns)) if pronouns[index].lower().startswith(current.lower())
-            ]
-        return [
-            app_commands.Choice(name=pronoun, value=pronoun)
-            for pronoun in pronouns if pronoun.lower().startswith(current.lower())
-        ]
-    if itx.namespace.mode == 4:
-        return [
-            app_commands.Choice(name="This mode doesn't need an argument", value="None")
-        ]
-    return []
-
-
 class Pronouns(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
@@ -136,7 +24,7 @@ class Pronouns(commands.Cog):
         self.client.tree.add_command(self.ctx_menu_message)
 
     async def get_pronouns(self, itx, user):
-        collection = rina_db["members"]
+        collection = self.client.rina_db["members"]
         query = {"member_id": user.id}
         data = collection.find_one(query)
         warning = ""
@@ -191,6 +79,117 @@ class Pronouns(commands.Cog):
                                             '\n'.join(pronoun_list) + warning,
                                             ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
+    async def pronoun_autocomplete(self, itx: discord.Interaction, current: str):
+        if itx.namespace.mode == 1:
+            results = []
+            for member in itx.guild.members:
+                if member.nick is not None:
+                    nick = current.lower() in member.nick.lower()
+                else:
+                    nick = False
+                if current.lower() in member.name.lower():
+                    name = str(member)
+                    results.append(app_commands.Choice(name=name, value=member.mention))
+                elif nick:
+                    name = f"{member.nick}     ({member})"
+                    results.append(app_commands.Choice(name=name, value=member.mention))
+                if len(results) >= 10:
+                    return results
+            return results
+
+        if itx.namespace.mode == 2:
+            def get_pronouns():
+                part = [
+                    "She",
+                    "Her",
+                    "He",
+                    "Him",
+                    "They",
+                    "Them",
+                    "It",
+                    "Its",
+                ]
+                part_loose = [
+                    "Any",
+                    "Any pronouns",
+                    "Ask",
+                    "Ask for pronouns",
+                    "Hee/hee"
+                ]
+                autocompletes = []
+                autocomplete_sections = current.lower().split("/")
+                if len(autocomplete_sections) < 2:
+                    suggestions = part_loose
+                    for x in part:
+                        for y in part:
+                            suggestions.append(x + "/" + y)
+                    for suggestion in suggestions:
+                        if current.lower() in suggestion.lower():
+                            autocompletes.append(suggestion)
+                for pronoun_part in part_loose:
+                    if current.lower() in pronoun_part.lower():
+                        autocompletes.append(pronoun_part)
+                for pronoun_part in part:
+                    if autocomplete_sections[-1].lower() in pronoun_part.lower():
+                        suggestion = "/".join(autocomplete_sections[:-1]) + "/" + pronoun_part
+                        autocompletes.append(suggestion)
+                autocompletes.append(current)
+                return autocompletes
+
+            _results = get_pronouns()
+            _temp = []
+            results = []
+
+            for result in _results:
+                if result not in _temp:
+                    results.append(app_commands.Choice(name=result, value=result))
+                    _temp.append(result)
+                if len(results) >= 10:
+                    break
+            return results
+
+        if itx.namespace.mode == 3:
+            staff_overwrite = False
+            data = None
+            if is_staff(itx.guild, itx.user) and " |" in current:
+                sections = current.split(" |")
+                if len(sections) == 2:
+                    try:
+                        user_id = int(sections[0])
+                        collection = self.client.rina_db["members"]
+                        query = {"member_id": user_id}
+                        data = collection.find_one(query)
+                        staff_overwrite = True
+                        current = sections[1].strip()
+                    except ValueError:
+                        pass
+            if not staff_overwrite:
+                # find results in database
+                collection = self.client.rina_db["members"]
+                query = {"member_id": itx.user.id}
+                data = collection.find_one(query)
+            if data is None:
+                return []
+            else:
+                pronouns = data['pronouns']
+
+            if len(pronouns) == 0:
+                return []
+            if staff_overwrite:
+                return [
+                    app_commands.Choice(name=pronouns[index], value=str(index))
+                    for index in range(len(pronouns)) if pronouns[index].lower().startswith(current.lower())
+                ]
+            return [
+                app_commands.Choice(name=pronoun, value=pronoun)
+                for pronoun in pronouns if pronoun.lower().startswith(current.lower())
+            ]
+        if itx.namespace.mode == 4:
+            return [
+                app_commands.Choice(name="This mode doesn't need an argument", value="None")
+            ]
+        return []
+
     @app_commands.command(name="pronouns", description="Get someone's pronouns!")
     @app_commands.describe(argument="Check a user or add/remove a pronoun here!")
     @app_commands.choices(mode=[
@@ -199,7 +198,7 @@ class Pronouns(commands.Cog):
         discord.app_commands.Choice(name='Remove pronoun: Type the pronoun you wanna remove', value=3),
         discord.app_commands.Choice(name='Help', value=4),
     ])
-    @app_commands.autocomplete(argument=pronoun_autocomplete)
+    @app_commands.autocomplete(argument=self.pronoun_autocomplete)
     async def pronouns_command(self, itx: discord.Interaction, mode: int, argument: str = None):
         if mode == 1:  # Check
             if argument is not None:
@@ -236,7 +235,7 @@ class Pronouns(commands.Cog):
             if not ("/" in pronoun or pronoun.startswith(":")):
                 warning = ("Warning: Others may not be able to know what you mean with these pronouns "
                            "(it doesn't use an `x/y` or `:x` format)\n")
-            collection = rina_db["members"]
+            collection = self.client.rina_db["members"]
             query = {"member_id": itx.user.id}
             data = collection.find_one(query)
             if data is None:
@@ -271,7 +270,7 @@ class Pronouns(commands.Cog):
                           f"custom pronouns, and use {cmd_mention} `mode:Remove` `argument:pronoun` to remove one",
                 ephemeral=True)
         elif mode == 3:  # Remove
-            collection = rina_db["members"]
+            collection = self.client.rina_db["members"]
             query = {"member_id": itx.user.id}
             data = collection.find_one(query)
             if data is None:

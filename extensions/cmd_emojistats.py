@@ -1,12 +1,16 @@
-import discord, discord.ext.commands as commands, discord.app_commands as app_commands
-from time import mktime  # for logging emoji last use time
-from datetime import datetime, timezone
 import re  # to find all emojis used in someone's message
-import pymongo  # for pymongo.DESCENDING when sorting db query output
 import sys  # for integer max value: sys.maxsize
+from datetime import datetime, timezone
+from time import mktime  # for logging emoji last use time
+
+import discord
+import discord.app_commands as app_commands
+import discord.ext.commands as commands
+import motor.core as motorcore  # for typing
+import pymongo  # for pymongo.DESCENDING when sorting db query output
+
 from resources.customs.bot import Bot
 from resources.customs.emojistats import EmojiSendSource
-import motor.core as motorcore  # for typing
 
 
 #   Rina.emojistats         # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00

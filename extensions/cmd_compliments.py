@@ -227,8 +227,6 @@ class Compliments(commands.Cog):
                 # check if user would like femme responses telling them they're cute
                 for role in message.author.roles:
                     if role.name.lower() == "she/her":
-                        # TODO: I should probably check people's roles for whether they have she/her and/or would
-                        #  like to be told they're cute. Perhaps check complimentblacklist too.
                         responses += femme_responses
 
                 respond = random.choice(responses)
@@ -398,8 +396,8 @@ class Compliments(commands.Cog):
             length = len(blacklist)
 
             ans = []
-            for id in range(length):
-                ans.append(f"`{id}`: {blacklist[id]}")
+            for blackboard_id in range(length):
+                ans.append(f"`{blackboard_id}`: {blacklist[blackboard_id]}")
             ans = '\n'.join(ans)
             await itx.response.send_message(f"Found {length} string{'s' * (length != 1)}:\n{ans}", ephemeral=True)
 

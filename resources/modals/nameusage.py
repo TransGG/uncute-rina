@@ -1,7 +1,7 @@
 import discord
 
 
-class GetNameModal_NameUsage_GetTop(discord.ui.Modal, title="Search page with word"):
+class GetNameModalNameUsageGetTop(discord.ui.Modal, title="Search page with word"):
     def __init__(self, pages, embed_title, timeout=None):
         super().__init__()
         self.value = None
