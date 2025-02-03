@@ -164,27 +164,43 @@ class DevRequest(commands.Cog):
                     threads.append(thread)
 
             await itx.edit_original_response(content="`[## ]`: Sending messages in threads...")
+
+            not_found_count = 0
+            ignored_count = 0
+            failed_threads = []
+
             for thread in threads:
                 try:
                     starter_message = await watchlist_channel.fetch_message(thread.id)
                 except discord.errors.NotFound:
+                    not_found_count += 1
                     continue  # thread starter message was removed.
 
                 if (starter_message is None or
                         starter_message.author.id != self.client.user.id or
                         len(starter_message.embeds) == 0):
+                    ignored_count += 1
                     continue
                 if starter_message.embeds[0].color in [dev_request_emoji_color_options["🟡"],
                                                        dev_request_emoji_color_options["🔵"]]:
-                    cmd_mention = self.client.get_command_mention("ping_open_dev_requests")
-                    await thread.send(itx.user.mention + f" poked this thread with {cmd_mention}.\n"
-                                                         "This channel got a message because it was archived and the "
-                                                         "request wasn't marked as completed or rejected.",
-                                      allowed_mentions=discord.AllowedMentions.none())
-                    pinged_thread_count += 1
+                    try:
+                        cmd_mention = self.client.get_command_mention("ping_open_dev_requests")
+                        await thread.send(itx.user.mention + f" poked this thread with {cmd_mention}.\n"
+                                                             "This channel got a message because it was archived and "
+                                                             "the request wasn't marked as completed or rejected.",
+                                          allowed_mentions=discord.AllowedMentions.none())
+                        pinged_thread_count += 1
+                    except discord.Forbidden:
+                        failed_threads.append(thread.id)
+
             await itx.edit_original_response(
-                content=f"`[###]`: Pinged {pinged_thread_count} archived "
-                        f"channel{'' if pinged_thread_count == 1 else 's'} successfully!")
+                content=(f"`[###]`: Pinged {pinged_thread_count} archived "
+                         f"channel{'' if pinged_thread_count == 1 else 's'} successfully!\n"
+                         f"\n"
+                         f"Ignored `{ignored_count}` threads (not by bot or no embeds, etc.)\n"
+                         f"Could not find `{not_found_count}` starter messages.\n"
+                         f"Could not send a message in the following {len(failed_threads)} threads:\n"
+                         f"- {', '.join(['<#' + str(t_id) + '>' for t_id in failed_threads])}")[:2000])
         except:
             await itx.followup.send("Something went wrong!", ephemeral=True)
             raise
