@@ -231,7 +231,7 @@ class Starboard(commands.Cog):
             await self.client.get_guild_info(
                 payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels",
                 "starboardEmoji", "starboardDownvoteInitValue")
-        if payload.member.id == self.client.user.id or \
+        if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji_id and
                  getattr(payload.emoji, "name", None) != "❌"):
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
@@ -262,7 +262,7 @@ class Starboard(commands.Cog):
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
-            if message.author.id != self.client.user.id:
+            if not self.client.is_me(message.author):
                 return  # only needs to update the message if it's a rina starboard message of course...
 
             starboard_original_message: discord.Message | None = await fetch_starboard_original_message(self.client,
@@ -296,7 +296,7 @@ class Starboard(commands.Cog):
                                 return
                     return
                 elif reaction.count == star_minimum:
-                    if message.author == self.client.user:
+                    if self.client.is_me(message.author):
                         # can't starboard Rina's message
                         return
                     if message.channel.id in channel_blacklist:

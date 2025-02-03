@@ -177,7 +177,7 @@ class DevRequest(commands.Cog):
                     continue  # thread starter message was removed.
 
                 if (starter_message is None or
-                        starter_message.author.id != self.client.user.id or
+                        not self.client.is_me(starter_message.author) or
                         len(starter_message.embeds) == 0):
                     ignored_count += 1
                     continue
@@ -221,7 +221,7 @@ class DevRequest(commands.Cog):
             return
         channel: discord.TextChannel = await self.client.fetch_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
-        if message.author.id != self.client.user.id:
+        if not self.client.is_me(message.author):
             return
         if len(message.embeds) != 1:
             return

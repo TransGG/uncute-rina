@@ -836,21 +836,17 @@ class CustomVcs(commands.Cog):
             owner = itx.guild.get_member(int(owner_id))
             await channel.set_permissions(
                 owner,
-                overwrite=discord.PermissionOverwrite(
-                    connect=True,
-                    speak=True,
-                    view_channel=True,
-                    read_message_history=True
-                ),
+                connect=True,
+                speak=True,
+                view_channel=True,
+                read_message_history=True,
                 reason="VcTable created: set as owner"
             )
 
         await channel.set_permissions(
             # make sure the bot can still see the channel for vc events, even if /vctable lock
-            self.client.user,
-            overwrite=discord.PermissionOverwrite(
-                view_channel=True
-            ),
+            itx.guild.me,
+            view_channel=True,
             reason="VcTable created: auto-set as participent"
         )
 
@@ -1095,7 +1091,7 @@ class CustomVcs(commands.Cog):
                                                 "their participation permissions, un-owner them first!",
                                                 ephemeral=True)
                 return
-            if user.id == self.client.user.id:
+            if self.client.is_me(user):
                 await itx.response.send_message(
                     ":warning: You are trying to hide this channel from the bot that manages this system!\n"
                     "Your command has been interrupted. Removing this user's viewing permissions would "
