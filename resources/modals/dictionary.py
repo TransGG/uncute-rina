@@ -1,7 +1,7 @@
 import discord
 
 
-class DictionaryAPI_SendPageModal(discord.ui.Modal, title="Share single dictionary entry?"):
+class DictionaryAPISendPageModal(discord.ui.Modal, title="Share single dictionary entry?"):
     def __init__(self, entries, timeout=None):
         super().__init__()
         self.value = None
@@ -9,14 +9,14 @@ class DictionaryAPI_SendPageModal(discord.ui.Modal, title="Share single dictiona
         self.entries = entries
         self.id = None
         self.question_text = discord.ui.TextInput(label='Entry index',
-                                                    placeholder=f"[A number from 0 to {len(entries) - 1} ]",
-                                                    # style=discord.TextStyle.short,
-                                                    # required=True
-                                                    )
+                                                  placeholder=f"[A number from 0 to {len(entries) - 1} ]",
+                                                  # style=discord.TextStyle.short,
+                                                  # required=True
+                                                  )
         self.add_item(self.question_text)
 
     async def on_submit(self, itx: discord.Interaction):
-        self.value = 9 # failed; placeholder
+        self.value = 9  # failed; placeholder
         try:
             self.id = int(self.question_text.value)
         except ValueError:
@@ -31,6 +31,6 @@ class DictionaryAPI_SendPageModal(discord.ui.Modal, title="Share single dictiona
                         "It has to be an index number from an entry in the /dictionary response.",
                 ephemeral=True)
             return
-        self.value = 1 # succeeded
+        self.value = 1  # succeeded
         await itx.response.send_message(f'Sending item...', ephemeral=True, delete_after=8)
         self.stop()

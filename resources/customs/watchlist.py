@@ -1,8 +1,11 @@
 import discord
-import asyncio # for sleep(1) while waiting for other thread fetching function instance. Like cmdg_starboard: see get_or_fetch_starboard_messages()
+import asyncio
+
+# for sleep(1) while waiting for other thread fetching function instance.
+# Like cmdg_starboard: see get_or_fetch_starboard_messages()
 
 
-local_watchlist_index: dict[int, int] = {} # user_id, thread_id
+local_watchlist_index: dict[int, int] = {}  # user_id, thread_id
 busy_updating_watchlist_index: bool = False
 
 
@@ -18,6 +21,7 @@ def add_to_watchlist_cache(user_id: int, thread_id: int):
         The id of the thread to link with the user.
     """
     local_watchlist_index[user_id] = thread_id
+
 
 async def get_or_fetch_watchlist_index(watch_channel: discord.TextChannel) -> dict[int, int]:
     """
@@ -36,7 +40,8 @@ async def get_or_fetch_watchlist_index(watch_channel: discord.TextChannel) -> di
     global busy_updating_watchlist_index, local_watchlist_index
     if not busy_updating_watchlist_index and local_watchlist_index == {}:
         busy_updating_watchlist_index = True
-        watchlist_index_temp: dict[int, int] = {} # to later overwrite the global variable instead of changing that directly
+        watchlist_index_temp: dict[
+            int, int] = {}  # to later overwrite the global variable instead of changing that directly
         for thread in watch_channel.threads:
             starter_message = await thread.parent.fetch_message(thread.id)
             try:
@@ -44,7 +49,8 @@ async def get_or_fetch_watchlist_index(watch_channel: discord.TextChannel) -> di
                 #     https: / / warned.username / 262913789375021056 /
                 user_id = int(starter_message.embeds[0].author.url.split("/")[3])
                 if user_id in watchlist_index_temp:
-                    continue # only use the user's most recent watchlist thread (if ever there is a second thread) \\ or maybe it does the earliest one?
+                    continue  # Only use the user's most recent watchlist thread (if ever there is a second thread).
+                    # or maybe it does the earliest one?
                 watchlist_index_temp[user_id] = thread.id
             except (IndexError, AttributeError):
                 pass
