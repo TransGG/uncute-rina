@@ -65,8 +65,8 @@ class GenericTwoButtonView(discord.ui.View):
         self.value: bool | None = None
         self.timeout: float | None = timeout
 
-        self.add_item(create_simple_button(button_true[0], button_true[1], on_button_true))
-        self.add_item(create_simple_button(button_false[0], button_false[1], on_button_false))
+        self.add_item(create_simple_button(button_true[0], button_true[1], self.on_button_true))
+        self.add_item(create_simple_button(button_false[0], button_false[1], self.on_button_false))
 
     async def on_button_true(self, _: discord.Interaction):
         self.value = True
