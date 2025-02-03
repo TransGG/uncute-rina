@@ -44,12 +44,18 @@ class BanAppealReactionsAddon(commands.Cog):
 
             username: str = appeal_embed.fields[1].value
             try:
-                await message.create_thread(name=f"App-{platform[0]}-{username}", auto_archive_duration=10080)
+                thread = await message.create_thread(name=f"App-{platform[0]}-{username}", auto_archive_duration=10080)
             except discord.errors.Forbidden:
                 raise  # no permission to send message (should be reported to staff server owner I suppose)
             except discord.errors.HTTPException:
                 # I expect this HTTP exception to have code=400 "BAD REQUEST"
-                await message.create_thread(name=f"Appeal-Malformed username", auto_archive_duration=10080)
+                thread = await message.create_thread(name=f"Appeal-Malformed username", auto_archive_duration=10080)
+            await thread.join()
+            joiner_msg = await thread.send("user-mention placeholder")
+            # surely pinging active staffs should only make those with the original channel perms be
+            # able to see it, right...?
+            await joiner_msg.edit(content=f"<@&{self.client.custom_ids['active_staff_role']}>")
+            await joiner_msg.delete()
 
 
 async def setup(client):
