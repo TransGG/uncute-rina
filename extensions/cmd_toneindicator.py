@@ -72,6 +72,7 @@ class ToneIndicator(commands.Cog):
             "hypothetical": ["/hyp"],
             "inside joke": ["/ij"],
             "information or informing": ["/in", "/info"],
+            "in system. Like an inside joke, but usually for people with DID (with a system)": ["/insys"],
             "indirect": ["/ind"],
             "in real life / the outside world": ["/irl", "/ew", "/mp"],
             "irrelevant": ["/irre"],
