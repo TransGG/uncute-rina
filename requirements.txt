@@ -1,4 +1,4 @@
-discord
+git+https://github.com/Rapptz/discord.py.git@db7b2d9058e4e7f357a6a9f02aad41e8b053a1bd
 motor==3.4.0
 pymongo==4.8.0
 pandas
