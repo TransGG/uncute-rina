@@ -84,6 +84,14 @@ async def fetch_starboard_original_message(
     #    https:/ /discord.com / channels / 985931648094834798 / 1006682505149169694 / 1014887159485968455
     guild_id, channel_id, message_id = [int(i) for i in link.split("/")[4:]]
     ch = client.get_channel(channel_id)
+
+    if ch is None:
+        await log_to_guild(client, starboard_message.guild,
+                           f":warning: Couldn't find starboard channel from starboard message!\n"
+                           f"starboard message: {starboard_message.channel.id}/{starboard_message.id}, link text: {text}\n"
+                           f"recovered channel id: {channel_id}")
+        return
+
     try:
         original_message = await ch.fetch_message(message_id)
     except discord.NotFound:
