@@ -446,6 +446,14 @@ class Starboard(commands.Cog):
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
+        if star_channel is None:
+            guild = self.client.get_guild(message_payload.guild_id)
+            await log_to_guild(self.client, guild,
+                               f":warning: Couldn't find starboard channel from guild info on message delete!\n"
+                               f"message payload: {message_payload.guild_id}/{message_payload.channel_id}/{message_payload.message_id}\n"
+                               f"recovered channel id: {_star_channel}")
+            return
+
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
             # this prevents having two 'message deleted' logs for manual deletion of starboard message
             starboard_message_ids_marked_for_deletion.remove(message_payload.message_id)

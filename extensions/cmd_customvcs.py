@@ -244,6 +244,7 @@ async def edit_guild_info_autocomplete(itx: discord.Interaction, current: str) -
             ["Custom Voice Channels", "02"],
             ["Starboard settings", "03"],
             ["Bumping-related settings", "04"],
+            ["Additional settings", "05"],
         ]
         return [
                    app_commands.Choice(name=option[0], value=option[1])

@@ -202,11 +202,15 @@ class VCLogReader(commands.Cog):
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
                            upper_bound="Get data up to [period] minutes ago",
-                           msg_log_limit="How many logs should I use to make the graph (default: 5000)")
+                           msg_log_limit="How many logs should I use to make the graph (default: 5000)",
+                           user_ids="Specific user ids to filter the graph for (separate with comma)")
     async def get_voice_channel_data(
             self, itx: discord.Interaction, requested_channel: str, lower_bound: str, upper_bound: str = None,
-            msg_log_limit: int = 5000
+            msg_log_limit: int = 5000, user_ids: str | None = None
     ):
+        if user_ids is None:
+            user_ids = ""
+        ignore_user_ids: list[str] = user_ids.replace(" ","").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str = requested_channel
         if not is_staff(itx.guild, itx.user):
@@ -290,6 +294,8 @@ class VCLogReader(commands.Cog):
             # set as its ID if not None (prevent TypeError: 'NoneType' object is not subscriptable)
             to_channel = to_channel[0] if to_channel else to_channel
             user_id = user[0]
+            if len(ignore_user_ids) != 0 and user_id not in ignore_user_ids:
+                continue
             if voice_channel.id not in [from_channel, to_channel]:
                 continue
             if user[0] not in intermediate_data:
@@ -309,7 +315,8 @@ class VCLogReader(commands.Cog):
             del intermediate_data[user_id]["time_temp"]
 
         data: VcLogGraphData = {"User": [], "Start": [], "Finish": []}
-        for user in intermediate_data:
+        sorted_usernames = sorted(intermediate_data) # sort alphabetically so graph always uses the same order
+        for user in sorted_usernames:
             for time_tuple in intermediate_data[user]["timestamps"]:
                 data["User"].append(intermediate_data[user]["name"])
                 data["Start"].append(time_tuple[0])
@@ -341,6 +348,18 @@ class VCLogReader(commands.Cog):
             [datetime.fromtimestamp(x, tz=timezone.utc).strftime(label_time_text_format) for x in tick_labels],
             rotation=30)
 
+        # Default y-tick labels have a font size of rcParams['axes.titlesize'], which corresponds to 'large'.
+        #      https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html
+        #   'large' is relative to the default font size, which is rcParams['font.size'] (default 10.0)
+        #      https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
+        #    The text sizes are as follows: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large']
+        #    Their values are as follows:   [   5.79,      6.94,     8.33,    10.0,     12.0,     14.4 ,     17.2]
+        #      https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
+        #    Each text size is 1.2x bigger than the previous, with `medium` by default 10.0
+        # On the default scale (large), a graph can fit about 12 names. That would give 12*12=144 fontsize in a graph.
+        # When more users are shown (eg. 30), that would bring the font size to 144 / 30 = 4.8,
+        scaling_label_size = min(max(144 / len(sorted_usernames), 4), 12) # clamp to 4 <= size <= 12 (default)
+        
         ax.set_yticks(range(len(labels)))
         ax.set_yticklabels(labels)
         ax.set_xlabel("time (utc+0)")
