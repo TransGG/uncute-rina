@@ -447,7 +447,8 @@ class Starboard(commands.Cog):
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if star_channel is None:
-            await log_to_guild(client, starboard_message.guild,
+            guild = self.client.get_guild(message_payload.guild_id)
+            await log_to_guild(self.client, guild,
                                f":warning: Couldn't find starboard channel from guild info on message delete!\n"
                                f"message payload: {message_payload.guild_id}/{message_payload.channel_id}/{message_payload.message_id}\n"
                                f"recovered channel id: {_star_channel}")
