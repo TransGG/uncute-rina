@@ -14,7 +14,8 @@ You will need a mongo database to use this bot. For more info, look at https://m
 
 [//]: # (- pip install -U git+https://github.com/Rapptz/discord.py/)
 [//]: # (I likely won't be using the latest version anymore: only the stables)
-- `pip install discord pymongo[srv] motor pandas apscheduler matplotlib requests`
+[//]: # (`pip install -r requirements.txt` or add `--upgrade` and/or `--force-reinstall`)
+- `pip install -r requirements.txt --upgrade`
 
 ## Usage
 
