@@ -210,7 +210,7 @@ class VCLogReader(commands.Cog):
     ):
         if user_ids is None:
             user_ids = ""
-        ignore_user_ids: list[str] = user_ids.replace(" ","").split(",")
+        select_user_ids: list[str] = user_ids.replace(" ","").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str = requested_channel
         if not is_staff(itx.guild, itx.user):
@@ -294,7 +294,7 @@ class VCLogReader(commands.Cog):
             # set as its ID if not None (prevent TypeError: 'NoneType' object is not subscriptable)
             to_channel = to_channel[0] if to_channel else to_channel
             user_id = user[0]
-            if len(ignore_user_ids) != 0 and user_id not in ignore_user_ids:
+            if len(select_user_ids) != 0 and user_id not in select_user_ids:
                 continue
             if voice_channel.id not in [from_channel, to_channel]:
                 continue
@@ -358,10 +358,10 @@ class VCLogReader(commands.Cog):
         #    Each text size is 1.2x bigger than the previous, with `medium` by default 10.0
         # On the default scale (large), a graph can fit about 12 names. That would give 12*12=144 fontsize in a graph.
         # When more users are shown (eg. 30), that would bring the font size to 144 / 30 = 4.8,
-        scaling_label_size = min(max(144 / len(sorted_usernames), 4), 12) # clamp to 4 <= size <= 12 (default)
+        scaling_label_size = min(max(144 / max(len(sorted_usernames),1) , 4), 12) # clamp to 4 <= size <= 12 (default)
         
         ax.set_yticks(range(len(labels)))
-        ax.set_yticklabels(labels)
+        ax.set_yticklabels(labels, scaling_label_size)
         ax.set_xlabel("time (utc+0)")
         plt.tight_layout()
         plt.savefig('outputs/vcLogs.png', dpi=300)
