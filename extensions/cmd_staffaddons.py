@@ -58,7 +58,7 @@ class StaffAddons(commands.Cog):
 
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
-        # This funcion largely copies the built-in channel.purge() function with a check, but is more fancy by
+        # This function largely copies the built-in channel.purge() function with a check, but is more fancy by
         # offering a sort of progress update every 50-100 messages :D
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)",
@@ -114,9 +114,12 @@ class StaffAddons(commands.Cog):
                 await itx.channel.delete_messages(queued_message_deletions,
                                                   reason="Delete selfies older than 7 days")  # delete last few messages
 
-            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
+            try:
+                await itx.channel.send(f"Removed {message_delete_count} messages older than 7 days!")
+            except discord.Forbidden:
+                await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
         except:
-            await itx.followup.send("Something went wrong!")
+            await itx.followup.send("Something went wrong!", ephemeral=True)
             raise
 
     @app_commands.command(name="version", description="Get bot version")

@@ -32,7 +32,7 @@ class WatchList(commands.Cog):
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
-        if user.id == self.client.user.id:
+        if self.client.is_me(user):
             await itx.response.send_message(
                 f"You just tried to add a watchlist to Uncute Rina. Are you sure about that.......?\n"
                 "If so, please send a message to Mia so she can remove this extra if-statement.", ephemeral=True)

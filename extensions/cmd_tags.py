@@ -49,7 +49,7 @@ class Tags:  # TODO: move to own file
 
         embed.colour = colours[tag_name]
         cmd_mention = client.get_command_mention("tag")
-        log_msg = f"{itx.user.name} ({itx.user.id}) used {cmd_mention} `tag:{tag_name}` anonymously"
+        log_msg = f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{tag_name}` anonymously"
         if public:
             if anonymous:
                 if public_footer:
@@ -219,8 +219,8 @@ class Tags:  # TODO: move to own file
         cmd_mention = client.get_command_mention("remove-role")
         embed = discord.Embed(
             title="Please avoid political discussions!",
-            description="A member has requested that we avoid political discussions in this chat, we kindly "
-                        "ask that you refrain from discussing politics in this chat to maintain a positive and "
+            description="A member has requested that we avoid political discussions in this chat. We kindly "
+                        "ask that you refrain from discussing politics to maintain a positive and "
                         "uplifting environment for all members.\n"
                         "Our community focuses on highlighting the positive aspects of the trans "
                         "community. Political discussions often detract from this goal and create "
@@ -230,7 +230,26 @@ class Tags:  # TODO: move to own file
                         "If you continue discussing politics, a moderator may need to take action and mute "
                         "you. Thank you for your cooperation."
         )
-        await tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
+        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
+
+    @staticmethod
+    async def send_avoidventing_info(tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
+        cmd_mention = client.get_command_mention("remove-role")
+        embed = discord.Embed(
+            title="Please avoid venting / doomposting!",
+            description="A member has requested that we avoid venting / doomposting in this chat. We kindly "
+                        "ask that you refrain from venting to maintain a positive, uplifting and "
+                        "safe environment for all members.\n"
+                        "Venting often means sharing negative thoughts or feeling to gain support. This can "
+                        "become a burden to others to be an emotional support buddy. Be mindful of people "
+                        "around you or see if you can get support from family, friends, or a therapist.\n"
+                        f"Check out <#{Tags.no_venting_channel_id}>. If you can't see this, use "
+                        f"{cmd_mention} `role:NVA`\n"
+                        f"If you continue venting or doomposting, a moderator may need to take action and mute "
+                        f"you. Thank you for your cooperation."
+        )
+        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
+
 
     @staticmethod
     async def send_chat_topic_change_request(tag_name: str, itx: discord.Interaction, client, public, anonymous):
@@ -323,8 +342,34 @@ class Tags:  # TODO: move to own file
                         "tag to be easily identifiable as a moderator."
         )
         await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
-    # endregion Tags
 
+    @staticmethod
+    async def send_enabling_embeds_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+        txt = ("**Enabling Embeds**\n"
+               "Embeds are a neat feature in discord that let you preview websites and show certain messages "
+               "in a nicer format. Many bots make use of embeds to lay out information, as do I.\n"
+               "Users can enable and disable this setting manually. Simply go to `Discord > App Settings > Chat > "
+               "Embeds and Link Previews > Show embeds and previews website links pasted into chat` and toggle "
+               "that setting.")
+        if anonymous:
+            if public:
+                await itx.response.send_message("sending...", ephemeral=True)
+                try:
+                    msg = await itx.channel.send(txt)
+                    cmd_mention = client.get_command_mention("tag")
+                    log_msg = (f"{itx.user.name} ({itx.user.id}) used {cmd_mention} `tag:{tag_name}` anonymously, "
+                               f"in {itx.channel.mention} (`{itx.channel.id}`)\n"
+                               f"[Jump to the tag message]({msg.jump_url})")
+                    await log_to_guild(client, itx.guild, log_msg)
+                    staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                    await staff_message_reports_channel.send(log_msg)
+                except discord.Forbidden:
+                    await itx.followup.send(txt, ephemeral=False)
+            else:
+                await itx.response.send_message(txt, ephemeral=True)
+        else:
+            await itx.response.send_message(txt, ephemeral=not public)
+    # endregion Tags
 
 async def tag_autocomplete(itx: discord.Interaction, current: str):
     if current == "":
@@ -434,21 +479,23 @@ t: Tags = Tags()
 tag_info_dict: dict[str, tuple[tuple[int, int, int], typing.Callable, int]] = {
     # (sorted ABC and by hue; change hue) (Hue Sat Value (HSV), tag function, servers they're active in)
     "avoiding politics": ([0, 40, 100], t.send_avoidpolitics_info, EnabledServers.all_server_ids()),
-    "conversing effectively": ([20, 40, 100], t.send_conversing_effectively_info, EnabledServers.all_server_ids()),
-    "customvcs": ([40, 40, 100], t.send_customvc_info, EnabledServers.all_server_ids()),
-    "image ban role / temporary embed ban": ([60, 40, 100],
+    "avoiding venting": ([20, 40, 100], t.send_avoidventing_info, EnabledServers.all_server_ids()),
+    "conversing effectively": ([40, 40, 100], t.send_conversing_effectively_info, EnabledServers.all_server_ids()),
+    "customvcs": ([60, 40, 100], t.send_customvc_info, EnabledServers.all_server_ids()),
+    "enabling embeds": ([80, 40, 100], t.send_enabling_embeds_info, EnabledServers.all_server_ids()),
+    "image ban role / temporary embed ban": ([100, 40, 100],
                                              t.send_imagebanrole_info, EnabledServers.transplace_etc_ids()),
-    "mature role and mature chat": ([80, 40, 100], t.send_maturerole_info, EnabledServers.transplace_etc_ids()),
-    "minimodding or correcting staff": ([100, 40, 100], t.send_minimodding_info, EnabledServers.all_server_ids()),
-    "please change topic": ([120, 40, 100], t.send_chat_topic_change_request, EnabledServers.all_server_ids()),
-    "plural kit": ([140, 40, 100], t.send_pluralkit_info, EnabledServers.all_server_ids()),
+    "mature role and mature chat": ([120, 40, 100], t.send_maturerole_info, EnabledServers.transplace_etc_ids()),
+    "minimodding or correcting staff": ([140, 40, 100], t.send_minimodding_info, EnabledServers.all_server_ids()),
+    "please change topic": ([160, 40, 100], t.send_chat_topic_change_request, EnabledServers.all_server_ids()),
+    "plural kit": ([180, 40, 100], t.send_pluralkit_info, EnabledServers.all_server_ids()),
     "report": ([0, 100, 100], t.send_report_info, EnabledServers.all_server_ids()),
-    "selfies": ([160, 40, 100], t.send_selfies_info, EnabledServers.transplace_etc_ids()),
-    "tone indicators": ([180, 40, 100], t.send_toneindicator_info, EnabledServers.all_server_ids()),
-    "trigger warnings": ([200, 40, 100], t.send_triggerwarning_info, EnabledServers.all_server_ids()),
-    "trusted role": ([220, 40, 100], t.send_trustedrole_info, EnabledServers.transplace_etc_ids()),
-    "set pk server tag": ([260, 40, 100], t.send_pksettag_info, EnabledServers.all_server_ids()),
-    "system discourse": ([240, 40, 100], t.send_syscourse_info, EnabledServers.all_server_ids()),
+    "selfies": ([200, 40, 100], t.send_selfies_info, EnabledServers.transplace_etc_ids()),
+    "tone indicators": ([220, 40, 100], t.send_toneindicator_info, EnabledServers.all_server_ids()),
+    "trigger warnings": ([240, 40, 100], t.send_triggerwarning_info, EnabledServers.all_server_ids()),
+    "trusted role": ([260, 40, 100], t.send_trustedrole_info, EnabledServers.transplace_etc_ids()),
+    "set pk server tag": ([280, 40, 100], t.send_pksettag_info, EnabledServers.all_server_ids()),
+    "system discourse": ([300, 40, 100], t.send_syscourse_info, EnabledServers.all_server_ids()),
 }
 colours = {k: discord.Colour.from_hsv(v[0][0] / 360, v[0][1] / 100, v[0][2] / 100) for k, v in tag_info_dict.items()}
 

@@ -378,6 +378,9 @@ class SearchAddons(commands.Cog):
                     assumption_data = {}  # because Wolfram|Alpha is being annoyingly inconsistent.
                     if "word" in assumption:
                         assumption_data["${word}"] = assumption["word"]
+                    if type(assumption["values"]) is dict:
+                        # only 1 value, instead of a list. So just make a list of 1 value instead.
+                        assumption["values"] = [assumption["values"]]
                     for value_index in range(len(assumption["values"])):
                         assumption_data["${desc" + str(value_index + 1) + "}"] = assumption["values"][value_index][
                             "desc"]
@@ -387,12 +390,16 @@ class SearchAddons(commands.Cog):
                         except KeyError:
                             pass  # the "word" variable is only there sometimes. for some stupid reason.
 
-                    template: str = assumption["template"]
-                    for replacer in assumption_data:
-                        template = template.replace(replacer, assumption_data[replacer])
-                    if template.endswith("."):
-                        template = template[:-1]
-                    assumptions.append(template + "?")
+                    if "template" in assumption:
+                        template: str = assumption["template"]
+                        for replacer in assumption_data:
+                            template = template.replace(replacer, assumption_data[replacer])
+                        if template.endswith("."):
+                            template = template[:-1]
+                        assumptions.append(template + "?")
+                    else:
+                        template: str = assumption["type"] + " - " + assumption["desc"] + " (todo)"
+                        assumptions.append(template)
             if len(assumptions) > 0:
                 alternatives = "\nAssumptions:\n> " + '\n> '.join(assumptions)
             else:
