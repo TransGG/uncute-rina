@@ -242,7 +242,7 @@ class Tags:  # TODO: move to own file
                         "safe environment for all members.\n"
                         "Venting often means sharing negative thoughts or feeling to gain support. This can "
                         "become a burden to others to be an emotional support buddy. Be mindful of people "
-                        "around you or see if you can get support from family or a therapist.\n"
+                        "around you or see if you can get support from family, friends, or a therapist.\n"
                         f"Check out <#{Tags.no_venting_channel_id}>. If you can't see this, use "
                         f"{cmd_mention} `role:NVA`\n"
                         f"If you continue venting or doomposting, a moderator may need to take action and mute "

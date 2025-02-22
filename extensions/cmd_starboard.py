@@ -84,6 +84,14 @@ async def fetch_starboard_original_message(
     #    https:/ /discord.com / channels / 985931648094834798 / 1006682505149169694 / 1014887159485968455
     guild_id, channel_id, message_id = [int(i) for i in link.split("/")[4:]]
     ch = client.get_channel(channel_id)
+
+    if ch is None:
+        await log_to_guild(client, starboard_message.guild,
+                           f":warning: Couldn't find starboard channel from starboard message!\n"
+                           f"starboard message: {starboard_message.channel.id}/{starboard_message.id}, link text: {text}\n"
+                           f"recovered channel id: {channel_id}")
+        return
+
     try:
         original_message = await ch.fetch_message(message_id)
     except discord.NotFound:
@@ -437,6 +445,14 @@ class Starboard(commands.Cog):
                                                                              "starboardChannel", "starboardEmoji")
         star_channel = self.client.get_channel(_star_channel)
         starboard_emoji = self.client.get_emoji(starboard_emoji_id)
+
+        if star_channel is None:
+            guild = self.client.get_guild(message_payload.guild_id)
+            await log_to_guild(self.client, guild,
+                               f":warning: Couldn't find starboard channel from guild info on message delete!\n"
+                               f"message payload: {message_payload.guild_id}/{message_payload.channel_id}/{message_payload.message_id}\n"
+                               f"recovered channel id: {_star_channel}")
+            return
 
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
             # this prevents having two 'message deleted' logs for manual deletion of starboard message

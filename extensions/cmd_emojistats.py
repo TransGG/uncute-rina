@@ -175,8 +175,7 @@ class EmojiStats(commands.Cog):
                                         f"messageUsedCount: {msg_used}\n" +
                                         f"reactionUsedCount: {reaction_used}\n" +
                                         f"Animated: {animated}\n" +
-                                        f"Last used: {datetime.fromtimestamp(emoji['lastUsed']).strftime(
-                                            '%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",
+                                        f"Last used: {datetime.fromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",
                                         ephemeral=True)
 
     @emojistats.command(name="get_unused_emojis", description="Get the least-used emojis")

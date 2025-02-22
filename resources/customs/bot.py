@@ -168,7 +168,7 @@ class Bot(commands.Bot):
             await log[0].response.send_message(log[1], ephemeral=True)
             raise
 
-    def is_me(self, user: discord.Member | discord.User | int):
-        if isinstance(user, discord.User):
-            user = user.id
-        return self.user.id == user.id
+    def is_me(self, user_id: discord.Member | discord.User | int):
+        if isinstance(user_id, discord.User) or isinstance(user_id, discord.Member):
+            user_id = user_id.id
+        return self.user.id == user_id
