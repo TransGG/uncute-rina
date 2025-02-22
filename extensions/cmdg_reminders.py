@@ -9,7 +9,7 @@ import discord.ext.commands as commands
 from resources.customs.bot import Bot
 from resources.customs.reminders import ReminderObject, BumpReminderObject
 from resources.utils.timeparser import TimeParser
-from resources.views.reminders import TimeOfDaySelection
+from resources.views.reminders import TimeOfDaySelection, ShareReminder, CopyReminder
 
 
 class TimestampFormats(enum.Enum):
@@ -204,10 +204,19 @@ class RemindersCog(commands.GroupCog, name="reminder"):
         ReminderObject(self.client, now, distance, itx.user.id, reminder, db_data)
         _distance = int(mktime(distance.timetuple()))
         cmd_mention = self.client.get_command_mention("reminder reminders")
+        view = ShareReminder()
         await itx.response.send_message(
             f"Successfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!\n"
             f"Use {cmd_mention} to see your list of reminders",
-            ephemeral=True)
+            view=view, ephemeral=True)
+        await view.wait()
+        if view.value == 1:
+            msg = f"{itx.user.mention} shared a reminder on <t:{_distance}:F> for \"{reminder}\""
+            copy_view = CopyReminder(timeout=300, self.client, now, distance, itx.user.id, reminder, db_data)
+            try:
+                await itx.channel.send(msg, view=copy_view)
+            except discord.errors.Forbidden:
+                await view.return_interaction.response(msg, view=copy_view)
 
     @app_commands.command(name="reminders", description="Check your list of reminders!")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
