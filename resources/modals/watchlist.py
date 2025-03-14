@@ -13,9 +13,9 @@ class WatchlistReasonModal(discord.ui.Modal):
     Attributes
     -----------
     add_to_watchlist_func: :class:`typing.Callable[
-            [discord.Interaction, discord.User, str, str | None],
+            [discord.Interaction, discord.User, str, str | None, Optional[str]],
             typing.Coroutine[Any, Any, None]]`
-        An async function from WatchList.add_to_watchlist(itx, user, reason, message_id) -> None to run with on_submit.
+        An async function from WatchList.add_to_watchlist(itx, user, reason, message_id, [warnings]) -> None to run with on_submit.
     message: :class:`discord.Message` | :class:`None`
         The message that was reported / marked for the watchlist.
     reason_text: :class:`str`
@@ -33,7 +33,7 @@ class WatchlistReasonModal(discord.ui.Modal):
     def __init__(
             self,
             add_to_watchlist_func: typing.Callable[
-                [discord.Interaction, discord.User | discord.Member, str, str | None, str],
+                [discord.Interaction, discord.User | discord.Member, str, str | None, Optional[str]],
                 typing.Coroutine[typing.Any, typing.Any, None]],
             title: str,
             reported_user: discord.User,
@@ -57,5 +57,5 @@ class WatchlistReasonModal(discord.ui.Modal):
     async def on_submit(self, itx: discord.Interaction):
         self.value = 1
         await self.add_to_watchlist_func(itx, self.user, self.reason_text.value,
-                                         str(getattr(self.message, "id", "")) or None, self.message.id)
+                                         str(getattr(self.message, "id", "")) or None, "")
         self.stop()

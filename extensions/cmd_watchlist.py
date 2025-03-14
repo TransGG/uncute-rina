@@ -27,7 +27,8 @@ class WatchList(commands.Cog):
         self.client.tree.add_command(self.ctx_menu_message)
 
     async def add_to_watchlist(
-            self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str = None, warning=""
+            self, itx: discord.Interaction, user: discord.Member, reason: str = "", message_id: str | None = None,
+            warning = ""
     ):
         if not is_staff(itx.guild, itx.user):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
@@ -43,7 +44,7 @@ class WatchList(commands.Cog):
         #   used in case you want to report someone but want to use someone else's
         #   message as evidence or context.
 
-        if message_id is str:
+        if type(message_id) is str:
             if message_id is None:
                 pass
             elif message_id.isdecimal():
