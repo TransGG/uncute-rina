@@ -21,6 +21,7 @@ BOT_VERSION = "1.3.0.3"
 
 EXTENSIONS = [
     "cmd_addons",
+    "cmd_aegis_ping_reactions",
     "cmd_ban_appeal_reactions",
     "cmd_compliments",
     "cmd_crashhandling",
