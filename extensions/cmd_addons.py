@@ -232,25 +232,35 @@ class SearchAddons(commands.Cog):
             await itx.response.send_message(
                 f"You can't use the following characters for country_id!\n> {illegal_characters}", ephemeral=True)
             return
-
-        response_api = requests.get(
-            f"https://www.equaldex.com/api/region?regionid={country_id}&formatted=true").text
+        equaldex_key = self.client.api_tokens["Equaldex"]
+        querystring = {"regionid": country_id, "apiKey": equaldex_key}
+        response = requests.get(
+            f"https://www.equaldex.com/api/region", params=querystring)  # &formatted=true
+        response_api = response.text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
         # it also has some <br \/>\r\n strings in there for some reason...? so uh
         jsonizing_table = {
             r"<br \/>\r\n": r"\n",
             "<pre>": "",
-            "</pre>": ""
+            "</pre>": "",
+            "<i>": "_",
+            r"<\/i>": "_",
+            "<b>": "**",
+            r"<\/b>": "**"
         }
         for key in jsonizing_table:
             response_api = response_api.replace(key, jsonizing_table[key])
         data = json.loads(response_api)
-        if "error" in data:
+        if "error" in data and response.status_code == 404:
             if country_id.lower() == "uk":
                 await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...\nTry 'GB' instead!",
                                                 ephemeral=True)
             else:
                 await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...", ephemeral=True)
+            return
+        elif "error" in data:
+            await itx.response.send_message(f"Error code: {response.status_code}\n"
+                                            f"I'm sorry, I couldn't find '{country_id}'.", ephemeral=True)
             return
 
         region = EqualDexRegion(data['regions']['region'])
@@ -278,9 +288,15 @@ class SearchAddons(commands.Cog):
                 # else:
                 #     value = "➖ " + value
                 if len(region.issues[issue]['current_status']['description']) > 0:
-                    value += f" ({region.issues[issue]['current_status']['description']})"
+                    if len(region.issues[issue]['current_status']['description']) > 200:
+                        value += f" ({region.issues[issue]['current_status']['description'][:200]}..."
+                    else:
+                        value += f" ({region.issues[issue]['current_status']['description']})"
                 elif len(region.issues[issue]['description']) > 0:
-                    value += f" ({region.issues[issue]['description']})"
+                    if len(region.issues[issue]['description']) > 200:
+                        value += f" ({region.issues[issue]['description'][:200]}..."
+                    else:
+                        value += f" ({region.issues[issue]['description']})"
                 if len(value) > 1024:
                     value = value[:1020] + "..."
             embed.add_field(name=region.issues[issue]['label'],

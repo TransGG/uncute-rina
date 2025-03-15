@@ -61,14 +61,14 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     "\n"
                     ". . **1:** Welcome page\n"
                     ". . **2:** Index\n"
-                    ". . **3:** Bot functions\n"
-                    ". . **4:** Utility\n"
-                    ". . **5:** Suggestion commands\n"
-                    ". . **6:** Internet search commands\n"
-                    ". . **7:** Server search commands\n"
-                    ". . **8:** Chat actions\n"
-                    ". . **9:** Server functions\n"
-                    ". . **10:** Voice channels",
+                    ". . **3:** Bot functions\n"  # 100
+                    ". . **4:** Utility\n"  # 110
+                    ". . **5:** Suggestion commands\n"  # 120
+                    ". . **6:** Internet search commands\n"  # 130
+                    ". . **7:** Server search commands\n"  # 140
+                    ". . **8:** Chat actions\n"  # 150
+                    ". . **9:** Server functions\n"  # 160
+                    ". . **10:** Voice channels",  # 170
         fields=[],
         staff_only=False,
     ),
@@ -125,14 +125,23 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         fields=[],
         staff_only=False,
     ),
-    6: HelpPage(
+    6: HelpPage(  # index: Internet search commands
+        title="Internet search commands",
+        description="Googling is hard. That's why I made some searching commands!\b"
+                    "\n"
+                    ". . **131:** equaldex (LGBTQ laws in countries)\n"
+                    ". . **132:** qotw (question of the week)\n",
+        fields=[],
+        staff_only=False,
+    ),
+    7: HelpPage(
         title="Work in progress...",
         description="This section is still being worked on! (help, so much text to write D: )\n"
                     "Scroll a few pages ahead to see what the rest of the help pages look like!",
         fields=[],
         staff_only=False,
     ),
-    7: HelpPage(  # index: Suggestion commands
+    8: HelpPage(
         title="placeholder (skip ahead)",
         description="placeholder (skip ahead)",
         fields=[],
@@ -472,17 +481,16 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             (
                 "Parameters",
                 "`country_id`: The ID of the country you want to look up.\n"
-                "- The short ID form of a country. Some examples: America: US, \n"
+                "- The short ID form of a country. Some examples: America: US, Germany: DE, Canada: CA\n"
+                "- For more information, see [Wikipedia/ISO_3166#Officially_assigned_code_elements]"
+                "(https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)"
             ),
             (
-                "Examples (real)",
-                "- %%developer_request%% `suggestion:idea for rina: make tags just post the message directly "
-                "into the channel instead of as a command follow-up so it doesn't show the \"message could "
-                "not be loaded\" error :3`\n"
-                "  - Sends a message to a developer channel on the staff server.\n"
-                "- %%developer_request%% `suggestion:For Amari, make voice channels not give xp if someone is "
-                "alone in a voice channel, to prevent people camping in vc alone (or falling asleep in vc) for xp`\n"
-                "  - yeah, it does the thingy"
+                "Examples",
+                "- %%equaldex%% `country_id:GB`"
+                "  - Get LGBTQ laws from Great Britain (United Kingdom).\n"
+                "- %%equaldex%% `country_id:DE`"
+                "  - DE for Germany, "
             )
         ],
         staff_only=False,

@@ -5,6 +5,11 @@ import discord.ext.commands as commands
 import motor.core as motorcore  # for typing
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+from typing import Literal, TypedDict
+
+
+ApiTokenDict = TypedDict('ApiTokenDict',
+                         {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
 
 
 class Bot(commands.Bot):
@@ -17,11 +22,13 @@ class Bot(commands.Bot):
     running_on_production = True
 
     def __init__(
-            self, api_tokens: dict, version: str,
+            self,
+            api_tokens: ApiTokenDict,
+            version: str,
             rina_db: PyMongoDatabase, async_rina_db: motorcore.AgnosticDatabase,
             *args, **kwargs
     ):
-        self.api_tokens: dict = api_tokens
+        self.api_tokens: ApiTokenDict = api_tokens
         self.version: str = version
         self.rina_db: PyMongoDatabase = rina_db
         self.async_rina_db: motorcore.AgnosticDatabase = async_rina_db

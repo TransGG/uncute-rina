@@ -9,9 +9,10 @@ from pymongo import MongoClient
 import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
 import motor.core as motorcore  # for typing
 import os  # for creating outputs/ directory
+from typing import Literal, TypedDict
 
 from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging crash messages
-from resources.customs.bot import Bot
+from resources.customs.bot import Bot, ApiTokenDict
 from resources.customs.reminders import ReminderObject  # Reminders (/reminders remindme)
 from resources.customs.watchlist import get_or_fetch_watchlist_index  # for fetching all watchlists on startup
 
@@ -59,7 +60,12 @@ EXTENSIONS = [
 #       use embeds (for starboard)
 #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
-def get_token_data() -> tuple[str, dict[str, str], PyMongoDatabase, motorcore.AgnosticDatabase]:
+def get_token_data() -> tuple[
+    str,
+    ApiTokenDict,
+    PyMongoDatabase,
+    motorcore.AgnosticDatabase
+]:
     """
     Ensures the api_keys.json file contains all the bot's required keys, and
     uses these keys to start a link to the MongoDB.
@@ -86,7 +92,7 @@ def get_token_data() -> tuple[str, dict[str, str], PyMongoDatabase, motorcore.Ag
         tokens = {}
         bot_token: str = api_keys['Discord']
         missing_tokens: list[str] = []
-        for key in ['MongoDB', 'Open Exchange Rates', 'Wolfram Alpha']:
+        for key in ApiTokenDict.__required_keys__:
             # copy every other key to new dictionary to check if every key is in the file.
             if key not in api_keys:
                 missing_tokens.append(key)
@@ -143,7 +149,10 @@ def get_version() -> str:
 
 
 def create_client(
-        tokens: dict, rina_db: PyMongoDatabase, async_rina_db: motorcore.AgnosticDatabase, version: str
+        tokens: ApiTokenDict,
+        rina_db: PyMongoDatabase,
+        async_rina_db: motorcore.AgnosticDatabase,
+        version: str
 ) -> Bot:
     debug(f"[####+]: Creating bot" + " " * 30, color="light_blue", end='\r')
 
