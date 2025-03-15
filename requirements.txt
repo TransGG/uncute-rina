@@ -1,7 +1,8 @@
-git+https://github.com/Rapptz/discord.py.git@db7b2d9058e4e7f357a6a9f02aad41e8b053a1bd
-motor==3.4.0
-pymongo==4.8.0
-pandas
-apscheduler
-matplotlib
-requests
+discord.py>=2.5.0
+# git+https://github.com/Rapptz/discord.py/
+motor>=3.7.0
+pymongo>=4.11.1
+pandas>=2.2.3
+apscheduler>=3.11.0
+matplotlib>=3.10.0
+requests>=2.32.3
