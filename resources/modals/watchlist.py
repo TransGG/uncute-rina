@@ -33,14 +33,14 @@ class WatchlistReasonModal(discord.ui.Modal):
     def __init__(
             self,
             add_to_watchlist_func: typing.Callable[
-                [discord.Interaction, discord.User | discord.Member, str, str | None, Optional[str]],
+                [discord.Interaction, discord.User | discord.Member, str, str | None, typing.Optional[str]],
                 typing.Coroutine[typing.Any, typing.Any, None]],
             title: str,
             reported_user: discord.User,
             message: discord.Message = None,
             timeout=None
     ):
-        super().__init__(title=title, timeout=timeout)
+        super().__init__(title=title[:45], timeout=timeout)
         self.value = None
         # self.timeout = timeout
         # self.title = title
@@ -48,7 +48,7 @@ class WatchlistReasonModal(discord.ui.Modal):
         self.message = message
         self.add_to_watchlist_func = add_to_watchlist_func
 
-        self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}',
+        self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}'[:45],
                                                 placeholder=f"not required but recommended",
                                                 style=discord.TextStyle.paragraph,
                                                 required=False)

@@ -118,8 +118,8 @@ class WatchList(commands.Cog):
         if not already_on_watchlist:
             msg = await watch_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
             # make and join a thread under the reason
-            thread = await msg.create_thread(name=f"Watch-{(str(user) + '-' + str(user.id))}",
-                                             auto_archive_duration=10080)
+            thread = await msg.create_thread(name=f"Watch-{(str(user)[:70] + '-' + str(user.id))}",
+                                             auto_archive_duration=10080)  # max thread name = 100 chars
             add_to_watchlist_cache(user.id,
                                    thread.id)  # thread.id will be the same as msg.id, because of discord structure
             await thread.join()
@@ -237,7 +237,8 @@ class WatchList(commands.Cog):
         if not is_staff(itx.guild, itx.user):  # is already checked in the main command, but saves people's time
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
-        watchlist_reason_modal = WatchlistReasonModal(self.add_to_watchlist, "Add user to watchlist", user, None, 300)
+        watchlist_reason_modal = WatchlistReasonModal(self.add_to_watchlist, "Add user to watchlist",
+                                                      user, None, 300)
         await itx.response.send_modal(watchlist_reason_modal)
 
     async def watchlist_ctx_message(self, itx, message: discord.Message):

@@ -2,6 +2,7 @@ import discord
 from time import mktime
 from datetime import datetime, timedelta
 from resources.utils.utils import log_to_guild
+from resources.customs.bot import Bot
 
 recently_renamed_vcs: dict[int, list[datetime]] = {}  # make your own vcs!
 
@@ -53,15 +54,17 @@ def try_store_vc_rename(channel_id: int, max_rename_limit: int = 2) -> None | in
 
 class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s channel'):
 
-    def __init__(self, vc_hub: int, vc_log, vc_category):
+    def __init__(self, client: Bot, vc_hub: int, vc_log, vc_category):
         super().__init__()
+        self.client = client
         self.vcHub = vc_hub
         self.vcLog = vc_log
         self.vcCategory = vc_category
 
         self.channel_id = discord.ui.TextInput(label='Channel Id', placeholder="Which channel do you want to edit",
                                                required=True)
-        self.name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False)
+        self.name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False,
+                                         max_length=100 - len(client.custom_ids["vctable_prefix"]))
         self.limit = discord.ui.TextInput(label='Limit', placeholder="Give your voice channel a user limit",
                                           required=False)
         self.add_item(self.channel_id)

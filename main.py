@@ -18,7 +18,7 @@ from resources.customs.watchlist import get_or_fetch_watchlist_index  # for fetc
 
 program_start = datetime.now()  # startup time after local imports
 
-BOT_VERSION = "1.3.0.3"
+BOT_VERSION = "1.3.0.5"
 
 EXTENSIONS = [
     "cmd_addons",
