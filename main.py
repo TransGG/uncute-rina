@@ -15,7 +15,7 @@ import discord  # for main discord bot functionality
 from resources.customs.bot import Bot, ApiTokenDict
 from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging crash messages
 
-from extensions.reminders.reminderobject import ReminderObject  # Reminders (/reminders remindme)
+from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
 from extensions.watchlist.watchlistfunctions import get_or_fetch_watchlist_index
 # ^ for fetching all watchlists on startup
 

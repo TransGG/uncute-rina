@@ -6,21 +6,10 @@ import discord
 from resources.views.generics import create_simple_button
 from resources.customs.bot import Bot
 
+from extensions.reminders.utils import get_user_reminders
 
 if TYPE_CHECKING:
-    from extensions.reminders.reminderobject import ReminderObject
-
-
-# i had to place this here to prevent circular imports -_-
-def get_user_reminders(client: Bot, user: discord.Member | discord.User) -> list[ReminderDict]:
-    # Check if user has an entry in database yet.
-    collection = client.rina_db["reminders"]
-    query = {"userID": user.id}
-    db_data = collection.find_one(query)
-    if db_data is None:
-        collection.insert_one(query)
-        db_data = collection.find_one(query)
-    return db_data.get('reminders', [])
+    from extensions.reminders.objects import ReminderObject
 
 
 class CopyReminder(discord.ui.View):

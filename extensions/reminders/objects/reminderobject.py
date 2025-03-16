@@ -7,10 +7,12 @@ import discord
 from resources.customs.bot import Bot
 from resources.utils.timeparser import TimeParser
 
-from extensions.reminders.reminderdict import ReminderDict
-from extensions.reminders.views.copyreminder import CopyReminder, get_user_reminders
-from extensions.reminders.views.sharereminder import ShareReminder
-from extensions.reminders.views.timeofdayselection import TimeOfDaySelection
+from extensions.reminders.exceptions import (
+    MalformedISODateTimeException, UnixTimestampInPastException, TimestampParseError
+)
+from extensions.reminders.objects import ReminderDict, TimestampFormats
+from extensions.reminders.utils import get_user_reminders
+from extensions.reminders.views import CopyReminder, ShareReminder, TimeOfDaySelection
 
 
 class ReminderObject:
@@ -91,22 +93,6 @@ class ReminderObject:
             collection.update_one(query, {"$set": {"reminders": db_data['reminders']}}, upsert=True)
         else:
             collection.delete_one(query)
-
-
-class UnixTimestampInPastException(Exception):
-    def __init__(self, unix_timestamp_string: str, creation_time: datetime):
-        self.unix_timestamp_string = unix_timestamp_string
-        self.creation_time = creation_time
-
-
-class MalformedISODateTimeException(Exception):
-    def __init__(self, ex: Exception):
-        self.inner_exception = ex
-
-
-class TimestampParseError(Exception):
-    def __init__(self, inner_exception):
-        self.inner_exception = inner_exception
 
 
 async def _handle_reminder_timestamp_parsing(
@@ -223,7 +209,7 @@ async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str,
     return distance, creation_time
 
 
-async def create_reminder(
+async def _create_reminder(
         client: Bot,
         itx: discord.Interaction,
         distance: datetime,
@@ -244,7 +230,7 @@ async def create_reminder(
     await view.wait()
     if view.value == 1:
         msg = f"{itx.user.mention} shared a reminder on <t:{_distance}:F> for \"{reminder}\""
-        copy_view = CopyReminder(client, create_reminder, reminder_object, timeout=300)
+        copy_view = CopyReminder(client, _create_reminder, reminder_object, timeout=300)
         try:
             await itx.channel.send(content=msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
             await itx.edit_original_response(view=None)
@@ -309,4 +295,4 @@ async def parse_and_create_reminder(client: Bot, itx: discord.Interaction, remin
             ephemeral=True)
         return
 
-    await create_reminder(client, itx, distance, creation_time, reminder, user_reminders, False)
+    await _create_reminder(client, itx, distance, creation_time, reminder, user_reminders, False)

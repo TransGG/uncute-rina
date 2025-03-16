@@ -4,7 +4,7 @@ from extensions.nameusage.modals.getnamemodal import GetNameModal
 
 
 # todo: use Generics.PageView
-class PageViewNameUsageGetTop(discord.ui.View):
+class GetTopPageView(discord.ui.View):
     def __init__(self, pages, embed_title, timeout=None):
         super().__init__()
         self.value = None

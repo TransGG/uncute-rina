@@ -1,10 +1,11 @@
 import discord
+from datetime import datetime, timedelta
 
 from resources.customs.bot import Bot
 
 
 class BumpReminderObject:
-    def __init__(self, client: Bot, guild: discord.Guild, remindertime):
+    def __init__(self, client: Bot, guild: discord.Guild, remindertime: datetime):
         self.client = client
         self.guild = guild
         self.remindertime = remindertime - timedelta(seconds=1.5)
