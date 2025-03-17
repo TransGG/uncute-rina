@@ -1,10 +1,15 @@
 from datetime import datetime  # for startup and crash logging, and Reminders
-
-import discord  # for main discord bot functionality
-import discord.ext.commands as commands
 import motor.core as motorcore  # for typing
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+from typing import Literal, TypedDict
+
+import discord  # for main discord bot functionality
+import discord.ext.commands as commands
+
+
+ApiTokenDict = TypedDict('ApiTokenDict',
+                         {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
 
 
 class Bot(commands.Bot):
@@ -13,15 +18,17 @@ class Bot(commands.Bot):
     commandList: list[discord.app_commands.AppCommand]
     log_channel: discord.TextChannel | discord.Thread
     bot_owner: discord.User  # for AllowedMentions in on_appcommand_error()
-    reminder_scheduler: AsyncIOScheduler  # for Reminders
+    sched: AsyncIOScheduler  # for Reminders
     running_on_production = True
 
     def __init__(
-            self, api_tokens: dict, version: str,
+            self,
+            api_tokens: ApiTokenDict,
+            version: str,
             rina_db: PyMongoDatabase, async_rina_db: motorcore.AgnosticDatabase,
             *args, **kwargs
     ):
-        self.api_tokens: dict = api_tokens
+        self.api_tokens: ApiTokenDict = api_tokens
         self.version: str = version
         self.rina_db: PyMongoDatabase = rina_db
         self.async_rina_db: motorcore.AgnosticDatabase = async_rina_db
@@ -46,7 +53,8 @@ class Bot(commands.Bot):
             "enbyplace_ticket_channel_id": 1186054373986537522,
             "transonance_ticket_channel_id": 1108789589558177812,
             "ban_appeal_webhook_ids": [1120832140758745199],
-            "vctable_prefix": "[T] "
+            "vctable_prefix": "[T] ",
+            "aegis_ping_role_id": 1331313288000307371,
         }
         development_ids = {
             "staff_server_id": 985931648094834798,
@@ -65,7 +73,8 @@ class Bot(commands.Bot):
             "enbyplace_ticket_channel_id": 1125108250426228826,  # + public dev server channel
             "transonance_ticket_channel_id": 1125108250426228826,  # + public dev server channel
             "ban_appeal_webhook_ids": [979057304752254976],
-            "vctable_prefix": "[T] "
+            "vctable_prefix": "[T] ",
+            "aegis_ping_role_id": 1350538597366894662
         }
         assert [i for i in production_ids] == [i for i in development_ids]  # all keys match
 
