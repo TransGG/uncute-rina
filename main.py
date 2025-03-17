@@ -1,48 +1,52 @@
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from datetime import datetime  # for startup and crash logging, and Reminders
-from time import mktime  # to convert datetime to unix epoch time to store in database
-import discord  # for main discord bot functionality
 import json  # for loading the API keys file
 import logging  # to set logging level to not DEBUG and hide unnecessary logs
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
-from pymongo import MongoClient
 import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
 import motor.core as motorcore  # for typing
 import os  # for creating outputs/ directory
+from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+from pymongo import MongoClient
+from time import mktime  # to convert datetime to unix epoch time to store in database
 from typing import Literal, TypedDict
 
-from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging crash messages
+import discord  # for main discord bot functionality
+
 from resources.customs.bot import Bot, ApiTokenDict
-from resources.customs.reminders import ReminderObject  # Reminders (/reminders remindme)
-from resources.customs.watchlist import get_or_fetch_watchlist_index  # for fetching all watchlists on startup
+from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging crash messages
+
+from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
+from extensions.watchlist.watchlistfunctions import get_or_fetch_watchlist_index
+# ^ for fetching all watchlists on startup
+
 
 program_start = datetime.now()  # startup time after local imports
 
-BOT_VERSION = "1.3.0.5"
+BOT_VERSION = "1.4.0.0"
 
 EXTENSIONS = [
-    "cmd_addons",
-    "cmd_aegis_ping_reactions",
-    "cmd_ban_appeal_reactions",
-    "cmd_compliments",
-    "cmd_crashhandling",
-    "cmd_customvcs",
-    "cmd_emojistats",
-    "cmd_help",
-    "cmd_getmemberdata",
-    # "cmd_pronouns", # depreciated
-    "cmd_qotw",
-    "cmd_staffaddons",
-    "cmd_tags",
-    "cmd_termdictionary",
-    "cmd_todolist",
-    "cmd_toneindicator",
-    "cmd_vclogreader",
-    "cmd_watchlist",
-    "cmd_starboard",
-    "cmdg_nameusage",
-    "cmdg_reminders",
-    # "cmdg_testing_commands",
+    "addons",
+    "aegis_ping_reactions",
+    "ban_appeal_reactions",
+    "compliments",
+    "crashhandling",
+    "customvcs",
+    "emojistats",
+    "help",
+    "getmemberdata",
+    # "pronouns", # depreciated
+    "qotw",
+    "staffaddons",
+    "tags",
+    "termdictionary",
+    "todolist",
+    "toneindicator",
+    "vclogreader",
+    "watchlist",
+    "starboard",
+    "nameusage",
+    "reminders",
+    # "testing_commands",
 ]
 
 
@@ -217,7 +221,7 @@ def start_app():
         for extID in range(len(EXTENSIONS)):
             debug(f"[{'#' * extID}+{' ' * (len(EXTENSIONS) - extID - 1)}]: Loading {EXTENSIONS[extID]}" + " " * 15,
                   color="light_blue", end='\r')
-            await client.load_extension("extensions." + EXTENSIONS[extID])
+            await client.load_extension("extensions." + EXTENSIONS[extID] + ".module")
         debug(f"[###    ]: Loaded extensions successfully (in {datetime.now() - extension_loading_start_time})",
               color="green")
 

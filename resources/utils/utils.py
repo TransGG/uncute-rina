@@ -1,8 +1,11 @@
-import discord
 from datetime import datetime, timedelta  # for logging, to show log time; and for parsetime
 import logging  # for debug (logger.info)
 import warnings  # for debug (if given wrong color)
+
+import discord
+
 from resources.customs.bot import Bot
+
 
 __all__ = [
     "TESTING_ENVIRONMENT",
@@ -12,6 +15,7 @@ __all__ = [
     "executed_in_dms",
     "parse_date",
 ]
+
 
 TESTING_ENVIRONMENT = 2  # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 
