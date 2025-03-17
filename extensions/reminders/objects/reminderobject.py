@@ -233,11 +233,9 @@ async def _create_reminder(
         copy_view = CopyReminder(client, _create_reminder, reminder_object, timeout=300)
         try:
             await itx.channel.send(content=msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
-            await itx.edit_original_response(view=None)
-            return
         except discord.errors.Forbidden:
             await view.return_interaction.response(msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
-    await creation_msg.edit(view=None)
+    await itx.edit_original_response(view=None)
 
 
 async def parse_and_create_reminder(client: Bot, itx: discord.Interaction, reminder_datetime: str, reminder: str):
