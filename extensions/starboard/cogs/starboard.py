@@ -2,10 +2,8 @@ import asyncio
 # for sleep(1) while waiting for other starboard message fetching function instance.
 # See get_or_fetch_starboard_messages()
 from datetime import datetime, timezone
-from time import mktime
 # to track starboard refresh timestamps.
-# TODO: make it not use unix timestamps but just datetimes; and get message send time for embed because cool (serves
-#   no real purpose)
+# TODO: get message send time for embed because cool (serves no real purpose)
 
 import discord
 import discord.ext.commands as commands
@@ -13,9 +11,8 @@ import discord.ext.commands as commands
 from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
-
 starboard_message_ids_marked_for_deletion = []
-local_starboard_message_list_refresh_timestamp = 0  # TODO: make this not unix :P just use datetime
+local_starboard_message_list_refresh_timestamp = datetime.fromtimestamp(0)
 STARBOARD_REFRESH_DELAY = 1000
 local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
@@ -213,15 +210,15 @@ async def get_or_fetch_starboard_messages(
     """
     global busy_updating_starboard_messages, local_starboard_message_list, \
         local_starboard_message_list_refresh_timestamp
-    if not busy_updating_starboard_messages and mktime(datetime.now(
-            timezone.utc).timetuple()) - local_starboard_message_list_refresh_timestamp > STARBOARD_REFRESH_DELAY:
+    time_since_last_starboard_fetch = (datetime.now() - local_starboard_message_list_refresh_timestamp).total_seconds()
+    if not busy_updating_starboard_messages and time_since_last_starboard_fetch > STARBOARD_REFRESH_DELAY:
         # refresh once every 1000 seconds
         busy_updating_starboard_messages = True
         messages: list[discord.Message] = []
         async for star_message in starboard_channel.history(limit=1000):
             messages.append(star_message)
         local_starboard_message_list = messages
-        local_starboard_message_list_refresh_timestamp = mktime(datetime.now(timezone.utc).timetuple())
+        local_starboard_message_list_refresh_timestamp = datetime.now()
         busy_updating_starboard_messages = False
     while busy_updating_starboard_messages:
         # wait until not busy anymore
