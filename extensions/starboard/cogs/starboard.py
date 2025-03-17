@@ -3,7 +3,6 @@ import asyncio
 # See get_or_fetch_starboard_messages()
 from datetime import datetime, timezone
 # to track starboard refresh timestamps.
-# TODO: get message send time for embed because cool (serves no real purpose)
 
 import discord
 import discord.ext.commands as commands
@@ -13,7 +12,7 @@ from resources.utils.utils import log_to_guild  # to log starboard addition/remo
 
 starboard_message_ids_marked_for_deletion = []
 local_starboard_message_list_refresh_timestamp = datetime.fromtimestamp(0)
-STARBOARD_REFRESH_DELAY = 1000
+STARBOARD_REFRESH_DELAY = 3000
 local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
 
@@ -212,10 +211,10 @@ async def get_or_fetch_starboard_messages(
         local_starboard_message_list_refresh_timestamp
     time_since_last_starboard_fetch = (datetime.now() - local_starboard_message_list_refresh_timestamp).total_seconds()
     if not busy_updating_starboard_messages and time_since_last_starboard_fetch > STARBOARD_REFRESH_DELAY:
-        # refresh once every 1000 seconds
+        # refresh once every STARBOARD_REFRESH_DELAY seconds
         busy_updating_starboard_messages = True
         messages: list[discord.Message] = []
-        async for star_message in starboard_channel.history(limit=1000):
+        async for star_message in starboard_channel.history(limit=None):
             messages.append(star_message)
         local_starboard_message_list = messages
         local_starboard_message_list_refresh_timestamp = datetime.now()
@@ -224,6 +223,87 @@ async def get_or_fetch_starboard_messages(
         # wait until not busy anymore
         await asyncio.sleep(1)
     return local_starboard_message_list
+
+
+async def _send_starboard_message(
+        client: Bot, message: discord.Message, starboard_channel: discord.TextChannel, reaction: discord.Reaction
+):
+    embed = discord.Embed(
+        color=discord.Colour.from_rgb(r=255, g=172, b=51),
+        title='',
+        description=f"{message.content}",
+        timestamp=message.created_at  # this, or datetime.now()
+    )
+    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+    embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
+    embed.set_footer(text=f"{message.id}")
+    if isinstance(message.author, discord.Member):
+        name = message.author.nick or message.author.name
+    else:
+        # discord.User has no `nick` attribute.
+        name = message.author.name
+    embed.set_author(
+        name=f"{name}",
+        url=f"https://original.poster/{message.author.id}/",
+        icon_url=message.author.display_avatar.url
+    )
+    embed_list = []
+    for attachment in message.attachments:
+        try:
+            if attachment.content_type.split("/")[0] == "image":  # is image or GIF
+                if len(embed_list) == 0:
+                    embed.set_image(url=attachment.url)
+                    embed_list = [embed]
+                else:
+                    # can only set one image per embed... But you can add multiple embeds :]
+                    embed = discord.Embed(
+                        color=discord.Colour.from_rgb(r=255, g=172, b=51),
+                    )
+                    embed.set_image(url=attachment.url)
+                    embed_list.append(embed)
+            else:
+                if len(embed_list) == 0:
+                    embed.set_field_at(
+                        0,
+                        name=embed.fields[0].name,
+                        value=embed.fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
+                                                      f"({attachment.content_type}))")
+                else:
+                    embed_list[0].set_field_at(
+                        0,
+                        name=embed_list[0].fields[0].name,
+                        value=embed_list[0].fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
+                                                              f"({attachment.content_type}))")
+        except AttributeError:
+            # if it is neither an image, video, application, or recognised file type:
+            if len(embed_list) == 0:
+                embed.set_field_at(
+                    0,
+                    name=embed.fields[0].name,
+                    value=embed.fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+            else:
+                embed_list[0].set_field_at(
+                    0,
+                    name=embed_list[0].fields[0].name,
+                    value=embed_list[0].fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+    if len(embed_list) == 0:
+        embed_list.append(embed)
+
+    # Add new starboard msg
+    msg = await starboard_channel.send(
+        f"💫 **{reaction.count}** | <#{message.channel.id}>",
+        embeds=embed_list,
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
+    await log_to_guild(client, starboard_channel.guild,
+                       f"{reaction.emoji} Starboard message {msg.jump_url} was "
+                       f"created from {message.jump_url}. "
+                       f"Content: \"\"\"{message.content[:1000]}\"\"\" and "
+                       f"attachments: {[att.url for att in message.attachments]}")
+    # add star reaction to original message to prevent message from being re-added to the starboard
+    await msg.add_reaction(reaction.emoji)
+    await msg.add_reaction("❌")
+    local_starboard_message_list.append(msg)
 
 
 class Starboard(commands.Cog):
@@ -292,6 +372,7 @@ class Starboard(commands.Cog):
 
         for reaction in message.reactions:
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
+                # So reaction.emoji == starboard_emoji
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
                     starboard_messages = await get_or_fetch_starboard_messages(star_channel)
@@ -323,81 +404,7 @@ class Starboard(commands.Cog):
                             f'They might have blocked Rina...')
                         return
 
-                    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
-                    embed = discord.Embed(
-                        color=discord.Colour.from_rgb(r=255, g=172, b=51),
-                        title='',
-                        description=f"{message.content}",
-                        timestamp=datetime.now()
-                    )
-                    embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
-                    embed.set_footer(text=f"{message.id}")
-                    if isinstance(message.author, discord.Member):
-                        name = message.author.nick or message.author.name
-                    else:
-                        name = message.author.name
-                    embed.set_author(
-                        name=f"{name}",
-                        url=f"https://original.poster/{message.author.id}/",
-                        icon_url=message.author.display_avatar.url
-                    )
-                    embed_list = []
-                    for attachment in message.attachments:
-                        try:
-                            if attachment.content_type.split("/")[0] == "image":  # is image or GIF
-                                if len(embed_list) == 0:
-                                    embed.set_image(url=attachment.url)
-                                    embed_list = [embed]
-                                else:
-                                    # can only set one image per embed... But you can add multiple embeds :]
-                                    embed = discord.Embed(
-                                        color=discord.Colour.from_rgb(r=255, g=172, b=51),
-                                    )
-                                    embed.set_image(url=attachment.url)
-                                    embed_list.append(embed)
-                            else:
-                                if len(embed_list) == 0:
-                                    embed.set_field_at(
-                                        0,
-                                        name=embed.fields[0].name,
-                                        value=embed.fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
-                                                                      f"({attachment.content_type}))")
-                                else:
-                                    embed_list[0].set_field_at(
-                                        0,
-                                        name=embed_list[0].fields[0].name,
-                                        value=embed_list[0].fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
-                                                                              f"({attachment.content_type}))")
-                        except AttributeError:
-                            # if it is neither an image, video, application, or recognised file type:
-                            if len(embed_list) == 0:
-                                embed.set_field_at(
-                                    0,
-                                    name=embed.fields[0].name,
-                                    value=embed.fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
-                            else:
-                                embed_list[0].set_field_at(
-                                    0,
-                                    name=embed_list[0].fields[0].name,
-                                    value=embed_list[0].fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
-                    if len(embed_list) == 0:
-                        embed_list.append(embed)
-
-                    msg = await star_channel.send(
-                        f"💫 **{reaction.count}** | <#{message.channel.id}>",
-                        embeds=embed_list,
-                        allowed_mentions=discord.AllowedMentions.none(),
-                    )
-                    await log_to_guild(self.client, star_channel.guild,
-                                       f"{starboard_emoji} Starboard message {msg.jump_url} was "
-                                       f"created from {message.jump_url}. "
-                                       f"Content: \"\"\"{message.content[:1000]}\"\"\" and "
-                                       f"attachments: {[x.url for x in message.attachments]}")
-                    # add new starboard msg
-                    await msg.add_reaction(starboard_emoji)
-                    await msg.add_reaction("❌")
-                    local_starboard_message_list.append(msg)
-                    # add star reaction to original message to prevent message from being re-added to the starboard
+                    await _send_starboard_message(self.client, message, star_channel, reaction)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
