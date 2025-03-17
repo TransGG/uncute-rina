@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta  # for logging, to show log time; and for parsetime
+from datetime import datetime, timedelta, timezone  # for logging, to show log time; and for parsetime
 import logging  # for debug (logger.info)
 import warnings  # for debug (if given wrong color)
 
@@ -119,7 +119,7 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
             warnings.warn("Invalid color given for debug function: " + color, SyntaxWarning)
             color = "default"
     if add_time:
-        time = f"{colors[color]}[{datetime.now().strftime('%H:%M:%S.%f')}] [INFO]: "
+        time = f"{colors[color]}[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}] [INFO]: "
     else:
         time = colors[color]
     logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -176,7 +176,7 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
     ----------
     :class:`KeyError`
         if client.vcLog channel is undefined.
-        Note: It still outputs the given messge to console and to the client's default log channel.
+        Note: It still outputs the given message to console and to the client's default log channel.
 
     Returns
     -----------

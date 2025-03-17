@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from time import mktime
 # ^ for /delete_week_selfies (within 7 days), and /version startup time parsing to discord unix <t:1234:F>
 import requests  # to fetch from GitHub and see Rina is running the latest version
 
@@ -64,7 +63,7 @@ class StaffAddons(commands.Cog):
             await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)",
                                             ephemeral=True)
             return
-        time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
+        time_now = int(datetime.now().timestamp())  # get time in unix
         if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
             await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
             return
@@ -81,9 +80,10 @@ class StaffAddons(commands.Cog):
             # current ephemeral message's count content (status of deleting messages)
             feedback_output_count_status: int = 0
             async for message in itx.channel.history(limit=None,
-                                                     before=datetime.now() - timedelta(days=6, hours=23, minutes=30),
+                                                     before=(datetime.now().astimezone() -
+                                                             timedelta(days=6, hours=23, minutes=30)),
                                                      oldest_first=True):
-                message_date = int(mktime(message.created_at.timetuple()))
+                message_date = int(message.created_at.timestamp())
                 if "[info]" in message.content.lower() and is_staff(message.guild, message.author):
                     continue
                 if time_now - message_date > 14 * 86400:
@@ -128,7 +128,7 @@ class StaffAddons(commands.Cog):
         # get most recently pushed bot version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]
-        unix = int(mktime(self.client.startup_time.timetuple()))
+        unix = intself.client.startup_time.timetuple()
         for i in range(len(latest_version.split("."))):
             if int(latest_version.split(".")[i]) > int(self.client.version.split(".")[i]):
                 await itx.response.send_message(
@@ -150,4 +150,3 @@ class StaffAddons(commands.Cog):
         await self.client.tree.sync()
         self.client.commandList = await self.client.tree.fetch_commands()
         await itx.response.send_message("Updated commands")
-

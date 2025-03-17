@@ -96,12 +96,12 @@ def test_iso_date_timeshort_timezone():
     # Arrange
     current_time = _get_custom_time1()
     datetime_string = current_time.strftime('%Y-%m-%dT%I:%M:%S+0100')  # 2025-03-01T4:01:05+0100
-    current_time = current_time.replace(tzinfo=None)
     itx = CustomObject(created_at=current_time)
     func = _parse_reminder_time(itx, datetime_string)
 
     # Act
     reminder_time, _ = asyncio.run(func)
+    current_time = current_time.astimezone()
 
     # Assert
     assert current_time == reminder_time
@@ -141,12 +141,9 @@ def test_iso_date_timelong_timezone():
     # Act
     reminder_time1, _ = asyncio.run(func1)
     reminder_time2, _ = asyncio.run(func2)
-
-    correct_1equality = reminder_time1 + timedelta(hours=1)
-
+    
     # Assert
-    assert reminder_time1 != reminder_time2
-    assert correct_1equality == reminder_time2
+    assert reminder_time1.astimezone() == reminder_time2.astimezone() + timedelta(hours=1)
 
 
 def test_iso_time_timezone():
@@ -159,6 +156,7 @@ def test_iso_time_timezone():
 
     # Act
     reminder_time, _ = asyncio.run(func)
+    current_time = current_time.astimezone()
 
     # Assert
     # same as test_..._timeshort(), but using %H instead of %I. This means the time will be padded to 2 characters.

@@ -24,5 +24,5 @@ class BumpReminder(commands.Cog):
                     bump_bot_id = await self.client.get_guild_info(message.guild, "bumpBot")
 
                     if message.author.id == bump_bot_id:
-                        remindertime = datetime.now() + timedelta(hours=2)
+                        remindertime = datetime.now().astimezone() + timedelta(hours=2)
                         BumpReminderObject(self.client, message.guild, remindertime)

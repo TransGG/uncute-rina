@@ -12,6 +12,6 @@ class TimestampParseError(Exception):
 
 
 class UnixTimestampInPastException(Exception):
-    def __init__(self, unix_timestamp_string: str, creation_time: datetime):
-        self.unix_timestamp_string = unix_timestamp_string
+    def __init__(self, distance: datetime, creation_time: datetime):
+        self.distance = distance
         self.creation_time = creation_time

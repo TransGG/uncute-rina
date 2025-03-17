@@ -1,7 +1,6 @@
 import json
 import re  # to parse and remove https:/pronouns.page/ in-text page linking
 from datetime import datetime
-from time import mktime  # for urbandictionary post creation time
 import requests  # for API calls to dictionary apis
 
 import discord
@@ -371,12 +370,12 @@ class TermDictionary(commands.Cog):
                                           title=f"__{result['word'].capitalize()}__",
                                           description=result['definition'],
                                           url=result['permalink'])
-                    post_date = int(mktime(
+                    post_date = int(
                         datetime.strptime(
                             result['written_on'][:-1],  # "2009-03-04T01:16:08.000Z" ([:-1] to remove Z at end)
                             "%Y-%m-%dT%H:%M:%S.%f"
-                        ).timetuple()
-                    ))
+                        ).timestamp()
+                    )
                     warning = ""
                     if len(result['example']) > 800:
                         warning = "... (shortened due to size)"

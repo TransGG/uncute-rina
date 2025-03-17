@@ -47,9 +47,8 @@ async def _get_vc_activity(
     output: list[tuple[float, tuple[int, str], tuple[int, str] | None, tuple[
         int, str] | None]] = []  # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
 
-    async for message in voice_log_channel.history(after=datetime.fromtimestamp(min_time, tz=datetime.now().tzinfo),
-                                                   before=datetime.fromtimestamp(max_time,
-                                                                                 tz=datetime.now().tzinfo),
+    async for message in voice_log_channel.history(after=datetime.fromtimestamp(min_time, tz=timezone.utc),
+                                                   before=datetime.fromtimestamp(max_time, tz=timezone.utc),
                                                    limit=msg_limit,
                                                    oldest_first=True):
         # oldest_first is by default true, since "after" != None, oldest_first will be true anyway.

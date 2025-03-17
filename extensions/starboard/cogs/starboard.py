@@ -11,7 +11,7 @@ from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
 starboard_message_ids_marked_for_deletion = []
-local_starboard_message_list_refresh_timestamp = datetime.fromtimestamp(0)
+local_starboard_message_list_refresh_timestamp = datetime.fromtimestamp(0, timezone.utc)
 STARBOARD_REFRESH_DELAY = 3000
 local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
@@ -212,7 +212,9 @@ async def _get_or_fetch_starboard_messages(
     """
     global busy_updating_starboard_messages, local_starboard_message_list, \
         local_starboard_message_list_refresh_timestamp
-    time_since_last_starboard_fetch = (datetime.now() - local_starboard_message_list_refresh_timestamp).total_seconds()
+    time_since_last_starboard_fetch = (
+            datetime.now().astimezone() - local_starboard_message_list_refresh_timestamp
+    ).total_seconds()
     if not busy_updating_starboard_messages and time_since_last_starboard_fetch > STARBOARD_REFRESH_DELAY:
         # refresh once every STARBOARD_REFRESH_DELAY seconds
         busy_updating_starboard_messages = True
@@ -220,7 +222,7 @@ async def _get_or_fetch_starboard_messages(
         async for star_message in starboard_channel.history(limit=None):
             messages.append(star_message)
         local_starboard_message_list = messages
-        local_starboard_message_list_refresh_timestamp = datetime.now()
+        local_starboard_message_list_refresh_timestamp = datetime.now().astimezone()
         busy_updating_starboard_messages = False
     while busy_updating_starboard_messages:
         # wait until not busy anymore

@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from time import mktime  # for logging emoji last use time
 import sys  # for integer max value: sys.maxsize
 import motor.core as motorcore  # for typing
 from pymongo import DESCENDING
@@ -35,7 +34,7 @@ async def _add_to_sticker_data(sticker_name: str, async_rina_db: motorcore.Agnos
     # increment the usage of the sticker in the dictionary
     await collection.update_one(query, {"$inc": {location: 1}}, upsert=True)
     await collection.update_one(query, {
-        "$set": {"lastUsed": mktime(datetime.now(timezone.utc).timetuple()), "name": sticker_name}}, upsert=True)
+        "$set": {"lastUsed": datetime.now().timestamp(), "name": sticker_name}}, upsert=True)
 
 
 class StickerStats(commands.Cog):

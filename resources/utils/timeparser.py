@@ -85,11 +85,11 @@ class TimeParser:
                     # Also assigning to tuples doesn't save in list, so need list ref too.
                     break
             else:
-                raise ValueError(f"Datetime unit '{time_unit[1]}' not recognised!")
+                raise ValueError(f"Datetime unit '{time_units[unit_index]}' not recognised!")
         return time_units
 
     @staticmethod
-    def parse_date(time_string: str, start_date: datetime = datetime.now()) -> datetime:
+    def parse_date(time_string: str, start_date: datetime = datetime.now().astimezone()) -> datetime:
         """
         Helper function to turn strings like "3d5h10min4seconds" to a datetime in the future.
 
@@ -102,7 +102,7 @@ class TimeParser:
 
         Returns
         --------
-        :class:`datetime`:
+        :class:`datetime.datetime`:
             A datetime with an offset in the future (relative to the given datetime input) matching the input string.
 
         Raises
@@ -188,7 +188,8 @@ class TimeParser:
 
         timedict = {i: int(timedict[i]) for i in timedict}  # round everything down to the nearest whole number
 
-        distance = datetime(timedict["y"], timedict["M"], 1, timedict["h"], timedict["m"], timedict["s"])
+        distance = datetime(timedict["y"], timedict["M"], 1, timedict["h"], timedict["m"], timedict["s"],
+                            tzinfo=start_date.tzinfo)
         # cause you cant have >31 days in a month, but if overflow is given, then let
         # this timedelta calculate the new months/years
         distance += timedelta(days=timedict["d"])

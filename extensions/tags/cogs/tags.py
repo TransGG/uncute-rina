@@ -1,6 +1,5 @@
 import typing  # for typing.Callable: for list of [tag send functions].
 from datetime import datetime  # to make report tag auto-trigger at most once every 15 minutes
-from time import mktime
 
 import discord
 import discord.app_commands as app_commands
@@ -14,7 +13,7 @@ from resources.utils.utils import get_mod_ticket_channel_id  # for ticket channe
 from extensions.tags.tags import Tags, tag_info_dict
 
 # to prevent excessive spamming when multiple people mention staff. A sorta cooldown
-report_message_reminder_unix = 0  # int(mktime(datetime.now().timetuple()))
+report_message_reminder_unix = 0  # int(datetime.now().timestamp())
 
 
 async def _tag_autocomplete(itx: discord.Interaction, current: str):
@@ -68,7 +67,7 @@ class TagFunctions(commands.Cog):
                                    #    "<@&1087014898418061367>", # enbyplace admin
                                    ]:
             if staff_role_mention in message.content:
-                time_now = int(mktime(datetime.now().timetuple()))  # get time in unix
+                time_now = int(datetime.now().timestamp())  # get time in unix
                 if time_now - report_message_reminder_unix > 900:  # 15 minutes
                     await Tags().send_report_info("report", message.channel, self.client,
                                                   additional_info=[message.author.name, message.author.id])
