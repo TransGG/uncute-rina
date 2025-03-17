@@ -61,8 +61,14 @@ class SearchAddons(commands.Cog):
                 await itx.response.send_message(f"I'm sorry, I couldn't find '{country_id}'...", ephemeral=True)
             return
         elif "error" in data:
-            await itx.response.send_message(f"Error code: {response.status_code}\n"
-                                            f"I'm sorry, I couldn't find '{country_id}'.", ephemeral=True)
+            if country_id != country_id.upper():
+                await itx.response.send_message(f"Error code: {response.status_code}\n"
+                                                f"I'm sorry, I couldn't find '{country_id}'.\n"
+                                                f"Have you tried using uppercase? Try with "
+                                                f"`country_id:{country_id.upper()}`", ephemeral=True)
+            else:
+                await itx.response.send_message(f"Error code: {response.status_code}\n"
+                                                f"I'm sorry, I couldn't find '{country_id}'.", ephemeral=True)
             return
 
         region = EqualDexRegion(data['regions']['region'])

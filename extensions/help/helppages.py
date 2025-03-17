@@ -477,7 +477,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "`country_id`: The ID of the country you want to look up.\n"
                 "- The short ID form of a country. Some examples: America: US, Germany: DE, Canada: CA\n"
                 "- For more information, see [Wikipedia/ISO_3166#Officially_assigned_code_elements]"
-                "(https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)"
+                "(https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)\n"
+                "- It appears lowercase country codes don't work :p. So use uppercase: \"de\" vs \"DE\"."
             ),
             (
                 "Examples",
