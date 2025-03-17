@@ -1,6 +1,5 @@
 import asyncio  # to create new reminder task that runs immediately (from a not-async ReminderObject __init__ function)
-from datetime import datetime, timedelta
-from time import mktime
+from datetime import datetime, timedelta, timezone
 
 import discord
 
@@ -33,9 +32,9 @@ class ReminderObject:
         self.alert = ""
 
         if continued:
-            # self.remindertime = self.remindertime+(datetime.now()-datetime.utcnow())
-            # self.creationtime = self.creationtime+(datetime.now()-datetime.utcnow())
-            if self.remindertime < datetime.now():
+            # self.remindertime = self.remindertime.astimezone()
+            # self.creationtime = self.creationtime.astimezone()
+            if self.remindertime < datetime.now().astimezone():
                 self.alert = ("Your reminder was delayed. Probably because the bot was offline for a while. I "
                               "hope it didn't cause much of an issue!\n")
                 try:
@@ -45,7 +44,7 @@ class ReminderObject:
                 return
             client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
         else:
-            if self.remindertime < datetime.now():
+            if self.remindertime < datetime.now().astimezone():
                 self.alert = ("Your reminder date/time has passed already. Perhaps the bot was offline for "
                               "a while; perhaps you just filled in a time in the past!\n")
                 try:
@@ -55,8 +54,8 @@ class ReminderObject:
                 return
             collection = self.client.rina_db["reminders"]
             reminder_data: ReminderDict = {
-                "creationtime": int(mktime(creationtime.timetuple())),
-                "remindertime": int(mktime(remindertime.timetuple())),
+                "creationtime": int(creationtime.timestamp()),
+                "remindertime": int(remindertime.timestamp()),
                 "reminder": reminder,
             }
             user_reminders.append(reminder_data)
@@ -67,7 +66,7 @@ class ReminderObject:
 
     async def send_reminder(self):
         user = await self.client.fetch_user(self.userID)
-        creationtime = int(mktime(self.creationtime.timetuple()))
+        creationtime = int(self.creationtime.timestamp())
         try:
             await user.send(f"{self.alert}On <t:{creationtime}:F>, you asked to be reminded of \"{self.reminder}\".")
         except discord.errors.Forbidden:
@@ -78,7 +77,7 @@ class ReminderObject:
         index_subtraction = 0
         for reminder_index in range(len(db_data['reminders'])):
             if db_data['reminders'][reminder_index - index_subtraction]["remindertime"] <= int(
-                    mktime(datetime.now().timetuple())):
+                    datetime.now().timestamp()):
                 del db_data['reminders'][reminder_index - index_subtraction]
                 index_subtraction += 1
                 # See... If more than 1 reminder is placed at the same time, we don't want the reminder that is
@@ -104,7 +103,7 @@ async def _handle_reminder_timestamp_parsing(
     if reminder_datetime.count("t") == 1:
         # check input character validity
         for char in reminder_datetime:
-            if char not in "0123456789-t:+":
+            if char not in "0123456789-t:+z":  # z for timezone +0000
                 raise ValueError(f"`{char}` cannot be used for a reminder date/time.")
 
         date, time = reminder_datetime.split("t")
@@ -139,7 +138,7 @@ async def _handle_reminder_timestamp_parsing(
                          "Please add the timezone like so '-0100' or '+0900'.")
 
     # convert given time string to valid datetime
-    timestamp_format = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dt%H:%M%z", "%Y-%m-%d"][mode.value]
+    timestamp_format = ["%Y-%m-%dt%H:%M:%S%z", "%Y-%m-%dt%H:%M%z", "%Y-%m-%d"][mode.value]
     try:
         timestamp = datetime.strptime(reminder_datetime, timestamp_format)
     except ValueError:
@@ -160,7 +159,7 @@ async def _handle_reminder_timestamp_parsing(
         }
         query = f"Since a date format doesn't tell me what time you want the reminder, you can pick a time yourself:"
         for option in options:
-            query += f"\n  `{option}.` <t:{int(mktime(options[option].timetuple()))}:F>"
+            query += f"\n  `{option}.` <t:{int(options[option].timestamp())}:F>"
         view = TimeOfDaySelection(list(options))
         await itx.response.send_message(query, view=view, ephemeral=True)
         await view.wait()
@@ -170,21 +169,22 @@ async def _handle_reminder_timestamp_parsing(
         distance = options[view.value]
         itx = view.return_interaction
 
-    distance = datetime.fromtimestamp(mktime(distance.timetuple()))  # weird statement to remove timestamp awareness
+    distance = distance.astimezone(timezone.utc).replace(tzinfo=None)  # remove timestamp awareness after applying it
     return distance, itx  # New itx is returned in case the response is used by the view
 
 
-async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str, ) -> (datetime, datetime):
+async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str, ) -> tuple[datetime, datetime]:
     # Parse reminder input to get a datetime for the reminder scheduler
     _now = itx.created_at  # utc
-    creation_time = _now.astimezone(tz=datetime.now().tzinfo)
+    creation_time = _now
     distance: datetime
     try:
         possible_timestamp_datetime = reminder_datetime.replace("<t:", "").split(":")[0].replace(">", "")
         if reminder_datetime.startswith("<t:") and possible_timestamp_datetime.isdecimal():
-            if int(possible_timestamp_datetime) < mktime(datetime.timetuple(creation_time)):
-                raise UnixTimestampInPastException(possible_timestamp_datetime, creation_time)
-            distance = datetime.fromtimestamp(int(possible_timestamp_datetime))
+            distance = datetime.fromtimestamp(int(possible_timestamp_datetime), timezone.utc)
+            print(distance, distance.tzinfo)
+            if distance < creation_time:
+                raise UnixTimestampInPastException(distance, creation_time)
         else:
             reminder_datetime = ((" " + reminder_datetime)
                                  .replace(",", "")
@@ -218,7 +218,7 @@ async def _create_reminder(
         from_copy: bool = False
 ):
     reminder_object = ReminderObject(client, creation_time, distance, itx.user.id, reminder, db_data)
-    _distance = int(mktime(distance.timetuple()))
+    _distance = int(distance.timestamp())
     cmd_mention = client.get_command_mention("reminder reminders")
     view = ShareReminder()
     if from_copy:
@@ -252,14 +252,15 @@ async def parse_and_create_reminder(client: Bot, itx: discord.Interaction, remin
     try:
         distance, creation_time = await _parse_reminder_time(itx, reminder_datetime)
     except UnixTimestampInPastException as ex:
+        timestamp_unix = int(ex.distance.timestamp())
         await itx.response.send_message(
             "Couldn't make new reminder: \n"
             "> Your message was interpreted as a unix timestamp, but this timestamp would be before "
             "the current time!\n"
-            f"Given timestamp: {int(ex.unix_timestamp_string)}"
-            f"(<t:{int(ex.unix_timestamp_string)}:F>).\n"
-            f"Current time: {mktime(datetime.timetuple(ex.now))}"
-            f"(<t:{mktime(datetime.timetuple(ex.now))}:F>).\n"
+            f"Interpreted timestamp: {timestamp_unix}"
+            f"(<t:{timestamp_unix}:F>).\n"
+            f"Current time: {int(ex.creation_time.timestamp())} ({creation_time.astimezone(timezone.utc)} (UTC))"
+            f"(<t:{int(ex.creation_time.timestamp())}:F>).\n"
             ""
         )
         return
