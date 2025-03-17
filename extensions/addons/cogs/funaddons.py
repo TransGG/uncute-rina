@@ -17,14 +17,14 @@ from extensions.addons.views.math_sendpublicbutton import SendPublicButtonMath
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
-def product_in_list(mult_list: list):
+def _product_in_list(mult_list: list):
     a = 1
     for x in mult_list:
         a *= x
     return a
 
 
-def generate_roll(query: str) -> list[int]:
+def _generate_roll(query: str) -> list[int]:
     # print(query)
     temp: list[str | int] = query.split("d")
     # 2d4 = ["2","4"]
@@ -345,7 +345,7 @@ class FunAddons(commands.Cog):
                 multiply.append(section.split('*'))
             # print("multiply:  ",multiply)
             try:
-                result = [[sum(generate_roll(query)) for query in section] for section in multiply]
+                result = [[sum(_generate_roll(query)) for query in section] for section in multiply]
             except (TypeError, ValueError, OverflowError) as ex:
                 ex = repr(ex).split("(", 1)
                 ex_type = ex[0]
@@ -359,8 +359,8 @@ class FunAddons(commands.Cog):
             if "*" in advanced:
                 out += [' + '.join([' * '.join([str(x) for x in section]) for section in result])]
             if "+" in advanced or '-' in advanced:
-                out += [' + '.join([str(product_in_list(section)) for section in result])]
-            out += [str(sum([product_in_list(section) for section in result]))]
+                out += [' + '.join([str(_product_in_list(section)) for section in result])]
+            out += [str(sum([_product_in_list(section) for section in result]))]
             output = discord.utils.escape_markdown('\n= '.join(out))
             if len(output) >= 1950:
                 output = ("Your result was too long! I couldn't send it. Try making your rolls a bit smaller, "

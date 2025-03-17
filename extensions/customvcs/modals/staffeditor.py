@@ -8,7 +8,6 @@ from resources.utils.utils import log_to_guild
 
 
 class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s channel'):
-
     def __init__(self, client: Bot, vc_hub: int, vc_log, vc_category):
         super().__init__()
         self.client = client

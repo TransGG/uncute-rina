@@ -16,7 +16,7 @@ from resources.customs.bot import Bot, ApiTokenDict
 from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging crash messages
 
 from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
-from extensions.watchlist.watchlistfunctions import get_or_fetch_watchlist_index
+from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
 # ^ for fetching all watchlists on startup
 
 

@@ -13,7 +13,7 @@ import discord.ext.commands as commands
 from resources.customs.bot import Bot
 
 
-async def add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
+async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
     collection = async_rina_db["data"]
     query = {"guild_id": member.guild.id}
     data = await collection.find_one(query)
@@ -40,21 +40,21 @@ class MemberData(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        await add_to_data(member, "joined", self.client.async_rina_db)
+        await _add_to_data(member, "joined", self.client.async_rina_db)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         role = discord.utils.find(lambda r: r.name == 'Verified', member.guild.roles)
         if role in member.roles:
-            await add_to_data(member, "left verified", self.client.async_rina_db)
+            await _add_to_data(member, "left verified", self.client.async_rina_db)
         else:
-            await add_to_data(member, "left unverified", self.client.async_rina_db)
+            await _add_to_data(member, "left unverified", self.client.async_rina_db)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         role = discord.utils.find(lambda r: r.name == 'Verified', before.guild.roles)
         if role not in before.roles and role in after.roles:
-            await add_to_data(after, "verified", self.client.async_rina_db)
+            await _add_to_data(after, "verified", self.client.async_rina_db)
 
     @app_commands.command(name="getmemberdata", description="See joined, left, and recently verified users in x days")
     @app_commands.describe(lower_bound="Get data from [period] days ago",

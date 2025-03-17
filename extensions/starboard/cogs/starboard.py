@@ -17,7 +17,9 @@ local_starboard_message_list: list[discord.Message] = []
 busy_updating_starboard_messages = False
 
 
-async def delete_starboard_message(client: Bot, starboard_message: discord.Message, reason: str) -> None:
+# todo: move local_starboard_message_list functions to own file, "localstarboard" similar to watchlist
+
+async def _delete_starboard_message(client: Bot, starboard_message: discord.Message, reason: str) -> None:
     """
     Handles custom starboard message deletion messages and preventing double logging messages when
     the bot removes a starboard message.
@@ -31,6 +33,7 @@ async def delete_starboard_message(client: Bot, starboard_message: discord.Messa
     reason: :class:`str`
         The reason for deletion.
     """
+    global local_starboard_message_list
     await log_to_guild(client, starboard_message.guild, reason)
     starboard_message_ids_marked_for_deletion.append(starboard_message.id)
     await starboard_message.delete()
@@ -40,7 +43,7 @@ async def delete_starboard_message(client: Bot, starboard_message: discord.Messa
             break
 
 
-async def fetch_starboard_original_message(
+async def _fetch_starboard_original_message(
         client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji
 ) -> discord.Message | None:
     """
@@ -94,7 +97,7 @@ async def fetch_starboard_original_message(
         original_message = await ch.fetch_message(message_id)
     except discord.NotFound:
         # if original message removed, remove starboard message
-        await delete_starboard_message(client, starboard_message,
+        await _delete_starboard_message(client, starboard_message,
                                        f"{starboard_emoji} :x: Starboard message {starboard_message.id} was removed "
                                        f"(from {message_id}) (original message could not be found)")
         return
@@ -106,7 +109,7 @@ async def fetch_starboard_original_message(
     return original_message
 
 
-async def update_starboard_message_score(
+async def _update_starboard_message_score(
         client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji, downvote_init_value: int
 ) -> None:
     """
@@ -124,8 +127,8 @@ async def update_starboard_message_score(
     downvote_init_value: :class:`int`
         The minimum required votes before a negative score can cause the message to be deleted.
     """
-    original_message: discord.Message = await fetch_starboard_original_message(client, starboard_message,
-                                                                               starboard_emoji)
+    original_message: discord.Message = await _fetch_starboard_original_message(client, starboard_message,
+                                                                                starboard_emoji)
     if original_message is None:
         return
 
@@ -158,7 +161,7 @@ async def update_starboard_message_score(
 
     # if more x'es than stars, and more than [15] reactions, remove message
     if star_stat < 0 and reaction_total >= downvote_init_value:
-        await delete_starboard_message(
+        await _delete_starboard_message(
             client, starboard_message,
             f"{starboard_emoji} :x: Starboard message {starboard_message.id} was removed "
             f"(from {original_message.id}) (too many downvotes! "
@@ -188,7 +191,7 @@ async def update_starboard_message_score(
         raise
 
 
-async def get_or_fetch_starboard_messages(
+async def _get_or_fetch_starboard_messages(
         starboard_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None
 ) -> list[discord.Message]:
     """
@@ -228,6 +231,7 @@ async def get_or_fetch_starboard_messages(
 async def _send_starboard_message(
         client: Bot, message: discord.Message, starboard_channel: discord.TextChannel, reaction: discord.Reaction
 ):
+    global local_starboard_message_list
     embed = discord.Embed(
         color=discord.Colour.from_rgb(r=255, g=172, b=51),
         title='',
@@ -352,13 +356,13 @@ class Starboard(commands.Cog):
             if not self.client.is_me(message.author):
                 return  # only needs to update the message if it's a rina starboard message of course...
 
-            starboard_original_message: discord.Message | None = await fetch_starboard_original_message(self.client,
-                                                                                                        message,
-                                                                                                        starboard_emoji)
+            starboard_original_message: discord.Message | None = await _fetch_starboard_original_message(self.client,
+                                                                                                         message,
+                                                                                                         starboard_emoji)
             if (starboard_original_message is not None and
                     starboard_original_message.author.id == payload.user_id and
                     payload.emoji.name == "❌"):
-                await delete_starboard_message(
+                await _delete_starboard_message(
                     self.client,
                     message,
                     f"{starboard_emoji} :x: Starboard message {message.id} was removed "
@@ -367,7 +371,7 @@ class Starboard(commands.Cog):
                 return
 
             if len(message.embeds) > 0:
-                await update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)
+                await _update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
@@ -375,12 +379,12 @@ class Starboard(commands.Cog):
                 # So reaction.emoji == starboard_emoji
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
+                    starboard_messages = await _get_or_fetch_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await update_starboard_message_score(self.client, star_message, starboard_emoji,
-                                                                     downvote_init_value)
+                                await _update_starboard_message_score(self.client, star_message, starboard_emoji,
+                                                                      downvote_init_value)
                                 return
                     return
                 elif reaction.count == star_minimum:
@@ -428,19 +432,19 @@ class Starboard(commands.Cog):
 
         if message.channel.id == star_channel.id:
             if len(message.embeds) > 0:
-                await update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)
+                await _update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
+                    starboard_messages = await _get_or_fetch_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
-                                await update_starboard_message_score(self.client, star_message, starboard_emoji,
-                                                                     downvote_init_value)
+                                await _update_starboard_message_score(self.client, star_message, starboard_emoji,
+                                                                      downvote_init_value)
                                 return
 
     @commands.Cog.listener()
@@ -473,7 +477,7 @@ class Starboard(commands.Cog):
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
-            starboard_messages = await get_or_fetch_starboard_messages(star_channel)
+            starboard_messages = await _get_or_fetch_starboard_messages(star_channel)
             for star_message in starboard_messages:
                 for embed in star_message.embeds:
                     if embed.footer.text == str(message_payload.message_id):
@@ -488,7 +492,7 @@ class Starboard(commands.Cog):
                         except discord.NotFound:
                             msg_link = str(message_payload.message_id) + " (couldn't get jump link)"
 
-                        await delete_starboard_message(
+                        await _delete_starboard_message(
                             self.client,
                             star_message,
                             f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "

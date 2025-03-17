@@ -12,7 +12,7 @@ from resources.utils.utils import log_to_guild
 from extensions.compliments.views import ConfirmPronounsView
 
 
-async def choose_and_send_compliment(
+async def _choose_and_send_compliment(
         itx: discord.Interaction,
         user: discord.User | discord.Member,
         compliment_type: str,
@@ -140,7 +140,7 @@ async def choose_and_send_compliment(
                                                                                  roles=False, replied_user=False))
 
 
-async def send_confirm_gender_modal(itx: discord.Interaction, user: discord.User | discord.Member):
+async def _send_confirm_gender_modal(itx: discord.Interaction, user: discord.User | discord.Member):
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(
@@ -150,7 +150,7 @@ async def send_confirm_gender_modal(itx: discord.Interaction, user: discord.User
     if view.value is None:
         await itx.edit_original_response(content=':x: Timed out...', view=None)
     else:
-        await choose_and_send_compliment(itx, user, view.value, self.client.rina_db)
+        await _choose_and_send_compliment(itx, user, view.value, self.client.rina_db)
 
 
 class Compliments(commands.Cog):
@@ -295,9 +295,9 @@ class Compliments(commands.Cog):
         random.shuffle(userroles)  # pick a random order for which pronoun role to pick
         for role in userroles:
             if role.name.lower() in roles:
-                await choose_and_send_compliment(itx, user, role.name.lower(), self.client.rina_db)
+                await _choose_and_send_compliment(itx, user, role.name.lower(), self.client.rina_db)
                 return
-        await send_confirm_gender_modal(itx, user)
+        await _send_confirm_gender_modal(itx, user)
 
     @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
     @app_commands.choices(location=[

@@ -17,7 +17,7 @@ from extensions.tags.tags import Tags, tag_info_dict
 report_message_reminder_unix = 0  # int(mktime(datetime.now().timetuple()))
 
 
-async def tag_autocomplete(itx: discord.Interaction, current: str):
+async def _tag_autocomplete(itx: discord.Interaction, current: str):
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
 
@@ -28,7 +28,7 @@ async def tag_autocomplete(itx: discord.Interaction, current: str):
            ][:15]
 
 
-async def role_autocomplete(itx: discord.Interaction, current: str):
+async def _role_autocomplete(itx: discord.Interaction, current: str):
     role_options = {
         1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
         1126160612620243044: ("Hide Venting channel role", "NVA")  # NVA
@@ -79,7 +79,7 @@ class TagFunctions(commands.Cog):
     @app_commands.describe(tag="What tag do you want more information about?")
     @app_commands.describe(public="Show everyone in chat? (default: yes)")
     @app_commands.describe(anonymous="Hide your name when sending the message publicly? (default: yes)")
-    @app_commands.autocomplete(tag=tag_autocomplete)
+    @app_commands.autocomplete(tag=_tag_autocomplete)
     async def tag(self, itx: discord.Interaction, tag: str, public: bool = True, anonymous: bool = True):
         options = [i for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
         tag = tag.lower()
@@ -99,7 +99,7 @@ class TagFunctions(commands.Cog):
 
     @app_commands.command(name="remove-role", description="Remove one of your agreement roles")
     @app_commands.describe(role_name="The name of the role to remove")
-    @app_commands.autocomplete(role_name=role_autocomplete)
+    @app_commands.autocomplete(role_name=_role_autocomplete)
     async def remove_role(self, itx: discord.Interaction, role_name: str):
         role_options = {
             "npa": ["NPA", 1126160553145020460],

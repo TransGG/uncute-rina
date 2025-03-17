@@ -119,7 +119,7 @@ conversion_rates = {  # [default 0, incrementation]
 }
 
 
-def get_emoji_from_str(
+def _get_emoji_from_str(
         client: Bot, emoji_str: str | None
 ) -> discord.Emoji | discord.PartialEmoji | None:
     """
@@ -160,7 +160,7 @@ def get_emoji_from_str(
         return emoji
 
 
-async def unit_autocomplete(itx: discord.Interaction, current: str):
+async def _unit_autocomplete(itx: discord.Interaction, current: str):
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
@@ -227,9 +227,9 @@ class OtherAddons(commands.Cog):
                            from_unit="Which unit do you want to convert from?",
                            public="Do you want to share the result with everyone in chat?")
     @app_commands.rename(from_unit='from')
-    @app_commands.autocomplete(from_unit=unit_autocomplete)
+    @app_commands.autocomplete(from_unit=_unit_autocomplete)
     @app_commands.rename(from_unit='to')
-    @app_commands.autocomplete(to_unit=unit_autocomplete)
+    @app_commands.autocomplete(to_unit=_unit_autocomplete)
     async def convert_unit(
             self, itx: discord.Interaction, mode: str, from_unit: str, value: float, to_unit: str, public: bool = False
     ):
@@ -297,17 +297,17 @@ class OtherAddons(commands.Cog):
         else:
             errors.append("- The message ID needs to be a number!")
 
-        upvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = get_emoji_from_str(self.client, upvote_emoji)
+        upvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client, upvote_emoji)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
 
-        downvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = get_emoji_from_str(self.client, downvote_emoji)
+        downvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client, downvote_emoji)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
 
         if neutral_emoji is None:
-            neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = get_emoji_from_str(self.client,
-                                                                                              neutral_emoji)
+            neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client,
+                                                                                               neutral_emoji)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 

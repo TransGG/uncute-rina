@@ -11,7 +11,7 @@ import discord.ext.commands as commands
 from resources.customs.bot import Bot
 
 
-async def add_to_sticker_data(sticker_name: str, async_rina_db: motorcore.AgnosticDatabase, sticker_id: str):
+async def _add_to_sticker_data(sticker_name: str, async_rina_db: motorcore.AgnosticDatabase, sticker_id: str):
     """
     Helper function to add sticker data to the mongo database when a sticker is sent in chat.
 
@@ -53,7 +53,7 @@ class StickerStats(commands.Cog):
         for sticker in message.stickers:
             # if sticker in message.guild.stickers:
             #     # only track if it's actually a guild's sticker; not some outsider one
-            await add_to_sticker_data(sticker.name, self.client.async_rina_db, str(sticker.id))
+            await _add_to_sticker_data(sticker.name, self.client.async_rina_db, str(sticker.id))
 
     @stickerstats.command(name="getstickerdata", description="Get sticker usage data from an ID!")
     @app_commands.rename(sticker_name="sticker")

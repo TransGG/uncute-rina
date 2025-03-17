@@ -25,7 +25,7 @@ from extensions.emojistats.emojisendsource import EmojiSendSource
 # reactionUsedCount = 8                             #  int  of how often messages have been replied to with this emoji
 
 
-async def add_to_emoji_data(
+async def _add_to_emoji_data(
         emoji: tuple[bool, str, str],
         async_rina_db: motorcore.AgnosticDatabase,
         location: EmojiSendSource,
@@ -102,14 +102,14 @@ class EmojiStats(commands.Cog):
             start_index += emoji.span()[1]  # (11,29) for example
 
         for emoji in emojis:
-            await add_to_emoji_data(emoji, self.client.async_rina_db, location=EmojiSendSource.MESSAGE)
+            await _add_to_emoji_data(emoji, self.client.async_rina_db, location=EmojiSendSource.MESSAGE)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
         if reaction.emoji.id is not None:
-            await add_to_emoji_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)),
-                                    self.client.async_rina_db,
-                                    location=EmojiSendSource.REACTION)
+            await _add_to_emoji_data((reaction.emoji.animated, reaction.emoji.name, str(reaction.emoji.id)),
+                                     self.client.async_rina_db,
+                                     location=EmojiSendSource.REACTION)
 
     @emojistats.command(name="getemojidata", description="Get emoji usage data from an ID!")
     @app_commands.rename(emoji_name="emoji")

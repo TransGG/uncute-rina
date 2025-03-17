@@ -17,7 +17,7 @@ from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
 
 
-async def get_vc_activity(
+async def _get_vc_activity(
         voice_log_channel: discord.abc.Messageable,
         min_time: float,
         max_time: float,
@@ -277,7 +277,7 @@ class VCLogReader(commands.Cog):
         min_time: float = current_time - lower_bound
         max_time: float = current_time - upper_bound
 
-        events = await get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
+        events = await _get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
 
         if max_time == current_time:  # current_time - 0 == current_time
             # if looking until the current time/date, add fake "leave" event for every person that is currently

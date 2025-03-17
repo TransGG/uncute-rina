@@ -15,7 +15,7 @@ appcommanderror_cooldown: datetime = datetime.fromtimestamp(0)
 commanderror_cooldown: datetime = datetime.fromtimestamp(0)
 
 
-async def send_crash_message(
+async def _send_crash_message(
         client: Bot,
         error_type: str,
         traceback_text: str,
@@ -116,7 +116,7 @@ class CrashHandling(commands.Cog):
             # within 10 seconds
             return
         msg = traceback.format_exc()
-        await send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
+        await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
         commanderror_cooldown = datetime.now()
 
     async def on_app_command_error(self, itx: discord.Interaction, error):
@@ -175,6 +175,6 @@ class CrashHandling(commands.Cog):
         # details: /help `page:1` `param2:hey`
         command_details = f"</{itx.command.name}:{itx.data.get('id')}> " + ' '.join(
             [f"`{k}:{v}`" for k, v in itx.namespace.__dict__.items()])
-        await send_crash_message(self.client, "AppCommand Error", msg, command_details,
-                                 discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
+        await _send_crash_message(self.client, "AppCommand Error", msg, command_details,
+                                  discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
         appcommanderror_cooldown = datetime.now()

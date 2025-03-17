@@ -7,7 +7,7 @@ import discord.ext.commands as commands
 from resources.customs.bot import Bot
 from resources.utils.permissions import is_staff  # to test staff roles
 
-from extensions.watchlist.watchlistfunctions import get_or_fetch_watchlist_index, add_to_watchlist_cache
+from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache
 from extensions.watchlist.modals import WatchlistReasonModal
 
 
