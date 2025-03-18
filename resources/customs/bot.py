@@ -1,11 +1,11 @@
 from datetime import datetime  # for startup and crash logging, and Reminders
-
-import discord  # for main discord bot functionality
-import discord.ext.commands as commands
 import motor.core as motorcore  # for typing
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 from typing import Literal, TypedDict
+
+import discord  # for main discord bot functionality
+import discord.ext.commands as commands
 
 
 ApiTokenDict = TypedDict('ApiTokenDict',
@@ -13,12 +13,12 @@ ApiTokenDict = TypedDict('ApiTokenDict',
 
 
 class Bot(commands.Bot):
-    startup_time = datetime.now()  # bot uptime start, used in /version in cmd_staffaddons
+    startup_time = datetime.now().astimezone()  # bot uptime start, used in /version in cmd_staffaddons
 
     commandList: list[discord.app_commands.AppCommand]
     log_channel: discord.TextChannel | discord.Thread
     bot_owner: discord.User  # for AllowedMentions in on_appcommand_error()
-    reminder_scheduler: AsyncIOScheduler  # for Reminders
+    sched: AsyncIOScheduler  # for Reminders
     running_on_production = True
 
     def __init__(
