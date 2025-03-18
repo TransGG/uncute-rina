@@ -142,8 +142,8 @@ class FunAddons(commands.Cog):
         # adding headpats on abababa or awawawawa
         msg_content = message.content.lower()
         if not added_pat and len(msg_content) > 5 and (msg_content.startswith("aba") or msg_content.startswith("awa")):
-            msg_content = msg_content.replace("ab", "").replace("aw", "")
-            if msg_content == "a":
+            replaced = msg_content.replace("ab", "").replace("aw", "")
+            if replaced == "a":
                 try:
                     added_pat = True
                     await message.add_reaction("<:TPF_02_Pat:968285920421875744>")

@@ -21,7 +21,7 @@ from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 
-BOT_VERSION = "1.4.1.0"
+BOT_VERSION = "1.4.1.1"
 
 EXTENSIONS = [
     "addons",
