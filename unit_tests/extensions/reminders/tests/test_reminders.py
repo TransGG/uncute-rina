@@ -98,16 +98,42 @@ def test_discord_timestamp():
 def test_iso_date_timeshort_timezone():
     # Arrange
     current_time = _get_custom_time1()
-    datetime_string = current_time.strftime('%Y-%m-%dT%I:%M:%S+0100')  # 2025-03-01T4:01:05+0100
+    date_string1 = current_time.strftime('%Y-%m-%dT%I:%M:%S+0900')  # 2025-03-01T04:01:05+0100
+    date_string2 = current_time.strftime('%Y-%m-%dT%I:%M:%S+1000')  # 2025-03-01T04:01:05+0100
+
+    assert date_string1.endswith("+0900")
+    assert date_string2.endswith("+1000")
+    assert date_string1 != date_string2
+
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func1 = _parse_reminder_time(itx, date_string1)
+    func2 = _parse_reminder_time(itx, date_string2)
 
     # Act
-    reminder_time, _ = asyncio.run(func)
-    current_time = current_time.astimezone()
+    reminder_time1, _ = asyncio.run(func1)
+    reminder_time2, _ = asyncio.run(func2)
 
     # Assert
-    assert current_time == reminder_time
+    assert reminder_time1.astimezone() == reminder_time2.astimezone() + timedelta(hours=1)
+
+
+def test_iso_date_timelong_timezone():
+    # Arrange
+    current_time = _get_custom_time1()
+    date_string1 = current_time.strftime('%Y-%m-%dT%H:%M:%S+0900')  # 2025-03-01T04:01:05+0100
+    date_string2 = current_time.strftime('%Y-%m-%dT%H:%M:%S+1000')  # 2025-03-01T04:01:05+0100
+
+    itx = CustomObject(created_at=current_time)
+    func1 = _parse_reminder_time(itx, date_string1)
+    func2 = _parse_reminder_time(itx, date_string2)
+
+    # Act
+    reminder_time1, _ = asyncio.run(func1)
+    reminder_time2, _ = asyncio.run(func2)
+
+    # Assert
+    # same as test_..._timeshort(), but using %H instead of %I. This means the time will be padded to 2 characters.
+    assert reminder_time1.astimezone() == reminder_time2.astimezone() + timedelta(hours=1)
 
 
 def test_iso_date_matches_unix_timestamp():
@@ -126,27 +152,6 @@ def test_iso_date_matches_unix_timestamp():
 
     # Assert
     assert timezone_correction1 == reminder_time2
-
-def test_iso_date_timelong_timezone():
-    # Arrange
-    current_time = _get_custom_time1()
-    date_string1 = current_time.strftime('%Y-%m-%dT%H:%M:%S+0900')  # 2025-03-01T04:01:05+0100
-    date_string2 = current_time.strftime('%Y-%m-%dT%H:%M:%S+1000')  # 2025-03-01T04:01:05+0100
-
-    assert date_string1.endswith("+0900")
-    assert date_string2.endswith("+1000")
-    assert date_string1 != date_string2
-
-    itx = CustomObject(created_at=current_time)
-    func1 = _parse_reminder_time(itx, date_string1)
-    func2 = _parse_reminder_time(itx, date_string2)
-
-    # Act
-    reminder_time1, _ = asyncio.run(func1)
-    reminder_time2, _ = asyncio.run(func2)
-    
-    # Assert
-    assert reminder_time1.astimezone() == reminder_time2.astimezone() + timedelta(hours=1)
 
 # endregion Functional mechanics
 
