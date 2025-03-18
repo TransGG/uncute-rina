@@ -140,7 +140,7 @@ async def _choose_and_send_compliment(
                                                                                  roles=False, replied_user=False))
 
 
-async def _send_confirm_gender_modal(itx: discord.Interaction, user: discord.User | discord.Member):
+async def _send_confirm_gender_modal(client: Bot, itx: discord.Interaction, user: discord.User | discord.Member):
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(
@@ -150,7 +150,7 @@ async def _send_confirm_gender_modal(itx: discord.Interaction, user: discord.Use
     if view.value is None:
         await itx.edit_original_response(content=':x: Timed out...', view=None)
     else:
-        await _choose_and_send_compliment(itx, user, view.value, self.client.rina_db)
+        await _choose_and_send_compliment(itx, user, view.value, client.rina_db)
 
 
 class Compliments(commands.Cog):
@@ -297,7 +297,7 @@ class Compliments(commands.Cog):
             if role.name.lower() in roles:
                 await _choose_and_send_compliment(itx, user, role.name.lower(), self.client.rina_db)
                 return
-        await _send_confirm_gender_modal(itx, user)
+        await _send_confirm_gender_modal(self.client, itx, user)
 
     @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
     @app_commands.choices(location=[

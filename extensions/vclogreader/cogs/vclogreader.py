@@ -2,6 +2,7 @@ import traceback  # to pass traceback into error return message
 from datetime import datetime, timezone  # to plot and sort voice chat logs
 import matplotlib.pyplot as plt
 import pandas as pd  # to plot voice channel timeline graph
+import typing
 
 import discord
 import discord.app_commands as app_commands

@@ -223,7 +223,7 @@ def _is_vc_custom(
     )  # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
 
 
-def _is_vctable_owner(channel: discord.VoiceChannel, target: discord.Role | discord.Member) -> bool:
+def _is_vc_table_owner(channel: discord.VoiceChannel, target: discord.Role | discord.Member) -> bool:
     if target not in channel.overwrites:
         return False
     return channel.overwrites[target].connect
@@ -766,7 +766,7 @@ class CustomVcs(commands.Cog):
         if channel is None:
             return
 
-        if not is_vc_table_owner(channel, itx.user):
+        if not _is_vc_table_owner(channel, itx.user):
             if not from_event:
                 cmd_mention = self.client.get_command_mention('vctable create')
                 await itx.response.send_message(
@@ -910,7 +910,7 @@ class CustomVcs(commands.Cog):
                                                 f"a vctable, or whitelist connecting and speaking. Give this to "
                                                 f"people you believe can help you with this.", ephemeral=True)
                 return
-            if is_vc_table_owner(channel, user):
+            if _is_vc_table_owner(channel, user):
                 await itx.response.send_message(f"This user is already an owner!", ephemeral=True)
                 return
             await channel.set_permissions(user, connect=True, speak=True, view_channel=True,
@@ -935,7 +935,7 @@ class CustomVcs(commands.Cog):
                                                 f"to delete in the `user: ` argument.",
                                                 ephemeral=True)
                 return
-            if not is_vc_table_owner(channel, user):
+            if not _is_vc_table_owner(channel, user):
                 await itx.response.send_message(
                     "This user wasn't an owner yet.. Try taking someone else's ownership away.", ephemeral=True)
                 return
@@ -951,7 +951,7 @@ class CustomVcs(commands.Cog):
             channel = await self.get_current_channel(itx, "check owners")
             if channel is None:
                 return
-            owners = _get_vctable_members_with_predicate(channel, is_vc_table_owner)
+            owners = _get_vctable_members_with_predicate(channel, _is_vc_table_owner)
             await itx.response.send_message("Here is a list of this VcTable's owners:\n  " + ', '.join(owners),
                                             ephemeral=True)
 
@@ -980,11 +980,11 @@ class CustomVcs(commands.Cog):
                                                 f"people :)", ephemeral=True)
                 return
             warning = "\nThis user was muted before. Making them a speaker removed their mute." if \
-                is_vc_table_muted(channel, user) else ""
-            if is_vc_table_speaker(channel, user):
+                _is_vctable_muted(channel, user) else ""
+            if _is_vctable_speaker(channel, user):
                 await itx.response.send_message(f"This user is already a speaker!", ephemeral=True)
                 return
-            if not is_vc_table_authorized(channel, itx):
+            if not _is_vctable_authorized(channel, itx):
                 cmd_mention = self.client.get_command_mention("vctable make_authorized_only")
                 warning += f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             await channel.set_permissions(user, speak=True,
@@ -1008,17 +1008,17 @@ class CustomVcs(commands.Cog):
                                                 f"To see current VcTable speakers, use {cmd_mention2} `mode:Check`.",
                                                 ephemeral=True)
                 return
-            if is_vc_table_owner(channel, user):
+            if _is_vc_table_owner(channel, user):
                 await itx.response.send_message(f"This user is an owner of this VcTable! If you want to reset "
                                                 f"their speaking permissions, un-owner them first!",
                                                 ephemeral=True)
                 return
-            if not is_vc_table_speaker(channel, user):
+            if not _is_vctable_speaker(channel, user):
                 await itx.response.send_message(f"This user is not a speaker! You can't unspeech a non-speaker!",
                                                 ephemeral=True)
                 return
             warning = ""
-            if not is_vc_table_authorized(channel, itx):
+            if not _is_vctable_authorized(channel, itx):
                 cmd_mention = self.client.get_command_mention("vctable make_authorized_only")
                 warning = f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             await channel.set_permissions(user, speak=None,
@@ -1034,7 +1034,7 @@ class CustomVcs(commands.Cog):
             channel = await self.get_current_channel(itx, "check speakers")
             if channel is None:
                 return
-            speakers = _get_vctable_members_with_predicate(channel, is_vc_table_speaker)
+            speakers = _get_vctable_members_with_predicate(channel, _is_vctable_speaker)
             await itx.response.send_message("Here is a list of this VcTable's speakers:\n  " + ', '.join(speakers),
                                             ephemeral=True)
 
@@ -1064,11 +1064,11 @@ class CustomVcs(commands.Cog):
                                                 f"Note: Staff can still view and join your voice channel.",
                                                 ephemeral=True)
                 return
-            if is_vc_table_participant(channel, user):
+            if _is_vctable_participant(channel, user):
                 await itx.response.send_message(f"This user is already a participant!", ephemeral=True)
                 return
             warning = ""
-            if not is_vc_table_locked(channel, itx):
+            if not _is_vctable_locked(channel, itx):
                 cmd_mention = self.client.get_command_mention("vctable lock")
                 warning += f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             await channel.set_permissions(user, view_channel=True, read_message_history=True,
@@ -1092,12 +1092,12 @@ class CustomVcs(commands.Cog):
                                                 f"{cmd_mention2} `mode:Check`.",
                                                 ephemeral=True)
                 return
-            if not is_vc_table_participant(channel, user):
+            if not _is_vctable_participant(channel, user):
                 await itx.response.send_message("This user is not a participant! You can't remove the "
                                                 "participation permissions they don't have!",
                                                 ephemeral=True)
                 return
-            if is_vc_table_owner(channel, user):
+            if _is_vc_table_owner(channel, user):
                 await itx.response.send_message("This user is an owner of this VcTable! If you want to reset "
                                                 "their participation permissions, un-owner them first!",
                                                 ephemeral=True)
@@ -1110,7 +1110,7 @@ class CustomVcs(commands.Cog):
                     ephemeral=True)
                 return
             warning = ""
-            if is_vc_table_locked(channel, itx):
+            if _is_vctable_locked(channel, itx):
                 cmd_mention = self.client.get_command_mention("vctable lock")
                 warning = f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             await channel.set_permissions(user, view_channel=None, read_message_history=None,
@@ -1126,7 +1126,7 @@ class CustomVcs(commands.Cog):
             channel = await self.get_current_channel(itx, "check speakers")
             if channel is None:
                 return
-            participants = _get_vctable_members_with_predicate(channel, is_vc_table_participant)
+            participants = _get_vctable_members_with_predicate(channel, _is_vctable_participant)
             await itx.response.send_message(
                 "Here is a list of this VcTable's participants:\n  " + ', '.join(participants), ephemeral=True)
 
@@ -1155,11 +1155,11 @@ class CustomVcs(commands.Cog):
                                                 ephemeral=True)
                 return
             warning = ("\nThis user was a speaker before. Muting them overwrote this permissions and "
-                       "removed their speaker permissions") if is_vc_table_speaker(channel, user) else ""
-            if is_vc_table_muted(channel, user):
+                       "removed their speaker permissions") if _is_vctable_speaker(channel, user) else ""
+            if _is_vctable_muted(channel, user):
                 await itx.response.send_message(f"This user is already muted!", ephemeral=True)
                 return
-            if is_vc_table_owner(channel, user):
+            if _is_vc_table_owner(channel, user):
                 await itx.response.send_message(
                     f"This user is an owner of this VcTable! If you want to mute them, un-owner them first!",
                     ephemeral=True)
@@ -1189,7 +1189,7 @@ class CustomVcs(commands.Cog):
                                                 f"Then simply mention this user in the `user: ` argument.",
                                                 ephemeral=True)
                 return
-            if not is_vc_table_muted(channel, user):
+            if not _is_vctable_muted(channel, user):
                 await itx.response.send_message(
                     f"This user is already unmuted! Let people be silent if they wanna be >:(", ephemeral=True)
                 return
@@ -1205,7 +1205,7 @@ class CustomVcs(commands.Cog):
             channel = await self.get_current_channel(itx, "check muted users")
             if channel is None:
                 return
-            muted = _get_vctable_members_with_predicate(channel, is_vc_table_muted)
+            muted = _get_vctable_members_with_predicate(channel, _is_vctable_muted)
             await itx.response.send_message("Here is a list of this VcTable's muted users:\n  " + ', '.join(muted),
                                             ephemeral=True)
 
@@ -1216,7 +1216,7 @@ class CustomVcs(commands.Cog):
         if channel is None:
             return
 
-        if is_vc_table_authorized(channel, itx):
+        if _is_vctable_authorized(channel, itx):
             await channel.set_permissions(itx.guild.default_role,
                                           speak=None,
                                           reason="VcTable edited: disaled authorized-only for speaking")
@@ -1242,7 +1242,7 @@ class CustomVcs(commands.Cog):
                                allowed_mentions=discord.AllowedMentions.none())
             for member in channel.members:  # member has no owner or speaking perms, move to same vc?
                 if member in channel.overwrites:
-                    if is_vc_table_owner(channel, member) or is_vc_table_speaker(channel, member):
+                    if _is_vc_table_owner(channel, member) or _is_vctable_speaker(channel, member):
                         continue
                 await member.move_to(channel)
             cmd_mention = self.client.get_command_mention("vctable speaker")
@@ -1259,7 +1259,7 @@ class CustomVcs(commands.Cog):
             return
 
         # if lock is enabled -> (the role overwrite is not nonexistant and is False):
-        if is_vc_table_locked(channel, itx):
+        if _is_vctable_locked(channel, itx):
             await channel.set_permissions(itx.guild.default_role,
                                           view_channel=None, read_message_history=None,
                                           reason="VcTable edited: disabled viewing lock")

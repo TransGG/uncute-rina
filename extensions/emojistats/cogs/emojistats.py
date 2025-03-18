@@ -3,6 +3,7 @@ import re  # to find all emojis used in someone's message
 import sys  # for integer max value: sys.maxsize
 import motor.core as motorcore  # for typing
 from pymongo import DESCENDING
+import typing
 
 import discord
 import discord.app_commands as app_commands

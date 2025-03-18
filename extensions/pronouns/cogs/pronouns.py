@@ -1,4 +1,7 @@
+# flake8: noqa
+# Cog isn't used anymore
 from pymongo.database import Database
+import typing
 
 import discord
 import discord.app_commands as app_commands

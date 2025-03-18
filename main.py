@@ -1,5 +1,5 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from datetime import datetime  # for startup and crash logging, and Reminders
+from datetime import datetime, timezone  # for startup and crash logging, and Reminders
 import json  # for loading the API keys file
 import logging  # to set logging level to not DEBUG and hide unnecessary logs
 import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)

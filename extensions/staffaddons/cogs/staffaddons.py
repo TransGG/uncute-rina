@@ -128,7 +128,7 @@ class StaffAddons(commands.Cog):
         # get most recently pushed bot version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]
-        unix = intself.client.startup_time.timetuple()
+        unix = int(self.client.startup_time.timetuple())
         for i in range(len(latest_version.split("."))):
             if int(latest_version.split(".")[i]) > int(self.client.version.split(".")[i]):
                 await itx.response.send_message(

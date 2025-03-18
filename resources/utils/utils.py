@@ -7,16 +7,6 @@ import discord
 from resources.customs.bot import Bot
 
 
-__all__ = [
-    "TESTING_ENVIRONMENT",
-    "debug",
-    "get_mod_ticket_channel_id",
-    "log_to_guild",
-    "executed_in_dms",
-    "parse_date",
-]
-
-
 TESTING_ENVIRONMENT = 2  # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
 
 
