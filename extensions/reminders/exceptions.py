@@ -6,7 +6,7 @@ class MalformedISODateTimeException(Exception):
         self.inner_exception = ex
 
 
-class TimestampParseError(Exception):
+class TimestampParseException(Exception):
     def __init__(self, inner_exception):
         self.inner_exception = inner_exception
 
