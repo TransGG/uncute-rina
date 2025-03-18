@@ -1,10 +1,22 @@
 from datetime import datetime, timedelta
 import re
+from typing import TypeAlias
+
+
+DistanceComponents = list[tuple[float, str]]
+
+
+class MissingUnitException(ValueError):
+    pass
+
+
+class MissingQuantityException(ValueError):
+    pass
 
 
 class TimeParser:
     @staticmethod
-    def parse_time_string(input_string: str) -> list[tuple[int, str]]:
+    def parse_time_string(input_string: str) -> DistanceComponents:
         """
         A helper function to turn a string of 2d4h to a list of tuples:
 
@@ -22,12 +34,15 @@ class TimeParser:
         -------
         :class:`ValueError`:
             If the user fills in an invalid digit ("0..3" or "0.30.4" for example)
+        :class:`MissingQuantityException`:
             If the user starts their input with a non-numeric character (should always start with a number :P)
+        :class:`MissingUnitException`:
+            If the user doesn't have a complete parse (typically because it ends with a numeric character).
         """
         # This function was partially written by AI, to convert "2d4sec" to [(2, "d"), (4,"sec")]
 
         if input_string[0] not in "0123456789.":
-            raise ValueError("Time strings should begin with a number: \"10min\"")
+            raise MissingQuantityException("Time strings should begin with a number: \"10min\"")
         # This regex captures one or more digits followed by one or more alphabetic characters.
         pattern = r"([.\d]+)([a-zA-Z]+)"  # :o i see two capture groups
 
@@ -38,17 +53,30 @@ class TimeParser:
         result = []
         # Not using list comprehension, to send more-detailed error message.
         # result = [(int(num), unit) for num, unit in matches] # :o you can split the capture groups
+        output = ""
+
         for (num, unit) in matches:
+            output += num + unit
             try:
-                result.append((int(num), unit))
+                result.append((float(num), unit))
             except ValueError:  # re-raise
                 raise ValueError(
                     f"Invalid number '{num}' in '{input_string}'! You can use decimals, but "
-                    f"the number should be valid.")
+                    f"the number should be valid."
+                )
+
+        if input_string != output:
+            # incomplete parse
+            raise MissingUnitException(
+                f"Incomplete parse. The input string did not have the correct parsing format:\n"
+                f"- Input:  `{input_string}`\n"
+                f"- Parsed: `{output}`" if output else "- Parsed: _(Empty)_"
+            )
+
         return result
 
     @staticmethod
-    def shrink_time_terms(time_units: list[tuple[int, str]]) -> list[tuple[int, str]]:
+    def shrink_time_terms(time_units: DistanceComponents) -> DistanceComponents:
         """
         Helper function to convert time strings from "year" to "y", etc.
 
@@ -85,11 +113,11 @@ class TimeParser:
                     # Also assigning to tuples doesn't save in list, so need list ref too.
                     break
             else:
-                raise ValueError(f"Datetime unit '{time_unit[1]}' not recognised!")
+                raise ValueError(f"Datetime unit '{time_units[unit_index]}' not recognised!")
         return time_units
 
     @staticmethod
-    def parse_date(time_string: str, start_date: datetime = datetime.now()) -> datetime:
+    def parse_date(time_string: str, start_date: datetime = datetime.now().astimezone()) -> datetime:
         """
         Helper function to turn strings like "3d5h10min4seconds" to a datetime in the future.
 
@@ -102,7 +130,7 @@ class TimeParser:
 
         Returns
         --------
-        :class:`datetime`:
+        :class:`datetime.datetime`:
             A datetime with an offset in the future (relative to the given datetime input) matching the input string.
 
         Raises
@@ -188,7 +216,9 @@ class TimeParser:
 
         timedict = {i: int(timedict[i]) for i in timedict}  # round everything down to the nearest whole number
 
-        distance = datetime(timedict["y"], timedict["M"], 1, timedict["h"], timedict["m"], timedict["s"])
+        distance = datetime(timedict["y"], timedict["M"], 1,
+                            timedict["h"], timedict["m"], timedict["s"], timedict["f"],
+                            tzinfo=start_date.tzinfo)
         # cause you cant have >31 days in a month, but if overflow is given, then let
         # this timedelta calculate the new months/years
         distance += timedelta(days=timedict["d"])
