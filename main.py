@@ -7,7 +7,6 @@ import motor.core as motorcore  # for typing
 import os  # for creating outputs/ directory
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 from pymongo import MongoClient
-from time import mktime  # to convert datetime to unix epoch time to store in database
 from typing import Literal, TypedDict
 
 import discord  # for main discord bot functionality
@@ -20,9 +19,9 @@ from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
 # ^ for fetching all watchlists on startup
 
 
-program_start = datetime.now()  # startup time after local imports
+program_start = datetime.now().astimezone()  # startup time after local imports
 
-BOT_VERSION = "1.4.0.0"
+BOT_VERSION = "1.4.1.0"
 
 EXTENSIONS = [
     "addons",
@@ -194,7 +193,8 @@ def start_app():
     # region Client events
     @client.event
     async def on_ready():
-        debug(f"[#######]: Logged in as {client.user}, in version {version} (in {datetime.now() - program_start})",
+        debug(f"[#######]: Logged in as {client.user}, in version {version} "
+              f"(in {datetime.now().astimezone() - program_start})",
               color="green")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
@@ -217,12 +217,13 @@ def start_app():
         # Cache server settings into client, to prevent having to load settings for every extension
         # Activate the extensions/programs/code for slash commands
 
-        extension_loading_start_time = datetime.now()
+        extension_loading_start_time = datetime.now().astimezone()
         for extID in range(len(EXTENSIONS)):
             debug(f"[{'#' * extID}+{' ' * (len(EXTENSIONS) - extID - 1)}]: Loading {EXTENSIONS[extID]}" + " " * 15,
                   color="light_blue", end='\r')
             await client.load_extension("extensions." + EXTENSIONS[extID] + ".module")
-        debug(f"[###    ]: Loaded extensions successfully (in {datetime.now() - extension_loading_start_time})",
+        debug(f"[###    ]: Loaded extensions successfully "
+              f"(in {datetime.now().astimezone() - extension_loading_start_time})",
               color="green")
 
         debug(f"[###+   ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
@@ -247,8 +248,8 @@ def start_app():
         for user in db_data:
             try:
                 for reminder in user['reminders']:
-                    creation_time = datetime.fromtimestamp(reminder['creationtime'])  # , timezone.utc)
-                    reminder_time = datetime.fromtimestamp(reminder['remindertime'])  # , timezone.utc)
+                    creation_time = datetime.fromtimestamp(reminder['creationtime'], timezone.utc)
+                    reminder_time = datetime.fromtimestamp(reminder['remindertime'], timezone.utc)
                     ReminderObject(client, creation_time, reminder_time, user['userID'], reminder['reminder'], user,
                                    continued=True)
             except KeyError:

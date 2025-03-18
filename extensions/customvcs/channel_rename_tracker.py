@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from time import mktime
 
 
 recently_renamed_vcs: dict[int, list[datetime]] = {}  # make your own vcs!
@@ -38,13 +37,13 @@ def try_store_vc_rename(channel_id: int, max_rename_limit: int = 2) -> None | in
         # if there have been 2 or more renames for this channel
         if len(recently_renamed_vcs[channel_id]) >= max_rename_limit:
             # if those renames were made within the last 10 minutes
-            if datetime.now() - recently_renamed_vcs[channel_id][0] < timedelta(seconds=600):
-                return int(mktime(recently_renamed_vcs[channel_id][0].timetuple()))
+            if datetime.now().astimezone() - recently_renamed_vcs[channel_id][0] < timedelta(seconds=600):
+                return int(recently_renamed_vcs[channel_id][0].timestamp())
             # clear rename queue log and continue command
             # (discord allows 2 renames in 10 minutes but can queue rename events, hence '[2:]')
             recently_renamed_vcs[channel_id] = recently_renamed_vcs[channel_id][2:]
     else:
         # create and continue command
         recently_renamed_vcs[channel_id] = []
-    recently_renamed_vcs[channel_id].append(datetime.now())
+    recently_renamed_vcs[channel_id].append(datetime.now().astimezone())
     return None

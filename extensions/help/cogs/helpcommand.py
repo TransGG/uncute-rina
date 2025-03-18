@@ -19,6 +19,9 @@ assert all([all([j in ["title", "description", "fields", "staff_only"] for j in 
     "All pages should only have fields that are one of these attributes: title, description, fields, staff_only"
 
 
+# todo: autocomplete? Let people search by page title or content;
+#  or display a page title based on the given page number?
+
 class HelpCommand(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client

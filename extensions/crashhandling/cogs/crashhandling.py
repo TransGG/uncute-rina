@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-from time import mktime
+from datetime import datetime, timedelta, timezone
 import traceback  # for crash logging
 import sys  # to stop the program (and automatically restart, thanks to pterodactyl)
 
@@ -11,8 +10,8 @@ from resources.customs.bot import Bot
 from resources.utils.utils import debug, TESTING_ENVIRONMENT
 
 
-appcommanderror_cooldown: datetime = datetime.fromtimestamp(0)
-commanderror_cooldown: datetime = datetime.fromtimestamp(0)
+appcommanderror_cooldown: datetime = datetime.fromtimestamp(0, timezone.utc)
+commanderror_cooldown: datetime = datetime.fromtimestamp(0, timezone.utc)
 
 
 async def _send_crash_message(
@@ -61,7 +60,7 @@ async def _send_crash_message(
             return  # prevent infinite logging loops, i guess
 
     error_caps = error_type.upper()
-    debug_message = (f"\n\n\n\n[{datetime.now().strftime('%H:%M:%S.%f')}] [{error_caps}]: {error_source}"
+    debug_message = (f"\n\n\n\n[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}] [{error_caps}]: {error_source}"
                      f"\n\n{traceback_text}\n")
     debug(f"{debug_message}", add_time=False)
 
@@ -111,17 +110,17 @@ class CrashHandling(commands.Cog):
         # msg = '\n\n          '.join([repr(i) for i in args])+"\n\n"
         # msg += '\n\n                   '.join([repr(i) for i in kwargs])
         global commanderror_cooldown
-        if datetime.now() - commanderror_cooldown < timedelta(seconds=10):
+        if datetime.now().astimezone() - commanderror_cooldown < timedelta(seconds=10):
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if
             # within 10 seconds
             return
         msg = traceback.format_exc()
         await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
-        commanderror_cooldown = datetime.now()
+        commanderror_cooldown = datetime.now().astimezone()
 
     async def on_app_command_error(self, itx: discord.Interaction, error):
         global appcommanderror_cooldown
-        if datetime.now() - appcommanderror_cooldown < timedelta(seconds=60):
+        if datetime.now().astimezone() - appcommanderror_cooldown < timedelta(seconds=60):
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if
             # within 1 minute
             return
@@ -177,4 +176,4 @@ class CrashHandling(commands.Cog):
             [f"`{k}:{v}`" for k, v in itx.namespace.__dict__.items()])
         await _send_crash_message(self.client, "AppCommand Error", msg, command_details,
                                   discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
-        appcommanderror_cooldown = datetime.now()
+        appcommanderror_cooldown = datetime.now().astimezone()

@@ -329,7 +329,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- Use a format like 1mo10d9h8m7s for years/months/weeks/days/hours/min/sec.\n"
                 # TODO: clarify; copy paste ValueError help message?
                 "- Use a format like 2026-12-01 or 2026-12-01T15:43:23 for a reminder in December 2026.\n"
-                "- Use a format like <t:01234567> or just 01234567 to use a Unix timestamp.\n"
+                "- Use a format like <t\\:01234567> or just 01234567 to use a Unix timestamp.\n"
                 "`reminder`: What would you like to be reminded of?"
             ),
             (

@@ -1,7 +1,6 @@
 import asyncio
 # for sleep(0.1) to prevent blocking: allow discord and other processes to send a heartbeat and function.
 from datetime import datetime, timezone
-from time import mktime  # for tracking member joins/leaves/verifications
 import matplotlib.pyplot as plt
 import pandas as pd  # for graphing member joins/leaves/verifications
 from motor.core import AgnosticDatabase
@@ -23,12 +22,12 @@ async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
 
     try:
         # see if this user already has data, if so, add a new joining time to the list
-        data[event_type][str(member.id)].append(mktime(datetime.now(timezone.utc).timetuple()))
+        data[event_type][str(member.id)].append(datetime.now().timestamp())
     except IndexError:
-        data[event_type][str(member.id)] = [mktime(datetime.now(timezone.utc).timetuple())]
+        data[event_type][str(member.id)] = [datetime.now().timestamp()]
     except KeyError:
         data[event_type] = {}
-        data[event_type][str(member.id)] = [mktime(datetime.now(timezone.utc).timetuple())]
+        data[event_type][str(member.id)] = [datetime.now().timestamp()]
     await collection.update_one(query,
                                 {"$set": {f"{event_type}.{member.id}": data[event_type][str(member.id)]}},
                                 upsert=True)
@@ -100,7 +99,7 @@ class MemberData(commands.Cog):
         totals = {}
         results = {}
         warning = ""
-        current_time = mktime(datetime.now(timezone.utc).timetuple())
+        current_time = datetime.now(timezone.utc).timestamp()
         min_time = int((current_time - lower_bound) / accuracy) * accuracy
         max_time = int((current_time - upper_bound) / accuracy) * accuracy
 
@@ -207,9 +206,9 @@ class MemberData(commands.Cog):
 
             tick_loc = [i for i in df['time'][::3]]
             if (lower_bound - upper_bound) / 86400 <= 1:
-                tick_disp = [datetime.fromtimestamp(i).strftime('%H:%M') for i in tick_loc]
+                tick_disp = [datetime.fromtimestamp(i, timezone.utc).strftime('%H:%M') for i in tick_loc]
             else:
-                tick_disp = [datetime.fromtimestamp(i).strftime('%Y-%m-%dT%H:%M') for i in tick_loc]
+                tick_disp = [datetime.fromtimestamp(i, timezone.utc).strftime('%Y-%m-%dT%H:%M') for i in tick_loc]
 
             # plt.xticks(tick_loc, tick_disp, rotation='vertical')
             # plt.setp(tick_disp, rotation=45, horizontalalignment='right')

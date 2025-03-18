@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from time import mktime  # for reminder times
 
 import discord
 import discord.app_commands as app_commands

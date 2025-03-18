@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from time import mktime  # for logging emoji last use time
 import re  # to find all emojis used in someone's message
 import sys  # for integer max value: sys.maxsize
 import motor.core as motorcore  # for typing
@@ -60,7 +59,7 @@ async def _add_to_emoji_data(
     # increment the usage of the emoji in the dictionary, depending on where it was used (see $location above)
     await collection.update_one(query, {"$inc": {location: 1}}, upsert=True)
     await collection.update_one(query,
-                                {"$set": {"lastUsed": mktime(datetime.now(timezone.utc).timetuple()),
+                                {"$set": {"lastUsed": datetime.now().timestamp(),
                                           "name": emoji_name,
                                           "animated": animated}},
                                 upsert=True)
@@ -149,7 +148,7 @@ class EmojiStats(commands.Cog):
                                         f"messageUsedCount: {msg_used}\n" +
                                         f"reactionUsedCount: {reaction_used}\n" +
                                         f"Animated: {animated}\n" +
-                                        f"Last used: {datetime.fromtimestamp(emoji['lastUsed']).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')}",
+                                        f"Last used: {datetime.fromtimestamp(emoji['lastUsed'], timezone.utc).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S (UTC)')}",
                                         ephemeral=True)
 
     @emojistats.command(name="get_unused_emojis", description="Get the least-used emojis")

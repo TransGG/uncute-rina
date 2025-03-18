@@ -13,7 +13,7 @@ ApiTokenDict = TypedDict('ApiTokenDict',
 
 
 class Bot(commands.Bot):
-    startup_time = datetime.now()  # bot uptime start, used in /version in cmd_staffaddons
+    startup_time = datetime.now().astimezone()  # bot uptime start, used in /version in cmd_staffaddons
 
     commandList: list[discord.app_commands.AppCommand]
     log_channel: discord.TextChannel | discord.Thread
