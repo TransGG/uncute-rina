@@ -14,8 +14,8 @@ from extensions.reminders.exceptions import (
 
 # region Helper functions
 def _get_current_time_formatted():
-    start_time = datetime.now()
-    start_time = start_time.replace(microsecond=0)  # itx.created_at has no microseconds or timezone
+    start_time = datetime.now().astimezone(timezone.utc)
+    start_time = start_time.replace(microsecond=0)  # itx.created_at has no microseconds
     return start_time
 
 
@@ -23,8 +23,9 @@ def _get_custom_time1():
     # Set a custom datetime. This is mainly done to make sure the tests for "%I" and "%H" are correctly different.
     # These tests check whether hour = "4" vs "04" makes a difference. If hour >= 10, using datetime wouldn't
     # let these tests show their potential.
-    start_time = datetime(year=2025, month=3, day=1, hour=4, minute=1, second=5, microsecond=9265)  # datetime.now()
-    start_time = start_time.replace(microsecond=0)  # itx.created_at has no microseconds or timezone
+    start_time = datetime(year=2025, month=3, day=1, hour=4, minute=1, second=5, microsecond=9265,
+                          tzinfo=timezone.utc)
+    start_time = start_time.replace(microsecond=0)  # itx.created_at has no microseconds
     return start_time
 
 # endregion Helper functions
@@ -39,21 +40,20 @@ def test_output_nochange_match():
 
     # Act
     reminder_time, now = asyncio.run(func)
-    current_time = current_time.astimezone()
 
     # Assert
     assert current_time == now
     assert current_time == reminder_time
 
+
 def test_output_timezones_match():
     # Arrange
-    current_time = _get_current_time_formatted().astimezone(datetime.now().tzinfo)
+    current_time = _get_current_time_formatted().replace(tzinfo=timezone.utc)
     itx = CustomObject(created_at=current_time)
     func = _parse_reminder_time(itx, "0d")
 
     # Act
     reminder_time, now = asyncio.run(func)
-    current_time = current_time.astimezone(timezone.utc)
     reminder_time = reminder_time.astimezone(timezone.utc)
 
     # Assert
@@ -69,8 +69,25 @@ def test_relative_offset():
 
     # Act
     reminder_time, _ = asyncio.run(func)
-    current_time = current_time.astimezone()
+    current_time = current_time.replace(tzinfo=timezone.utc)
     expected_time = current_time + timedelta(days=500, hours=1, minutes=1, seconds=1)
+
+    # Assert
+    assert expected_time == reminder_time
+
+
+def test_offset_overflows():
+    # Arrange
+    current_time = datetime(year=2000, month=11, day=30, hour=23, minute=59, second=59,
+                            tzinfo=timezone.utc)
+    itx = CustomObject(created_at=current_time)
+    func = _parse_reminder_time(itx, "1y 20mo 50w 500d 30h 100m 100s")
+
+    # Act
+    reminder_time, _ = asyncio.run(func)
+    intermediate_expected_time = datetime(year=2003, month=7, day=30, hour=23, minute=59, second=59,
+                                          tzinfo=timezone.utc)
+    expected_time = intermediate_expected_time + timedelta(days=500 + 50 * 7, hours=30, minutes=100, seconds=100)
 
     # Assert
     assert expected_time == reminder_time
@@ -160,9 +177,8 @@ def test_iso_date_matches_unix_timestamp():
 def test_exception_iso_time_timezone():
     # Todo: make this a feature?
     # Arrange
-    current_time = _get_custom_time1().astimezone(datetime.now().tzinfo)  # to get %z working
+    current_time = _get_custom_time1()
     datetime_string = current_time.strftime('%H:%M:%S%z')  # 04:01:05+0100
-    current_time = current_time.replace(tzinfo=None)
     itx = CustomObject(created_at=current_time)
     func = _parse_reminder_time(itx, datetime_string)
 
@@ -300,9 +316,8 @@ def test_exception_12_hour_clock():
 
 def test_exception_12_hour_clock_timezone():
     # Arrange
-    current_time = _get_current_time_formatted().astimezone(datetime.now().tzinfo)
-    datetime_string = current_time.strftime('2025-03-17T10:32:33PM+0100')
-    current_time.replace(tzinfo=None)
+    current_time = _get_current_time_formatted()
+    datetime_string = current_time.strftime('2025-03-17T10:32:33PM+0000')
     itx = CustomObject(created_at=current_time)
     func = _parse_reminder_time(itx, datetime_string)
 

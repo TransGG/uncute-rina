@@ -199,8 +199,8 @@ async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str)
     MissingUnitException
     """
     # Parse reminder input to get a datetime for the reminder scheduler
-    _now = itx.created_at  # utc
-    creation_time = _now.astimezone(timezone.utc)  # make it timezone-aware
+    creation_time = itx.created_at  # utc
+    assert creation_time.tzinfo == timezone.utc  # it is timezone aware, in utc
     distance: datetime
     try:
         possible_timestamp_datetime = reminder_datetime.replace("<t:", "").split(":")[0]

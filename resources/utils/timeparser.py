@@ -200,16 +200,16 @@ class TimeParser:
 
         # check overflows
         if timedict["s"] >= 60:
-            timedict["m"] += timedict["s"] % 60
+            timedict["m"] += timedict["s"] // 60
             timedict["s"] %= 60
         if timedict["m"] >= 60:
-            timedict["h"] += timedict["m"] % 60
+            timedict["h"] += timedict["m"] // 60
             timedict["m"] %= 60
         if timedict["h"] >= 24:
-            timedict["d"] += timedict["h"] % 24
+            timedict["d"] += timedict["h"] // 24
             timedict["h"] %= 24
         if timedict["M"] > 12:
-            timedict["y"] += timedict["M"] % 12
+            timedict["y"] += timedict["M"] // 12
             timedict["M"] %= 12
         if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
             raise ValueError("I don't think I can remind you in that long!")
