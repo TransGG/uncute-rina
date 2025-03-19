@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from datetime import timezone
 
 import discord
 
@@ -38,5 +39,19 @@ class CopyReminder(discord.ui.View):
                                             f"your reminders, and use {cmd_mention1} `item: ` to remove a reminder",
                                             ephemeral=True)
             return
-        await self.create_reminder_callback(self.client, itx, self.reminder.remindertime, self.reminder.creationtime,
-                                            self.reminder.reminder, user_reminders, True)
+        if self.reminder.remindertime < itx.created_at.astimezone():
+            cmd_mention = self.client.get_command_mention("reminder remindme")
+            cmd_mention1 = self.client.get_command_mention("help")
+            await itx.response.send_message(f"This reminder has already passed! Use {cmd_mention} to create a new "
+                                            f"reminder, or use {cmd_mention1} `page:113` for more help about reminders.",
+                                            ephemeral=True)
+            return
+        await self.create_reminder_callback(
+            self.client,
+            itx,
+            self.reminder.remindertime,
+            itx.created_at.astimezone(timezone.utc),
+            self.reminder.reminder,
+            user_reminders,
+            True
+        )

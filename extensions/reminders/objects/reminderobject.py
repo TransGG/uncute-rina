@@ -243,11 +243,20 @@ async def _create_reminder(
     cmd_mention = client.get_command_mention("reminder reminders")
     view = ShareReminder()
     if from_copy:
-        view = None
-    await itx.response.send_message(
-        f"Successfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!\n"
-        f"Use {cmd_mention} to see your list of reminders",
-        view=view, ephemeral=True)
+        # send message without view.
+        await itx.response.send_message(
+            f"Successfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!\n"
+            f"Use {cmd_mention} to see your list of reminders",
+            ephemeral=True
+        )
+        return
+    else:
+        await itx.response.send_message(
+            f"Successfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!\n"
+            f"Use {cmd_mention} to see your list of reminders",
+            view=view, ephemeral=True
+        )
+
     await view.wait()
     if view.value == 1:
         msg = f"{itx.user.mention} shared a reminder on <t:{_distance}:F> for \"{reminder}\""
