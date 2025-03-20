@@ -14,6 +14,17 @@ class MissingQuantityException(ValueError):
     pass
 
 
+TIMETERMS = {
+    "y": ["y", "year", "years"],
+    "M": ["mo", "month", "months"],
+    "w": ["w", "week", "weeks"],
+    "d": ["d", "day", "days"],
+    "h": ["h", "hour", "hours"],
+    "m": ["m", "min", "mins", "minute", "minutes"],
+    "s": ["s", "sec", "secs", "second", "seconds"]
+}
+
+
 class TimeParser:
     @staticmethod
     def parse_time_string(input_string: str) -> DistanceComponents:
@@ -95,19 +106,10 @@ class TimeParser:
         :class:`ValueError`:
             Input contains unrecognised datetime unit(s).
         """
-        timeterms = {
-            "y": ["y", "year", "years"],
-            "M": ["mo", "month", "months"],
-            "w": ["w", "week", "weeks"],
-            "d": ["d", "day", "days"],
-            "h": ["h", "hour", "hours"],
-            "m": ["m", "min", "mins", "minute", "minutes"],
-            "s": ["s", "sec", "secs", "second", "seconds"]
-        }
         for unit_index in range(len(time_units)):
             # use index instead of iterating tuples in list because of the tuple component reassignment 3 lines down.
-            for timeterm in timeterms:
-                if time_units[unit_index][1] in timeterms[timeterm]:
+            for timeterm in TIMETERMS:
+                if time_units[unit_index][1] in TIMETERMS[timeterm]:
                     time_units[unit_index] = (time_units[unit_index][0], timeterm)
                     # tuple does not support item assignment like (1,2)[0]=2
                     # Also assigning to tuples doesn't save in list, so need list ref too.
@@ -155,14 +157,13 @@ class TimeParser:
         timedict = {
             "y": start_date.year,
             "M": start_date.month,
-            "d": start_date.day - 1,
+            "d": start_date.day,
             "h": start_date.hour,
             "m": start_date.minute,
             "s": start_date.second,
-            "f": 0,  # microseconds can only be set with "0.04s" eg.
-            # now.day-1 for _timedict["d"] because later, datetime(day=...) starts with 1, and adds this value with
-            # timedelta. This is required cause the datetime() doesn't let you set "0" for days. (cuz a month starts
-            # at day 1)
+            "f": start_date.microsecond,
+            # microseconds can only be set with "0.04s", but since start_date will typically be from discord snowflakes,
+            #  the microseconds will be 0 by default.
         }
 
         # add values to each timedict key
@@ -221,6 +222,6 @@ class TimeParser:
                             tzinfo=start_date.tzinfo)
         # cause you cant have >31 days in a month, but if overflow is given, then let
         # this timedelta calculate the new months/years
-        distance += timedelta(days=timedict["d"])
+        distance += timedelta(days=timedict["d"] - 1)  # -1 cuz datetime.day has to start at 1 (first day of the month)
 
         return distance

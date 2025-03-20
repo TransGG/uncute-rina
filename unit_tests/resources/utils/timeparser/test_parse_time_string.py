@@ -9,7 +9,6 @@ from unit_tests.object import CustomObject
 from resources.utils.timeparser import TimeParser, MissingQuantityException, MissingUnitException
 
 
-# region parse_time_string
 # region Correct functionality
 def test_parse_simple():
     # Assign
@@ -46,6 +45,16 @@ def test_parse_decimals_longer():
     # Assert
     assert expected == parse
 
+
+def test_parse_overflow():
+    # this function is not particularly interesting since it should just split them, but oh well.
+    # Assign
+    parse = TimeParser.parse_time_string("50days50hours100minutes400seconds")
+    expected = [(50.0, 'days'), (50.0, 'hours'), (100.0, 'minutes'), (400.0, 'seconds')]
+
+    # Assert
+    assert expected == parse
+
 # endregion Correct Functionality
 
 
@@ -70,13 +79,4 @@ def test_parse_missing_unit2():
         TimeParser.parse_time_string("20days30")
 
 # endregion Malformed input
-# endregion parse_time_string
-
-def test_parse_overflow():
-    # Assign
-    parse = TimeParser.parse_time_string("50days50hours100minutes400seconds")
-    expected = [(50.0, 'days'), (50.0, 'hours'), (100.0, 'minutes'), (400.0, 'seconds')]
-
-    # Assert
-    assert expected == parse
 

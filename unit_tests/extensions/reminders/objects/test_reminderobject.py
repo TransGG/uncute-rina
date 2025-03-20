@@ -30,8 +30,7 @@ def _get_custom_time1():
 
 # endregion Helper functions
 
-
-# region Functional mechanics
+# region Correct functionality
 def test_output_nochange_match():
     # Arrange
     current_time = _get_current_time_formatted()
@@ -170,10 +169,10 @@ def test_iso_date_matches_unix_timestamp():
     # Assert
     assert timezone_correction1 == reminder_time2
 
-# endregion Functional mechanics
+# endregion Correct functionality
 
 
-# region Exception testing
+# region Malformed input
 def test_exception_iso_time_timezone():
     # Todo: make this a feature?
     # Arrange
@@ -325,4 +324,4 @@ def test_exception_12_hour_clock_timezone():
     with pytest.raises(TimestampParseException):
         reminder_time, _ = asyncio.run(func)
 
-# endregion Exception testing
+# endregion Malformed input
