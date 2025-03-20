@@ -10,37 +10,13 @@ import discord.ext.commands as commands
 from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
+from extensions.starboard.localstarboard import (
+    get_or_fetch_starboard_messages,
+    add_to_local_starboard,
+    delete_from_local_starboard
+)
+
 starboard_message_ids_marked_for_deletion = []
-local_starboard_message_list_refresh_timestamp = datetime.fromtimestamp(0, timezone.utc)
-STARBOARD_REFRESH_DELAY = 3000
-local_starboard_message_list: list[discord.Message] = []
-busy_updating_starboard_messages = False
-
-
-# todo: move local_starboard_message_list functions to own file, "localstarboard" similar to watchlist
-
-async def _delete_starboard_message(client: Bot, starboard_message: discord.Message, reason: str) -> None:
-    """
-    Handles custom starboard message deletion messages and preventing double logging messages when
-    the bot removes a starboard message.
-
-    Parameters
-    -----------
-    client: :class:`Bot`
-        The bot, to get the correct logging channel.
-    starboard_message: :class:`discord.Message`
-        The starboard message to delete.
-    reason: :class:`str`
-        The reason for deletion.
-    """
-    global local_starboard_message_list
-    await log_to_guild(client, starboard_message.guild, reason)
-    starboard_message_ids_marked_for_deletion.append(starboard_message.id)
-    await starboard_message.delete()
-    for i in range(len(local_starboard_message_list)):
-        if local_starboard_message_list[i].id == starboard_message.id:
-            del local_starboard_message_list[i]
-            break
 
 
 async def _fetch_starboard_original_message(
@@ -107,6 +83,87 @@ async def _fetch_starboard_original_message(
                            f"[{starboard_message.id}]({starboard_message.jump_url}) from this channel ({ch.mention})!")
         return
     return original_message
+
+
+async def _send_starboard_message(
+        client: Bot, message: discord.Message, starboard_channel: discord.TextChannel, reaction: discord.Reaction
+):
+    embed = discord.Embed(
+        color=discord.Colour.from_rgb(r=255, g=172, b=51),
+        title='',
+        description=f"{message.content}",
+        timestamp=message.created_at  # this, or datetime.now()
+    )
+    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+    embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
+    embed.set_footer(text=f"{message.id}")
+    if isinstance(message.author, discord.Member):
+        name = message.author.nick or message.author.name
+    else:
+        # discord.User has no `nick` attribute.
+        name = message.author.name
+    embed.set_author(
+        name=f"{name}",
+        url=f"https://original.poster/{message.author.id}/",
+        icon_url=message.author.display_avatar.url
+    )
+    embed_list = []
+    for attachment in message.attachments:
+        try:
+            if attachment.content_type.split("/")[0] == "image":  # is image or GIF
+                if len(embed_list) == 0:
+                    embed.set_image(url=attachment.url)
+                    embed_list = [embed]
+                else:
+                    # can only set one image per embed... But you can add multiple embeds :]
+                    embed = discord.Embed(
+                        color=discord.Colour.from_rgb(r=255, g=172, b=51),
+                    )
+                    embed.set_image(url=attachment.url)
+                    embed_list.append(embed)
+            else:
+                if len(embed_list) == 0:
+                    embed.set_field_at(
+                        0,
+                        name=embed.fields[0].name,
+                        value=embed.fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
+                                                      f"({attachment.content_type}))")
+                else:
+                    embed_list[0].set_field_at(
+                        0,
+                        name=embed_list[0].fields[0].name,
+                        value=embed_list[0].fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
+                                                              f"({attachment.content_type}))")
+        except AttributeError:
+            # if it is neither an image, video, application, or recognised file type:
+            if len(embed_list) == 0:
+                embed.set_field_at(
+                    0,
+                    name=embed.fields[0].name,
+                    value=embed.fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+            else:
+                embed_list[0].set_field_at(
+                    0,
+                    name=embed_list[0].fields[0].name,
+                    value=embed_list[0].fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+    if len(embed_list) == 0:
+        embed_list.append(embed)
+
+    # Add new starboard msg
+    msg = await starboard_channel.send(
+        f"💫 **{reaction.count}** | <#{message.channel.id}>",
+        embeds=embed_list,
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
+    await log_to_guild(client, starboard_channel.guild,
+                       f"{reaction.emoji} Starboard message {msg.jump_url} was "
+                       f"created from {message.jump_url}. "
+                       f"Content: \"\"\"{message.content[:1000]}\"\"\" and "
+                       f"attachments: {[att.url for att in message.attachments]}")
+    # add star reaction to original message to prevent message from being re-added to the starboard
+    await msg.add_reaction(reaction.emoji)
+    await msg.add_reaction("❌")
+    add_to_local_starboard(msg)
 
 
 async def _update_starboard_message_score(
@@ -191,125 +248,26 @@ async def _update_starboard_message_score(
         raise
 
 
-async def _get_or_fetch_starboard_messages(
-        starboard_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None
-) -> list[discord.Message]:
+async def _delete_starboard_message(client: Bot, starboard_message: discord.Message, reason: str) -> None:
     """
-    Fetch list of all starboard messages, unless it is already fetching: then it waits until the
-    other instance of the fetching function is done and retrieves the cached list. The list is
-    stored for STARBOARD_REFRESH_DELAY seconds.
+    Handles custom starboard message deletion messages and preventing double logging messages when
+    the bot removes a starboard message.
 
     Parameters
     -----------
-    starboard_channel: :class:`discord.abc.GuildChannel` | :class:`discord.abc.PrivateChannel` |
-            :class:`discord.Thread` | :class:`None`
-        The starboard channel to fetch messages from.
-
-    Returns
-    --------
-    :class:`list[discord.Message]`:
-        A list of starboard messages (sent by the bot) in the starboard channel.
+    client: :class:`Bot`
+        The bot, to get the correct logging channel.
+    starboard_message: :class:`discord.Message`
+        The starboard message to delete.
+    reason: :class:`str`
+        The reason for deletion.
     """
-    global busy_updating_starboard_messages, local_starboard_message_list, \
-        local_starboard_message_list_refresh_timestamp
-    time_since_last_starboard_fetch = (
-            datetime.now().astimezone() - local_starboard_message_list_refresh_timestamp
-    ).total_seconds()
-    if not busy_updating_starboard_messages and time_since_last_starboard_fetch > STARBOARD_REFRESH_DELAY:
-        # refresh once every STARBOARD_REFRESH_DELAY seconds
-        busy_updating_starboard_messages = True
-        messages: list[discord.Message] = []
-        async for star_message in starboard_channel.history(limit=None):
-            messages.append(star_message)
-        local_starboard_message_list = messages
-        local_starboard_message_list_refresh_timestamp = datetime.now().astimezone()
-        busy_updating_starboard_messages = False
-    while busy_updating_starboard_messages:
-        # wait until not busy anymore
-        await asyncio.sleep(1)
-    return local_starboard_message_list
-
-
-async def _send_starboard_message(
-        client: Bot, message: discord.Message, starboard_channel: discord.TextChannel, reaction: discord.Reaction
-):
     global local_starboard_message_list
-    embed = discord.Embed(
-        color=discord.Colour.from_rgb(r=255, g=172, b=51),
-        title='',
-        description=f"{message.content}",
-        timestamp=message.created_at  # this, or datetime.now()
-    )
-    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
-    embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
-    embed.set_footer(text=f"{message.id}")
-    if isinstance(message.author, discord.Member):
-        name = message.author.nick or message.author.name
-    else:
-        # discord.User has no `nick` attribute.
-        name = message.author.name
-    embed.set_author(
-        name=f"{name}",
-        url=f"https://original.poster/{message.author.id}/",
-        icon_url=message.author.display_avatar.url
-    )
-    embed_list = []
-    for attachment in message.attachments:
-        try:
-            if attachment.content_type.split("/")[0] == "image":  # is image or GIF
-                if len(embed_list) == 0:
-                    embed.set_image(url=attachment.url)
-                    embed_list = [embed]
-                else:
-                    # can only set one image per embed... But you can add multiple embeds :]
-                    embed = discord.Embed(
-                        color=discord.Colour.from_rgb(r=255, g=172, b=51),
-                    )
-                    embed.set_image(url=attachment.url)
-                    embed_list.append(embed)
-            else:
-                if len(embed_list) == 0:
-                    embed.set_field_at(
-                        0,
-                        name=embed.fields[0].name,
-                        value=embed.fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
-                                                      f"({attachment.content_type}))")
-                else:
-                    embed_list[0].set_field_at(
-                        0,
-                        name=embed_list[0].fields[0].name,
-                        value=embed_list[0].fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
-                                                              f"({attachment.content_type}))")
-        except AttributeError:
-            # if it is neither an image, video, application, or recognised file type:
-            if len(embed_list) == 0:
-                embed.set_field_at(
-                    0,
-                    name=embed.fields[0].name,
-                    value=embed.fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
-            else:
-                embed_list[0].set_field_at(
-                    0,
-                    name=embed_list[0].fields[0].name,
-                    value=embed_list[0].fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
-    if len(embed_list) == 0:
-        embed_list.append(embed)
+    await log_to_guild(client, starboard_message.guild, reason)
+    starboard_message_ids_marked_for_deletion.append(starboard_message.id)
+    await starboard_message.delete()
+    delete_from_local_starboard(starboard_message.id)
 
-    # Add new starboard msg
-    msg = await starboard_channel.send(
-        f"💫 **{reaction.count}** | <#{message.channel.id}>",
-        embeds=embed_list,
-        allowed_mentions=discord.AllowedMentions.none(),
-    )
-    await log_to_guild(client, starboard_channel.guild,
-                       f"{reaction.emoji} Starboard message {msg.jump_url} was "
-                       f"created from {message.jump_url}. "
-                       f"Content: \"\"\"{message.content[:1000]}\"\"\" and "
-                       f"attachments: {[att.url for att in message.attachments]}")
-    # add star reaction to original message to prevent message from being re-added to the starboard
-    await msg.add_reaction(reaction.emoji)
-    await msg.add_reaction("❌")
-    local_starboard_message_list.append(msg)
 
 
 class Starboard(commands.Cog):
@@ -381,7 +339,7 @@ class Starboard(commands.Cog):
                 # So reaction.emoji == starboard_emoji
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await _get_or_fetch_starboard_messages(star_channel)
+                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
@@ -441,7 +399,7 @@ class Starboard(commands.Cog):
             if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
                 if reaction.me:
                     # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await _get_or_fetch_starboard_messages(star_channel)
+                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
                     for star_message in starboard_messages:
                         for embed in star_message.embeds:
                             if embed.footer.text == str(message.id):
@@ -479,7 +437,7 @@ class Starboard(commands.Cog):
             return
         elif message_payload.channel_id != star_channel.id:
             # check if this message's is in the starboard. If so, delete it
-            starboard_messages = await _get_or_fetch_starboard_messages(star_channel)
+            starboard_messages = await get_or_fetch_starboard_messages(star_channel)
             for star_message in starboard_messages:
                 for embed in star_message.embeds:
                     if embed.footer.text == str(message_payload.message_id):
