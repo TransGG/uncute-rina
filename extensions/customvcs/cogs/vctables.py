@@ -10,7 +10,7 @@ from resources.utils.permissions import is_verified, is_staff, is_admin  # to ch
 from resources.utils.utils import log_to_guild  # to log custom vc changes
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
-from extensions.customvcs.utils import is_vc_custom
+from extensions.customvcs.utils import is_vc_custom, BLACKLISTED_CHANNELS, edit_permissionoverwrite
 
 
 # Owner       = Connection perms (and speaking perms)
@@ -71,6 +71,7 @@ def _get_vctable_members_with_predicate(
 class VcTables(commands.GroupCog, name="vctable", description="Make your voice channels advanced!"):
     def __init__(self, client: Bot):
         self.client = client
+        self.blacklisted_channels = BLACKLISTED_CHANNELS
 
     # region VcTable utilities
     async def get_current_voice_channel(self, itx: discord.Interaction, action: str, from_event: bool = None):
@@ -166,35 +167,55 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
         owners = owners.split(",")
         cmd_mention = self.client.get_command_mention("vctable add_owner")
-        added_owners = []
+        if itx.user.guild is None:
+            await itx.response.send_message("You don't seem to be in this guild, so I can't give you "
+                                            "permissions for this voice channel... Maybe ask @mysticmia about this?",
+                                            ephemeral=True)
+
+        # region Parse vctable owners
+        added_owners = [itx.user]
+        added_owner_ids = []
         for mention in owners:
             if mention == "":
                 continue
             mention: str = mention.strip()
             if not (mention[0:2] == "<@" and mention[-1] == ">"):
-                warning = (f"Note: You didn't give a good list of VcTable owners, so I only added you. To make "
-                           f"more people owner, use {cmd_mention}.\n")
-                added_owners = [str(itx.user.id)]
+                warning = (f"Note: You didn't give a good list of VcTable owners, so I only added the ones prior. "
+                           f"To make more people owner, use {cmd_mention}.\n")
                 break
-            for char in mention[2:-1]:
+            mention = mention[2:-1]
+            for char in mention:
                 if char not in "0123456789":
-                    warning = (f"Note: You didn't give a good list of VcTable owners, so I only added you. To make "
-                               f"more people owner, use {cmd_mention}.\n")
-                    added_owners = [str(itx.user.id)]
+                    warning = (f"Note: You didn't give a good list of VcTable owners, so I only added the ones prior. "
+                               f"To make more people owner, use {cmd_mention}.\n")
                     break
-            added_owners.append(mention)
-        else:
-            owner_list = [str(itx.user.id)] + [int(mention.strip()[2:-1]) for mention in added_owners]
-            added_owners = []
-            for owner_id in owner_list:
-                if owner_id not in added_owners:
-                    added_owners.append(owner_id)
 
-        channel = await self.get_current_voice_channel(itx, "create VcTable")
-        if channel is None:
+            if not mention.isdecimal():
+                warning = (f"Note: You didn't give a good list of VcTable owners, so I only added the ones prior. "
+                           f"To make more people owner, use {cmd_mention}.\n")
+                break
+            mention_id = int(mention)
+            added_owner_ids.append(mention_id)
+        else:
+            owner_list = [int(mention) for mention in added_owner_ids]
+            for owner_id in owner_list:
+                owner = itx.guild.get_member(owner_id)
+                if owner is None:
+                    warning = (f"Note: The list of owners you provided contained an unknown server member "
+                               f"({owner_id}), so I only added the ones prior. To make more people owner, "
+                               f"use {cmd_mention}.")
+                    break
+
+                if owner not in added_owners:
+                    added_owners.append(owner)
+        # endregion Parse vctable owners
+
+        # region Set warnings and manage odd cases
+        user_vc = await self.get_current_voice_channel(itx, "create VcTable")
+        if user_vc is None:
             return
 
-        if name == channel.name:
+        if name == user_vc.name:
             warning += ("Info: VcTables get a prefix, so the channel name is edited to include it. "
                         "Bots can only edit a channel's name twice every 10 minutes. If you wanted to also "
                         "change the channel name, you would need to run /editvc again, adding to that 2-rename limit. "
@@ -202,12 +223,12 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                         "(prefix and rename).\n"
                         "That means you don't have to give exactly the same name as the one the channel already had.")
         elif name is None:
-            name = channel.name
+            name = user_vc.name
 
         await itx.response.defer(ephemeral=True)
         # if owner present: already VcTable -> stop
-        for target in channel.overwrites:
-            if channel.overwrites[target].connect and target not in channel.category.overwrites:
+        for target in user_vc.overwrites:
+            if _is_vc_table_owner(user_vc, target) and target not in user_vc.category.overwrites:
                 cmd_mention = self.client.get_command_mention("vctable owner")
                 await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to "
                                         f"see who the owners of this table are!",
@@ -222,38 +243,44 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 f"(<t:{first_rename_time + 600}:t>).",
                 ephemeral=True)
             return
+        # endregion Set warnings and manage odd cases
 
-        for owner_id in added_owners:  # TODO: put all overwrites into 1 api call with channel.edit(overwrites=...)
-            owner = itx.guild.get_member(int(owner_id))
-            await channel.set_permissions(
-                owner,
-                connect=True,
-                speak=True,
-                view_channel=True,
-                read_message_history=True,
-                reason="VcTable created: set as owner"
-            )
+        # region Apply permission overwrites for vctable owners
+        new_overwrites = user_vc.overwrites
+        for owner in added_owners:
+            perms = discord.PermissionOverwrite()
+            if owner in user_vc.overwrites:
+                perms = user_vc.overwrites[owner]
+            # elif owner in user_vc.category.overwrites:
+            #     perms = user_vc.category.overwrites[owner]
+            edit_permissionoverwrite(perms, {
+                "connect": True, "speak": True, "view_channel": True, "read_message_history": True
+            })
+            new_overwrites[owner] = discord.PermissionOverwrite(**perms_dict)
+        await user_vc.edit(overwrites=new_overwrites)
 
-        await channel.set_permissions(
+        # todo: can i merge this one with the user_vc.edit too?
+        await user_vc.set_permissions(
             # make sure the bot can still see the channel for vc events, even if /vctable lock
             itx.guild.me,
             view_channel=True,
-            reason="VcTable created: auto-set as participent"
+            reason="VcTable created: auto-set as participant"
         )
+        # endregion Apply permission overwrites for vctable owners
 
         owner_taglist = ', '.join([f'<@{user_id}>' for user_id in added_owners])
         cmd_mention = self.client.get_command_mention("vctable about")
-        await channel.send(f"CustomVC converted to VcTable\n"
+        await user_vc.send(f"CustomVC converted to VcTable\n"
                            f"Use {cmd_mention} to learn more!\n"
                            f"Made {owner_taglist} a VcTable Owner\n"
                            f"**:warning: If someone is breaking the rules, TELL A MOD** "
                            f"(don't try to moderate a vc yourself)",
                            allowed_mentions=discord.AllowedMentions.none())
         await log_to_guild(self.client, itx.guild,
-                           f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({channel.id}) into a VcTable")
+                           f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({user_vc.id}) into a VcTable")
 
         try:
-            await channel.edit(name=self.client.custom_ids["vctable_prefix"] + name)
+            await user_vc.edit(name=self.client.custom_ids["vctable_prefix"] + name)
             await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n" + warning,
                                     ephemeral=True)
         except discord.errors.NotFound:
@@ -271,7 +298,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         await channel.send(
             f"{itx.user.mention} disbanded the VcTable and turned it back to a normal CustomVC",
             allowed_mentions=discord.AllowedMentions.none())
-        # remove channel's name prefix (seperately from the overwrites due to things like ratelimiting)
+        # remove channel's name prefix (separately from the overwrites due to things like ratelimiting)
         await itx.response.send_message("Successfully disbanded VcTable.", ephemeral=True)
         if channel.name.startswith(self.client.custom_ids["vctable_prefix"]):
             new_channel_name = channel.name[len(self.client.custom_ids["vctable_prefix"]):]

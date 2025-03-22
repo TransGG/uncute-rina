@@ -11,7 +11,7 @@ from resources.views.generics import GenericTwoButtonView
 
 from extensions.customvcs.channel_rename_tracker import clear_vc_rename_log, try_store_vc_rename
 from extensions.customvcs.modals import CustomVcStaffEditorModal
-from extensions.customvcs.utils import is_vc_custom
+from extensions.customvcs.utils import is_vc_custom, BLACKLISTED_CHANNELS
 
 
 async def _reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice_channel: discord.VoiceChannel):
@@ -227,7 +227,7 @@ async def _edit_guild_info_autocomplete(itx: discord.Interaction, current: str) 
 class CustomVcs(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
-        self.blacklisted_channels = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
+        self.blacklisted_channels = BLACKLISTED_CHANNELS
         #  # General, #Private, #Quiet, and #Minecraft. Later, it also excludes channels starting with "〙"
 
     @commands.Cog.listener()

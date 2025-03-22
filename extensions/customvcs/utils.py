@@ -1,6 +1,8 @@
 import discord
 
 
+BLACKLISTED_CHANNELS = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
+
 def is_vc_custom(
         voice_channel: discord.VoiceChannel,
         customvc_category_id: int,
@@ -25,9 +27,21 @@ def is_vc_custom(
     :class:`bool`:
         Whether the channel is a custom voice channel or not.
     """
+    if voice_channel.category is None:
+        return False
     return (
             voice_channel.category.id in [customvc_category_id] and
             voice_channel.id != customvc_hub_id and  # avoid deleting the hub channel
             voice_channel.id not in customvc_channel_blacklist and
             not voice_channel.name.startswith('〙')
     )  # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
+
+
+def edit_permissionoverwrite(
+        perms: discord.PermissionOverwrite,
+        overwrites: dict[str, bool]
+) -> discord.PermissionOverwrite:
+    perms_dict = dict(perms)
+    perms_dict.update(overwrites)
+    return perms_dict
+
