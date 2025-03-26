@@ -17,7 +17,7 @@ class Tags:
 
     @staticmethod
     async def tag_message(
-            tag_name: str, itx: discord.Interaction, client: Bot, public: bool, anonymous: bool,
+            tag_name: str, itx: discord.Interaction, public: bool, anonymous: bool,
             embed: discord.Embed, public_footer: bool = False
     ):
         """
@@ -29,8 +29,6 @@ class Tags:
             The tag's custom ID used in the code, and in logs.
         itx: :class:`discord.Interaction`
             The interaction to reply to.
-        client: :class:`UncuteRina.Bot`
-            The Bot client, for logs.
         public: :class:`bool`
             Whether to send the tag publicly or not.
         anonymous: :class:`bool`
@@ -42,7 +40,7 @@ class Tags:
         """
 
         embed.colour = colours[tag_name]
-        cmd_mention = client.get_command_mention("tag")
+        cmd_mention = itx.client.get_command_mention("tag")
         log_msg = f"{itx.user.name} (`{itx.user.id}`) used {cmd_mention} `tag:{tag_name}` anonymously"
         if public:
             if anonymous:
@@ -57,17 +55,17 @@ class Tags:
                 except discord.Forbidden:
                     msg = await itx.followup.send(embed=embed, ephemeral=False, wait=True)
                 log_msg += f", in {itx.channel.mention} (`{itx.channel.id}`)\n[Jump to the tag message]({msg.jump_url})"
-                await log_to_guild(client, itx.guild, log_msg)
-                staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                await log_to_guild(itx.client, itx.guild, log_msg)
+                staff_message_reports_channel = itx.client.get_channel(itx.client.custom_ids["staff_reports_channel"])
                 await staff_message_reports_channel.send(log_msg)
             else:
                 await itx.response.send_message(embed=embed)
         else:
             if anonymous:
-                view = SendPubliclyTagView(client, embed, timeout=60, public_footer=public_footer, log_msg=log_msg,
+                view = SendPubliclyTagView(embed, timeout=60, public_footer=public_footer, log_msg=log_msg,
                                            tag_name=tag_name)
             else:
-                view = SendPubliclyTagView(client, embed, timeout=60, tag_name=tag_name)
+                view = SendPubliclyTagView(embed, timeout=60, tag_name=tag_name)
             await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
 
     # region Tags
@@ -99,11 +97,11 @@ class Tags:
             await context.send(embed=embed)
 
     @staticmethod
-    async def send_customvc_info(tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
-        vc_hub = await client.get_guild_info(itx.guild, "vcHub")
+    async def send_customvc_info(tag_name: str, itx: discord.Interaction, public, anonymous):
+        vc_hub = await itx.client.get_guild_info(itx.guild, "vcHub")
 
-        cmd_mention = client.get_command_mention('editvc')
-        cmd_mention2 = client.get_command_mention('vctable about')
+        cmd_mention = itx.client.get_command_mention('editvc')
+        cmd_mention2 = itx.client.get_command_mention('vctable about')
         embed = discord.Embed(
             title="TransPlace's custom voice channels (vc)",
             description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You "
@@ -111,10 +109,10 @@ class Tags:
                         f"limit of this channel with the {cmd_mention} command. When everyone leaves the "
                         f"channel, the channel is deleted automatically."
                         f"You can use {cmd_mention2} for additional features.")
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_triggerwarning_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_triggerwarning_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="Using trigger warnings correctly",
             description="Content or trigger warnings (CW and TW for short) are notices placed before a "
@@ -128,10 +126,10 @@ class Tags:
                         "Some potential triggers include (TW: triggers): abuse, bugs/spiders, death, "
                         "dieting/weight loss, injections, self-harm, transmed/truscum points of view or "
                         "transphobic content.")
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed, public_footer=True)
 
     @staticmethod
-    async def send_toneindicator_info(tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
+    async def send_toneindicator_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="When to use tone indicators?",
             description="Tone indicators are a useful tool to clarify the meaning of a message.\n"
@@ -144,12 +142,12 @@ class Tags:
                         "\n"
                         "Some tone indicators have multiple definitions depending on the context. For "
                         "example: \"/m\" can mean 'mad' or 'metaphor'. You can look up tone indicators by "
-                        f"their tag or definition using {client.get_command_mention('toneindicator')}."
+                        f"their tag or definition using {itx.client.get_command_mention('toneindicator')}."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_trustedrole_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_trustedrole_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="The trusted role (and selfies)",
             description="The trusted role is the role we use to add an extra layer of protection to some "
@@ -160,11 +158,11 @@ class Tags:
                         "voice channels. If you rejoin the server you can always "
                         "ask for the role back too!"
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_imagebanrole_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
-        mod_ticket_channel_id = get_mod_ticket_channel_id(client, itx.guild.id)
+    async def send_imagebanrole_info(tag_name: str, itx: discord.Interaction, public, anonymous):
+        mod_ticket_channel_id = get_mod_ticket_channel_id(itx.client, itx.guild.id)
         embed = discord.Embed(
             title="TEB role (Image Ban)",
             description="**Why can't I send images in the server? Why are my .GIFs only sending links and not "
@@ -180,10 +178,10 @@ class Tags:
                         "Do note that mods will *only* remove the role if you have been active enough in the "
                         "server and weren't given the role from a warning."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_selfies_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_selfies_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="Selfies and the #selfies channel",
             description="For your own and other's safety, the selfies channel is hidden behind the "
@@ -194,10 +192,10 @@ class Tags:
                         "The selfies channel automatically deletes all messages after 7 days to ensure "
                         "the privacy and safety of our members."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_minimodding_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_minimodding_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="Correcting staff or minimodding",
             description="If you have any input on how members of staff operate, please open a ticket to "
@@ -206,11 +204,11 @@ class Tags:
                         "Please do not interfere with moderator actions, as it can make situations worse. "
                         "It can be seen as harassment, and you could be warned."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed, public_footer=True)
 
     @staticmethod
-    async def send_avoidpolitics_info(tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
-        cmd_mention = client.get_command_mention("remove-role")
+    async def send_avoidpolitics_info(tag_name: str, itx: discord.Interaction, public, anonymous):
+        cmd_mention = itx.client.get_command_mention("remove-role")
         embed = discord.Embed(
             title="Please avoid political discussions!",
             description="A member has requested that we avoid political discussions in this chat. We kindly "
@@ -224,11 +222,11 @@ class Tags:
                         "If you continue discussing politics, a moderator may need to take action and mute "
                         "you. Thank you for your cooperation."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed, public_footer=True)
 
     @staticmethod
-    async def send_avoidventing_info(tag_name: str, itx: discord.Interaction, client: Bot, public, anonymous):
-        cmd_mention = client.get_command_mention("remove-role")
+    async def send_avoidventing_info(tag_name: str, itx: discord.Interaction, public, anonymous):
+        cmd_mention = itx.client.get_command_mention("remove-role")
         embed = discord.Embed(
             title="Please avoid venting / doomposting!",
             description="A member has requested that we avoid venting / doomposting in this chat. We kindly "
@@ -242,21 +240,20 @@ class Tags:
                         f"If you continue venting or doomposting, a moderator may need to take action and mute "
                         f"you. Thank you for your cooperation."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
-
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed, public_footer=True)
 
     @staticmethod
-    async def send_chat_topic_change_request(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_chat_topic_change_request(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="Please change chat topic",
             description="A community member has requested a change of topic as the current one is making them "
                         "uncomfortable. Please refrain from continuing the current line of discussion and find "
                         "a new topic."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed, public_footer=True)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed, public_footer=True)
 
     @staticmethod
-    async def send_conversing_effectively_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_conversing_effectively_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="Conversing effectively",
             description="When you have a question and hope to find the answer quickly, don't start with just "
@@ -268,10 +265,10 @@ class Tags:
                         "[other relevant info]?\""
         )
         embed.set_footer(text="More info: https://www.nohello.net/, https://dontasktoask.com/")
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_pluralkit_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_pluralkit_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="PluralKit and users with the [APP] tag",
             description="PluralKit is a Discord bot that allows users to proxy their messages via Discord webhooks. "
@@ -287,11 +284,11 @@ class Tags:
                         "\n"
                         "***We do not allow users to make use of PluralKit for role-playing.***"
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_maturerole_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
-        mod_ticket_channel_id = get_mod_ticket_channel_id(client, itx)
+    async def send_maturerole_info(tag_name: str, itx: discord.Interaction, public, anonymous):
+        mod_ticket_channel_id = get_mod_ticket_channel_id(itx.client, itx)
         embed = discord.Embed(
             title="Mature role and \\#mature\\-chat",
             description="Our server is accessible to people of all ages. Because of that, you may often "
@@ -303,10 +300,10 @@ class Tags:
                         "all server rules.\n"
                         f"Access the channel by making a ticket in <#{mod_ticket_channel_id}>!"
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_syscourse_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_syscourse_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="Please avoid system discourse",
             description="A member has requested that we avoid discussions of system origins, including but "
@@ -321,10 +318,10 @@ class Tags:
                         "If you continue discussing system origins or other disallowed topics, a moderator may "
                         "need to take action and mute you. Thank you for your cooperation."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_pksettag_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_pksettag_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         embed = discord.Embed(
             title="Please set a PluralKit server tag",
             description="Please set a server tag via PluralKit. You can do that by doing `pk;system servertag [tag]`"
@@ -335,10 +332,10 @@ class Tags:
                         "Example: Apocalypse System uses ☣️ as a system tag, but \"[Mod]\" as a server "
                         "tag to be easily identifiable as a moderator."
         )
-        await Tags.tag_message(tag_name, itx, client, public, anonymous, embed)
+        await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_enabling_embeds_info(tag_name: str, itx: discord.Interaction, client, public, anonymous):
+    async def send_enabling_embeds_info(tag_name: str, itx: discord.Interaction, public, anonymous):
         txt = ("**Enabling Embeds**\n"
                "Embeds are a neat feature in discord that let you preview websites and show certain messages "
                "in a nicer format. Many bots make use of embeds to lay out information, as do I.\n"
@@ -350,12 +347,14 @@ class Tags:
                 await itx.response.send_message("sending...", ephemeral=True)
                 try:
                     msg = await itx.channel.send(txt)
-                    cmd_mention = client.get_command_mention("tag")
+                    cmd_mention = itx.client.get_command_mention("tag")
                     log_msg = (f"{itx.user.name} ({itx.user.id}) used {cmd_mention} `tag:{tag_name}` anonymously, "
                                f"in {itx.channel.mention} (`{itx.channel.id}`)\n"
                                f"[Jump to the tag message]({msg.jump_url})")
-                    await log_to_guild(client, itx.guild, log_msg)
-                    staff_message_reports_channel = client.get_channel(client.custom_ids["staff_reports_channel"])
+                    await log_to_guild(itx.client, itx.guild, log_msg)
+                    staff_message_reports_channel = itx.client.get_channel(
+                        itx.client.custom_ids["staff_reports_channel"]
+                    )
                     await staff_message_reports_channel.send(log_msg)
                 except discord.Forbidden:
                     await itx.followup.send(txt, ephemeral=False)

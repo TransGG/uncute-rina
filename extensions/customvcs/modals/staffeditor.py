@@ -11,7 +11,6 @@ from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s channel'):
     def __init__(self, client: Bot, vc_hub: int, vc_log, vc_category):
         super().__init__()
-        self.client = client
         self.vcHub = vc_hub
         self.vcLog = vc_log
         self.vcCategory = vc_category
@@ -97,7 +96,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
             if limit and not name:
                 await channel.edit(reason=f"Staff: Voice channel limit edited from \"{old_limit}\" to \"{limit}\"",
                                    user_limit=limit)
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f"Staff: Voice channel \"{old_name}\" ({channel.id}) edited the user limit from "
                                    f"\"{old_limit}\" to \"{limit}\""
                                    f" (by {itx.user.nick or itx.user.name}, {itx.user.id}){limit_info}")
@@ -108,7 +107,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
             if not limit and name:
                 await channel.edit(
                     reason=f"Staff: Voice channel renamed from \"{channel.name}\" to \"{name}\"{limit_info}", name=name)
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f"Staff: Voice channel ({channel.id}) renamed from "
                                    f"\"{old_name}\" to \"{name}\""
                                    f" (by {itx.user.nick or itx.user.name}, {itx.user.id})")
@@ -119,7 +118,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
                     reason=f"Staff: Voice channel edited from name: \"{channel.name}\" to \"{name}\" "
                            f"and user limit from: \"{limit}\" to \"{old_limit}\"",
                     user_limit=limit, name=name)
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f"Staff: {itx.user.nick or itx.user.name} ({itx.user.id}) changed "
                                    f"VC ({channel.id}) name \"{old_name}\" to \"{name}\" and user limit "
                                    f"from \"{old_limit}\" to \"{limit}\"{limit_info}")
@@ -128,7 +127,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
                     allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"Staff: Warning! >> {ex_message} << {itx.user.nick or itx.user.name} ({itx.user.id}) "
                                f"tried to change {old_name} ({channel.id}) to {name}, but wasn't allowed to by "
                                f"discord, probably because it's in a banned word list for discord's discovery "

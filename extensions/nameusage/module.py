@@ -4,4 +4,4 @@ from extensions.nameusage.cogs import NameUsage
 
 
 async def setup(client: Bot):
-    await client.add_cog(NameUsage(client))
+    await client.add_cog(NameUsage())

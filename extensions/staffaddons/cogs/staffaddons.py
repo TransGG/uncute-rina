@@ -12,8 +12,8 @@ from resources.utils.utils import log_to_guild  # logging when a staff command i
 
 
 class StaffAddons(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="say", description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?",
@@ -28,15 +28,15 @@ class StaffAddons(commands.Cog):
         if reply_to_interaction:
             await itx.response.send_message(text, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             return
-        cmd_mention = self.client.get_command_mention("editguildinfo")
-        await self.client.get_guild_info(itx.guild, "vcLog", log=[
+        cmd_mention = itx.client.get_command_mention("editguildinfo")
+        await itx.client.get_guild_info(itx.guild, "vcLog", log=[
             itx,
             "Couldn't send your message. You can't send messages in this server because "
             "the bot setup seems incomplete\n"
             f"Use {cmd_mention} `mode:11` to fix this!"])
         try:
             # vcLog      = guild["vcLog"]
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}")
             text = text.replace("[[\\n]]", "\n").replace("[[del]]", "")
             await itx.channel.send(f"{text}",
@@ -72,7 +72,7 @@ class StaffAddons(commands.Cog):
 
         await itx.response.send_message(output + "...", ephemeral=True)
         try:
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in "
                                f"{itx.channel.mention} ({itx.channel.id}).")
             message_delete_count: int = 0
@@ -128,17 +128,17 @@ class StaffAddons(commands.Cog):
         # get most recently pushed bot version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]
-        unix = int(self.client.startup_time.timetuple())
+        unix = int(itx.client.startup_time.timetuple())
         for i in range(len(latest_version.split("."))):
-            if int(latest_version.split(".")[i]) > int(self.client.version.split(".")[i]):
+            if int(latest_version.split(".")[i]) > int(itx.client.version.split(".")[i]):
                 await itx.response.send_message(
-                    f"Bot is currently running on v{self.client.version} (latest: v{latest_version})\n"
+                    f"Bot is currently running on v{itx.client.version} (latest: v{latest_version})\n"
                     f"(started <t:{unix}:D> at <t:{unix}:T>)",
                     ephemeral=not public)
                 return
         else:
             await itx.response.send_message(
-                f"Bot is currently running on v{self.client.version} (latest)\n(started <t:{unix}:D> at <t:{unix}:T>)",
+                f"Bot is currently running on v{itx.client.version} (latest)\n(started <t:{unix}:D> at <t:{unix}:T>)",
                 ephemeral=not public)
 
     @app_commands.command(name="update", description="Update slash-commands")
@@ -147,6 +147,6 @@ class StaffAddons(commands.Cog):
             await itx.response.send_message("Only Staff can update the slash commands (to prevent ratelimiting)",
                                             ephemeral=True)
             return
-        await self.client.tree.sync()
-        self.client.commandList = await self.client.tree.fetch_commands()
+        await itx.client.tree.sync()
+        itx.client.commandList = await itx.client.tree.fetch_commands()
         await itx.response.send_message("Updated commands")

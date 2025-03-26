@@ -14,12 +14,11 @@ if TYPE_CHECKING:
 
 
 class CopyReminder(discord.ui.View):
-    def __init__(self, client: Bot, create_reminder_callback, reminder: ReminderObject, timeout=300):
+    def __init__(self, create_reminder_callback, reminder: ReminderObject, timeout=300):
         super().__init__()
         self.timeout = timeout
         self.return_interaction: discord.Interaction | None = None
         self.reminder = reminder
-        self.client = client
 
         # required to prevent circular imports ;-;
         # AI suggested this to me lol. It's probably the easiest way to fix it.
@@ -31,23 +30,22 @@ class CopyReminder(discord.ui.View):
 
     async def button_callback(self, itx: discord.Interaction):
         # Check if user has too many reminders (max 50 allowed (internally chosen limit))
-        user_reminders = get_user_reminders(self.client, itx.user)
+        user_reminders = get_user_reminders(itx.client, itx.user)
         if len(user_reminders) > 50:
-            cmd_mention = self.client.get_command_mention("reminder reminders")
-            cmd_mention1 = self.client.get_command_mention("reminder remove")
+            cmd_mention = itx.client.get_command_mention("reminder reminders")
+            cmd_mention1 = itx.client.get_command_mention("reminder remove")
             await itx.response.send_message(f"You already have more than 50 reminders! Use {cmd_mention} to see "
                                             f"your reminders, and use {cmd_mention1} `item: ` to remove a reminder",
                                             ephemeral=True)
             return
         if self.reminder.remindertime < itx.created_at.astimezone():
-            cmd_mention = self.client.get_command_mention("reminder remindme")
-            cmd_mention1 = self.client.get_command_mention("help")
+            cmd_mention = itx.client.get_command_mention("reminder remindme")
+            cmd_mention1 = itx.client.get_command_mention("help")
             await itx.response.send_message(f"This reminder has already passed! Use {cmd_mention} to create a new "
                                             f"reminder, or use {cmd_mention1} `page:113` for more help about reminders.",
                                             ephemeral=True)
             return
         await self.create_reminder_callback(
-            self.client,
             itx,
             self.reminder.remindertime,
             itx.created_at.astimezone(timezone.utc),

@@ -4,4 +4,4 @@ from extensions.pronouns.cogs import Pronouns
 
 
 async def setup(client: Bot):
-    await client.add_cog(Pronouns(client))
+    await client.add_cog(Pronouns())

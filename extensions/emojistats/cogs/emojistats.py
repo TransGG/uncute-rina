@@ -124,7 +124,7 @@ class EmojiStats(commands.Cog):
                 ephemeral=True)
             return
 
-        collection = self.client.async_rina_db["emojistats"]
+        collection = itx.client.async_rina_db["emojistats"]
         query = {"id": emoji_id}
         emoji = await collection.find_one(query)
         if emoji is None:
@@ -177,7 +177,7 @@ class EmojiStats(commands.Cog):
 
         unused_emojis = []
 
-        collection = self.client.async_rina_db["emojistats"]
+        collection = itx.client.async_rina_db["emojistats"]
         query = {
             "$expr": {
                 "$lte": [
@@ -246,7 +246,7 @@ class EmojiStats(commands.Cog):
 
     @emojistats.command(name="getemojitop10", description="Get top 10 most used emojis")
     async def get_emoji_top_10(self, itx: discord.Interaction):
-        collection = self.client.async_rina_db["emojistats"]
+        collection = itx.client.async_rina_db["emojistats"]
         output = ""
         for source_type in ["messageUsedCount", "reactionUsedCount"]:
             results = []

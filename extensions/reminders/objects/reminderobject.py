@@ -231,16 +231,15 @@ async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str)
 
 
 async def _create_reminder(
-        client: Bot,
         itx: discord.Interaction,
         distance: datetime,
         creation_time: datetime, reminder: str,
         db_data: list[ReminderDict],
         from_copy: bool = False
 ):
-    reminder_object = ReminderObject(client, creation_time, distance, itx.user.id, reminder, db_data)
+    reminder_object = ReminderObject(itx.client, creation_time, distance, itx.user.id, reminder, db_data)
     _distance = int(distance.timestamp())
-    cmd_mention = client.get_command_mention("reminder reminders")
+    cmd_mention = itx.client.get_command_mention("reminder reminders")
     view = ShareReminder()
     if from_copy:
         # send message without view.
@@ -260,7 +259,7 @@ async def _create_reminder(
     await view.wait()
     if view.value == 1:
         msg = f"{itx.user.mention} shared a reminder on <t:{_distance}:F> for \"{reminder}\""
-        copy_view = CopyReminder(client, _create_reminder, reminder_object, timeout=300)
+        copy_view = CopyReminder(itx.client, _create_reminder, reminder_object, timeout=300)
         try:
             await itx.channel.send(content=msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.Forbidden:
@@ -268,18 +267,18 @@ async def _create_reminder(
     await itx.edit_original_response(view=None)
 
 
-async def parse_and_create_reminder(client: Bot, itx: discord.Interaction, reminder_datetime: str, reminder: str):
+async def parse_and_create_reminder(itx: discord.Interaction, reminder_datetime: str, reminder: str):
     # Check if user has too many reminders (max 50 allowed (internally chosen limit))
-    user_reminders = get_user_reminders(client, itx.user)
+    user_reminders = get_user_reminders(itx.client, itx.user)
     if len(user_reminders) > 50:
-        cmd_mention = client.get_command_mention("reminder reminders")
-        cmd_mention1 = client.get_command_mention("reminder remove")
+        cmd_mention = itx.client.get_command_mention("reminder reminders")
+        cmd_mention1 = itx.client.get_command_mention("reminder remove")
         await itx.response.send_message(f"Please don't make more than 50 reminders. Use {cmd_mention} to see "
                                         f"your reminders, and use {cmd_mention1} `item: ` to remove a reminder",
                                         ephemeral=True)
         return
 
-    cmd_mention_help = client.get_command_mention("help")
+    cmd_mention_help = itx.client.get_command_mention("help")
     try:
         distance, creation_time = await _parse_reminder_time(itx, reminder_datetime)
     except UnixTimestampInPastException as ex:
@@ -347,4 +346,4 @@ async def parse_and_create_reminder(client: Bot, itx: discord.Interaction, remin
         )
         return
 
-    await _create_reminder(client, itx, distance, creation_time, reminder, user_reminders, False)
+    await _create_reminder(itx, distance, creation_time, reminder, user_reminders, False)

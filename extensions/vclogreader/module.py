@@ -4,4 +4,4 @@ from extensions.vclogreader.cogs import VCLogReader
 
 
 async def setup(client: Bot):
-    await client.add_cog(VCLogReader(client))
+    await client.add_cog(VCLogReader())

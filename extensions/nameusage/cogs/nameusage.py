@@ -10,8 +10,8 @@ from extensions.nameusage.views.pageview import GetTopPageView
 
 
 class NameUsage(commands.GroupCog, name="nameusage", description="Get data about which names are used in which server"):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="gettop", description="See how often different names occur in this server")
     @app_commands.choices(mode=[

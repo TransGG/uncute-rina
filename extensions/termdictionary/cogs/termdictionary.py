@@ -19,10 +19,10 @@ del_separators_table = str.maketrans({" ": "", "-": "", "_": ""})
 
 
 class TermDictionary(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
-    async def dictionary_autocomplete(self, _: discord.Interaction, current: str):
+    async def dictionary_autocomplete(self, itx: discord.Interaction, current: str):
         def simplify(q):
             if type(q) is str:
                 return q.lower().translate(del_separators_table)
@@ -34,7 +34,7 @@ class TermDictionary(commands.Cog):
             return []
 
         # find results in custom dictionary
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"synonyms": simplify(current)}
         search = collection.find(query)
         for item in search:
@@ -106,7 +106,7 @@ class TermDictionary(commands.Cog):
         # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
         results: list[any]
         if source == 1 or source == 2:
-            collection = self.client.rina_db["termDictionary"]
+            collection = itx.client.rina_db["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
 
@@ -129,7 +129,7 @@ class TermDictionary(commands.Cog):
                     source = 3
                 # public = False
                 else:
-                    cmd_mention = self.client.get_command_mention("dictionary_staff define")
+                    cmd_mention = itx.client.get_command_mention("dictionary_staff define")
                     result_str += (f"No information found for '{term}' in the custom dictionary.\n"
                                    f"If you would like to add a term, message a staff member (to use {cmd_mention})")
                     public = False
@@ -139,7 +139,7 @@ class TermDictionary(commands.Cog):
             if len(result_str) > 1999:
                 result_str = (f"Your search ({term}) returned too many results (discord has a 2000-character "
                               f"message length D:). (Please ask staff to fix this (synonyms and stuff).)")
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f":warning: **!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary "
                                    f"search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 3 or source == 4:
@@ -352,9 +352,9 @@ class TermDictionary(commands.Cog):
             if len(data) == 0:
                 if source == 7:
                     result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
-                    cmd_mention_dict = self.client.get_command_mention("dictionary")
-                    cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
-                    await log_to_guild(self.client, itx.guild,
+                    cmd_mention_dict = itx.client.get_command_mention("dictionary")
+                    cmd_mention_def = itx.client.get_command_mention("dictionary_staff define")
+                    await log_to_guild(itx.client, itx.guild,
                                        f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for "
                                        f"'{term}' in the terminology dictionary and online, but there were "
                                        f"no results. Maybe we should add this term to "
@@ -423,11 +423,11 @@ class TermDictionary(commands.Cog):
                 return [text.lower().translate(del_separators_table) for text in q]
 
         # Test if this term is already defined in this dictionary.
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is not None:
-            cmd_mention = self.client.get_command_mention("dictionary")
+            cmd_mention = itx.client.get_command_mention("dictionary")
             await itx.response.send_message(
                 f"You have already previously defined this term (try to find it with {cmd_mention}).", ephemeral=True)
             return
@@ -451,7 +451,7 @@ class TermDictionary(commands.Cog):
         post = {"term": term, "definition": definition, "synonyms": synonyms}
         collection.insert_one(post)
 
-        await log_to_guild(self.client, itx.guild,
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.nick or itx.user.name} ({itx.user.id}) added the dictionary definition "
                            f"of '{term}' and set it to '{definition}', with synonyms: {synonyms}")
         await itx.followup.send(
@@ -469,18 +469,18 @@ class TermDictionary(commands.Cog):
             await itx.response.send_message("You can't add words to the dictionary without staff roles!",
                                             ephemeral=True)
             return
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = self.client.get_command_mention("dictionary_staff define")
+            cmd_mention = itx.client.get_command_mention("dictionary_staff define")
             await itx.response.send_message(
                 f"This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use {cmd_mention}.",
                 ephemeral=True)
             return
         collection.update_one(query, {"$set": {"definition": definition}})
 
-        await log_to_guild(self.client, itx.guild,
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed the dictionary definition "
                            f"of '{term}' to '{definition}'")
         await itx.response.send_message(f"Successfully redefined '{term}'", ephemeral=True)
@@ -493,14 +493,14 @@ class TermDictionary(commands.Cog):
             await itx.response.send_message("You can't remove words to the dictionary without staff roles!",
                                             ephemeral=True)
             return
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
             await itx.response.send_message(
                 "This term hasn't been added to the dictionary yet, and thus cannot be undefined!", ephemeral=True)
             return
-        await log_to_guild(self.client, itx.guild,
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.nick or itx.user.name} ({itx.user.id}) undefined the dictionary "
                            f"definition of '{term}' from '{search['definition']}' with synonyms: {search['synonyms']}")
         collection.delete_one(query)
@@ -521,11 +521,11 @@ class TermDictionary(commands.Cog):
             await itx.response.send_message("You can't add synonyms to the dictionary without staff roles!",
                                             ephemeral=True)
             return
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = self.client.get_command_mention("dictionary_staff define")
+            cmd_mention = itx.client.get_command_mention("dictionary_staff define")
             await itx.response.send_message(
                 f"This term hasn't been added to the dictionary yet, and thus cannot get "
                 f"new synonyms! Use {cmd_mention}.",
@@ -539,7 +539,7 @@ class TermDictionary(commands.Cog):
                 return
             synonyms.append(synonym.lower())
             collection.update_one(query, {"$set": {"synonyms": synonyms}}, upsert=True)
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"{itx.user.nick or itx.user.name} ({itx.user.id}) added synonym '{synonym}' "
                                f"the dictionary definition of '{term}'")
             await itx.response.send_message("Successfully added synonym", ephemeral=True)
@@ -556,7 +556,7 @@ class TermDictionary(commands.Cog):
                     ephemeral=True)
                 return
             collection.update_one(query, {"$set": {"synonyms": synonyms}}, upsert=True)
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"{itx.user.nick or itx.user.name} ({itx.user.id}) removed synonym '{synonym}' "
                                f"the dictionary definition of '{term}'")
             await itx.response.send_message("Successfully removed synonym", ephemeral=True)

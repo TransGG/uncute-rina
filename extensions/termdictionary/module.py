@@ -4,4 +4,4 @@ from extensions.termdictionary.cogs import TermDictionary
 
 
 async def setup(client: Bot):
-    await client.add_cog(TermDictionary(client))
+    await client.add_cog(TermDictionary())

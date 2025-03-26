@@ -48,8 +48,8 @@ async def _role_autocomplete(itx: discord.Interaction, current: str):
 
 
 class TagFunctions(commands.Cog):
-    def __init__(self, client):
-        self.client: Bot = client
+    def __init__(self, client: Bot):
+        self.client = client
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -83,9 +83,9 @@ class TagFunctions(commands.Cog):
         options = [i for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
         tag = tag.lower()
         if tag in options:
-            await tag_info_dict[tag][1](tag, itx, self.client, public=public, anonymous=anonymous)
+            await tag_info_dict[tag][1](tag, itx, public=public, anonymous=anonymous)
         elif tag in tag_info_dict:
-            ticket_channel = get_mod_ticket_channel_id(self.client, itx)
+            ticket_channel = get_mod_ticket_channel_id(itx.client, itx)
             await itx.response.send_message(
                 f"This tag is not enabled in this server! If you think this is a mistake, make "
                 f"a staff ticket (<#{ticket_channel}>).",

@@ -11,7 +11,6 @@ from resources.utils.utils import log_to_guild  # to log add_poll_reactions
 
 from extensions.addons.equaldexregion import EqualDexRegion
 from extensions.addons.views.equaldex_additionalinfo import EqualDexAdditionalInfo
-from extensions.addons.views.math_sendpublicbutton import SendPublicButtonMath
 
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
@@ -178,8 +177,8 @@ async def _unit_autocomplete(itx: discord.Interaction, current: str):
 
 
 class OtherAddons(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -239,7 +238,7 @@ class OtherAddons(commands.Cog):
             return
         if mode == "currency":
             # more info: https://docs.openexchangerates.org/reference/latest-json
-            api_key = self.client.api_tokens['Open Exchange Rates']
+            api_key = itx.client.api_tokens['Open Exchange Rates']
             response_api = requests.get(
                 f"https://openexchangerates.org/api/latest.json?app_id={api_key}&show_alternative=true").text
             data = json.loads(response_api)
@@ -297,22 +296,22 @@ class OtherAddons(commands.Cog):
         else:
             errors.append("- The message ID needs to be a number!")
 
-        upvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client, upvote_emoji)
+        upvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(itx.client, upvote_emoji)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
 
-        downvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client, downvote_emoji)
+        downvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(itx.client, downvote_emoji)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
 
         if neutral_emoji is None:
-            neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client,
+            neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(itx.client,
                                                                                                neutral_emoji)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
-        if itx.guild.id != self.client.custom_ids["staff_server_id"]:
-            blacklisted_channels = await self.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
+        if itx.guild.id != itx.client.custom_ids["staff_server_id"]:
+            blacklisted_channels = await itx.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
             if itx.channel.id in blacklisted_channels:
                 errors.append("- :no_entry: You are not allowed to use this command in this channel!")
 
@@ -340,8 +339,8 @@ class OtherAddons(commands.Cog):
                                                          "(at least) one of the emojis was not a real emoji!")
             else:
                 await itx.edit_original_response(content=":warning: Adding emojis failed!")
-        cmd_mention = self.client.get_command_mention("add_poll_reactions")
-        await log_to_guild(self.client, itx.guild,
+        cmd_mention = itx.client.get_command_mention("add_poll_reactions")
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
 
     @app_commands.command(name="get_rina_command_mention",
@@ -359,7 +358,7 @@ class OtherAddons(commands.Cog):
                 ephemeral=True)
             return
 
-        cmd_mention = self.client.get_command_mention(command)
+        cmd_mention = itx.client.get_command_mention(command)
         await itx.response.send_message(
             f"Your input: `{command}`.\n"
             f"Command mention: {cmd_mention}.\n"

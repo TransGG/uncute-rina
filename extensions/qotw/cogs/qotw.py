@@ -9,14 +9,14 @@ from resources.utils.utils import get_mod_ticket_channel_id
 
 
 class QOTW(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="qotw", description="Suggest a question for the weekly queue!")
     @app_commands.describe(question="What question would you like to add?")
     async def qotw(self, itx: discord.Interaction, question: str):
         if len(question) > 400:
-            channel_id = get_mod_ticket_channel_id(self.client, guild_id=itx.guild.id)
+            channel_id = get_mod_ticket_channel_id(itx.client, guild_id=itx.guild.id)
             await itx.response.send_message(
                 f"Please make your question shorter! (400 characters) If you have a special request, "
                 f"please make a ticket (in <#{channel_id}>)",
@@ -26,7 +26,7 @@ class QOTW(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            confirm_channel = itx.client.get_channel(self.client.custom_ids["staff_qotw_channel"])
+            confirm_channel = itx.client.get_channel(itx.client.custom_ids["staff_qotw_channel"])
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                 color=discord.Colour.from_rgb(r=33, g=33, b=33),

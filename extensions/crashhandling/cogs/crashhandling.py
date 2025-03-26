@@ -73,6 +73,16 @@ async def _send_crash_message(
                        allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
 
 
+async def _reply(itx: discord.Interaction, message: str):
+    try:
+        if itx.response.is_done():
+            await itx.followup.send(message, ephemeral=True)
+        else:
+            await itx.response.send_message(message, ephemeral=True)
+    except discord.errors.NotFound:  # ex: 404 interaction not found, eg. took too long
+        pass  # prevent other code from not running
+
+
 class CrashHandling(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
@@ -125,38 +135,29 @@ class CrashHandling(commands.Cog):
             # within 1 minute
             return
 
-        async def reply(itx1: discord.Interaction, message: str):
-            try:
-                if itx1.response.is_done():
-                    await itx1.followup.send(message, ephemeral=True)
-                else:
-                    await itx1.response.send_message(message, ephemeral=True)
-            except discord.errors.NotFound:  # ex: 404 interaction not found, eg. took too long
-                pass  # prevent other code from not running
-
-        cmd_mention = self.client.get_command_mention("update")
+        cmd_mention = itx.client.get_command_mention("update")
         if isinstance(error, discord.app_commands.errors.CommandNotFound):
-            await reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask "
-                             f"{self.client.bot_owner} ({self.client.bot_owner.mention}) if she typed {cmd_mention}!")
+            await _reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask "
+                              f"{itx.client.bot_owner} ({itx.client.bot_owner.mention}) if she typed {cmd_mention}!")
         elif isinstance(error, discord.app_commands.errors.CommandSignatureMismatch):
-            await reply(itx, f"Error: CommandSignatureMismatch. Either Mia used GroupCog instead of Cog, "
-                             f"or this command is out of date (try {cmd_mention})")
+            await _reply(itx, f"Error: CommandSignatureMismatch. Either Mia used GroupCog instead of Cog, "
+                              f"or this command is out of date (try {cmd_mention})")
         else:
             if hasattr(error, 'original'):
                 error_reply = "Error"
                 if hasattr(error.original, 'status'):
                     error_reply += " " + str(error.original.status)
                     # if error.original.status == "403":
-                    #     await reply(itx, "Error 403: It seems like I didn't have permissions for this action! "
-                    #                      f"If you believe this is an error, please message or "
-                    #                      f"ping {client.bot_owner}} :)")
+                    #     await _reply(itx, "Error 403: It seems like I didn't have permissions for this action! "
+                    #                       f"If you believe this is an error, please message or "
+                    #                       f"ping {client.bot_owner}} :)")
                 if hasattr(error.original, 'code'):
                     error_reply += " (" + str(error.original.code) + ")"
-                await reply(itx,
-                            error_reply + f". Please report the error and details to {self.client.bot_owner} "
-                                          f"({self.client.bot_owner.mention}) by pinging her or sending her a DM")
+                await _reply(itx,
+                             error_reply + f". Please report the error and details to {itx.client.bot_owner} "
+                                           f"({itx.client.bot_owner.mention}) by pinging her or sending her a DM")
             else:
-                await reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
+                await _reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
 
         try:
             msg = f"    Executor details: {itx.user} ({itx.user.id})\n"
@@ -174,6 +175,6 @@ class CrashHandling(commands.Cog):
         # details: /help `page:1` `param2:hey`
         command_details = f"</{itx.command.name}:{itx.data.get('id')}> " + ' '.join(
             [f"`{k}:{v}`" for k, v in itx.namespace.__dict__.items()])
-        await _send_crash_message(self.client, "AppCommand Error", msg, command_details,
+        await _send_crash_message(itx.client, "AppCommand Error", msg, command_details,
                                   discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
         appcommanderror_cooldown = datetime.now().astimezone()

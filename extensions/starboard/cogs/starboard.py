@@ -63,10 +63,13 @@ async def _fetch_starboard_original_message(
     ch = client.get_channel(channel_id)
 
     if ch is None:
-        await log_to_guild(client, starboard_message.guild,
-                           f":warning: Couldn't find starboard channel from starboard message!\n"
-                           f"starboard message: {starboard_message.channel.id}/{starboard_message.id}, link text: {text}\n"
-                           f"recovered channel id: {channel_id}")
+        await log_to_guild(
+            client,
+            starboard_message.guild,
+            f":warning: Couldn't find starboard channel from starboard message!\n"
+            f"starboard message: {starboard_message.channel.id}/{starboard_message.id}, link text: {text}\n"
+            f"recovered channel id: {channel_id}"
+        )
         return
 
     try:
@@ -74,8 +77,8 @@ async def _fetch_starboard_original_message(
     except discord.NotFound:
         # if original message removed, remove starboard message
         await _delete_starboard_message(client, starboard_message,
-                                       f"{starboard_emoji} :x: Starboard message {starboard_message.id} was removed "
-                                       f"(from {message_id}) (original message could not be found)")
+                                        f"{starboard_emoji} :x: Starboard message {starboard_message.id} was removed "
+                                        f"(from {message_id}) (original message could not be found)")
         return
     except discord.errors.Forbidden:
         await log_to_guild(client, starboard_message.guild,
@@ -262,12 +265,10 @@ async def _delete_starboard_message(client: Bot, starboard_message: discord.Mess
     reason: :class:`str`
         The reason for deletion.
     """
-    global local_starboard_message_list
     await log_to_guild(client, starboard_message.guild, reason)
     starboard_message_ids_marked_for_deletion.append(starboard_message.id)
     await starboard_message.delete()
     delete_from_local_starboard(starboard_message.id)
-
 
 
 class Starboard(commands.Cog):

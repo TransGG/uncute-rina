@@ -295,9 +295,9 @@ class Compliments(commands.Cog):
         random.shuffle(userroles)  # pick a random order for which pronoun role to pick
         for role in userroles:
             if role.name.lower() in roles:
-                await _choose_and_send_compliment(itx, user, role.name.lower(), self.client.rina_db)
+                await _choose_and_send_compliment(itx, user, role.name.lower(), itx.client.rina_db)
                 return
-        await _send_confirm_gender_modal(self.client, itx, user)
+        await _send_confirm_gender_modal(itx.client, itx, user)
 
     @app_commands.command(name="complimentblacklist", description="If you dislike words in certain compliments")
     @app_commands.choices(location=[
@@ -332,7 +332,7 @@ class Compliments(commands.Cog):
             if len(string) > 150:
                 await itx.response.send_message("Please make strings shorter than 150 characters...", ephemeral=True)
                 return
-            collection = self.client.rina_db["complimentblacklist"]
+            collection = itx.client.rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -348,7 +348,7 @@ class Compliments(commands.Cog):
 
         elif mode == 2:  # Remove item from black list
             if string is None:
-                cmd_mention = self.client.get_command_mention("complimentblacklist")
+                cmd_mention = itx.client.get_command_mention("complimentblacklist")
                 await itx.response.send_message(
                     f"Type the id of the string you want to remove. To find the id, type {cmd_mention} `mode:Check`.",
                     ephemeral=True)
@@ -361,7 +361,7 @@ class Compliments(commands.Cog):
                     "This should be a number... You didn't give a number...",
                     ephemeral=True)
                 return
-            collection = self.client.rina_db["complimentblacklist"]
+            collection = itx.client.rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search = collection.find_one(query)
             if search is None:
@@ -373,7 +373,7 @@ class Compliments(commands.Cog):
             try:
                 del blacklist[string]
             except IndexError:
-                cmd_mention = self.client.get_command_mention("complimentblacklist")
+                cmd_mention = itx.client.get_command_mention("complimentblacklist")
                 await itx.response.send_message(
                     f"Couldn't delete that ID, because there isn't any item on your list with that ID. "
                     f"Use {cmd_mention} `mode:Check` to see the IDs assigned to each item on your list",
@@ -386,7 +386,7 @@ class Compliments(commands.Cog):
                 ephemeral=True)
 
         elif mode == 3:  # check
-            collection = self.client.rina_db["complimentblacklist"]
+            collection = itx.client.rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search: dict[str, int | list] = collection.find_one(query)
             if search is None:

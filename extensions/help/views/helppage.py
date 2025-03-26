@@ -13,7 +13,7 @@ from extensions.help.helppage import HelpPage
 class HelpPageView(PageView):
     async def update_page(self, itx: discord.Interaction, view: PageView) -> None:
         page_key = list(self.pages)[self.page]
-        embed = generate_help_page_embed(self.pages[page_key], page_key, self.client)
+        embed = generate_help_page_embed(self.pages[page_key], page_key, itx.client)
         await itx.response.edit_message(
             embed=embed,
             view=view
@@ -66,17 +66,17 @@ class HelpPageView(PageView):
                      if page_guess != 404 else "`404`: Page not found!") +  # easter egg
                     f" {relative_page_location_details} Try %%help%% `page:1` or use the page keys "
                     f"to get to the right page number!",
-                    self.client),
+                    itx.client),
                 ephemeral=True)
             return
 
         self.page = list(self.pages).index(page_guess)
         self.update_button_colors()
         await self.update_page(jump_page_modal.itx, self)
+
     # endregion buttons
 
-    def __init__(self, client: Bot, first_page_key: int, page_dict: dict[int, HelpPage]) -> None:
-        self.client = client
+    def __init__(self, first_page_key: int, page_dict: dict[int, HelpPage]) -> None:
         self.pages = page_dict
         first_page_index = list(self.pages).index(first_page_key)
         super().__init__(first_page_index, len(self.pages) - 1, self.update_page)

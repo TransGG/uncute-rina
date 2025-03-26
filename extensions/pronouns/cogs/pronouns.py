@@ -13,8 +13,6 @@ from resources.utils.permissions import is_staff  # to check staff for removing 
 
 class Pronouns(commands.Cog):
     def __init__(self, client: Bot):
-        self.client = client
-
         # setting ContextMenu here, because apparently you can't use that decorator in classes..?
         self.ctx_menu_user = app_commands.ContextMenu(
             name='Pronouns',
@@ -24,11 +22,11 @@ class Pronouns(commands.Cog):
             name='Pronouns',
             callback=self.pronouns_ctx_message,
         )
-        self.client.tree.add_command(self.ctx_menu_user)
-        self.client.tree.add_command(self.ctx_menu_message)
+        client.tree.add_command(self.ctx_menu_user)
+        client.tree.add_command(self.ctx_menu_message)
 
     async def get_pronouns(self, itx, user):
-        collection = self.client.rina_db["members"]
+        collection = itx.client.rina_db["members"]
         query = {"member_id": user.id}
         data = collection.find_one(query)
         warning = ""
@@ -37,7 +35,7 @@ class Pronouns(commands.Cog):
         else:
             pronouns = data['pronouns']
         if len(pronouns) == 0:
-            cmd_mention = self.client.get_command_mention("pronouns")
+            cmd_mention = itx.client.get_command_mention("pronouns")
             warning = (f"\nThis person hasn't added custom pronouns yet! "
                        f"(They need to use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one)")
 
@@ -71,7 +69,7 @@ class Pronouns(commands.Cog):
         pronoun_list += roles
 
         if len(pronoun_list) == 0:
-            cmd_mention = self.client.get_command_mention("pronouns")
+            cmd_mention = itx.client.get_command_mention("pronouns")
             await itx.response.send_message(f"This person doesn't have any pronoun roles and hasn't added any "
                                             f"custom pronouns. Ask them to add a role in #self-roles, or to use "
                                             f"{cmd_mention} `mode:Add` `argument:<pronoun>`\n"
@@ -160,7 +158,7 @@ class Pronouns(commands.Cog):
                 if len(sections) == 2:
                     try:
                         user_id = int(sections[0])
-                        collection = self.client.rina_db["members"]
+                        collection = itx.client.rina_db["members"]
                         query = {"member_id": user_id}
                         data = collection.find_one(query)
                         staff_overwrite = True
@@ -169,7 +167,7 @@ class Pronouns(commands.Cog):
                         pass
             if not staff_overwrite:
                 # find results in database
-                collection = self.client.rina_db["members"]
+                collection = itx.client.rina_db["members"]
                 query = {"member_id": itx.user.id}
                 data = collection.find_one(query)
             if data is None:
@@ -239,7 +237,7 @@ class Pronouns(commands.Cog):
             if not ("/" in pronoun or pronoun.startswith(":")):
                 warning = ("Warning: Others may not be able to know what you mean with these pronouns "
                            "(it doesn't use an `x/y` or `:x` format)\n")
-            collection = self.client.rina_db["members"]
+            collection = itx.client.rina_db["members"]
             query = {"member_id": itx.user.id}
             data = collection.find_one(query)
             if data is None:
@@ -268,25 +266,25 @@ class Pronouns(commands.Cog):
                 return
             pronouns.append(pronoun)
             collection.update_one(query, {"$set": {f"pronouns": pronouns}}, upsert=True)
-            cmd_mention = self.client.get_command_mention("pronouns")
+            cmd_mention = itx.client.get_command_mention("pronouns")
             await itx.response.send_message(
                 warning + f"Successfully added `{pronoun}`. Use {cmd_mention} `mode:Check` to see your "
                           f"custom pronouns, and use {cmd_mention} `mode:Remove` `argument:pronoun` to remove one",
                 ephemeral=True)
         elif mode == 3:  # Remove
-            collection = self.client.rina_db["members"]
+            collection = itx.client.rina_db["members"]
             query = {"member_id": itx.user.id}
             data = collection.find_one(query)
             if data is None:
                 # see if this user already has data, if not, add empty
-                cmd_mention = self.client.get_command_mention("pronouns")
+                cmd_mention = itx.client.get_command_mention("pronouns")
                 await itx.response.send_message(
                     f"You haven't added pronouns yet! Use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one!",
                     ephemeral=True)
                 return
 
             if argument is None:
-                cmd_mention = self.client.get_command_mention("pronouns")
+                cmd_mention = itx.client.get_command_mention("pronouns")
                 await itx.response.send_message(
                     f"You can remove pronouns with this command. Check the pronouns you have with "
                     f"the {cmd_mention} `mode:Check` command. If you have a pronoun you want to "
@@ -304,7 +302,7 @@ class Pronouns(commands.Cog):
                         data = collection.find_one(query)
                         if data is None:
                             # see if this user already has data, if not, add empty
-                            cmd_mention = self.client.get_command_mention("pronouns")
+                            cmd_mention = itx.client.get_command_mention("pronouns")
                             await itx.response.send_message(
                                 f"This person hasn't added pronouns yet! Tell them to use "
                                 f"{cmd_mention} `mode:Add` `argument:<pronoun>` to add one!",
@@ -313,7 +311,7 @@ class Pronouns(commands.Cog):
                         pronouns = data['pronouns']
                         del pronouns[int(pronoun) - 1]
                     except ValueError:
-                        cmd_mention = self.client.get_command_mention("pronouns")
+                        cmd_mention = itx.client.get_command_mention("pronouns")
                         await itx.response.send_message(
                             f"If you are staff, and wanna remove a pronoun, then type "
                             f"`argument:USERID | PronounYouWannaRemove` like "
@@ -324,7 +322,7 @@ class Pronouns(commands.Cog):
                             ephemeral=True)
                         return
                 else:
-                    cmd_mention = self.client.get_command_mention("pronouns")
+                    cmd_mention = itx.client.get_command_mention("pronouns")
                     await itx.response.send_message(
                         f"You haven't added this pronoun yet, so I can't really remove it either! "
                         f"Use {cmd_mention} `mode:Add` `argument:<pronoun>` to add one, or "
@@ -336,7 +334,7 @@ class Pronouns(commands.Cog):
             collection.update_one(query, {"$set": {f"pronouns": pronouns}}, upsert=True)
             await itx.response.send_message(f"Removed `{pronoun}` successfully!", ephemeral=True)
         elif mode == 4:  # help
-            cmd_mention = self.client.get_command_mention("pronouns")
+            cmd_mention = itx.client.get_command_mention("pronouns")
             await itx.response.send_message(
                 f"There are multiple ways to get a user's pronouns. The simplest of all is clicking their role. "
                 f"However, sometimes the selection of roles is not enough to tell others your pronouns. In that "

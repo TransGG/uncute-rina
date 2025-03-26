@@ -259,17 +259,17 @@ class CustomVcs(commands.Cog):
                                             ephemeral=True)
             return
 
-        cmd_mention = self.client.get_command_mention("editguildinfo")
+        cmd_mention = itx.client.get_command_mention("editguildinfo")
         log = [itx,
                f"Not enough data is configured to do this action! Please ask an admin to fix this with "
                f"{cmd_mention} `mode:21`, `mode:22` or `mode:23`!"]
-        vc_hub, vc_log, vc_category = await self.client.get_guild_info(
+        vc_hub, vc_log, vc_category = await itx.client.get_guild_info(
             itx.guild, "vcHub", "vcLog", "vcCategory", log=log)
         warning = ""
 
         if itx.user.voice is None:
             if is_staff(itx.guild, itx.user):
-                await itx.response.send_modal(CustomVcStaffEditorModal(self.client, vc_hub, vc_log, vc_category))
+                await itx.response.send_modal(CustomVcStaffEditorModal(itx.client, vc_hub, vc_log, vc_category))
                 return
             await itx.response.send_message("You must be connected to a voice channel to use this command",
                                             ephemeral=True)
@@ -291,7 +291,7 @@ class CustomVcs(commands.Cog):
                 warning += "Are you really going to change it to that..\n"
             if len(itx.user.voice.channel.overwrites) > len(
                     itx.user.voice.channel.category.overwrites):  # if VcTable, add prefix
-                name = self.client.custom_ids["vctable_prefix"] + name
+                name = itx.client.custom_ids["vctable_prefix"] + name
 
         if name is not None:
             # don't add cooldown if you only change the limit, not the name
@@ -314,7 +314,7 @@ class CustomVcs(commands.Cog):
             if not limit and name:
                 await channel.edit(reason=f"Voice channel renamed from \"{channel.name}\" to \"{name}\"{limit_info}",
                                    name=name)
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f"Voice channel ({channel.id}) renamed from \"{old_name}\" to \"{name}\" "
                                    f"(by {itx.user.nick or itx.user.name}, {itx.user.id})")
                 await itx.response.send_message(warning + f"Voice channel successfully renamed to \"{name}\"",
@@ -322,7 +322,7 @@ class CustomVcs(commands.Cog):
             if limit and not name:
                 await channel.edit(reason=f"Voice channel limit edited from \"{old_limit}\" to \"{limit}\"",
                                    user_limit=limit)
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f"Voice channel \"{old_name}\" ({channel.id}) edited the user limit "
                                    f"from \"{old_limit}\" to \"{limit}\" "
                                    f"(by {itx.user.nick or itx.user.name}, {itx.user.id}){limit_info}")
@@ -335,7 +335,7 @@ class CustomVcs(commands.Cog):
                     reason=f"Voice channel edited from name: \"{channel.name}\" to \"{name}\" and user limit "
                            f"from \"{limit}\" to \"{old_limit}\"",
                     user_limit=limit, name=name)
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) "
                                    f"name \"{old_name}\" to \"{name}\" and "
                                    f"user limit from \"{old_limit}\" to \"{limit}\"{limit_info}")
@@ -343,7 +343,7 @@ class CustomVcs(commands.Cog):
                                                 ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"Warning! >> {ex_message} << {itx.user.nick or itx.user.name} ({itx.user.id}) "
                                f"tried to change {old_name} ({channel.id}) to {name}, but wasn't allowed to by "
                                f"discord, probably because it's in a banned word list for discord's "
@@ -449,7 +449,7 @@ class CustomVcs(commands.Cog):
 
         if mode == 1:
             try:
-                value = await self.client.get_guild_info(itx.guild, options[option])
+                value = await itx.client.get_guild_info(itx.guild, options[option])
             except KeyError:
                 await itx.response.send_message("This server does not yet have a value for this option!",
                                                 ephemeral=True)
@@ -459,7 +459,7 @@ class CustomVcs(commands.Cog):
                 str(value), ephemeral=True)
         if mode == 2:
             query = {"guild_id": itx.guild_id}
-            collection = self.client.rina_db["guildInfo"]
+            collection = itx.client.rina_db["guildInfo"]
 
             async def to_int(non_int, error_msg):
                 try:

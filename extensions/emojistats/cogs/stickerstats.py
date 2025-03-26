@@ -68,7 +68,7 @@ class StickerStats(commands.Cog):
                 ephemeral=True)
             return
 
-        collection = self.client.async_rina_db["stickerstats"]
+        collection = itx.client.async_rina_db["stickerstats"]
         query = {"id": sticker_id}
         sticker_response = await collection.find_one(query)
         if sticker_response is None:
@@ -104,7 +104,7 @@ class StickerStats(commands.Cog):
 
         unused_stickers = []
 
-        collection = self.client.async_rina_db["stickerstats"]
+        collection = itx.client.async_rina_db["stickerstats"]
         query = {
             "$expr": {
                 "$lte": [
@@ -158,7 +158,7 @@ class StickerStats(commands.Cog):
 
     @stickerstats.command(name="getstickertop10", description="Get top 10 most used stickers")
     async def get_sticker_top_10(self, itx: discord.Interaction):
-        collection = self.client.async_rina_db["stickerstats"]
+        collection = itx.client.async_rina_db["stickerstats"]
         output = ""
         for source_type in ["messageUsedCount"]:
             results = []

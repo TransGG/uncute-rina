@@ -199,8 +199,8 @@ async def _get_vc_activity(
 
 
 class VCLogReader(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
@@ -235,15 +235,15 @@ class VCLogReader(commands.Cog):
                                                members=[])
             warning = "Warning: This channel is not a voice channel, or has been deleted!\n\n"
 
-        cmd_mention = self.client.get_command_mention("editguildinfo")
+        cmd_mention = itx.client.get_command_mention("editguildinfo")
         try:
-            log_channel_id = await self.client.get_guild_info(itx.guild_id, "vcActivityLogChannel")
+            log_channel_id = await itx.client.get_guild_info(itx.guild_id, "vcActivityLogChannel")
         except KeyError:
             await itx.response.send_message(
                 f"Error: No log channel found! Set one with {cmd_mention} `mode:Edit` `option:51` `value:`.",
                 ephemeral=True)
             return
-        log_channel = self.client.get_channel(log_channel_id)
+        log_channel = itx.client.get_channel(log_channel_id)
         if log_channel is None:
             await itx.response.send_message(
                 f"Error: The given log channel id ({log_channel_id}) yielded no valid channels!", ephemeral=True)

@@ -11,7 +11,6 @@ from resources.utils.utils import log_to_guild  # to log add_poll_reactions
 
 from extensions.addons.equaldexregion import EqualDexRegion
 from extensions.addons.views.equaldex_additionalinfo import EqualDexAdditionalInfo
-from extensions.addons.views.math_sendpublicbutton import SendPublicButtonMath
 
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
@@ -325,7 +324,7 @@ class FunAddons(commands.Cog):
             await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ", "")
             if advanced == "help":
-                cmd_mention = self.client.get_command_mention("help")
+                cmd_mention = itx.client.get_command_mention("help")
                 await itx.response.send(
                     f"I don't think I ever added a help command... Ping mysticmia for more information about "
                     f"this command, or run {cmd_mention} `page:112` for more information.")

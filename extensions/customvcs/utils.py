@@ -43,5 +43,5 @@ def edit_permissionoverwrite(
 ) -> discord.PermissionOverwrite:
     perms_dict = dict(perms)
     perms_dict.update(overwrites)
-    return perms_dict
+    return discord.PermissionOverwrite(**perms_dict)
 

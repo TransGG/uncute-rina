@@ -32,7 +32,7 @@ class DevRequest(commands.Cog):
         await itx.response.defer(ephemeral=True)
         try:
             # get channel of where this message has to be sent
-            watchlist_channel = itx.client.get_channel(self.client.custom_ids["staff_dev_request"])
+            watchlist_channel = itx.client.get_channel(itx.client.custom_ids["staff_dev_request"])
             # make uncool embed for the loading period while it sends the copyable version
             embed = discord.Embed(
                 color=discord.Colour.from_rgb(r=33, g=33, b=33),
@@ -54,7 +54,7 @@ class DevRequest(commands.Cog):
             # mention developers in a message edit, adding them all to the thread without mentioning them
             # and do the same for the requester, though this will only work if they're in the staff server..
             joiner_msg = await thread.send("role mention placeholder")
-            await joiner_msg.edit(content=f"<@&{self.client.custom_ids['staff_developer_role']}> <@{itx.user.id}>")
+            await joiner_msg.edit(content=f"<@&{itx.client.custom_ids['staff_developer_role']}> <@{itx.user.id}>")
             await joiner_msg.delete()
 
             # edit the uncool embed to make it cool: Show question, link to plaintext, and upvotes/downvotes
@@ -91,7 +91,7 @@ class DevRequest(commands.Cog):
 
         await itx.response.send_message("`[   ]`: Fetching cached threads.", ephemeral=True)
         try:
-            watchlist_channel = itx.client.get_channel(self.client.custom_ids["staff_dev_request"])
+            watchlist_channel = itx.client.get_channel(itx.client.custom_ids["staff_dev_request"])
             threads: list[discord.Thread] = []
             pinged_thread_count = 0
             async for thread in watchlist_channel.archived_threads(limit=None):
@@ -117,14 +117,14 @@ class DevRequest(commands.Cog):
                     continue  # thread starter message was removed.
 
                 if (starter_message is None or
-                        not self.client.is_me(starter_message.author) or
+                        not itx.client.is_me(starter_message.author) or
                         len(starter_message.embeds) == 0):
                     ignored_count += 1
                     continue
                 if starter_message.embeds[0].color in [emoji_color_options["🟡"],
                                                        emoji_color_options["🔵"]]:
                     try:
-                        cmd_mention = self.client.get_command_mention("ping_open_dev_requests")
+                        cmd_mention = itx.client.get_command_mention("ping_open_dev_requests")
                         await thread.send(itx.user.mention + f" poked this thread with {cmd_mention}.\n"
                                                              "This channel got a message because it was archived and "
                                                              "the request wasn't marked as completed or rejected.",

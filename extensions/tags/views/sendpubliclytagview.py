@@ -6,8 +6,12 @@ from resources.utils.utils import log_to_guild
 
 class SendPubliclyTagView(discord.ui.View):
     def __init__(
-            self, client: Bot, embed: discord.Embed, timeout=None,
-            public_footer=None, log_msg=None, tag_name=None
+            self,
+            embed: discord.Embed,
+            timeout=None,
+            public_footer=None,
+            log_msg=None,
+            tag_name=None
     ):
         super().__init__()
         if embed.footer.text is None:
@@ -16,7 +20,6 @@ class SendPubliclyTagView(discord.ui.View):
             self.footer = embed.footer.text + "\n"
 
         self.value = None
-        self.client = client
         self.timeout = timeout
         self.public_footer = public_footer
         self.embed = embed
@@ -45,8 +48,8 @@ class SendPubliclyTagView(discord.ui.View):
             self.log_msg += f", in {itx.channel.mention} (`{itx.channel.id}`)\n" + \
                             f"[Jump to the tag message]({msg.jump_url})"
             if self.value == 2:
-                await log_to_guild(self.client, itx.guild, self.log_msg)
-                staff_message_reports_channel = self.client.get_channel(self.client.custom_ids["staff_reports_channel"])
+                await log_to_guild(itx.client, itx.guild, self.log_msg)
+                staff_message_reports_channel = itx.client.get_channel(itx.client.custom_ids["staff_reports_channel"])
                 await staff_message_reports_channel.send(self.log_msg)
         self.stop()
 

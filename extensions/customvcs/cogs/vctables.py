@@ -69,8 +69,7 @@ def _get_vctable_members_with_predicate(
 
 
 class VcTables(commands.GroupCog, name="vctable", description="Make your voice channels advanced!"):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
         self.blacklisted_channels = BLACKLISTED_CHANNELS
 
     # region VcTable utilities
@@ -95,10 +94,10 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         """
         log = None
         if not from_event:
-            cmd_mention = self.client.get_command_mention("editguildinfo")
+            cmd_mention = itx.client.get_command_mention("editguildinfo")
             log = [itx, f"Not enough data is configured to do this action! Please ask an admin to "
                         f"fix this with {cmd_mention} `mode:21` or `mode:22`!"]
-        vc_hub, vc_category = await self.client.get_guild_info(itx.guild, "vcHub", "vcCategory", log=log)
+        vc_hub, vc_category = await itx.client.get_guild_info(itx.guild, "vcHub", "vcCategory", log=log)
 
         if itx.user.voice is None or itx.user.voice.channel is None:
             if not from_event:
@@ -145,7 +144,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
         if not _is_vc_table_owner(channel, itx.user):
             if not from_event:
-                cmd_mention = self.client.get_command_mention('vctable create')
+                cmd_mention = itx.client.get_command_mention('vctable create')
                 await itx.response.send_message(
                     f"Invalid permissions: You are not an owner of this VcTable! (Perhaps this isn't a VcTable yet: "
                     f"use {cmd_mention} to make it one!)",
@@ -166,7 +165,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         warning = ""
 
         owners = owners.split(",")
-        cmd_mention = self.client.get_command_mention("vctable add_owner")
+        cmd_mention = itx.client.get_command_mention("vctable add_owner")
         if itx.user.guild is None:
             await itx.response.send_message("You don't seem to be in this guild, so I can't give you "
                                             "permissions for this voice channel... Maybe ask @mysticmia about this?",
@@ -229,7 +228,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         # if owner present: already VcTable -> stop
         for target in user_vc.overwrites:
             if _is_vc_table_owner(user_vc, target) and target not in user_vc.category.overwrites:
-                cmd_mention = self.client.get_command_mention("vctable owner")
+                cmd_mention = itx.client.get_command_mention("vctable owner")
                 await itx.followup.send(f"This channel is already a VcTable! Use {cmd_mention} `mode:Check owners` to "
                                         f"see who the owners of this table are!",
                                         ephemeral=True)
@@ -253,10 +252,9 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 perms = user_vc.overwrites[owner]
             # elif owner in user_vc.category.overwrites:
             #     perms = user_vc.category.overwrites[owner]
-            edit_permissionoverwrite(perms, {
+            new_overwrites[owner] = edit_permissionoverwrite(perms, {
                 "connect": True, "speak": True, "view_channel": True, "read_message_history": True
             })
-            new_overwrites[owner] = discord.PermissionOverwrite(**perms_dict)
         await user_vc.edit(overwrites=new_overwrites)
 
         # todo: can i merge this one with the user_vc.edit too?
@@ -269,18 +267,18 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         # endregion Apply permission overwrites for vctable owners
 
         owner_taglist = ', '.join([f'<@{user_id}>' for user_id in added_owners])
-        cmd_mention = self.client.get_command_mention("vctable about")
+        cmd_mention = itx.client.get_command_mention("vctable about")
         await user_vc.send(f"CustomVC converted to VcTable\n"
                            f"Use {cmd_mention} to learn more!\n"
                            f"Made {owner_taglist} a VcTable Owner\n"
                            f"**:warning: If someone is breaking the rules, TELL A MOD** "
                            f"(don't try to moderate a vc yourself)",
                            allowed_mentions=discord.AllowedMentions.none())
-        await log_to_guild(self.client, itx.guild,
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({user_vc.id}) into a VcTable")
 
         try:
-            await user_vc.edit(name=self.client.custom_ids["vctable_prefix"] + name)
+            await user_vc.edit(name=itx.client.custom_ids["vctable_prefix"] + name)
             await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n" + warning,
                                     ephemeral=True)
         except discord.errors.NotFound:
@@ -300,8 +298,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             allowed_mentions=discord.AllowedMentions.none())
         # remove channel's name prefix (separately from the overwrites due to things like ratelimiting)
         await itx.response.send_message("Successfully disbanded VcTable.", ephemeral=True)
-        if channel.name.startswith(self.client.custom_ids["vctable_prefix"]):
-            new_channel_name = channel.name[len(self.client.custom_ids["vctable_prefix"]):]
+        if channel.name.startswith(itx.client.custom_ids["vctable_prefix"]):
+            new_channel_name = channel.name[len(itx.client.custom_ids["vctable_prefix"]):]
             try_store_vc_rename(channel.id, max_rename_limit=3)
             # same as on_voice_state_update:
             # allow max 3 renamed: if a staff queued a rename due to rules, it'd be queued at 3.
@@ -326,24 +324,24 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             description=f"Words in brackets [like so] mean they are optional for the command.\n"
                         f"Most commands are for owners only, like muting, adding/removing permissions. Normal "
                         f"participants can check who's owner, speaker, or muted though.\n"
-                        f"{self.client.get_command_mention('vctable about')}: See this help page\n"
-                        f"{self.client.get_command_mention('vctable create')} `[owners: ]`: "
+                        f"{itx.client.get_command_mention('vctable about')}: See this help page\n"
+                        f"{itx.client.get_command_mention('vctable create')} `[owners: ]`: "
                         f"Turns your CustomVC into a VcTable and makes you (and any additional mentioned "
                         f"user(s)) the owner\n"
-                        f"{self.client.get_command_mention('vctable owner')} `mode: ` `user: `: "
+                        f"{itx.client.get_command_mention('vctable owner')} `mode: ` `user: `: "
                         f"Add/Remove an owner to your table. If you want to check the owners, then it doesn't "
                         f"matter what you fill in for 'user'\n"
-                        f"{self.client.get_command_mention('vctable mute')} `mode: ` `user: `: "
+                        f"{itx.client.get_command_mention('vctable mute')} `mode: ` `user: `: "
                         f"Mute/Unmute a user in your table. If you want to check the muted participants, "
                         f"see ^ (same as for checking owners)\n"
-                        f"{self.client.get_command_mention('vctable make_authorized_only')}: "
+                        f"{itx.client.get_command_mention('vctable make_authorized_only')}: "
                         f"Toggle the whitelist for speaking\n"
-                        f"{self.client.get_command_mention('vctable speaker')} `mode: ` `user: `: "
+                        f"{itx.client.get_command_mention('vctable speaker')} `mode: ` `user: `: "
                         f"Add/Remove a speaker to your table. This user gets whitelisted to speak when authorized-only "
                         f"is enabled. Checking speakers works the same as checking owners and muted users\n"
-                        f"{self.client.get_command_mention('vctable lock')}: "
+                        f"{itx.client.get_command_mention('vctable lock')}: "
                         f"Similar to make-authorized-only, but for viewing the voice channel and its message history.\n"
-                        f"{self.client.get_command_mention('vctable participant')} `mode: ` `user: `: "
+                        f"{itx.client.get_command_mention('vctable participant')} `mode: ` `user: `: "
                         f"Add/Remove a participant to your table. This user gets whitelisted to view the channel "
                         f"and message history when the 'lock' is activated.\n")
         await itx.response.send_message(embeds=[embed1, embed2], ephemeral=True)
@@ -363,8 +361,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if mode == 1:
                 await itx.response.send_message("You can't set yourself as owner!", ephemeral=True)
             elif mode == 2:
-                cmd_mention = self.client.get_command_mention("vctable owner")
-                cmd_mention1 = self.client.get_command_mention("vctable disband")
+                cmd_mention = itx.client.get_command_mention("vctable owner")
+                cmd_mention1 = itx.client.get_command_mention("vctable disband")
                 await itx.response.send_message("You can't remove your ownership of this VcTable!\n"
                                                 f"You can make more people owner with {cmd_mention} `user: ` though..."
                                                 f"If you want to delete the VcTable, you can use {cmd_mention1}",
@@ -399,7 +397,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if channel is None:
                 return
             if user is None:
-                cmd_mention = self.client.get_command_mention("vctable owner")
+                cmd_mention = itx.client.get_command_mention("vctable owner")
                 await itx.response.send_message(f"Removing owners is usually a bad sign.. Do not hesitate to make a "
                                                 f"ticket for staff if there's something wrong.\n"
                                                 f"Anyway. You can check current owners with "
@@ -444,7 +442,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if channel is None:
                 return
             if user is None:
-                cmd_mention = self.client.get_command_mention("vctable make_authorized_only")
+                cmd_mention = itx.client.get_command_mention("vctable make_authorized_only")
                 await itx.response.send_message(f"You can add a speaker to your VcTable using this command."
                                                 f"Using {cmd_mention}, you can let only those you've selected "
                                                 f"be able to talk in your voice channel. This can be useful if "
@@ -457,7 +455,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 await itx.response.send_message(f"This user is already a speaker!", ephemeral=True)
                 return
             if not _is_vctable_authorized(channel, itx):
-                cmd_mention = self.client.get_command_mention("vctable make_authorized_only")
+                cmd_mention = itx.client.get_command_mention("vctable make_authorized_only")
                 warning += f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             await channel.set_permissions(user, speak=True,
                                           reason="VcTable edited: set as speaker")
@@ -472,8 +470,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if channel is None:
                 return
             if user is None:
-                cmd_mention = self.client.get_command_mention("vctable owner")
-                cmd_mention2 = self.client.get_command_mention("vctable speaker")
+                cmd_mention = itx.client.get_command_mention("vctable owner")
+                cmd_mention2 = itx.client.get_command_mention("vctable speaker")
                 await itx.response.send_message(f"You can remove speakers with this command. This only works if "
                                                 f"the user you're trying to remove is not already a VcTable owner "
                                                 f"(you'll need to use {cmd_mention} `mode:Remove owner` first).\n"
@@ -491,7 +489,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 return
             warning = ""
             if not _is_vctable_authorized(channel, itx):
-                cmd_mention = self.client.get_command_mention("vctable make_authorized_only")
+                cmd_mention = itx.client.get_command_mention("vctable make_authorized_only")
                 warning = f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             await channel.set_permissions(user, speak=None,
                                           reason="VcTable edited: removed as speaker")
@@ -527,7 +525,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if channel is None:
                 return
             if user is None:
-                cmd_mention = self.client.get_command_mention("vctable lock")
+                cmd_mention = itx.client.get_command_mention("vctable lock")
                 await itx.response.send_message(f"You can add a participant to your VcTable using this command."
                                                 f"Using {cmd_mention}, you can let only those you've selected "
                                                 f"be able to see your voice channel and read its messages. This "
@@ -541,7 +539,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 return
             warning = ""
             if not _is_vctable_locked(channel, itx):
-                cmd_mention = self.client.get_command_mention("vctable lock")
+                cmd_mention = itx.client.get_command_mention("vctable lock")
                 warning += f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             await channel.set_permissions(user, view_channel=True, read_message_history=True,
                                           reason="VcTable edited: set as participant")
@@ -555,8 +553,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if channel is None:
                 return
             if user is None:
-                cmd_mention = self.client.get_command_mention("vctable owner")
-                cmd_mention2 = self.client.get_command_mention("vctable participant")
+                cmd_mention = itx.client.get_command_mention("vctable owner")
+                cmd_mention2 = itx.client.get_command_mention("vctable participant")
                 await itx.response.send_message(f"You can remove participants with this command. This only works if "
                                                 f"the user you're trying to remove is not already a VcTable owner "
                                                 f"(you'll need to use {cmd_mention} `mode:Remove owner` first).\n"
@@ -574,7 +572,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                                 "their participation permissions, un-owner them first!",
                                                 ephemeral=True)
                 return
-            if self.client.is_me(user):
+            if itx.client.is_me(user):
                 await itx.response.send_message(
                     ":warning: You are trying to hide this channel from the bot that manages this system!\n"
                     "Your command has been interrupted. Removing this user's viewing permissions would "
@@ -583,7 +581,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 return
             warning = ""
             if _is_vctable_locked(channel, itx):
-                cmd_mention = self.client.get_command_mention("vctable lock")
+                cmd_mention = itx.client.get_command_mention("vctable lock")
                 warning = f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             await channel.set_permissions(user, view_channel=None, read_message_history=None,
                                           reason="VcTable edited: removed as participant")
@@ -655,7 +653,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if channel is None:
                 return
             if user is None:
-                cmd_mention = self.client.get_command_mention("vctable mute")
+                cmd_mention = itx.client.get_command_mention("vctable mute")
                 await itx.response.send_message(f"This command lets you unmute a previously-muted person. "
                                                 f"To see which people are muted, use {cmd_mention} `mode:Check`\n"
                                                 f"Then simply mention this user in the `user: ` argument.",
@@ -702,7 +700,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
         # if authorized-only is disabled:
         view = GenericTwoButtonView(("Confirm", discord.ButtonStyle.green), ("Cancel", discord.ButtonStyle.red))
-        cmd_mention = self.client.get_command_mention("vctable speaker")
+        cmd_mention = itx.client.get_command_mention("vctable speaker")
         await itx.response.send_message(f"Enabling authorized-only (a whitelist) will make only owners and speakers "
                                         f"(people that have been whitelisted) able to talk.\n"
                                         f"Please make sure everyone is aware of this change. "
@@ -720,7 +718,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                     if _is_vc_table_owner(channel, member) or _is_vctable_speaker(channel, member):
                         continue
                 await member.move_to(channel)
-            cmd_mention = self.client.get_command_mention("vctable speaker")
+            cmd_mention = itx.client.get_command_mention("vctable speaker")
             await itx.edit_original_response(
                 content=f"Successfully enabled whitelist. Use {cmd_mention} `user: ` to let more people speak.",
                 view=None)
@@ -745,7 +743,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
         # if lock is disabled:
         view = GenericTwoButtonView(("Confirm", discord.ButtonStyle.green), ("Cancel", discord.ButtonStyle.red))
-        cmd_mention = self.client.get_command_mention("vctable participant")
+        cmd_mention = itx.client.get_command_mention("vctable participant")
         await itx.response.send_message(
             f"Enabling the lock (a whitelist) will make only owners and participants (people that "
             f"have been whitelisted) able to see this server and message history.\n"
@@ -760,7 +758,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                           reason="VcTable edited: enabled viewing lock")
             await channel.send(f"{itx.user.mention} enabled whitelist for viewing the voice channel.",
                                allowed_mentions=discord.AllowedMentions.none())
-            cmd_mention = self.client.get_command_mention("vctable participant")
+            cmd_mention = itx.client.get_command_mention("vctable participant")
             await itx.edit_original_response(
                 content=f"Successfully enabled whitelist. Use {cmd_mention} `user: ` to let more people speak.",
                 view=None)

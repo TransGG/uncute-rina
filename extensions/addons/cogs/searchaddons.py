@@ -19,8 +19,8 @@ STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 
 class SearchAddons(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
@@ -34,7 +34,7 @@ class SearchAddons(commands.Cog):
             await itx.response.send_message(
                 f"You can't use the following characters for country_id!\n> {illegal_characters}", ephemeral=True)
             return
-        equaldex_key = self.client.api_tokens["Equaldex"]
+        equaldex_key = itx.client.api_tokens["Equaldex"]
         querystring = {"regionid": country_id, "apiKey": equaldex_key}
         response = requests.get(
             f"https://www.equaldex.com/api/region", params=querystring)  # &formatted=true
@@ -136,7 +136,7 @@ class SearchAddons(commands.Cog):
         query = query.replace("+",
                               " plus ")
         # pluses are interpreted as a space (`%20`) in urls. In LaTeX, that can mean multiply
-        api_key = self.client.api_tokens['Wolfram Alpha']
+        api_key = itx.client.api_tokens['Wolfram Alpha']
         try:
             data = requests.get(
                 f"https://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
@@ -245,7 +245,7 @@ class SearchAddons(commands.Cog):
                 warnings = "\nWarnings:\n> " + '\n> '.join(warnings)
             else:
                 warnings = ""
-            view = SendPublicButtonMath(self.client)
+            view = SendPublicButtonMath()
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
                 f"Result:\n> {output}" +

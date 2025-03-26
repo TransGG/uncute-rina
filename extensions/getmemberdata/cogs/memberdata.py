@@ -103,7 +103,7 @@ class MemberData(commands.Cog):
         min_time = int((current_time - lower_bound) / accuracy) * accuracy
         max_time = int((current_time - upper_bound) / accuracy) * accuracy
 
-        collection = self.client.async_rina_db["data"]
+        collection = itx.client.async_rina_db["data"]
         query = {"guild_id": itx.guild_id}
         data = await collection.find_one(query)
         if data is None:

@@ -11,8 +11,8 @@ from extensions.reminders.objects import parse_and_create_reminder  # todo: put 
 
 
 class RemindersCog(commands.GroupCog, name="reminder"):
-    def __init__(self, client: Bot):
-        self.client: Bot = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="remindme", description="Add a reminder for yourself!")
     @app_commands.describe(reminder_datetime="When would you like me to remind you? (1d2h, 5 weeks, 1mo10d)",
@@ -32,16 +32,16 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 "Please keep reminder text below 1500 characters... Otherwise I can't send you a message about it!",
                 ephemeral=True)
             return
-        await parse_and_create_reminder(self.client, itx, reminder_datetime, reminder)
+        await parse_and_create_reminder(itx, reminder_datetime, reminder)
 
     @app_commands.command(name="reminders", description="Check your list of reminders!")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
     async def reminders(self, itx: discord.Interaction, item: int = None):
-        collection = self.client.rina_db["reminders"]
+        collection = itx.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
-            cmd_mention = self.client.get_command_mention("reminder remindme")
+            cmd_mention = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment!\nUse {cmd_mention} to make a reminder!",
                 ephemeral=True)
@@ -62,7 +62,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                     for reminder in db_data['reminders']:
                         out.append(f"`{index}` | <t:{reminder['remindertime']}:F>")
                         index += 1
-                    cmd_mention = self.client.get_command_mention("reminder reminders")
+                    cmd_mention = itx.client.get_command_mention("reminder reminders")
                     out_msg = ((f"You have {len(db_data['reminders'])} reminders "
                                 f"(use {cmd_mention} `item: ` to get more info about a reminder):\n") +
                                '\n'.join(out)[:1996])
@@ -77,14 +77,14 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                     f"  Remind you about: {discord.utils.escape_markdown(reminder['reminder'])}",
                     ephemeral=True)
         except IndexError:
-            cmd_mention = self.client.get_command_mention("reminder reminders")
+            cmd_mention = itx.client.get_command_mention("reminder reminders")
             await itx.response.send_message(
                 f"I couldn't find any reminder with that ID!\n"
                 f"Look for the \"ID: `0`\" at the beginning of your reminder on the reminder list ({cmd_mention})",
                 ephemeral=True)
             return
         except KeyError:
-            cmd_mention = self.client.get_command_mention("reminder remindme")
+            cmd_mention = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment.\nUse {cmd_mention} to make a reminder!",
                 ephemeral=True)
@@ -93,11 +93,11 @@ class RemindersCog(commands.GroupCog, name="reminder"):
     @app_commands.command(name="remove", description="Remove of your reminders")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
     async def remove(self, itx: discord.Interaction, item: int):
-        collection = self.client.rina_db["reminders"]
+        collection = itx.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
-            cmd_mention = self.client.get_command_mention("reminder remindme")
+            cmd_mention = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment! (so I can't remove any either..)\n"
                 f"Use {cmd_mention} to make a reminder!",
@@ -107,14 +107,14 @@ class RemindersCog(commands.GroupCog, name="reminder"):
         try:
             del db_data['reminders'][item]
         except IndexError:
-            cmd_mention = self.client.get_command_mention("reminder reminders")
+            cmd_mention = itx.client.get_command_mention("reminder reminders")
             await itx.response.send_message(
                 f"I couldn't find any reminder with that ID!\n"
                 f"Look for the \"ID: `0`\" at the beginning of your reminder on the reminder list ({cmd_mention})",
                 ephemeral=True)
             return
         except KeyError:
-            cmd_mention = self.client.get_command_mention("reminder remindme")
+            cmd_mention = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment. (so I can't remove any either..)\n"
                 f"Use {cmd_mention} to make a reminder!",
