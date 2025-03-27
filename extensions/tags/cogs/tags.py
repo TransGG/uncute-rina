@@ -6,7 +6,6 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.customs.utils import EnabledServers
 # ^ to specify which tags can be used in which servers (e.g. Mature role not in EnbyPlace)
 from resources.utils.utils import get_mod_ticket_channel_id  # for ticket channel id in Report tag
 

@@ -180,9 +180,7 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
         await client.log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
         raise
 
-    log_channel: discord.abc.GuildChannel | discord.Thread | None = guild.get_channel(log_channel_id)
-    if log_channel is None:
-        log_channel = guild.get_thread(log_channel_id)
+    log_channel: discord.abc.GuildChannel | discord.Thread | None = client.get_channel(log_channel_id)
     if log_channel is None:
         debug("Exception in log_channel (log_channel could not be loaded):\n"
               "    guild: " + repr(guild) +
