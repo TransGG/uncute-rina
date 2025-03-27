@@ -117,7 +117,7 @@ async def _create_new_custom_vc(
             await vc.delete()
         await client.log_channel.send(content=warning, allowed_mentions=discord.AllowedMentions.none())
         raise
-    # nomicChannel = member.guild.get_channel(vcNoMic)
+
     await log_to_guild(client, member.guild,
                        warning + f"{member.nick or member.name} ({member.id}) created and joined "
                                  f"voice channel {vc.id} (with the default name).")
@@ -481,7 +481,7 @@ class CustomVcs(commands.Cog):
                 collection.update_one(query, {"$set": {options[option]: ch.id}}, upsert=True)
             elif option == "12":
                 channel_ids = value.split(",")
-                blacklist = []
+                blacklist: list[int] = []
                 for channel_id in channel_ids:
                     channel = await to_int(channel_id.strip(), "You need to give a list of integers, separated "
                                                                "by a comma, for this new blacklist!")

@@ -6,6 +6,22 @@ from resources.customs.bot import Bot
 
 from extensions.settings.server_settings import ServerSettings
 
+# todo: make function for parsing channel / role / user
+#  Maybe make it match a specific type (eg. discord.CategoryChannel/vc/member/user).
+#  Maybe autocomplete with the right type? like autocompleting channel names
+
+# todo: make function to parse a list of ^ one of the above
+#  or maybe a mix of multiple
+# todo: allow individual adding and removing from lists
+# todo: make options an enum or flag (not strings/dictionary! ):
+
+
+# todo: make settings that are changeable also an enum
+
+# todo: maybe a function to re-fetch settings for a specific server
+#  Like if a channel is deleted, or an emoji is removed. That you don't
+#  have to completely restart Rina to re-fetch every setting.
+
 
 def _setting_autocomplete(itx: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
     if not is_admin(itx.guild, itx.user):

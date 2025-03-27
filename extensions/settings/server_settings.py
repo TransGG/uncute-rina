@@ -1,12 +1,26 @@
 from __future__ import annotations
+
+import types
+
 import motor.core
+from typing import TypedDict, Required, Any
 
 import discord
+import pymongo.results
 
 from resources.customs.bot import Bot
 
+from extensions.settings.objects import ServerAttributes, ServerAttributeIds
 
 GuildId = int
+UserId = int
+ChannelId = int
+RoleId = int
+EmojiId = int
+TextChannelId = int
+VoiceChannelId = int
+CategoryChannelId = int
+MessageableChannelId = int
 MessageChannel = discord.TextChannel | discord.Thread
 
 
@@ -14,7 +28,7 @@ def get_channel_argument(
         invalid_arguments: dict[str, str | list[str]],
         invalid_argument_name: str,
         client: Bot,
-        channel_id: int,
+        channel_id: ChannelId,
 ) -> (
         discord.VoiceChannel |
         discord.StageChannel |
@@ -62,7 +76,7 @@ def get_role_argument(
         invalid_arguments: dict[str, str | list[str]],
         invalid_argument_name: str,
         server: discord.Guild | None,
-        role_id: int,
+        role_id: RoleId,
 ) -> discord.Role:
     """
     Try to get the role corresponding to a role id. If the channel is not found, add the argument name to
@@ -102,7 +116,7 @@ def get_user_argument(
         invalid_arguments: dict[str, str | list[str]],
         invalid_argument_name: str,
         client: Bot,
-        user_id: int,
+        user_id: UserId | None,
 ) -> discord.User:
     user = None
     if user_id is not None:
@@ -116,9 +130,13 @@ def get_roles_in_list(
         invalid_arguments: dict[str, str | list[str]],
         invalid_argument_name: str,
         server: discord.Guild,
-        role_ids: [int],
+        role_ids: list[RoleId] | None,
 ) -> list[discord.Role]:
     roles = []
+    if role_ids is None:
+        # Return early
+        return roles
+
     invalid_role_ids: list[str] = []
     for role_id in role_ids and server is not None:
         role = server.get_role(role_id)
@@ -130,18 +148,69 @@ def get_roles_in_list(
     return roles
 
 
+def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> ServerAttributeIds:
+    guild_id: GuildId = old_settings.get("guild_id")  # this one shouldn't ever be None
+    if guild_id is None:
+        raise ValueError("guild_id in this object was not found!")
+    custom_vc_create_channel_id: VoiceChannelId | None = old_settings.get("vcHub", None)
+    log_channel_id: MessageableChannelId | None = old_settings.get("vcLog", None)
+    custom_vc_category_id: CategoryChannelId | None = old_settings.get("vcCategory", None)
+    starboard_channel_id: TextChannelId | None = old_settings.get("starboardChannel", None)
+    starboard_minimum_upvote_count: int | None = old_settings.get("starboardCountMinimum", None)
+    bump_reminder_channel_id: MessageableChannelId | None = old_settings.get("bumpChannel", None)
+    bump_reminder_role_id: RoleId | None = old_settings.get("bumpRole", None)
+    poll_reaction_blacklisted_channel_ids: list[int] = old_settings.get("pollReactionsBlacklist", [])
+    bump_reminder_bot_id: UserId | None = old_settings.get("bumpBot", None)
+    starboard_blacklisted_channel_ids: list[int] = old_settings.get("starboardBlacklistedChannels", [])
+    starboard_upvote_emoji_id: EmojiId | None = old_settings.get("starboardEmoji", None)
+    starboard_minimum_vote_count_for_downvote_delete: int | None = old_settings.get("starboardDownvoteInitValue", None)
+    voice_channel_logs_channel_id: MessageableChannelId | None = old_settings.get("vcActivityLogChannel", None)
+
+    new_settings = {
+        "guild_id": guild_id,
+        "custom_vc_create_channel_id": custom_vc_create_channel_id,
+        "log_channel_id": log_channel_id,
+        "custom_vc_category_id": custom_vc_category_id,
+        "unused": unused,
+        "starboard_channel_id": starboard_channel_id,
+        "starboard_minimum_upvote_count": starboard_minimum_upvote_count,
+        "bump_reminder_channel_id": bump_reminder_channel_id,
+        "bump_reminder_role_id": bump_reminder_role_id,
+        "poll_reaction_blacklisted_channel_ids": poll_reaction_blacklisted_channel_ids,
+        "bump_reminder_bot_id": bump_reminder_bot_id,
+        "starboard_blacklisted_channel_ids": starboard_blacklisted_channel_ids,
+        "starboard_upvote_emoji_id": starboard_upvote_emoji_id,
+        "starboard_minimum_vote_count_for_downvote_delete": starboard_minimum_vote_count_for_downvote_delete,
+        "voice_channel_logs_channel_id": voice_channel_logs_channel_id,
+    }
+    return ServerAttributeIds(new_settings)
+
+
 class ServerSettings:
+    database_key = "server_settings"
+
     @staticmethod
     async def migrate(async_rina_db: motor.code.AgnosticDatabase):
-        query = {"guild_id": itx.guild_id}
-        old_collection: motor.MotorCollection = await async_rina_db["guildInfo"]
+        """
 
-        await old_collection.find_one(query)
+        :param async_rina_db: The database to reference to look up the old and store the new database
+        :return: Dunno yet lol
+        :raises IndexError: No online database of the old version was found
+        """
+        old_collection: motor.MotorCollection = await async_rina_db["guildInfo"]
+        all_settings = old_collection.find()
+        new_collection: motor.MotorCollection = await async_rina_db[""]
+        new_settings = []
+        async for guild_id in all_settings:
+            old_setting = all_settings[guild_id]
+            new_setting = convert_old_settings_to_new(old_setting)
+            new_settings.append(new_setting)
+
+        await new_collection.insert_many(new_settings)
 
     @staticmethod
     async def load_all(async_rina_db: motor.core.AgnosticDatabase) -> list[ServerSettings]:
-        query = {}
-        collection: motor.MotorCollection = await async_rina_db["server_settings"]
+        collection: motor.MotorCollection = await async_rina_db[ServerSettings.database_key]
         all_settings = await collection.find()
         # todo: implement. lol
         if all_settings is None:
@@ -149,108 +218,91 @@ class ServerSettings:
         return []
 
     @staticmethod
+    async def load(async_rina_db: motor.core.AgnosticDatabase) -> ServerSettings:
+        collection: motor.MotorCollection = await async_rina_db[ServerSettings.database_key]
+        query = {"guild_id": self.server}
+        result = await collection.find_one(query)
+        if result is None:
+            # todo: implement. lol
+            raise NotImplementedError()
+        raise NotImplementedError()
+
+    async def add(self, async_rina_db: motor.core.AgnosticDatabase, parameter: str, value: Any) -> bool:
+        if parameter not in ServerAttributeIds:
+            raise KeyError(f"{parameter} is not a valid Server Attribute.")
+
+        collection: motor.MotorCollection = await async_rina_db[ServerSettings.database_key]
+        query = {"guild_id": self.server}
+        update = {"$set": {parameter: value}}
+
+        result = await collection.update_one(query, update, upsert=True)
+        return result.modified_count > 0
+        # todo: add new id to ServerSettings as correct Channel etc object
+
+    @staticmethod
     def from_ids(
             itx: discord.Interaction,
-            parent_server: ServerSettings | None,
-            child_servers: dict[GuildId, ServerSettings] | None,
             server_id: int,
-
-            qotw_suggestions_channel_id: int | None,
-            developer_request_channel_id: int | None,
-            watchlist_channel_id: int | None,
-            badeline_bot_id: int | None,
-            staff_logs_category_id: int | None,
-            staff_reports_channel_id: int | None,
-            ban_appeal_reaction_role_id: int | None,
-            watchlist_reaction_role_id: int | None,
-            developer_request_reaction_role_id: int | None,
-            ticket_create_channel_id: int | None,
-
-            staff_role_ids: list[int],
-            admin_role_ids: list[int],
-            owner_role_ids: list[int],
-
-            ban_appeal_webhook_id: int | None,
-            vctable_prefix: str | None,
-            aegis_ping_role_id: int | None,
+            attributes: ServerAttributeIds
     ) -> ServerSettings:
         invalid_arguments: dict[str, str | list[str]] = {}
 
-        if child_servers is None:
-            child_servers = {}
         server = itx.client.get_guild(server_id)
         if server is None:
             invalid_arguments.append(f"server_id: {server_id}")
 
+        for attribute in ServerAttributeIds.__required_keys__:
+            pass
+
         qotw_suggestions_channel = get_channel_argument(
-            invalid_arguments, "qotw_suggestions_channel_id",
-            itx.client, qotw_suggestions_channel_id)
+            invalid_arguments, "qotw_suggestions_channel",
+            itx.client, attributes['qotw_suggestions_channel'])
         developer_request_channel = get_channel_argument(
-            invalid_arguments, "developer_request_channel_id",
-            itx.client, developer_request_channel_id)
+            invalid_arguments, "developer_request_channel",
+            itx.client, attributes['developer_request_channel'])
         staff_reports_channel = get_channel_argument(
-            invalid_arguments, "staff_reports_channel_id",
-            itx.client, staff_reports_channel_id)
+            invalid_arguments, "staff_reports_channel",
+            itx.client, attributes['staff_reports_channel'])
         staff_logs_category = get_channel_argument(
-            invalid_arguments, "staff_logs_category_id",
-            itx.client, staff_logs_category_id)
+            invalid_arguments, "staff_logs_category",
+            itx.client, attributes['staff_logs_category'])
         watchlist_channel = get_channel_argument(
-            invalid_arguments, "watchlist_channel_id",
-            itx.client, watchlist_channel_id)
+            invalid_arguments, "watchlist_channel",
+            itx.client, attributes['watchlist_channel'])
         ticket_create_channel = get_channel_argument(
-            invalid_arguments, "ticket_create_channel_id",
-            itx.client, ticket_create_channel_id)
+            invalid_arguments, "ticket_create_channel",
+            itx.client, attributes['ticket_create_channel'])
 
         watchlist_reaction_role = get_role_argument(
-            invalid_arguments, "watchlist_reaction_role_id",
-            itx.client, watchlist_reaction_role_id)
+            invalid_arguments, "watchlist_reaction_role",
+            itx.client, attributes['watchlist_reaction_role'])
         ban_appeal_reaction_role = get_role_argument(
-            invalid_arguments, "ban_appeal_reaction_role_id",
-            itx.client, ban_appeal_reaction_role_id)
+            invalid_arguments, "ban_appeal_reaction_role",
+            itx.client, attributes['ban_appeal_reaction_role'])
         developer_request_reaction_role = get_role_argument(
-            invalid_arguments, "developer_request_reaction_role_id",
-            itx.client, developer_request_reaction_role_id)
+            invalid_arguments, "developer_request_reaction_role",
+            itx.client, attributes['developer_request_reaction_role'])
 
         badeline_bot = get_user_argument(
-            invalid_arguments, "badeline_bot_id",
-            itx.client, badeline_bot_id)
+            invalid_arguments, "badeline_bot",
+            itx.client, attributes['badeline_bot'])
 
         staff_roles = get_roles_in_list(
-            invalid_arguments, "staff_role_ids",
-            server, staff_role_ids)
+            invalid_arguments, "staff_roles",
+            server, attributes['staff_roles'])
         admin_roles = get_roles_in_list(
-            invalid_arguments, "admin_role_ids",
-            server, admin_role_ids)
+            invalid_arguments, "admin_roles",
+            server, attributes['admin_roles'])
         owner_roles = get_roles_in_list(
-            invalid_arguments, "owner_role_ids",
-            server, owner_role_ids)
+            invalid_arguments, "owner_roles",
+            server, attributes['owner_roles'])
 
         if len(invalid_arguments) > 0:
             raise ValueError("Some server settings for {} are unset!\n" + ','.join(invalid_arguments))
 
         return ServerSettings(
             parent_server=parent_server,
-            child_servers=child_servers,
             server=server,
-
-            qotw_suggestions_channel=qotw_suggestions_channel,
-            developer_request_channel=developer_request_channel,
-            watchlist_channel=watchlist_channel,
-            badeline_bot=badeline_bot,
-            staff_logs_category=staff_logs_category,
-            staff_reports_channel=staff_reports_channel,
-            ban_appeal_reaction_role=ban_appeal_reaction_role,
-            watchlist_reaction_role=watchlist_reaction_role,
-            developer_request_reaction_role=developer_request_reaction_role,
-            ticket_create_channel=ticket_create_channel,
-
-            staff_roles=staff_roles,
-            admin_roles=admin_roles,
-            owner_roles=owner_roles,
-
-            ban_appeal_webhook_id=ban_appeal_webhook_id,
-            vctable_prefix=vctable_prefix,
-            aegis_ping_role_id=aegis_ping_role_id,
         )
 
     def __init__(
@@ -258,48 +310,12 @@ class ServerSettings:
             parent_server: ServerSettings | None,
             child_servers: dict[GuildId, ServerSettings] | None,
             server: discord.Guild,  # transplace_server_id,
-
-            qotw_suggestions_channel: MessageChannel | None,
-            developer_request_channel: MessageChannel | None,
-            watchlist_channel: MessageChannel | None,
-            badeline_bot: discord.User | None,
-            staff_logs_category: discord.CategoryChannel | None,
-            staff_reports_channel: MessageChannel | None,
-            ban_appeal_reaction_role: discord.Role | None,
-            watchlist_reaction_role: discord.Role | None,
-            developer_request_reaction_role: discord.Role | None,
-            ticket_create_channel: MessageChannel | None,
-
-            staff_roles: list[discord.Role],
-            admin_roles: list[discord.Role],
-            owner_roles: list[discord.Role],
-
-            ban_appeal_webhook_id: int | None,
-            vctable_prefix: str | None,
-            aegis_ping_role_id: int | None
+            attributes: ServerAttributes
     ):
         self.parent_server = parent_server
         self.child_servers = child_servers
         self.server = server
-
-        self.qotw_suggestions_channel = qotw_suggestions_channel
-        self.developer_request_channel = developer_request_channel
-        self.watchlist_channel = watchlist_channel
-        self.badeline_bot = badeline_bot
-        self.staff_logs_category = staff_logs_category
-        self.staff_reports_channel = staff_reports_channel
-        self.ban_appeal_reaction_role = ban_appeal_reaction_role
-        self.watchlist_reaction_role = watchlist_reaction_role
-        self.developer_request_reaction_role = developer_request_reaction_role
-        self.ticket_create_channel = ticket_create_channel
-
-        self.staff_roles = staff_roles
-        self.admin_roles = admin_roles
-        self.owner_roles = owner_roles
-
-        self.ban_appeal_webhook_id = ban_appeal_webhook_id
-        self.vctable_prefix = vctable_prefix
-        self.aegis_ping_role_id = aegis_ping_role_id
+        self.attributes = attributes
 
     def add_child_server(self, settings: ServerSettings):
         self.child_servers[settings.server.id] = settings
