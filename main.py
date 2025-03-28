@@ -264,11 +264,11 @@ def start_app():
 
     client.run(token, log_level=logging.WARNING)
 
-
-try:
-    start_app()
-except SystemExit:
-    print("Exited the program forcefully using the kill switch")
+if __name__ == "__main__":
+    try:
+        start_app()
+    except SystemExit:
+        print("Exited the program forcefully using the kill switch")
 
 # region TODO:
 # - Translator
