@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import types
+import typing
 
 import motor.core
-from typing import TypedDict, Required, Any
+from typing import TypedDict, Required, Any, TypeVar, get_args, get_origin, Union, Callable, Type, Optional
 
 import discord
 import pymongo.results
@@ -25,7 +26,7 @@ MessageChannel = discord.TextChannel | discord.Thread
 
 
 def get_channel_argument(
-        invalid_arguments: dict[str, str | list[str]],
+        invalid_arguments: dict[str, str],
         invalid_argument_name: str,
         client: Bot,
         channel_id: ChannelId,
@@ -45,7 +46,7 @@ def get_channel_argument(
 
     Parameters
     -----------
-    invalid_arguments :class:`dict[str, str | list[str]]`:
+    invalid_arguments :class:`dict[str, str]`:
         A dictionary of previous invalid arguments with which to add the argument name if the requested channel is
         not found.
     invalid_argument_name :class:`str`:
@@ -73,7 +74,7 @@ def get_channel_argument(
 
 
 def get_role_argument(
-        invalid_arguments: dict[str, str | list[str]],
+        invalid_arguments: dict[str, str],
         invalid_argument_name: str,
         server: discord.Guild | None,
         role_id: RoleId,
@@ -84,7 +85,7 @@ def get_role_argument(
 
     Parameters
     -----------
-    invalid_arguments :class:`dict[str, str | list[str]]`:
+    invalid_arguments :class:`dict[str, str]`:
         A dictionary of previous invalid arguments with which to add the argument name if the requested role is
         not found.
     invalid_argument_name :class:`str`:
@@ -113,7 +114,7 @@ def get_role_argument(
 
 
 def get_user_argument(
-        invalid_arguments: dict[str, str | list[str]],
+        invalid_arguments: dict[str, str],
         invalid_argument_name: str,
         client: Bot,
         user_id: UserId | None,
@@ -126,8 +127,45 @@ def get_user_argument(
     return user
 
 
+T = TypeVar('T')
+
+
+def parse_id_generic(
+        invalid_arguments: dict[str, str],
+        invalid_argument_name: str,
+        get_object_function: Callable[[int], T],
+        object_id: int | None
+) -> T:
+    parsed_obj = None
+    if object_id is not None:
+        parsed_obj = get_object_function(object_id)
+        if parsed_obj is None:
+            invalid_arguments[invalid_argument_name] = str(object_id)
+    return parsed_obj
+
+def parse_list_id_generic(
+        invalid_arguments: dict[str, str],
+        invalid_argument_name: str,
+        get_object_function: Callable[[int], T | None],
+        object_ids: list[int] | None
+) -> list[T]:
+    parsed_objects: list[T] = []
+    if object_ids is None:
+        # Return early
+        return parsed_objects
+
+    invalid_object_ids: list[str] = []
+    for object_id in object_ids:
+        parsed_obj: T | None = get_object_function(object_id)
+        if parsed_obj is None:
+            invalid_object_ids.append(str(object_id))
+        else:
+            parsed_objects.append(parsed_obj)
+    invalid_arguments.append(invalid_argument_name + f": [{','.join(invalid_object_ids)}]")
+    return parsed_objects
+
 def get_roles_in_list(
-        invalid_arguments: dict[str, str | list[str]],
+        invalid_arguments: dict[str, str],
         invalid_argument_name: str,
         server: discord.Guild,
         role_ids: list[RoleId] | None,
@@ -218,14 +256,19 @@ class ServerSettings:
         return []
 
     @staticmethod
-    async def load(async_rina_db: motor.core.AgnosticDatabase) -> ServerSettings:
+    async def load(client: Bot, async_rina_db: motor.core.AgnosticDatabase, server_id: int) -> ServerSettings:
         collection: motor.MotorCollection = await async_rina_db[ServerSettings.database_key]
-        query = {"guild_id": self.server}
+        query = {"guild_id": server_id}
         result = await collection.find_one(query)
         if result is None:
             # todo: implement. lol
-            raise NotImplementedError()
-        raise NotImplementedError()
+            attributes = ServerAttributeIds()
+        else:
+            attributes = ServerAttributeIds(**result)
+        return ServerSettings.from_ids(client, server_id, attributes)
+
+    # todo: perhaps a function to convert this back to ID version?
+    # todo: perhaps a repair function to remove unknown/migrated keys from the database?
 
     async def add(self, async_rina_db: motor.core.AgnosticDatabase, parameter: str, value: Any) -> bool:
         if parameter not in ServerAttributeIds:
@@ -241,81 +284,77 @@ class ServerSettings:
 
     @staticmethod
     def from_ids(
-            itx: discord.Interaction,
+            client: Bot,
             server_id: int,
             attributes: ServerAttributeIds
     ) -> ServerSettings:
         invalid_arguments: dict[str, str | list[str]] = {}
 
-        server = itx.client.get_guild(server_id)
+        server = client.get_guild(server_id)
         if server is None:
             invalid_arguments.append(f"server_id: {server_id}")
 
-        for attribute in ServerAttributeIds.__required_keys__:
-            pass
-
-        qotw_suggestions_channel = get_channel_argument(
-            invalid_arguments, "qotw_suggestions_channel",
-            itx.client, attributes['qotw_suggestions_channel'])
-        developer_request_channel = get_channel_argument(
-            invalid_arguments, "developer_request_channel",
-            itx.client, attributes['developer_request_channel'])
-        staff_reports_channel = get_channel_argument(
-            invalid_arguments, "staff_reports_channel",
-            itx.client, attributes['staff_reports_channel'])
-        staff_logs_category = get_channel_argument(
-            invalid_arguments, "staff_logs_category",
-            itx.client, attributes['staff_logs_category'])
-        watchlist_channel = get_channel_argument(
-            invalid_arguments, "watchlist_channel",
-            itx.client, attributes['watchlist_channel'])
-        ticket_create_channel = get_channel_argument(
-            invalid_arguments, "ticket_create_channel",
-            itx.client, attributes['ticket_create_channel'])
-
-        watchlist_reaction_role = get_role_argument(
-            invalid_arguments, "watchlist_reaction_role",
-            itx.client, attributes['watchlist_reaction_role'])
-        ban_appeal_reaction_role = get_role_argument(
-            invalid_arguments, "ban_appeal_reaction_role",
-            itx.client, attributes['ban_appeal_reaction_role'])
-        developer_request_reaction_role = get_role_argument(
-            invalid_arguments, "developer_request_reaction_role",
-            itx.client, attributes['developer_request_reaction_role'])
-
-        badeline_bot = get_user_argument(
-            invalid_arguments, "badeline_bot",
-            itx.client, attributes['badeline_bot'])
-
-        staff_roles = get_roles_in_list(
-            invalid_arguments, "staff_roles",
-            server, attributes['staff_roles'])
-        admin_roles = get_roles_in_list(
-            invalid_arguments, "admin_roles",
-            server, attributes['admin_roles'])
-        owner_roles = get_roles_in_list(
-            invalid_arguments, "owner_roles",
-            server, attributes['owner_roles'])
+        new_settings: dict[str, Any | None] = {k: None for k in ServerAttributes.__required_keys__}
+        attribute_types: dict[str, Type[list | None] | Type[int | None]] = typing.get_type_hints(ServerAttributes)
+        for attribute in attributes.items():
+            attribute_value = attributes[attribute]  # type: ignore
+            attribute_type = attribute_types[attribute]  # raises KeyError (but probably not, if the tests passed)
+            if get_origin(attribute_type) is list:
+                # original was: list[T]`. get_origin returns `list`.
+                attribute_type = get_args(attribute_type)[0]  # get_args returns `T`
+                if attribute_type is discord.Guild:
+                    new_settings[attribute] = parse_list_id_generic(
+                        invalid_arguments, attribute, client.get_guild, attribute_value
+                    )
+                if attribute_type is discord.Role:
+                    new_settings[attribute] = parse_list_id_generic(
+                        invalid_arguments, attribute, server.get_role, attribute_value
+                    )
+                if attribute_type is discord.abc.Messageable:
+                    new_settings[attribute] = parse_list_id_generic(
+                        invalid_arguments, attribute, client.get_channel, attribute_value
+                    )
+            else:
+                if attribute_type is discord.Guild:
+                    new_settings[attribute] = parse_id_generic(
+                        invalid_arguments, attribute, client.get_guild, attribute_value)
+                if attribute_type is discord.abc.Messageable:
+                    new_settings[attribute] = parse_id_generic(
+                        invalid_arguments, attribute, client.get_channel, attribute_value)
+                if attribute_type is discord.User:
+                    new_settings[attribute] = parse_id_generic(
+                        invalid_arguments, attribute, client.get_user, attribute_value)
+                if attribute_type is discord.Role:
+                    new_settings[attribute] = parse_id_generic(
+                        invalid_arguments, attribute, server.get_role, attribute_value)
+                if attribute_type is discord.CategoryChannel:
+                    # I think it's safe to assume the stored value was an object of the correct type in the first place.
+                    new_settings[attribute] = parse_id_generic(
+                        invalid_arguments, attribute, client.get_channel, attribute_value)
+                if attribute_type is discord.VoiceChannel:
+                    new_settings[attribute] = parse_id_generic(
+                        invalid_arguments, attribute, client.get_channel, attribute_value)
+                if attribute_type is discord.Emoji:
+                    new_settings[attribute] = parse_id_generic(
+                        invalid_arguments, attribute, client.get_emoji, attribute_value)
+                if attribute_type is int:
+                    new_settings[attribute] = attribute_value
+                if attribute_type is str:
+                    new_settings[attribute] = str(attribute_value)
+                    pass
 
         if len(invalid_arguments) > 0:
             raise ValueError("Some server settings for {} are unset!\n" + ','.join(invalid_arguments))
 
         return ServerSettings(
-            parent_server=parent_server,
             server=server,
+            attributes=ServerAttributes(**new_settings)
         )
 
     def __init__(
             self, *,
-            parent_server: ServerSettings | None,
-            child_servers: dict[GuildId, ServerSettings] | None,
-            server: discord.Guild,  # transplace_server_id,
+            server: discord.Guild,
             attributes: ServerAttributes
     ):
-        self.parent_server = parent_server
-        self.child_servers = child_servers
         self.server = server
-        self.attributes = attributes
-
-    def add_child_server(self, settings: ServerSettings):
-        self.child_servers[settings.server.id] = settings
+        self.attributes: ServerAttributes = attributes

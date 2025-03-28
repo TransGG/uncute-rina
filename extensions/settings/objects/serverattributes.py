@@ -4,7 +4,6 @@ import discord
 
 
 class ServerAttributes(TypedDict):
-    server: discord.Guild
     parent_server: discord.Guild | None
     child_servers: list[discord.Guild] | None
     #

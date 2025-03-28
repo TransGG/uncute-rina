@@ -22,6 +22,8 @@ from extensions.settings.server_settings import ServerSettings
 #  Like if a channel is deleted, or an emoji is removed. That you don't
 #  have to completely restart Rina to re-fetch every setting.
 
+# todo: ensure SystemAttributeIds.parent_server is not in a parent server's parent server
+#  The same for checking if one of the child_servers contains self, to prevent cyclic dependencies.
 
 def _setting_autocomplete(itx: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
     if not is_admin(itx.guild, itx.user):
