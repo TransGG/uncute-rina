@@ -97,7 +97,6 @@ def test_discord_timestamp():
     current_time = _get_custom_time1()
     new_time = current_time + timedelta(days=1)
     unix_timestamp = int(new_time.timestamp())
-    print(new_time, new_time.tzinfo)
     discord_format = f"<t:{unix_timestamp}:F>"
     itx = CustomObject(created_at=current_time)
     func = _parse_reminder_time(itx, discord_format)
