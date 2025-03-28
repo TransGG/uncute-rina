@@ -13,6 +13,7 @@ from resources.customs.bot import Bot
 
 from extensions.settings.objects import ServerAttributes, ServerAttributeIds
 
+
 GuildId = int
 UserId = int
 ChannelId = int
@@ -23,109 +24,6 @@ VoiceChannelId = int
 CategoryChannelId = int
 MessageableChannelId = int
 MessageChannel = discord.TextChannel | discord.Thread
-
-
-def get_channel_argument(
-        invalid_arguments: dict[str, str],
-        invalid_argument_name: str,
-        client: Bot,
-        channel_id: ChannelId,
-) -> (
-        discord.VoiceChannel |
-        discord.StageChannel |
-        discord.ForumChannel |
-        discord.TextChannel |
-        discord.CategoryChannel |
-        discord.Thread |
-        discord.abc.PrivateChannel |
-        None
-):
-    """
-    Try to get the channel corresponding to a channel id. If the channel is not found, add the argument name to
-    invalid_arguments.
-
-    Parameters
-    -----------
-    invalid_arguments :class:`dict[str, str]`:
-        A dictionary of previous invalid arguments with which to add the argument name if the requested channel is
-        not found.
-    invalid_argument_name :class:`str`:
-        The argument name to add to the invalid_arguments dictionary, if the requested channel is not found.
-    client :class:`Bot`:
-        The client with which to fetch the channel from the channel id.
-    channel_id :class:`int`:
-        The id of the channel to look up (and if not found, to add to the invalid_arguments dictionary)
-
-    Returns
-    --------
-    The channel matching the given channel_id, or None if not found.
-
-    Regards
-    --------
-    Since invalid_arguments is a dictionary, it will be passed as reference. It is updated inside the function, but
-    it will also update the original dictionary object.
-    """
-    channel = None
-    if channel_id is not None:
-        channel = client.get_channel(channel_id)
-        if channel is None:
-            invalid_arguments[invalid_argument_name] = str(channel_id)
-    return channel
-
-
-def get_role_argument(
-        invalid_arguments: dict[str, str],
-        invalid_argument_name: str,
-        server: discord.Guild | None,
-        role_id: RoleId,
-) -> discord.Role:
-    """
-    Try to get the role corresponding to a role id. If the channel is not found, add the argument name to
-    invalid_arguments.
-
-    Parameters
-    -----------
-    invalid_arguments :class:`dict[str, str]`:
-        A dictionary of previous invalid arguments with which to add the argument name if the requested role is
-        not found.
-    invalid_argument_name :class:`str`:
-        The argument name to add to the invalid_arguments dictionary, if the requested role is not found.
-    server :class:`discord.Guild | None`:
-        The guild with which to fetch the role from the role id. If this is None, the role won't be added to the
-        invalid_arguments dictionary, but will still return None.
-    role_id :class:`int`:
-        The id of the role to look up (and if not found, to add to the invalid_arguments dictionary)
-
-    Returns
-    --------
-    The role matching the given role_id, or None if not found or if `server` is None.
-
-    Regards
-    --------
-    Since invalid_arguments is a dictionary, it will be passed as reference. It is updated inside the function, but
-    it will also update the original dictionary object.
-    """
-    role = None
-    if role_id is not None and server is not None:
-        role = server.get_role(role_id)
-        if role is None:
-            invalid_arguments[invalid_argument_name] = str(role_id)
-    return role
-
-
-def get_user_argument(
-        invalid_arguments: dict[str, str],
-        invalid_argument_name: str,
-        client: Bot,
-        user_id: UserId | None,
-) -> discord.User:
-    user = None
-    if user_id is not None:
-        user = client.get_user(user_id)
-        if user is None:
-            invalid_arguments[invalid_argument_name] = str(user_id)
-    return user
-
 
 T = TypeVar('T')
 
@@ -163,27 +61,6 @@ def parse_list_id_generic(
             parsed_objects.append(parsed_obj)
     invalid_arguments.append(invalid_argument_name + f": [{','.join(invalid_object_ids)}]")
     return parsed_objects
-
-def get_roles_in_list(
-        invalid_arguments: dict[str, str],
-        invalid_argument_name: str,
-        server: discord.Guild,
-        role_ids: list[RoleId] | None,
-) -> list[discord.Role]:
-    roles = []
-    if role_ids is None:
-        # Return early
-        return roles
-
-    invalid_role_ids: list[str] = []
-    for role_id in role_ids and server is not None:
-        role = server.get_role(role_id)
-        if role is None:
-            invalid_role_ids.append(str(role_id))
-        else:
-            roles.append(role)
-    invalid_arguments.append(invalid_argument_name + f": [{','.join(invalid_role_ids)}]")
-    return roles
 
 
 def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> ServerAttributeIds:
@@ -227,32 +104,39 @@ class ServerSettings:
     database_key = "server_settings"
 
     @staticmethod
-    async def migrate(async_rina_db: motor.code.AgnosticDatabase):
+    async def migrate(async_rina_db: motor.core.AgnosticDatabase):
         """
+        Migrate all data from the old guildInfo database to the new server_settings database.
 
-        :param async_rina_db: The database to reference to look up the old and store the new database
-        :return: Dunno yet lol
-        :raises IndexError: No online database of the old version was found
+        :param async_rina_db: The database to reference to look up the old and store the new database.
+        :raise IndexError: No online database of the old version was found.
         """
         old_collection: motor.MotorCollection = await async_rina_db["guildInfo"]
-        all_settings = old_collection.find()
-        new_collection: motor.MotorCollection = await async_rina_db[""]
+        old_settings = old_collection.find()
+        new_collection: motor.MotorCollection = await async_rina_db[ServerSettings.database_key]
         new_settings = []
-        async for guild_id in all_settings:
-            old_setting = all_settings[guild_id]
+        async for old_setting in old_settings:
             new_setting = convert_old_settings_to_new(old_setting)
             new_settings.append(new_setting)
 
-        await new_collection.insert_many(new_settings)
+        if new_settings:
+            await new_collection.insert_many(new_settings)
 
     @staticmethod
-    async def load_all(async_rina_db: motor.core.AgnosticDatabase) -> list[ServerSettings]:
+    async def load_all(client: Bot, async_rina_db: motor.core.AgnosticDatabase, server_id: int) -> list[ServerSettings]:
+        """
+        Load all server settings from database and format into a ServerSettings object.
+        :param async_rina_db: The database to reference to look up the database.
+        :return: A list of ServerSettings matching all ServerAttributeIds stored in the database.
+        """
         collection: motor.MotorCollection = await async_rina_db[ServerSettings.database_key]
-        all_settings = await collection.find()
-        # todo: implement. lol
-        if all_settings is None:
-            return []
-        return []
+        all_settings = await collection.find(query)
+        server_settings: list[ServerSettings] = []
+        async for setting in all_settings:
+            server_id = setting["guild_id"]
+            attributes = ServerAttributeIds(**setting)
+            server_settings.append(ServerSettings.from_ids(client, server_id, attributes))
+        return server_settings
 
     @staticmethod
     async def load(client: Bot, async_rina_db: motor.core.AgnosticDatabase, server_id: int) -> ServerSettings:
@@ -260,7 +144,6 @@ class ServerSettings:
         query = {"guild_id": server_id}
         result = await collection.find_one(query)
         if result is None:
-            # todo: implement. lol
             attributes = ServerAttributeIds()
         else:
             attributes = ServerAttributeIds(**result)

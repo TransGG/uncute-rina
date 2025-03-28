@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from datetime import datetime, timezone  # for startup and crash logging, and Reminders
 import json  # for loading the API keys file
@@ -33,7 +34,6 @@ EXTENSIONS = [
     "emojistats",
     "help",
     "getmemberdata",
-    # "pronouns", # depreciated
     "qotw",
     "staffaddons",
     "tags",
@@ -42,6 +42,7 @@ EXTENSIONS = [
     "toneindicator",
     "vclogreader",
     "watchlist",
+    "settings",
     "starboard",
     "nameusage",
     "reminders",
