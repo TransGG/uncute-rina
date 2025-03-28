@@ -29,7 +29,7 @@ class ServerAttributes(TypedDict):
     custom_vc_create_channel: discord.VoiceChannel | None
     log_channel: discord.abc.Messageable | None
     custom_vc_category: discord.CategoryChannel | None
-    starboard_channel: discord.abc.MessageableChannel | None
+    starboard_channel: discord.abc.Messageable | None
     starboard_minimum_upvote_count: int | None
     bump_reminder_channel: discord.abc.Messageable | None
     bump_reminder_role: discord.Role | None

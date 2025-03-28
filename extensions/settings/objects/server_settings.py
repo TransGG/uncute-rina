@@ -209,7 +209,6 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> Ser
         "custom_vc_create_channel_id": custom_vc_create_channel_id,
         "log_channel_id": log_channel_id,
         "custom_vc_category_id": custom_vc_category_id,
-        "unused": unused,
         "starboard_channel_id": starboard_channel_id,
         "starboard_minimum_upvote_count": starboard_minimum_upvote_count,
         "bump_reminder_channel_id": bump_reminder_channel_id,
@@ -221,7 +220,7 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> Ser
         "starboard_minimum_vote_count_for_downvote_delete": starboard_minimum_vote_count_for_downvote_delete,
         "voice_channel_logs_channel_id": voice_channel_logs_channel_id,
     }
-    return ServerAttributeIds(new_settings)
+    return ServerAttributeIds(**new_settings)
 
 
 class ServerSettings:
@@ -296,8 +295,9 @@ class ServerSettings:
 
         new_settings: dict[str, Any | None] = {k: None for k in ServerAttributes.__required_keys__}
         attribute_types: dict[str, Type[list | None] | Type[int | None]] = typing.get_type_hints(ServerAttributes)
-        for attribute in attributes.items():
-            attribute_value = attributes[attribute]  # type: ignore
+        for attribute_pair in attributes.items():
+            attribute = attribute_pair[0]
+            attribute_value = attribute_pair[1]
             attribute_type = attribute_types[attribute]  # raises KeyError (but probably not, if the tests passed)
             if get_origin(attribute_type) is list:
                 # original was: list[T]`. get_origin returns `list`.

@@ -3,6 +3,7 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from resources.customs.bot import Bot
+from resources.utils.permissions import is_admin
 
 from extensions.settings.server_settings import ServerSettings
 
@@ -39,7 +40,7 @@ class SettingsCog(commands.Cog):
             self,
             itx: discord.Interaction
     ):
-        if not is_owner(itx.guild, itx.user):
+        if not is_admin(itx.guild, itx.user):
             pass
 
     @app_commands.command(name="settings", description="Edit bot settings for this server.")
