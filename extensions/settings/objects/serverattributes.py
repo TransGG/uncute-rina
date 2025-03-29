@@ -4,9 +4,11 @@ import discord
 
 
 class ServerAttributes(TypedDict):
+    # When adding a new key to this class, make sure to add the same key to the ServerAttributes class
+    # If you're giving it a new type, make sure it gets parsed in ServerSettings.get_attributes()
     parent_server: discord.Guild | None
-    child_servers: list[discord.Guild] | None
-    #
+    child_servers: list[discord.Guild]
+
     qotw_suggestions_channel: discord.abc.Messageable | None
     developer_request_channel: discord.abc.Messageable | None
     watchlist_channel: discord.abc.Messageable | None
@@ -18,11 +20,10 @@ class ServerAttributes(TypedDict):
     watchlist_reaction_role: discord.Role | None
     developer_request_reaction_role: discord.Role | None
     aegis_ping_role: discord.Role | None
-    #
+
     staff_roles: list[discord.Role]
     admin_roles: list[discord.Role]
-    owner_roles: list[discord.Role]
-    #
+
     ban_appeal_webhook: discord.User | None
     vctable_prefix: str | None
 

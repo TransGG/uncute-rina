@@ -1,5 +1,7 @@
 from typing import TypedDict
 
+from extensions.settings.objects import EnabledModules
+
 
 GuildId = int
 UserId = int
@@ -12,9 +14,11 @@ MessageableChannelId = int
 
 
 class ServerAttributeIds(TypedDict, total=False):
+    # When adding a new key to this class, make sure to add the same key to the ServerAttributes class
+
     parent_server: GuildId
     child_servers: list[GuildId]
-    #
+
     qotw_suggestions_channel: MessageableChannelId
     developer_request_channel: MessageableChannelId
     watchlist_channel: MessageableChannelId
@@ -26,14 +30,13 @@ class ServerAttributeIds(TypedDict, total=False):
     watchlist_reaction_role: RoleId
     developer_request_reaction_role: RoleId
     aegis_ping_role: RoleId
-    #
+
     staff_roles: list[RoleId]
     admin_roles: list[RoleId]
-    owner_roles: list[RoleId]
-    #
+
     ban_appeal_webhook: int
     vctable_prefix: str
-    #
+
     custom_vc_create_channel: VoiceChannelId
     log_channel: MessageableChannelId
     custom_vc_category: CategoryChannelId
