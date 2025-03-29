@@ -1,4 +1,5 @@
 import discord
+import discord.app_commands as app_commands
 
 from resources.customs.bot import Bot
 from resources.utils.stringhelper import replace_string_command_mentions

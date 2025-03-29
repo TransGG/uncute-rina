@@ -1,5 +1,7 @@
 from extensions.help.helppage import HelpPage
 
+__all__ = ["help_pages", 'aliases', 'FIRST_PAGE']
+
 
 # noinspection SqlNoDataSourceInspection
 help_pages: dict[int, HelpPage] = {
@@ -62,7 +64,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **7:** Server search commands\n"  # 140
                     ". . **8:** Chat actions\n"  # 150
                     ". . **9:** Server functions\n"  # 160
-                    ". . **10:** Voice channels",  # 170
+                    ". . **10:** Voice channels\n"  # 170
+                    ". . **90:** Bot setup",  # 900
         fields=[],
         staff_only=False,
     ),
@@ -121,7 +124,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     ),
     6: HelpPage(  # index: Internet search commands
         title="Internet search commands",
-        description="Googling is hard. That's why I made some searching commands!\b"
+        description="Googling is hard. That's why I made some searching commands!\n"
                     "\n"
                     ". . **131:** equaldex (LGBTQ laws in countries)\n"
                     ". . **132:** qotw (question of the week)\n",
@@ -129,15 +132,36 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         staff_only=False,
     ),
     7: HelpPage(
-        title="Work in progress...",
+        title="Server search commands",
         description="This section is still being worked on! (help, so much text to write D: )\n"
                     "Scroll a few pages ahead to see what the rest of the help pages look like!",
         fields=[],
         staff_only=False,
     ),
     8: HelpPage(
-        title="placeholder (skip ahead)",
+        title="Chat actions",
         description="placeholder (skip ahead)",
+        fields=[],
+        staff_only=False,
+    ),
+    9: HelpPage(
+        title="Server functions",
+        description="placeholder (skip ahead)",
+        fields=[],
+        staff_only=False,
+    ),
+    10: HelpPage(
+        title="Voice channels",
+        description="placeholder (skip ahead)",
+        fields=[],
+        staff_only=False,
+    ),
+    90: HelpPage(
+        title="Bot setup",
+        description="Rina isn't really meant for more than 1 server. But.. I tried my best :D\n"
+                    "There are some commands to help customize the features in your server.\n"
+                    "\n"
+                    ". . **901:** test",
         fields=[],
         staff_only=False,
     ),
@@ -492,3 +516,37 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     )
     # endregion
 }
+
+
+#    all pages only have one of these attributes
+assert all([type(i) is int for i in help_pages]), "All help pages should have an integer key."
+assert sorted(list(help_pages)) == list(help_pages), "All help pages should be sorted by default."
+assert all([all([j in ["title", "description", "fields", "staff_only"] for j in help_pages[i]]) for i in help_pages]), \
+    "All pages should only have fields that are one of these attributes: title, description, fields, staff_only"
+
+
+FIRST_PAGE: int = list(help_pages)[0]
+
+
+aliases: dict[int, list[str]] = {
+    0: ["Fallback", "Rina's fallback help page"],
+    1: ["Introduction", "Welcome page", "Rina's commands"],
+    2: ["Index of indexes"],
+    3: ["Index: Bot functions"],
+    4: ["Index: Utility"],
+    5: ["Index: Suggestion commands"],
+    6: ["Index: Internet search commands"],
+    7: ["Index: Server search commands"],
+    8: ["Index: Chat actions"],
+    9: ["Index: Server functions"],
+    10: ["Index: Voice channels"],
+    90: ["Index: Bot setup"],
+}
+
+for page in help_pages:
+    if page in aliases:
+        continue
+    aliases[page] = [help_pages[page]["title"]]
+
+assert len(aliases) == len(help_pages)  # all pages have an alias
+assert all(len(alias_list) > 0 for alias_list in aliases.values())  # all alias lists are not empty
