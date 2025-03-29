@@ -1,6 +1,6 @@
 import pytest
 
-from extensions.settings.objects import ServerAttributes, ServerAttributeIds
+from extensions.settings.objects import ServerAttributes, ServerAttributeIds, ServerSettings
 from extensions.settings.objects.server_settings import convert_old_settings_to_new
 
 
@@ -59,9 +59,18 @@ inputs = [
 
 
 def test_migrate_output():
-    a = convert_old_settings_to_new(inputs[0])
-    print(a)
-from extensions.settings.objects import ServerAttributes, ServerAttributeIds, ServerSettings
+    # Honestly, I don't even know what it's supposed to output.
+    for elem in inputs:
+        guild_id, attribute_ids = convert_old_settings_to_new(elem)
+
+        # Remove unused keys
+        del elem["_id"]
+        if "vcNoMic" in elem:
+            del elem["vcNoMic"]
+
+        # Remove extracted key
+        del elem["guild_id"]
+        assert len(attribute_ids) == len(elem)
 
 
 def test_matching_keys():

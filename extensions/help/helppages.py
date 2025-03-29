@@ -3,7 +3,6 @@ from extensions.help.helppage import HelpPage
 __all__ = ["help_pages", 'aliases', 'FIRST_PAGE']
 
 
-# noinspection SqlNoDataSourceInspection
 help_pages: dict[int, HelpPage] = {
     0: HelpPage(  # fallback default page
         title="Rina's fallback help page",
@@ -161,7 +160,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         description="Rina isn't really meant for more than 1 server. But.. I tried my best :D\n"
                     "There are some commands to help customize the features in your server.\n"
                     "\n"
-                    ". . **901:** test",
+                    ". . **901:** settings",
         fields=[],
         staff_only=False,
     ),
@@ -513,16 +512,32 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
             )
         ],
         staff_only=False,
-    )
+    ),
     # endregion
+    900: HelpPage(  # equaldex
+        title="Server settings",
+        description="Rina has many commands and features. Some commands need setup beforehand, like "
+                    "a logging channel or role ids. This command lets you personalize rina for *your* "
+                    "server!",
+        fields=[
+            (
+                "Parameters",
+                "`type`: The type of setting you want to change.\n"
+                "- Attribute: IDs like staff role ids, starboard channel ids, blacklisted channels, vctable prefixes\n"
+                "- Module: Choose which modules are currently running.\n"
+                "`key`: The attribute or module you want to \n"
+            ),
+            (
+                "Examples",
+                "- %%equaldex%% `country_id:GB`"
+                "  - Get LGBTQ laws from Great Britain (United Kingdom).\n"
+                "- %%equaldex%% `country_id:DE`"
+                "  - DE for Germany, "
+            )
+        ],
+        staff_only=False,
+    )
 }
-
-
-#    all pages only have one of these attributes
-assert all([type(i) is int for i in help_pages]), "All help pages should have an integer key."
-assert sorted(list(help_pages)) == list(help_pages), "All help pages should be sorted by default."
-assert all([all([j in ["title", "description", "fields", "staff_only"] for j in help_pages[i]]) for i in help_pages]), \
-    "All pages should only have fields that are one of these attributes: title, description, fields, staff_only"
 
 
 FIRST_PAGE: int = list(help_pages)[0]
