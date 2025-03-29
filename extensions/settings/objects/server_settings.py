@@ -137,9 +137,9 @@ class ServerSettings:
         :param async_rina_db: The database to reference to look up the old and store the new database.
         :raise IndexError: No online database of the old version was found.
         """
-        old_collection: motor.MotorCollection = await async_rina_db["guildInfo"]
+        old_collection: motor.core.AgnosticCollection = async_rina_db["guildInfo"]
         old_settings = old_collection.find()
-        new_collection: motor.MotorCollection = await async_rina_db[ServerSettings.DATABASE_KEY]
+        new_collection: motor.core.AgnosticCollection = async_rina_db[ServerSettings.DATABASE_KEY]
         new_settings = []
         async for old_setting in old_settings:
             new_setting: ServerSettingData = {}

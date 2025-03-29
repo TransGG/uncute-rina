@@ -132,7 +132,7 @@ class CrashHandling(commands.Cog):
     async def on_app_command_error(self, itx: discord.Interaction, error):
         global appcommanderror_cooldown
 
-        if error is InsufficientPermissionsCheckFailure:
+        if type(error) is InsufficientPermissionsCheckFailure:
             await itx.response.send_message("You do not have the permissions to run this command!",
                                             ephemeral=True)
             return

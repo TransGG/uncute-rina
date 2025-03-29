@@ -113,6 +113,8 @@ def is_admin(guild: discord.Guild, member: discord.Member | discord.User) -> boo
 class InsufficientPermissionsCheckFailure(app_commands.CheckFailure):
     pass
 
+# todo: apply is_staff_check to all functions that currently use is_staff
+
 def is_staff_check(itx: discord.Interaction):
     if is_staff(itx.guild, itx.user):
         return True
