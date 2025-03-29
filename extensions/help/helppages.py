@@ -28,7 +28,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
 %%vctable about%%: Learn about making your voice chat more on-topic!
 """,
         fields=[],
-        staff_only=False,
     ),
     # region Default pages (home / index)
     1: HelpPage(
@@ -47,7 +46,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     "\n"
                     "Do you have a cool bot idea? Use %%developer_request%% to suggest them to staff!",
         fields=[],
-        staff_only=False,
     ),
     2: HelpPage(
         title="Index",
@@ -66,7 +64,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **10:** Voice channels\n"  # 170
                     ". . **90:** Bot setup",  # 900
         fields=[],
-        staff_only=False,
     ),
     # endregion
 
@@ -99,7 +96,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **103:** get_rina_command_mention\n"
                     ". . **105:** add_poll_reactions\n",
         fields=[],
-        staff_only=False,
     ),
     4: HelpPage(  # index: Utility
         title="Utility",
@@ -110,7 +106,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **114:** convert_unit\n"
                     ". . **115:** todo\n",
         fields=[],
-        staff_only=False,
     ),
     5: HelpPage(  # index: Suggestion commands
         title="Suggestion commands",
@@ -119,7 +114,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **121:** developer_request\n"
                     ". . **122:** qotw (question of the week)\n",
         fields=[],
-        staff_only=False,
     ),
     6: HelpPage(  # index: Internet search commands
         title="Internet search commands",
@@ -128,32 +122,27 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **131:** equaldex (LGBTQ laws in countries)\n"
                     ". . **132:** qotw (question of the week)\n",
         fields=[],
-        staff_only=False,
     ),
     7: HelpPage(
         title="Server search commands",
         description="This section is still being worked on! (help, so much text to write D: )\n"
                     "Scroll a few pages ahead to see what the rest of the help pages look like!",
         fields=[],
-        staff_only=False,
     ),
     8: HelpPage(
         title="Chat actions",
         description="placeholder (skip ahead)",
         fields=[],
-        staff_only=False,
     ),
     9: HelpPage(
         title="Server functions",
         description="placeholder (skip ahead)",
         fields=[],
-        staff_only=False,
     ),
     10: HelpPage(
         title="Voice channels",
         description="placeholder (skip ahead)",
         fields=[],
-        staff_only=False,
     ),
     90: HelpPage(
         title="Bot setup",
@@ -162,7 +151,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     "\n"
                     ". . **901:** settings",
         fields=[],
-        staff_only=False,
     ),
     # endregion
     # region Bot Functions
@@ -195,7 +183,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - An alias for this command. Brings you to the Bot Functions index page."
             )
         ],
-        staff_only=False,
     ),
     102: HelpPage(  # /version
         title="Bot version",
@@ -211,7 +198,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Gives Rina's current version, and if there is a newer version."
             )
         ],
-        staff_only=False,
     ),
     103: HelpPage(  # get_rina_command_mention
         title="Sharing Rina's commands the cooler way :sunglasses:",
@@ -242,7 +228,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Gives you the command mention information for /add_poll_reactions.\n"
             )
         ],
-        staff_only=False,
     ),
     104: HelpPage(  # /add_poll_reactions
         title="Adding voting emojis / Creating tiny polls",
@@ -278,7 +263,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Adds a thumbs up, then a person shrugging, then a thumbs down emoji."
             )
         ],
-        staff_only=False,
     ),
     # endregion
     # region Utility commands
@@ -314,7 +298,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - See next page (__**102**__) for more information about advanced dice rolls."
             )
         ],
-        staff_only=False,
     ),
     112: HelpPage(  # dice rolls advanced
         title="Advanced dice rolls",  # /roll advanced: ...
@@ -338,7 +321,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Multiply the outcome of 5 dice with the outcome of 2 dice, and subtract the outcome of 3 dice."
             )
         ],
-        staff_only=False,
     ),
     113: HelpPage(  # reminders
         title="Reminders",  # /reminder
@@ -368,7 +350,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "Use that number to remove the reminder like so: `item:number`."
             )
         ],
-        staff_only=False,
     ),
     114: HelpPage(  # convert unit
         title="Converting units",
@@ -394,7 +375,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 ""
             )
         ],
-        staff_only=False,
     ),
     115: HelpPage(  # to-do list
         title="Todo lists",
@@ -428,7 +408,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "to make sure you're removing the right command when removing multiple to-do items at once!"
             )
         ],
-        staff_only=False,
     ),
     # endregion
     # region Suggestion commands
@@ -460,7 +439,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - yeah, it does the thingy"
             )
         ],
-        staff_only=False,
     ),
     122: HelpPage(  # qotw
         title="Questions of the week",
@@ -484,7 +462,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - yes"
             )
         ],
-        staff_only=False,
     ),
     # endregion
     # region Internet search commands
@@ -511,7 +488,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - DE for Germany, "
             )
         ],
-        staff_only=False,
     ),
     # endregion
     900: HelpPage(  # equaldex
@@ -535,7 +511,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - DE for Germany, "
             )
         ],
-        staff_only=False,
+        staff_only=True
     )
 }
 

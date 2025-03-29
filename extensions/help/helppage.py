@@ -1,7 +1,7 @@
 from typing import TypedDict
 
 
-class HelpPage(TypedDict):
+class HelpPage(TypedDict, total=False):
     """
     A simple shell for a /help page, used for discord embeds
 

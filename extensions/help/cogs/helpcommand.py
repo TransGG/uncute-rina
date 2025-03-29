@@ -3,6 +3,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
+from resources.utils.permissions import is_admin
 from resources.utils.stringhelper import replace_string_command_mentions
 
 from extensions.help.helppages import help_pages, aliases, FIRST_PAGE
@@ -29,14 +30,23 @@ async def send_help_menu(itx: discord.Interaction, requested_page: int = FIRST_P
         )
         return
 
+    user_is_staff = is_admin(itx.guild, itx.user)
+    if not user_is_staff and help_pages[requested_page].get("staff_only", False):
+        # user is not staff but the page is staff-only
+        await itx.response.send_message("This page is only available to admins.", ephemeral=True)
+        return
+
     embed = generate_help_page_embed(help_pages[requested_page], requested_page, itx.client)
+
     await itx.response.send_message(embed=embed,
-                                    view=HelpPageView(requested_page, help_pages),
+                                    view=HelpPageView(requested_page, help_pages, user_is_staff),
                                     ephemeral=True)
 
-async def _help_page_autocomplete(_: discord.Interaction, current: str) -> list[app_commands.Choice[int]]:
+async def _help_page_autocomplete(itx: discord.Interaction, current: str) -> list[app_commands.Choice[int]]:
     results = []
     added_pages = []
+
+    user_is_staff = is_admin(itx.guild, itx.user)
 
     if current.isdecimal():
         current_page = None
@@ -46,12 +56,16 @@ async def _help_page_autocomplete(_: discord.Interaction, current: str) -> list[
             pass
 
         if current_page is not None and current_page in aliases:
-            results.append(app_commands.Choice(name=aliases[current_page][0], value=current_page))
-            return results
+            if user_is_staff or not help_pages[current_page].get("staff_only", False):
+                results.append(app_commands.Choice(name=aliases[current_page][0], value=current_page))
+                return results
 
     # search aliases
     for page in aliases:
         for alias in aliases[page]:
+            if not user_is_staff and help_pages[page].get("staff_only", False):
+                continue
+
             if current.lower() in alias.lower():
                 results.append(app_commands.Choice(name=alias[:100], value=page))
                 added_pages.append(page)
@@ -64,6 +78,9 @@ async def _help_page_autocomplete(_: discord.Interaction, current: str) -> list[
 
     # search page descriptions
     for page in help_pages:
+        if not user_is_staff and help_pages[page].get("staff_only", False):
+            continue
+
         if page in added_pages:
             continue
         if current.lower() in help_pages[page]["description"].lower():

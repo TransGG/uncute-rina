@@ -76,7 +76,13 @@ class HelpPageView(PageView):
 
     # endregion buttons
 
-    def __init__(self, first_page_key: int, page_dict: dict[int, HelpPage]) -> None:
+    def __init__(self, first_page_key: int, page_dict: dict[int, HelpPage], can_view_staff_pages: bool) -> None:
+        if not can_view_staff_pages:
+            page_numbers = list(page_dict)
+            for x in range(len(page_numbers)):
+                if page_dict[page_numbers[x]].get("staff_only", False):
+                    del page_dict[page_numbers[x]]
+
         self.pages = page_dict
         first_page_index = list(self.pages).index(first_page_key)
         super().__init__(first_page_index, len(self.pages) - 1, self.update_page)

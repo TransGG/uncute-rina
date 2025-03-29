@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from resources.customs.bot import Bot
+from resources.utils.permissions import InsufficientPermissionsCheckFailure
 from resources.utils.utils import debug, TESTING_ENVIRONMENT
 
 
@@ -130,6 +131,12 @@ class CrashHandling(commands.Cog):
 
     async def on_app_command_error(self, itx: discord.Interaction, error):
         global appcommanderror_cooldown
+
+        if error is InsufficientPermissionsCheckFailure:
+            await itx.response.send_message("You do not have the permissions to run this command!",
+                                            ephemeral=True)
+            return
+
         if datetime.now().astimezone() - appcommanderror_cooldown < timedelta(seconds=60):
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if
             # within 1 minute

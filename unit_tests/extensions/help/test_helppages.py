@@ -44,7 +44,7 @@ def test_help_pages_attributes():
     for page_number, helppage in help_pages.items():
         for section_name in helppage:
             if section_name not in allowed_keys:
-                invalid_attributes.append((page_number, section_name))
+                invalid_pages.append((page_number, section_name))
 
     assert invalid_pages == [], \
         "All pages should only have fields that are one of these attributes: title, description, fields, staff_only"
