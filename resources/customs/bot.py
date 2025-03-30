@@ -179,6 +179,69 @@ class Bot(commands.Bot):
             await log[0].response.send_message(log[1], ephemeral=True)
             raise
 
+    def get_guild_attribute(
+            self, guild_id: discord.Guild | int, *args: str
+    ):
+        """
+        Get ServerSettings attributes for the given guild.
+
+        Parameters
+        ----------
+        guild_id: The guild or guild id of the server you want to get attributes for.
+        args: The attribute(s) to get the values of. Must be keys of ServerAttributes.
+
+        Returns
+        -------
+        A list of the values of the given attribute keys, .
+        """
+        if type(guild_id) is discord.Guild:
+            guild_id: int = guild_id.id
+
+        if guild_id not in self.server_settings:
+            return None  # return early
+
+        attributes = self.server_settings[guild_id].attributes
+        attribute_keys = ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__)
+
+        output: list[discord.Guild | None | list[discord.Guild] | discord.abc.Messageable | discord.CategoryChannel |
+                     discord.User | discord.Role | list[discord.Role] | str | discord.VoiceChannel | int |
+                     list[discord.abc.Messageable] | discord.Emoji] = []
+        for arg in args:
+            if arg in attributes:
+                output.append(attributes[arg])
+            elif arg not in attribute_keys:
+                raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
+            else:
+                output.append(None)
+
+        return output
+
+    def is_module_enabled(
+            self, guild_id: discord.Guild | int, *args: str
+    ) -> list[bool]:
+
+        if type(guild_id) is discord.Guild:
+            guild_id: int = guild_id.id
+
+        if guild_id not in self.server_settings:
+            return False  # return early
+
+        modules = self.server_settings[guild_id].enabled_modules
+        module_keys = EnabledModules.__required_keys__.union(EnabledModules.__optional_keys__)
+
+        output: list[bool] = []
+        for arg in args:
+            if arg in modules:
+                output.append(modules[arg])
+            elif arg not in module_keys:
+                raise ValueError(f"Module '{arg}' is not a valid module!")
+            else:
+                output.append(False)
+
+        return output
+
+
+
     def is_me(self, user_id: discord.Member | discord.User | int):
         if isinstance(user_id, discord.User) or isinstance(user_id, discord.Member):
             user_id = user_id.id
