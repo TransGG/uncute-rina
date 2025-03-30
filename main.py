@@ -197,7 +197,7 @@ def start_app():
     # region Client events
     @client.event
     async def on_ready():
-        start_progress.step("Logged in as {client.user}, in version {version} "
+        start_progress.step(f"Logged in as {client.user}, in version {version} "
                             f"(in {datetime.now().astimezone() - program_start})")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
@@ -206,11 +206,11 @@ def start_app():
         watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
         if watchlist_channel is not None:  # if running on prod
             await get_or_fetch_watchlist_index(watchlist_channel)
-        post_startup_progress.step(f"Loaded watchlist threads.")
+        post_startup_progress.step("Loaded watchlist threads.")
 
     @client.event
     async def setup_hook():
-        start_progress.step(f"Started Bot")
+        start_progress.step("Started Bot")
         start_progress.progress("Load extensions and scheduler")
         logger = logging.getLogger("apscheduler")
         logger.setLevel(logging.WARNING)
@@ -226,8 +226,8 @@ def start_app():
         for extID in range(len(EXTENSIONS)):
             extension_load_progress.progress(f"Loading {EXTENSIONS[extID]}")
             await client.load_extension("extensions." + EXTENSIONS[extID] + ".module")
-        start_progress.step("Loaded extensions successfully "
-                            "(in {datetime.now().astimezone() - extension_loading_start_time})")
+        start_progress.step(f"Loaded extensions successfully "
+                            f"(in {datetime.now().astimezone() - extension_loading_start_time})")
         start_progress.progress("Loading server settings")
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
@@ -257,10 +257,10 @@ def start_app():
             except KeyError:
                 pass
         start_progress.step("Finished setting up reminders")
-        start_progress.progress(f"Caching bot's command names and their ids")
+        start_progress.progress("Caching bot's command names and their ids")
         client.commandList = await client.tree.fetch_commands()
         start_progress.step("Cached bot's command names and their ids")
-        start_progress.progress(f"Starting...")
+        start_progress.progress("Starting...")
 
     # endregion
 

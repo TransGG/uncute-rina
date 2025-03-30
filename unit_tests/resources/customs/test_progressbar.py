@@ -28,7 +28,7 @@ def get_original_message(message: str) -> str:
 
 def test_progress(caplog):
     # Arrange
-    progressbar = ProgressBar(5)
+    progressbar = ProgressBar(4)
 
     # Act
     with caplog.at_level(logging.INFO):
@@ -50,7 +50,7 @@ def test_progress(caplog):
 
 def test_step(caplog):
     # Arrange
-    progressbar = ProgressBar(6)
+    progressbar = ProgressBar(5)
 
     # Act
     with caplog.at_level(logging.INFO):
@@ -70,7 +70,7 @@ def test_step(caplog):
 
 def test_progress_newline(caplog):
     # Arrange
-    progressbar = ProgressBar(5)
+    progressbar = ProgressBar(4)
 
     # Act
     with caplog.at_level(logging.INFO):
@@ -90,7 +90,7 @@ def test_progress_newline(caplog):
 
 def test_step_no_newline(caplog):
     # Arrange
-    progressbar = ProgressBar(6)
+    progressbar = ProgressBar(5)
 
     # Act
     with caplog.at_level(logging.INFO):
@@ -111,7 +111,7 @@ def test_step_no_newline(caplog):
 
 def test_step_step(caplog):
     # Arrange
-    progressbar = ProgressBar(6)
+    progressbar = ProgressBar(5)
     progressbar.step("")
 
     # Act
@@ -134,7 +134,7 @@ def test_step_step(caplog):
 # noinspection DuplicatedCode
 def test_step_progress(caplog):
     # Arrange
-    progressbar = ProgressBar(6)
+    progressbar = ProgressBar(5)
     progressbar.step("")
 
     # Act
@@ -158,7 +158,7 @@ def test_step_progress(caplog):
 # noinspection DuplicatedCode
 def test_progress_progress(caplog):
     # Arrange
-    progressbar = ProgressBar(6)
+    progressbar = ProgressBar(5)
     progressbar.progress("")
 
     # Act
@@ -178,9 +178,10 @@ def test_progress_progress(caplog):
     # Assert
     assert "[#+   ]: " == message
 
+
 def test_progress_step(caplog):
     # Arrange
-    progressbar = ProgressBar(6)
+    progressbar = ProgressBar(5)
     progressbar.progress("")
 
     # Act
@@ -199,11 +200,12 @@ def test_progress_step(caplog):
     # Assert
     assert "[#    ]: " == message
 
+
 def test_padding_length(caplog):
     # Arrange
     progressbar = ProgressBar(9)
     progressbar.progress("qwerty" * 3)
-    expected_progress = "[#+      ]: "
+    expected_progress = "[#+       ]: "
 
     # Act
     with caplog.at_level(logging.INFO):
@@ -214,3 +216,45 @@ def test_padding_length(caplog):
 
     # Assert
     assert expected_output == message
+
+
+def test_short_bar_step(caplog):
+    # Arrange
+    progressbar = ProgressBar(1)
+
+    # Act
+    with caplog.at_level(logging.INFO):
+        progressbar.step("")
+
+    message = get_original_message(caplog.messages[0])
+
+    # Assert
+    assert "[#]: " == message
+
+
+def test_short_bar_progress(caplog):
+    # Arrange
+    progressbar = ProgressBar(1)
+
+    # Act
+    with caplog.at_level(logging.INFO):
+        progressbar.progress("")
+
+    message = get_original_message(caplog.messages[0])
+
+    # Assert
+    assert "[+]: " == message
+
+
+def test_short_bar_progress_step(caplog):
+    # Arrange
+    progressbar = ProgressBar(1)
+    progressbar.progress("")
+    # Act
+    with caplog.at_level(logging.INFO):
+        progressbar.step("")
+
+    message = get_original_message(caplog.messages[0])
+
+    # Assert
+    assert "[#]: " == message

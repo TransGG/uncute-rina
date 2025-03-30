@@ -13,14 +13,17 @@ class ProgressBar:
         self._just_progressed = False
         self._previous_message_length = 0
 
-    def _get_progess_bar(self, *, progressing) -> str:
+    def _get_progess_bar(self, *, busy) -> str:
         out = "["
         out += self._fill_char * self._step
-        if progressing:
+        if busy:
             out += "+"
         # [###+ = 5 chars. Max step may be 4. Pad 0 characters. [###+]:
-        pad_chars = self._max_steps - len(out)
+        pad_chars = self._max_steps - len(out) + 1
+        if pad_chars < 0:
+            raise ValueError("Progress exceeded size of progress bar!")
         out += " "*pad_chars
+        # [###+ ]
 
         out += "]: "
         return out
@@ -34,7 +37,7 @@ class ProgressBar:
         end = '\n' if newline else '\r'
         if self._just_progressed:  # to prevent two progress chars in a row: "[##++  ]:"
             self._step += 1
-        progress_bar = self._get_progess_bar(progressing=True)
+        progress_bar = self._get_progess_bar(busy=True)
         padding = self._get_line_clear_padding(text)
         debug(progress_bar + text + padding, color="light_blue", end=end)
         self._previous_message_length = len(text)
@@ -43,7 +46,7 @@ class ProgressBar:
     def step(self, text, *, newline=True):
         end = '\n' if newline else '\r'
         self._step += 1
-        progress_bar = self._get_progess_bar(progressing=False)
+        progress_bar = self._get_progess_bar(busy=False)
         padding = self._get_line_clear_padding(text)
         debug(progress_bar + text + padding, color="green", end=end)
         self._previous_message_length = len(text)
