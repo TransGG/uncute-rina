@@ -1,5 +1,7 @@
 import pytest
 
+import typing
+
 from extensions.settings.objects import ServerAttributes, ServerAttributeIds, ServerSettings, EnabledModules
 from extensions.settings.objects.server_settings import convert_old_settings_to_new
 
@@ -126,3 +128,17 @@ def test_no_bad_module_names():
     if invalid_names:
         pytest.fail("Module keys should not contain a '.' or '$', because MongoDB won't let you have "
                     "keys with those characters. The names in question:\n- " + "\n- ".join(invalid_names))
+
+def test_all_modules_bools():
+    # Arrange
+    module_types = typing.get_type_hints(EnabledModules)
+    invalid_types = []
+
+    # Act
+    for module, module_type in module_types.items():
+        if module_type != bool:
+            invalid_types.append(module)
+
+    # Assert
+    assert invalid_types == []
+

@@ -7,6 +7,7 @@ from typing import Literal, TypedDict
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
 
+from extensions.settings.objects import ServerSettings, ServerAttributes, EnabledModules
 
 ApiTokenDict = TypedDict('ApiTokenDict',
                          {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
@@ -32,6 +33,7 @@ class Bot(commands.Bot):
         self.version: str = version
         self.rina_db: PyMongoDatabase = rina_db
         self.async_rina_db: motorcore.AgnosticDatabase = async_rina_db
+        self.server_settings: dict[int, ServerSettings] | None = None
         super().__init__(*args, **kwargs)
 
     @property

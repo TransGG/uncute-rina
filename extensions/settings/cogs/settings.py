@@ -54,13 +54,13 @@ async def _setting_autocomplete(itx: discord.Interaction, current: str) -> list[
 attribute_type_single_value = [ModeAutocomplete.set, ModeAutocomplete.delete]
 attribute_type_list = [ModeAutocomplete.add, ModeAutocomplete.remove]
 
-def get_attribute_autocomplete_type(attribute_key: str) -> list[ModeAutocomplete] | None:
+def get_attribute_autocomplete_mode(attribute_key: str) -> list[ModeAutocomplete] | None:
     """
-    Retrieve the autocomplete-type of a ServerAttributeId key. This is usually either a list or a single value.
+    Retrieve the mode autocomplete-type of a ServerAttributeId key. This is usually either a list or a single value.
 
     Returns
     -------
-    The autocomplete type, or None if the attribute is not a valid key.
+    The mode autocomplete-type, or None if the attribute is not a valid key.
     """
     attribute_keys = list(ServerAttributeIds.__required_keys__.union(ServerAttributeIds.__optional_keys__))
     attribute_types = typing.get_type_hints(ServerAttributeIds)
@@ -106,7 +106,7 @@ async def _mode_autocomplete(itx: discord.Interaction, current: str) -> list[app
             ]
         return [app_commands.Choice(name="Invalid setting given.", value=ModeAutocomplete.invalid.value)]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
-        autocomplete_type = get_attribute_autocomplete_type(itx.namespace.setting)
+        autocomplete_type = get_attribute_autocomplete_mode(itx.namespace.setting)
         if autocomplete_type is None:
             return [app_commands.Choice(name="Invalid setting given.", value=ModeAutocomplete.invalid.value)]
         types += autocomplete_type
@@ -133,43 +133,56 @@ async def _value_autocomplete(itx: discord.Interaction, current: str) -> list[ap
 
         results = []
         if issubclass(attribute_type, discord.Guild):
+            # iterate all guilds
             for guild in itx.client.guilds:
                 if current in guild.name or str(guild.id).startswith(current):
                     results.append(app_commands.Choice(name=guild.name, value=str(guild.id)))
+        elif issubclass(attribute_type, discord.User):
+            # Note: discord.User is a subclass of discord.abc.Messageable, so should be tested before that too.
+            # iterate guild members
+            for member in itx.guild.members:
+                if current in member.name or str(member.id).startswith(current):
+                    results.append(app_commands.Choice(name=member.name, value=str(member.id)))
+                if len(results) > 20:
+                    break
+            # from user id
+            if current.isdecimal():
+                potential_user = itx.client.get_user(int(current))
+                if potential_user is not None:
+                    results.append(app_commands.Choice(name=potential_user.name, value=str(potential_user.id)))
         elif issubclass(attribute_type, discord.abc.GuildChannel):
             for channel in itx.guild.channels:
                 if (isinstance(channel, attribute_type) and
                     (current in channel.name or str(channel.id).startswith(current))
                 ):
                     results.append(app_commands.Choice(name=channel.name, value=str(channel.id)))
-        elif issubclass(attribute_type, discord.User):
-            # Note: discord.User is a subclass of discord.abc.Messageable, so should be tested before that too.
-            for member in itx.guild.members:
-                if current in member.name or str(member.id).startswith(current):
-                    results.append(app_commands.Choice(name=member.name, value=str(member.id)))
-                if len(results) > 20:
-                    break
-            if current.isdecimal():
-                potential_user = itx.client.get_user(int(current))
-                if potential_user is not None:
-                    results.append(app_commands.Choice(name=potential_user.name, value=str(potential_user.id)))
         elif issubclass(attribute_type, discord.abc.Messageable):
+            # from channel id
             if current.isdecimal():
                 potential_channel = itx.client.get_channel(int(current))
                 if potential_channel is not None:
                     results.append(app_commands.Choice(
                         name=potential_channel.name, value=str(potential_channel.id)))
+            # iterate messageable guild channels
+            for channel in itx.guild.channels:
+                if isinstance(channel, attribute_type):
+                    if current in channel.name or str(channel.id).startswith(current):
+                        results.append(app_commands.Choice(name=channel.name, value=str(channel.id)))
         elif issubclass(attribute_type, discord.Role):
+            # iterate guild roles
             for role in itx.guild.roles:
                 if current in role.name or str(role.id).startswith(current):
                     results.append(app_commands.Choice(name=role.name, value=str(role.id)))
         elif issubclass(attribute_type, discord.Emoji):
+            # iterate guild emojis
             for emoji in itx.guild.emojis:
                 if current in emoji.name or str(emoji.id).startswith(current):
                     results.append(app_commands.Choice(name=emoji.name, value=str(emoji.id)))
         elif attribute_type == str:
+            # leave as is
             results.append(app_commands.Choice(name=current, value=current))
         elif attribute_type == int:
+            # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
                 results.append(app_commands.Choice(name=current, value=current))
         else:
@@ -230,9 +243,12 @@ class SettingsCog(commands.Cog):
                                             help_str,
                                             ephemeral=True)
             return
+        itx.response = typing.cast(discord.InteractionResponse, itx.response)
 
         try:
-            ModeAutocomplete(mode)
+            modify_mode: ModeAutocomplete | None = None
+            if mode is not None:
+                modify_mode = ModeAutocomplete(mode)
         except ValueError:
             await itx.response.send_message("This is not a valid mode. " + help_str, ephemeral=True)
             return
@@ -241,17 +257,122 @@ class SettingsCog(commands.Cog):
             # Todo: Make more functions call HelpPage functions.
             await send_help_menu(itx, requested_page=900)
 
+        if modify_mode is None:
+            await itx.response.send_message("You must set a mode! " + help_str)
+            return
+
         if setting_type == "Attribute":
             attribute_keys = list(ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__))
-            if mode is None:
-                await itx.response.send_message("You must set a mode! " + help_str)
 
-            if setting in attribute_keys:
-                if mode == ModeAutocomplete.view:
-                    # todo: Implement. Needs `itx.client.server_attributes[setting]`
-                    pass
+            if setting not in attribute_keys:
+                await itx.response.send_message(
+                    "This is not a valid setting. Please choose one of the autocompleted settings after "
+                    "setting `type:Attribute`.\n"
+                    "If you filled in `type:Module` and loaded the earlier autocomplete for that instead "
+                    "(and the autocomplete cache doesn't let you reload the settings), you can clear your "
+                    "whole chatbox and re-type the command to reset the autocomplete cache (discord is "
+                    "silly) (on Desktop at least). Otherwise reopen the app, maybe that works.\n" +
+                    help_str,
+                    ephemeral=True
+                )
+                return
 
-                # confirm if expected attribute type also matches the given attribute type
-                expected_attribute_type = get_attribute_autocomplete_type(setting)
-                parse_attribute(itx.client, setting, value)
+            if modify_mode == ModeAutocomplete.view:
+                itx.client.get_guild_attribute(itx.guild, "fish")
+                # todo: Implement. Needs `itx.client.server_attributes[setting]`
+                await itx.response.send_message("not implemented; ping mia to fix",
+                                                ephemeral=True)
+                return
+
+            # confirm if expected attribute type also matches the given attribute type
+            expected_modify_mode = get_attribute_autocomplete_mode(setting)
+            assert expected_modify_mode is not None
+            # It shouldn't be None because `setting` is already in `attribute_keys` from ServerAttributes, and
+            #  the function checks keys of ServerAttributeIds, which should be identical.
+
+            if modify_mode not in expected_modify_mode:
+                await itx.response.send_message(
+                    f"This attribute cannot be changed with this mode ('{mode}')\n"
+                    f"It must be one of the following: " +
+                    ', '.join([f"'{m}'" for m in expected_modify_mode]), # [a,b,c] -> "'a', 'b', 'c'"
+                    ephemeral=True
+                )
+                return
+
+            attribute = parse_attribute(itx.client, setting, value)
+            attribute_type = get_attribute_type(setting)
+            if attribute is None:
+                await itx.response.send_message(f"Could not parse `{value}` as value for '{setting}' "
+                                                f"(expected {attribute_type.__name__}")
+                return
+
+            if hasattr(attribute, "id"):
+                # guild, channel, emoji, role, user
+                database_value = attribute.id
+            else:
+                # int, str
+                database_value = attribute
+
+            if modify_mode == ModeAutocomplete.set:
+                await ServerSettings.set_attribute(
+                    itx.client.async_rina_db, itx.guild.id, setting, database_value
+                )
+            elif modify_mode == ModeAutocomplete.delete:
+                await ServerSettings.remove_attribute(
+                    itx.client.async_rina_db, itx.guild.id, setting
+                )
+            elif modify_mode == ModeAutocomplete.add:
+                result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
+                if result is not None:
+                    items = result["attribute_ids"][setting]  # type: ignore
+                else:
+                    # if guild has no info yet
+                    items = []
+
+                if database_value in items:
+                    await itx.response.send_message(f"Couldn't add '{database_value}' to the list, because it was "
+                                                    f"already in it!", ephemeral=True)
+
+                items.append(database_value)
+                await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
+            elif modify_mode == ModeAutocomplete.remove:
+                result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
+                if result is not None:
+                    items = result["attribute_ids"][setting]  # type: ignore
+                else:
+                    # if guild has no info yet
+                    items = []
+
+                if not items:  # empty list
+                    await itx.response.send_message("Couldn't remove any item from the list, because there "
+                                                    "was nothing in it!", ephemeral=True)
+                    return
+
+                if database_value not in items:
+                    await itx.response.send_message(f"Couldn't remove '{database_value}' from the list, because "
+                                                    f"it wasn't in the list before either!", ephemeral=True)
+                    return
+
+                del items[items.index(database_value)]
+                await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
+            else:
+                raise NotImplementedError()
+
+        elif setting_type == "Module":
+            module_keys = list(EnabledModules.__required_keys__.union(EnabledModules.__optional_keys__))
+
+            if setting not in module_keys:
+                await itx.response.send_message(
+                    "This is not a valid setting. Please choose one of the autocompleted settings after "
+                    "setting `type:Module`.\n"
+                    "If you filled in `type:Attribute` and loaded the earlier autocomplete for that instead "
+                    "(and the autocomplete cache doesn't let you reload the settings), you can clear your "
+                    "whole chatbox and re-type the command to reset the autocomplete cache (discord is "
+                    "silly) (on Desktop at least). Otherwise reopen the app, maybe that works.\n" +
+                    help_str,
+                    ephemeral=True
+                )
+                return
+
+
 

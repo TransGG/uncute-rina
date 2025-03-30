@@ -9,9 +9,12 @@ from typing import TypedDict, Required, Any, TypeVar, get_args, get_origin, Unio
 import discord
 import pymongo.results
 
-from resources.customs.bot import Bot
-
 from extensions.settings.objects import ServerAttributes, ServerAttributeIds, EnabledModules
+
+
+if typing.TYPE_CHECKING:
+    from resources.customs.bot import Bot
+
 
 GuildId = int
 UserId = int
@@ -124,7 +127,9 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> tup
 def parse_attribute(
         client: Bot,
         attribute_key: str,
-        attribute_value: str
+        attribute_value: str,
+        *,
+        invalid_arguments = None
 ) -> object | None:
     """
     Parse the attribute value as ServerAttribute based on the given attribute key.
@@ -134,11 +139,14 @@ def parse_attribute(
     client: The client to get the attribute from.
     attribute_key: The key of the attribute type to parse it to.
     attribute_value: The attribute value to parse.
+    invalid_arguments: An optional list tracking previously unparseable arguments.
 
     Returns
     -------
     The parsed value, or None if not found.
     """
+    if invalid_arguments is None:
+        invalid_arguments = []
     attribute_types: dict[str, Type[list[int] | None] | Type[int | None]] = typing.get_type_hints(ServerAttributes)
     attribute_type = attribute_types[attribute_key]  # raises KeyError (but probably not, if the tests passed)
     if get_origin(attribute_type) is typing.types.UnionType:  # typing.Union != typing.types.UnionType :/
@@ -161,7 +169,7 @@ def parse_attribute(
     if attribute_type is discord.User:
         func = client.get_user
     if attribute_type is discord.Role:
-        func = server.get_role
+        func = client.get_role
     if attribute_type is discord.CategoryChannel:
         # I think it's safe to assume the stored value was an object of the correct type in the first place.
         #  As in, it's a CategoryChannel id, not a VoiceChannel id.
@@ -197,6 +205,25 @@ class ServerSettings:
     DATABASE_KEY = "server_settings"
 
     @staticmethod
+    async def get_entry(async_rina_db: motor.core.AgnosticDatabase, guild_id: int) -> ServerSettingData | None:
+        """
+        Retrieve a database entry for the given guild ID.
+
+        Parameters
+        ----------
+        async_rina_db: The database with which to retrieve the entry.
+        guild_id: The guild id of the guild to retrieve the entry for.
+
+        Returns
+        -------
+        A ServerSettingData or None if there is no entry for the given guild.
+        """
+        collection: motor.MotorCollection = await async_rina_db[ServerSettings.DATABASE_KEY]
+        query = {"guild_id": guild_id}
+        result: ServerSettingData | None = await collection.find_one(query)
+        return result
+
+    @staticmethod
     async def migrate(async_rina_db: motor.core.AgnosticDatabase):
         """
         Migrate all data from the old guildInfo database to the new server_settings database.
@@ -219,29 +246,42 @@ class ServerSettings:
         if new_settings:
             await new_collection.insert_many(new_settings)
 
-    async def set_attribute(self, async_rina_db: motor.core.AgnosticDatabase, parameter: str, value: Any) -> bool:
+    @staticmethod
+    async def set_attribute(
+            async_rina_db: motor.core.AgnosticDatabase,
+            guild_id: int,
+            parameter: str,
+            value: Any
+    ) -> tuple[bool, bool]:
         if "." in parameter or "$" in parameter:
             raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{parameter}')")
         if parameter not in ServerAttributeIds:
             raise KeyError(f"'{parameter}' is not a valid Server Attribute.")
 
         collection: motor.MotorCollection = await async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": self.server}
+        query = {"guild_id": guild_id}
         update = {"$set": {parameter: value}}
 
         result = await collection.update_one(query, update, upsert=True)
-        return result.modified_count > 0
+        # result.did_upsert -> if yes, make new ServerSettings?
+        # result.raw_result
+        return result.modified_count > 0, result.did_upsert
         # todo: add new id to ServerSettings as correct Channel etc object
 
-    async def remove_attribute(self, async_rina_db: motor.core.AgnosticDatabase, parameter: str) -> bool:
+    @staticmethod
+    async def remove_attribute(
+            async_rina_db: motor.core.AgnosticDatabase,
+            guild_id: int,
+            parameter: str
+    ) -> tuple[bool, bool]:
         if "." in parameter or "$" in parameter:
             raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{parameter}')")
         collection: motor.MotorCollection = await async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": self.server}
+        query = {"guild_id": guild_id}
         update = {"$unset": {f"attribute_ids.{parameter}": ""}}
 
         result = await collection.update_one(query, update, upsert=True)
-        return result.modified_count > 0
+        return result.modified_count > 0, result.did_upsert
         # todo: add new id to ServerSettings as correct Channel etc object
 
     @staticmethod
@@ -276,9 +316,7 @@ class ServerSettings:
         -------
         A ServerSettings object, corresponding to the given guild_id.
         """
-        collection: motor.MotorCollection = await async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": guild_id}
-        result: ServerSettingData | None = await collection.find_one(query)
+        result = await ServerSettings.get_entry(async_rina_db, guild_id)
         if result is None:
             raise KeyError(f"Guild '{guild_id}' has no data yet!")
 
@@ -343,7 +381,9 @@ class ServerSettings:
         new_settings: dict[str, Any | None] = {k: None for k in ServerAttributes.__required_keys__}
         for attribute_pair in attributes.items():
             attribute, attribute_value = attribute_pair
-            new_settings[attribute] = parse_attribute(client, attribute, attribute_value)
+            new_settings[attribute] = parse_attribute(
+                client, attribute, attribute_value, invalid_arguments=invalid_arguments
+            )
 
         if len(invalid_arguments) > 0:
             raise ValueError("Some server settings for {} are unset!\n" + ','.join(invalid_arguments))
@@ -356,6 +396,6 @@ class ServerSettings:
             enabled_modules: EnabledModules,
             attributes: ServerAttributes
     ):
-        self.guild = guild,
+        self.guild = guild
         self.enabled_modules = enabled_modules
         self.attributes = attributes
