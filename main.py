@@ -13,7 +13,8 @@ from typing import Literal, TypedDict
 import discord  # for main discord bot functionality
 
 from resources.customs.bot import Bot, ApiTokenDict
-from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging crash messages
+from resources.customs.progressbar import ProgressBar
+from resources.utils.utils import TESTING_ENVIRONMENT
 
 from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
 from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
@@ -48,6 +49,9 @@ EXTENSIONS = [
     "reminders",
     # "testing_commands",
 ]
+
+load_progress = ProgressBar(5)
+start_progress = ProgressBar(7)
 
 
 # Permission requirements:
@@ -89,8 +93,7 @@ def get_token_data() -> tuple[
     :class:`KeyError`:
         if the api_keys.json file is missing the api key for an api used in the program.
     """
-    debug(f"[#+   ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
-    # debug(f"[+     ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Loading api keys...")
     try:
         with open("api_keys.json", "r") as f:
             api_keys = json.loads(f.read())
@@ -111,12 +114,12 @@ def get_token_data() -> tuple[
     if missing_tokens:
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
 
-    debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Loading database clusters...")
     cluster: MongoClient = MongoClient(tokens['MongoDB'])
     rina_db: PyMongoDatabase = cluster["Rina"]
     cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(tokens['MongoDB'])
     async_rina_db: motorcore.AgnosticDatabase = cluster["Rina"]
-    debug(f"[###  ]: Loaded database clusters" + " " * 30, color="green", end='r')
+    load_progress.step("Loaded database clusters", newline=False)
     return bot_token, tokens, rina_db, async_rina_db
 
 
@@ -130,7 +133,7 @@ def get_version() -> str:
     :class:`str`:
         Current version/instance of the bot.
     """
-    debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Loading version...")
     file_version = BOT_VERSION.split(".")
     try:
         os.makedirs("outputs", exist_ok=True)
@@ -149,7 +152,7 @@ def get_version() -> str:
     rina_version = '.'.join(rina_version)
     with open("outputs/version.txt", "w") as f:
         f.write(f"{rina_version}")
-    debug(f"[#### ]: Loaded version" + " " * 30, color="green", end='\r')
+    load_progress.step("Loaded version", newline=False)
     return rina_version
 
 
@@ -159,7 +162,7 @@ def create_client(
         async_rina_db: motorcore.AgnosticDatabase,
         version: str
 ) -> Bot:
-    debug(f"[####+]: Creating bot" + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Creating bot")
 
     intents = discord.Intents.default()
     intents.members = True  # apparently this needs to be defined because it's not included in Intents.default()?
@@ -180,7 +183,7 @@ def create_client(
         activity=discord.Game(name="with slash (/) commands!"),
         allowed_mentions=discord.AllowedMentions(everyone=False)
     )
-    debug(f"[#      ]: Created Bot" + " " * 30, color="green")
+    start_progress.step("Created Bot")
     return bot
 
 
@@ -188,27 +191,27 @@ def start_app():
     (token, tokens, rina_db, async_rina_db) = get_token_data()
     version = get_version()
     client = create_client(tokens, rina_db, async_rina_db, version)
-    debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
+    start_progress.progress("Starting Bot...")
 
     # this can probably be done better
     # region Client events
     @client.event
     async def on_ready():
-        debug(f"[#######]: Logged in as {client.user}, in version {version} "
-              f"(in {datetime.now().astimezone() - program_start})",
-              color="green")
+        start_progress.step("Logged in as {client.user}, in version {version} "
+                            f"(in {datetime.now().astimezone() - program_start})")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
-        debug(f"[+]: Pre-loading all watchlist threads", color="light_blue", end="\r")
+        post_startup_progress = ProgressBar(1)
+        post_startup_progress.progress("Pre-loading all watchlist threads")
         watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
         if watchlist_channel is not None:  # if running on prod
             await get_or_fetch_watchlist_index(watchlist_channel)
-        debug(f"[#]: Loaded watchlist threads." + " " * 15, color="green")
+        post_startup_progress.step(f"Loaded watchlist threads.")
 
     @client.event
     async def setup_hook():
-        debug(f"[##     ]: Started Bot" + " " * 30, color="green")
-        debug(f"[##+    ]: Load extensions and scheduler", color="light_blue", end="\r")
+        start_progress.step(f"Started Bot")
+        start_progress.progress("Load extensions and scheduler")
         logger = logging.getLogger("apscheduler")
         logger.setLevel(logging.WARNING)
         # remove annoying 'Scheduler started' message on sched.start()
@@ -219,15 +222,13 @@ def start_app():
         # Activate the extensions/programs/code for slash commands
 
         extension_loading_start_time = datetime.now().astimezone()
+        extension_load_progress = ProgressBar(len(EXTENSIONS))
         for extID in range(len(EXTENSIONS)):
-            debug(f"[{'#' * extID}+{' ' * (len(EXTENSIONS) - extID - 1)}]: Loading {EXTENSIONS[extID]}" + " " * 15,
-                  color="light_blue", end='\r')
+            extension_load_progress.progress(f"Loading {EXTENSIONS[extID]}")
             await client.load_extension("extensions." + EXTENSIONS[extID] + ".module")
-        debug(f"[###    ]: Loaded extensions successfully "
-              f"(in {datetime.now().astimezone() - extension_loading_start_time})",
-              color="green")
-
-        debug(f"[###+   ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
+        start_progress.step("Loaded extensions successfully "
+                            "(in {datetime.now().astimezone() - extension_loading_start_time})")
+        start_progress.progress("Loading server settings")
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
         except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound,
@@ -241,8 +242,8 @@ def start_app():
         # can't use the commented out code because Rina is owned by someone else in the main server than
         # the dev server (=not me).
 
-        debug(f"[####   ]: Loaded server settings" + " " * 30, color="green")
-        debug(f"[####+  ]: Restarting ongoing reminders" + " " * 30, color="light_blue", end="\r")
+        start_progress.step("Loaded server settings")
+        start_progress.progress("Restarting ongoing reminders")
         collection = rina_db["reminders"]
         query = {}
         db_data = collection.find(query)
@@ -255,11 +256,11 @@ def start_app():
                                    continued=True)
             except KeyError:
                 pass
-        debug(f"[#####  ]: Finished setting up reminders" + " " * 30, color="green")
-        debug(f"[#####+ ]: Caching bot's command names and their ids", color="light_blue", end='\r')
+        start_progress.step("Finished setting up reminders")
+        start_progress.progress(f"Caching bot's command names and their ids")
         client.commandList = await client.tree.fetch_commands()
-        debug(f"[###### ]: Cached bot's command names and their ids" + " " * 30, color="green")
-        debug(f"[######+]: Starting..." + " " * 30, color="light_blue", end='\r')
+        start_progress.step("Cached bot's command names and their ids")
+        start_progress.progress(f"Starting...")
 
     # endregion
 

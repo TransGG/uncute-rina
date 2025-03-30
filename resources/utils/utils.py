@@ -1,10 +1,13 @@
+from __future__ import annotations
 from datetime import datetime, timedelta, timezone  # for logging, to show log time; and for parsetime
 import logging  # for debug (logger.info)
 import warnings  # for debug (if given wrong color)
+from typing import TYPE_CHECKING
 
 import discord
 
-from resources.customs.bot import Bot
+if TYPE_CHECKING:
+    from resources.customs.bot import Bot
 
 
 TESTING_ENVIRONMENT = 2  # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
