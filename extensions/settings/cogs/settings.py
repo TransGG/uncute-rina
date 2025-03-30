@@ -184,7 +184,8 @@ class SettingsCog(commands.Cog):
     @app_commands.command(name="settings", description="Edit bot settings for this server.")
     @app_commands.describe(setting_type="What do you want to modify?",
                            setting="The setting you want to see/modify",
-                           mode="How do you want to modify it?")
+                           mode="How do you want to modify it?",
+                           value="The thing you want to add/remove")
     @app_commands.rename(setting_type="type")
     @app_commands.choices(setting_type=[
         discord.app_commands.Choice(name='Help', value="Help"),

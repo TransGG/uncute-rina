@@ -15,7 +15,6 @@ help_pages: dict[int, HelpPage] = {
 %%equaldex%%: See LGBTQ safety and rights in a country (with API)
 %%math%%: Ask Wolfram|Alpha for math or science help
 %%nameusage gettop%%: See how many people are using the same name
-%%pronouns%%: See someone's pronouns or edit your own
 %%qotw%% and %%developer_request%%: Suggest a Question Of The Week or Bot Suggestion to staff
 %%reminder reminders%%: Make or see your reminders
 %%roll%%: Roll some dice with a random result
@@ -501,14 +500,33 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "`type`: The type of setting you want to change.\n"
                 "- Attribute: IDs like staff role ids, starboard channel ids, blacklisted channels, vctable prefixes\n"
                 "- Module: Choose which modules are currently running.\n"
-                "`key`: The attribute or module you want to \n"
+                "`setting`: The attribute or module you want to change.\n"
+                "- This will be autocompleted based on what you selected for `type`.\n"
+                "`mode`: How do you want to change your selected setting?\n"
+                "- View: Don't change anything, just view the current value for the selected setting.\n"
+                "- [Module] Enable: Turn on a module.\n"
+                "- [Module] Disable: Turn off a module.\n"
+                "- [Attribute] Set: Set a value for the selected setting.\n"
+                "- [Attribute] Delete: Unset a value for the selected setting.\n"
+                "- [Attribute] Add: Used for lists. Add a value to the list for the selected setting.\n"
+                "- [Attribute] Remove: Used for lists. Remove a value from the list for the selected setting.\n"
+            ),(
+                "Parameters (continued)",
+                "`value`: The value you want to give this setting.\n"
+                "- You don't have to set a value if you selected `mode:View`.\n"
+                "- With `mode:Remove` (for lists), you should fill in the value that is currently in the list"
+                "(not the index of the item in the list).\n"
             ),
             (
                 "Examples",
-                "- %%equaldex%% `country_id:GB`"
-                "  - Get LGBTQ laws from Great Britain (United Kingdom).\n"
-                "- %%equaldex%% `country_id:DE`"
-                "  - DE for Germany, "
+                "- %%settings%% `type:Module` `setting:starboard` `mode:Enable`\n"
+                "  - Enable the 'starboard' module.\n"
+                "- %%settings%% `type:Attribute` `setting:log_channel` `mode:Set` `value:123456789012345678`\n"
+                "  - Set the 'log_channel' attribute to '123456789012345678', the channel id.\n"
+                "- %%settings%% `type:Attribute` `setting:poll_reaction_blacklisted_channels` `mode:Add` `value:general`\n"
+                "  - poll_reaction_blacklisted_channels is a list of channels: [1,2,3]. Add the `general` channel to this list.\n"
+                "  - When clicking autocomplete results, the value may be the name of the channel. You can use this "
+                "method, or fill in the ID manually and ignore the autocomplete result.\n"
             )
         ],
         staff_only=True

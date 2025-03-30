@@ -40,7 +40,7 @@ class HelpPageView(PageView):
             return
 
         try:
-            if not jump_page_modal.question_text.value.isnumeric():
+            if not jump_page_modal.question_text.value.isdecimal():
                 raise ValueError
             page_guess = int(jump_page_modal.question_text.value)
         except ValueError:
