@@ -279,9 +279,8 @@ class ServerSettings:
             attribute = attribute_pair[0]
             attribute_value = attribute_pair[1]
             attribute_type = attribute_types[attribute]  # raises KeyError (but probably not, if the tests passed)
-
             if get_origin(attribute_type) is list:
-                # original was: list[T]`. get_origin returns `list`.
+                # original was: `list[T]`. get_origin returns `list`.
                 attribute_type = get_args(attribute_type)[0]  # get_args returns `T`
                 strategy = parse_list_id_generic
             else:
