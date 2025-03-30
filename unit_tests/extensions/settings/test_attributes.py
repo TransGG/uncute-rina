@@ -1,6 +1,6 @@
 import pytest
 
-from extensions.settings.objects import ServerAttributes, ServerAttributeIds, ServerSettings
+from extensions.settings.objects import ServerAttributes, ServerAttributeIds, ServerSettings, EnabledModules
 from extensions.settings.objects.server_settings import convert_old_settings_to_new
 
 
@@ -80,3 +80,49 @@ def test_matching_keys():
 
     # Assert
     assert at == atid
+
+def test_no_bad_attribute_names():
+    # Arrange
+    attribute_keys = ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__)
+    invalid_names = []
+
+    # Act
+    for attribute_key in attribute_keys:
+        if "." in attribute_key or "$" in attribute_key:
+            invalid_names.append(attribute_key)
+
+    # Assert
+    if invalid_names:
+        pytest.fail("Attributes should not contain a '.' or '$', because MongoDB won't let you have "
+                    "keys with those characters. The names in question:\n- " + "\n- ".join(invalid_names))
+
+
+def test_no_bad_attribute_id_names():
+    # Arrange
+    attribute_id_keys = ServerAttributeIds.__required_keys__.union(ServerAttributeIds.__optional_keys__)
+    invalid_names = []
+
+    # Act
+    for attribute_id_key in attribute_id_keys:
+        if "." in attribute_id_key or "$" in attribute_id_key:
+            invalid_names.append(attribute_id_key)
+
+    # Assert
+    if invalid_names:
+        pytest.fail("Attribute Ids should not contain a '.' or '$', because MongoDB won't let you have "
+                    "keys with those characters. The names in question:\n- " + "\n- ".join(invalid_names))
+
+def test_no_bad_module_names():
+    # Arrange
+    enabled_module_keys = EnabledModules.__required_keys__.union(EnabledModules.__optional_keys__)
+    invalid_names = []
+
+    # Act
+    for enabled_module_key in enabled_module_keys:
+        if "." in enabled_module_key or "$" in enabled_module_key:
+            invalid_names.append(enabled_module_key)
+
+    # Assert
+    if invalid_names:
+        pytest.fail("Module keys should not contain a '.' or '$', because MongoDB won't let you have "
+                    "keys with those characters. The names in question:\n- " + "\n- ".join(invalid_names))
