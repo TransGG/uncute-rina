@@ -40,6 +40,7 @@ def parse_id_generic(
             invalid_arguments[invalid_argument_name] = str(object_id)
     return parsed_obj
 
+
 def parse_list_id_generic(
         invalid_arguments: dict[str, str],
         invalid_argument_name: str,
@@ -119,6 +120,72 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> tup
 
     return guild_id, ServerAttributeIds(**new_settings)
 
+
+def parse_attribute(
+        client: Bot,
+        attribute_key: str,
+        attribute_value: str
+) -> object | None:
+    """
+    Parse the attribute value as ServerAttribute based on the given attribute key.
+
+    Parameters
+    ----------
+    client: The client to get the attribute from.
+    attribute_key: The key of the attribute type to parse it to.
+    attribute_value: The attribute value to parse.
+
+    Returns
+    -------
+    The parsed value, or None if not found.
+    """
+    attribute_types: dict[str, Type[list[int] | None] | Type[int | None]] = typing.get_type_hints(ServerAttributes)
+    attribute_type = attribute_types[attribute_key]  # raises KeyError (but probably not, if the tests passed)
+    if get_origin(attribute_type) is typing.types.UnionType:  # typing.Union != typing.types.UnionType :/
+        # original was: `list[T] | None` (`Union[list[T], None]`).
+        #   get_origin returns `<class 'types.UnionType'>`
+        #   get_args   returns `(list[T], <class 'NoneType'>)`.
+        attribute_type = typing.get_args(attribute_type)[0]
+    if get_origin(attribute_type) is list:
+        # original was: `list[T]`. get_origin returns `list`.
+        attribute_type = get_args(attribute_type)[0]  # get_args returns `T`
+        strategy = parse_list_id_generic
+    else:
+        strategy = parse_id_generic
+
+    func = None
+    if attribute_type is discord.Guild:
+        func = client.get_guild
+    if attribute_type is discord.abc.Messageable:
+        func = client.get_channel
+    if attribute_type is discord.User:
+        func = client.get_user
+    if attribute_type is discord.Role:
+        func = server.get_role
+    if attribute_type is discord.CategoryChannel:
+        # I think it's safe to assume the stored value was an object of the correct type in the first place.
+        #  As in, it's a CategoryChannel id, not a VoiceChannel id.
+        func = client.get_channel
+    if attribute_type is discord.VoiceChannel:
+        func = client.get_channel
+    if attribute_type is discord.Emoji:
+        func = client.get_emoji
+    if attribute_type is int:
+        func = None
+    if attribute_type is str:
+        return str(attribute_value)
+
+    try:
+        attribute_value_id = int(attribute_value)
+        parsed_attribute = attribute_value_id
+    except ValueError:
+        return None
+
+    if func is not None:
+        parsed_attribute = strategy(
+            invalid_arguments, attribute_key, func, attribute_value_id
+        )
+    return parsed_attribute
 
 class ServerSettingData(TypedDict):
     guild_id: int
@@ -274,48 +341,9 @@ class ServerSettings:
             invalid_arguments.append(f"guild_id: {guild_id}")
 
         new_settings: dict[str, Any | None] = {k: None for k in ServerAttributes.__required_keys__}
-        attribute_types: dict[str, Type[list | None] | Type[int | None]] = typing.get_type_hints(ServerAttributes)
         for attribute_pair in attributes.items():
-            attribute = attribute_pair[0]
-            attribute_value = attribute_pair[1]
-            attribute_type = attribute_types[attribute]  # raises KeyError (but probably not, if the tests passed)
-            if get_origin(attribute_type) is list:
-                # original was: `list[T]`. get_origin returns `list`.
-                attribute_type = get_args(attribute_type)[0]  # get_args returns `T`
-                strategy = parse_list_id_generic
-            else:
-                strategy = parse_id_generic
-
-            func = None
-            if attribute_type is discord.Guild:
-                func = client.get_guild
-            if attribute_type is discord.abc.Messageable:
-                func = client.get_channel
-            if attribute_type is discord.User:
-                func = client.get_user
-            if attribute_type is discord.Role:
-                func = server.get_role
-            if attribute_type is discord.CategoryChannel:
-                # I think it's safe to assume the stored value was an object of the correct type in the first place.
-                #  As in, it's a CategoryChannel id, not a VoiceChannel id.
-                func = client.get_channel
-            if attribute_type is discord.VoiceChannel:
-                func = client.get_channel
-            if attribute_type is discord.Emoji:
-                func = client.get_emoji
-            if attribute_type is int:
-                strategy = None
-                new_settings[attribute] = attribute_value
-            if attribute_type is str:
-                strategy = None
-                new_settings[attribute] = str(attribute_value)
-
-            if strategy is not None:
-                if func is None:
-                    raise NotImplementedError(f"Attribute '{attribute}' of type '{attribute_type}' could not be retrieved.")
-                new_settings[attribute] = strategy(
-                    invalid_arguments, attribute, func, attribute_value
-                )
+            attribute, attribute_value = attribute_pair
+            new_settings[attribute] = parse_attribute(client, attribute, attribute_value)
 
         if len(invalid_arguments) > 0:
             raise ValueError("Some server settings for {} are unset!\n" + ','.join(invalid_arguments))

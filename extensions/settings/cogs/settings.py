@@ -9,7 +9,7 @@ from resources.utils.permissions import is_admin, is_admin_check
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import (
-    ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules, TypeAutocomplete, ModeAutocomplete
+    ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules, TypeAutocomplete, ModeAutocomplete, parse_attribute
 )
 
 
@@ -51,6 +51,43 @@ async def _setting_autocomplete(itx: discord.Interaction, current: str) -> list[
     else:
         return []
 
+attribute_type_single_value = [ModeAutocomplete.set, ModeAutocomplete.delete]
+attribute_type_list = [ModeAutocomplete.add, ModeAutocomplete.remove]
+
+def get_attribute_autocomplete_type(attribute_key: str) -> list[ModeAutocomplete] | None:
+    """
+    Retrieve the autocomplete-type of a ServerAttributeId key. This is usually either a list or a single value.
+
+    Returns
+    -------
+    The autocomplete type, or None if the attribute is not a valid key.
+    """
+    attribute_keys = list(ServerAttributeIds.__required_keys__.union(ServerAttributeIds.__optional_keys__))
+    attribute_types = typing.get_type_hints(ServerAttributeIds)
+    if attribute_key in attribute_keys:
+        attribute_type = attribute_types[attribute_key]
+        if typing.get_origin(attribute_type) is list:
+            return attribute_type_list
+        else:
+            return attribute_type_single_value
+    return None
+
+def get_attribute_type(attribute_key: str) -> type | None:
+    attribute_keys = list(ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__))
+    attribute_types = typing.get_type_hints(ServerAttributes)
+    attribute_type = None
+    if attribute_key in attribute_keys:
+        attribute_type = attribute_types[attribute_key]
+        if typing.get_origin(attribute_type) is typing.types.UnionType:  # typing.Union != typing.types.UnionType :/
+            # original was: `list[T] | None` (`Union[list[T], None]`).
+            #   get_origin returns `<class 'types.UnionType'>`
+            #   get_args   returns `(list[T], <class 'NoneType'>)`.
+            attribute_type = typing.get_args(attribute_type)[0]
+        if typing.get_origin(attribute_type) is list:
+            # original was `list[T]`. get_args returns `T`
+            attribute_type = typing.get_args(attribute_type)[0]
+    return attribute_type
+
 
 @app_commands.check(is_admin_check)
 async def _mode_autocomplete(itx: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
@@ -69,19 +106,14 @@ async def _mode_autocomplete(itx: discord.Interaction, current: str) -> list[app
             ]
         return [app_commands.Choice(name="Invalid setting given.", value=ModeAutocomplete.invalid.value)]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
-        attribute_keys = list(ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__))
-        attribute_types = typing.get_type_hints(ServerAttributes)
-        if itx.namespace.setting in attribute_keys:
-            attribute_type = attribute_types[itx.namespace.setting]
-            if typing.get_origin(attribute_type) is list:
-                types += [ModeAutocomplete.add, ModeAutocomplete.remove]
-            else:
-                types += [ModeAutocomplete.set, ModeAutocomplete.delete]
-            return [
-                app_commands.Choice(name=key.value, value=key.value)
-                for key in types if current.lower() in key.value.lower()
-            ]
-        return [app_commands.Choice(name="Invalid setting given.", value=ModeAutocomplete.invalid.value)]
+        autocomplete_type = get_attribute_autocomplete_type(itx.namespace.setting)
+        if autocomplete_type is None:
+            return [app_commands.Choice(name="Invalid setting given.", value=ModeAutocomplete.invalid.value)]
+        types += autocomplete_type
+        return [
+            app_commands.Choice(name=key.value, value=key.value)
+            for key in types if current.lower() in key.value.lower()
+        ]
     else:
         return []
 
@@ -95,69 +127,56 @@ async def _value_autocomplete(itx: discord.Interaction, current: str) -> list[ap
         if itx.namespace.mode == ModeAutocomplete.view.value:
             return [app_commands.Choice(name="This parameter is unnecessary when viewing a state", value="-")]
 
-        attribute_keys = list(ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__))
-        attribute_types = typing.get_type_hints(ServerAttributes)
-        if itx.namespace.setting in attribute_keys:
-            attribute_type = attribute_types[itx.namespace.setting]
-            if typing.get_origin(attribute_type) is typing.types.UnionType:  # typing.Union != typing.types.UnionType :/
-                # original was: `list[T] | None` (`Union[list[T], None]`).
-                #   get_origin returns `<class 'types.UnionType'>`
-                #   get_args   returns `(list[T], <class 'NoneType'>)`.
-                attribute_type = typing.get_args(attribute_type)[0]
-            if typing.get_origin(attribute_type) is list:
-                # original was `list[T]`. get_args returns `T`
-                attribute_type = typing.get_args(attribute_type)[0]
+        attribute_type = get_attribute_type(itx.namespace.setting)
+        if attribute_type is None:
+            return [app_commands.Choice(name="Invalid setting given.", value="-")]
 
-            results = []
-            if issubclass(attribute_type, discord.Guild):
-                for guild in itx.client.guilds:
-                    if current in guild.name or str(guild.id).startswith(current):
-                        results.append(app_commands.Choice(name=guild.name, value=str(guild.id)))
-            elif issubclass(attribute_type, discord.abc.GuildChannel):
-                for channel in itx.guild.channels:
-                    if (isinstance(channel, attribute_type) and
-                        (current in channel.name or str(channel.id).startswith(current))
-                    ):
-                        results.append(app_commands.Choice(name=channel.name, value=str(channel.id)))
-            elif issubclass(attribute_type, discord.User):
-                # Note: discord.User is a subclass of discord.abc.Messageable, so should be tested before that too.
-                for member in itx.guild.members:
-                    if current in member.name or str(member.id).startswith(current):
-                        results.append(app_commands.Choice(name=member.name, value=str(member.id)))
-                    if len(results) > 20:
-                        break
-                if current.isdecimal():
-                    potential_user = itx.client.get_user(int(current))
-                    if potential_user is not None:
-                        results.append(app_commands.Choice(name=potential_user.name, value=str(potential_user.id)))
-            elif issubclass(attribute_type, discord.abc.Messageable):
-                if current.isdecimal():
-                    potential_channel = itx.client.get_channel(int(current))
-                    if potential_channel is not None:
-                        results.append(app_commands.Choice(
-                            name=potential_channel.name, value=str(potential_channel.id)))
-            elif issubclass(attribute_type, discord.Role):
-                for role in itx.guild.roles:
-                    if current in role.name or str(role.id).startswith(current):
-                        results.append(app_commands.Choice(name=role.name, value=str(role.id)))
-            elif issubclass(attribute_type, discord.Emoji):
-                for emoji in itx.guild.emojis:
-                    if current in emoji.name or str(emoji.id).startswith(current):
-                        results.append(app_commands.Choice(name=emoji.name, value=str(emoji.id)))
-            elif attribute_type == str:
+        results = []
+        if issubclass(attribute_type, discord.Guild):
+            for guild in itx.client.guilds:
+                if current in guild.name or str(guild.id).startswith(current):
+                    results.append(app_commands.Choice(name=guild.name, value=str(guild.id)))
+        elif issubclass(attribute_type, discord.abc.GuildChannel):
+            for channel in itx.guild.channels:
+                if (isinstance(channel, attribute_type) and
+                    (current in channel.name or str(channel.id).startswith(current))
+                ):
+                    results.append(app_commands.Choice(name=channel.name, value=str(channel.id)))
+        elif issubclass(attribute_type, discord.User):
+            # Note: discord.User is a subclass of discord.abc.Messageable, so should be tested before that too.
+            for member in itx.guild.members:
+                if current in member.name or str(member.id).startswith(current):
+                    results.append(app_commands.Choice(name=member.name, value=str(member.id)))
+                if len(results) > 20:
+                    break
+            if current.isdecimal():
+                potential_user = itx.client.get_user(int(current))
+                if potential_user is not None:
+                    results.append(app_commands.Choice(name=potential_user.name, value=str(potential_user.id)))
+        elif issubclass(attribute_type, discord.abc.Messageable):
+            if current.isdecimal():
+                potential_channel = itx.client.get_channel(int(current))
+                if potential_channel is not None:
+                    results.append(app_commands.Choice(
+                        name=potential_channel.name, value=str(potential_channel.id)))
+        elif issubclass(attribute_type, discord.Role):
+            for role in itx.guild.roles:
+                if current in role.name or str(role.id).startswith(current):
+                    results.append(app_commands.Choice(name=role.name, value=str(role.id)))
+        elif issubclass(attribute_type, discord.Emoji):
+            for emoji in itx.guild.emojis:
+                if current in emoji.name or str(emoji.id).startswith(current):
+                    results.append(app_commands.Choice(name=emoji.name, value=str(emoji.id)))
+        elif attribute_type == str:
+            results.append(app_commands.Choice(name=current, value=current))
+        elif attribute_type == int:
+            if current.isdecimal():
                 results.append(app_commands.Choice(name=current, value=current))
-            elif attribute_type == int:
-                if current.isdecimal():
-                    results.append(app_commands.Choice(name=current, value=current))
-            else:
-                results.append(
-                    app_commands.Choice(name=f"Autocomplete for type '{attribute_type.__name__}' not supported"[:100],
-                                        value="-"))
-            return results[:10]
         else:
-            return [
-                app_commands.Choice(name="Invalid setting given.", value="-")
-            ]
+            results.append(
+                app_commands.Choice(name=f"Autocomplete for type '{attribute_type.__name__}' not supported"[:100],
+                                    value="-"))
+        return results[:10]
 
     elif itx.namespace.type == TypeAutocomplete.module.value:
         return [
@@ -204,13 +223,35 @@ class SettingsCog(commands.Cog):
             mode: str | None = None,
             value: str | None = None
     ):
-
+        help_cmd_mention = itx.client.get_command_mention("help")
+        help_str = f"Use {help_cmd_mention} `page:900` for more info."
         if setting_type not in ["Help", "Attribute", "Module"]:
-            itx.response.send_message("That is not a valid mode. Please use the options provided to you.",
-                                      ephemeral=True)
+            await itx.response.send_message("That is not a valid type. Please use the options provided to you. " +
+                                            help_str,
+                                            ephemeral=True)
+            return
+
+        try:
+            ModeAutocomplete(mode)
+        except ValueError:
+            await itx.response.send_message("This is not a valid mode. " + help_str, ephemeral=True)
             return
 
         if setting_type == "Help":
             # Todo: Make more functions call HelpPage functions.
             await send_help_menu(itx, requested_page=900)
+
+        if setting_type == "Attribute":
+            attribute_keys = list(ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__))
+            if mode is None:
+                await itx.response.send_message("You must set a mode! " + help_str)
+
+            if setting in attribute_keys:
+                if mode == ModeAutocomplete.view:
+                    # todo: Implement. Needs `itx.client.server_attributes[setting]`
+                    pass
+
+                # confirm if expected attribute type also matches the given attribute type
+                expected_attribute_type = get_attribute_autocomplete_type(setting)
+                parse_attribute(itx.client, setting, value)
 
