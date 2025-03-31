@@ -296,7 +296,7 @@ class SettingsCog(commands.Cog):
                 return
 
             invalid_arguments = {}
-            attribute = await parse_attribute(
+            attribute = parse_attribute(
                 itx.client, itx.guild, setting, value, invalid_arguments=invalid_arguments
             )
             if invalid_arguments and modify_mode != ModeAutocomplete.remove:  # allow removal of malformed data

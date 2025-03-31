@@ -32,18 +32,17 @@ MessageChannel = discord.TextChannel | discord.Thread
 T = TypeVar('T')
 
 
-async def parse_id_generic(
+def parse_id_generic(
         invalid_arguments: dict[str, str],
         invalid_argument_name: str,
-        get_object_function: Callable[[int], Awaitable[T | None]],
+        get_object_function: Callable[[int], T | None],
         object_id: int | None
 ) -> T | None:
     parsed_obj: T | None = None
     if object_id is not None:
-        try:
-            parsed_obj = await get_object_function(object_id)
-        except (discord.NotFound, discord.HTTPException, discord.Forbidden, discord.InvalidData) as ex:
-            invalid_arguments[invalid_argument_name] = f"{ex.__class__.__name__}: {object_id}"
+        parsed_obj = get_object_function(object_id)
+        if parsed_obj is None:
+            invalid_arguments[invalid_argument_name] = f"{object_id}"
         else:
             if parsed_obj is None:
                 invalid_arguments[invalid_argument_name] = str(object_id)
@@ -127,7 +126,7 @@ def get_attribute_type(attribute_key: str) -> tuple[type | None, bool]:
     return attribute_type, attribute_in_list
 
 
-async def parse_attribute(
+def parse_attribute(
         client: discord.Client,
         guild: discord.Guild,
         attribute_key: str,
@@ -151,34 +150,35 @@ async def parse_attribute(
     attribute_type, _ = get_attribute_type(attribute_key)
     func = None
     if attribute_type is discord.Guild:
-        func = client.fetch_guild
+        func = client.get_guild
     if attribute_type is discord.abc.Messageable:
-        func = client.fetch_channel
+        func = client.get_channel
     if attribute_type is discord.User:
-        func = client.fetch_user
+        func = client.get_user
     if attribute_type is discord.Role:
-        func = guild.fetch_role
+        func = guild.get_role
     if attribute_type is discord.CategoryChannel:
         # I think it's safe to assume the stored value was an object of the correct type in the first place.
         #  As in, it's a CategoryChannel id, not a VoiceChannel id.
-        func = client.fetch_channel
+        func = client.get_channel
     if attribute_type is discord.VoiceChannel:
-        func = client.fetch_channel
+        func = client.get_channel
     if attribute_type is discord.Emoji:
-        func = guild.fetch_emoji
+        func = guild.get_emoji
     if attribute_type is int:
         func = None
     if attribute_type is str:
         return str(attribute_value)
 
     try:
+        # all of these require a <object>.id (or the attribute itself is an int)
         attribute_value_id = int(attribute_value)
         parsed_attribute = attribute_value_id
     except ValueError:
         return None
 
     if func is not None:
-        parsed_attribute = await parse_id_generic(
+        parsed_attribute = parse_id_generic(
             invalid_arguments, attribute_key, func, attribute_value_id
         )
     return parsed_attribute
@@ -343,7 +343,7 @@ class ServerSettings:
         async for setting in settings_data:
             setting: ServerSettingData
             try:
-                server_setting = await ServerSettings.load(client, setting)
+                server_setting = ServerSettings.load(client, setting)
                 server_settings[server_setting.guild.id] = server_setting
             except ParseError as ex:
                 warnings.warn(f"ParseError for {setting["guild_id"]}: " + ex.message)
@@ -367,10 +367,10 @@ class ServerSettings:
         if result is None:
             raise KeyError(f"Guild '{guild_id}' has no data yet!")
 
-        return await ServerSettings.load(client, result)
+        return ServerSettings.load(client, result)
 
     @staticmethod
-    async def load(client: discord.Client, settings: ServerSettingData) -> ServerSettings:
+    def load(client: discord.Client, settings: ServerSettingData) -> ServerSettings:
         """
         Load all server settings from database and format into a ServerSettings object.
 
@@ -384,7 +384,7 @@ class ServerSettings:
         guild_id = settings["guild_id"]
         enabled_modules = settings["enabled_modules"]
         attribute_ids = ServerAttributeIds(**settings["attribute_ids"])
-        guild, attributes = await ServerSettings.get_attributes(client, guild_id, attribute_ids)
+        guild, attributes = ServerSettings.get_attributes(client, guild_id, attribute_ids)
         return ServerSettings(
             guild=guild,
             enabled_modules=enabled_modules,
@@ -394,7 +394,7 @@ class ServerSettings:
     # todo: perhaps a repair function to remove unknown/migrated keys from the database?
 
     @staticmethod
-    async def get_attributes(
+    def get_attributes(
             client: discord.Client,
             guild_id: int,
             attributes: ServerAttributeIds
@@ -424,12 +424,12 @@ class ServerSettings:
             if type(attribute_value) is list:
                 parsed_values = []
                 for value in attribute_value:
-                    parsed_value = await parse_attribute(
+                    parsed_value = parse_attribute(
                         client, guild, attribute, value, invalid_arguments=invalid_arguments)
                     if parsed_value is not None:
                         parsed_values.append(parsed_value)
             else:
-                new_settings[attribute] = await parse_attribute(
+                new_settings[attribute] = parse_attribute(
                     client, guild, attribute, attribute_value, invalid_arguments=invalid_arguments
                 )
 

@@ -36,12 +36,11 @@ def _parse_watchlist_string_message_id(message_id: str | None) -> tuple[int | No
     return message_id, allow_different_report_author
 
 
-async def _create_uncool_watchlist_thread(user: discord.Member, watch_channel: discord.TextChannel):
+async def _create_uncool_watchlist_thread(client: Bot, user: discord.Member, watch_channel: discord.TextChannel):
     """
     A helper function to create a new watchlist thread if it wasn't created already.
-    :param user: The user
-    :param watch_channel:
-    :return:
+    :param user: The user to create the watchlist thread for.
+    :param watch_channel: The channel to create the thread in.
     """
     # make and send uncool embed for the loading period while it sends the copyable version
     embed = discord.Embed(
@@ -183,7 +182,7 @@ async def _add_to_watchlist(
                                 f"May this serve as a warning for this user.",
                         allowed_mentions=discord.AllowedMentions.none())
     else:
-        msg, thread = await _create_uncool_watchlist_thread(user, watch_channel)
+        msg, thread = await _create_uncool_watchlist_thread(itx.client, user, watch_channel)
 
     # Send a plaintext version of the reason, and copy a link to it
     different_author_warning = " (mentioned message author below)" if allow_different_report_author else ""
