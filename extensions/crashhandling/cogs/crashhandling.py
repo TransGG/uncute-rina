@@ -26,21 +26,12 @@ async def _send_crash_message(
     """
     Sends crash message to Rina's main logging channel
 
-    Parameters
-    -----------
-    client: :class:`Bot`:
-        The client to fetch logging channel and send the crash message with.
-    error_type: :class:`str`:
-        Whether the error an 'Error' or an 'AppCommand Error'
-    traceback_text: :class:`str`:
-        The traceback to send.
-    error_source: :class:`str`:
-        Name of the error source, displayed at the top of the message. Think of event or command.
-    color: :class:`discord.Colour`:
-        Color of the discord embed.
-    itx: :class:`discord.Interaction` | :class:`None`, optional:
-        Interaction with a potential guild. This might allow Rina to send the crash log to that guild instead.
-            Default: None.
+    :param client: The client to fetch logging channel and send the crash message with.
+    :param error_type: Whether the error an 'Error' or an 'AppCommand Error'
+    :param traceback_text: The traceback to send.
+    :param error_source: Name of the error source, displayed at the top of the message. Think of event or command.
+    :param color: Color of the discord embed.
+    :param itx: Interaction with a potential guild. This might allow Rina to send the crash log to that guild instead.
     """
     log_guild: discord.Guild
     try:

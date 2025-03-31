@@ -31,24 +31,15 @@ class TimeParser:
         """
         A helper function to turn a string of 2d4h to a list of tuples:
 
-        Parameters
-        -----------
-        input_string :class:`str`:
-            The string to split. Example: "4days6seconds"
+        :param input_string: The string to split. Example: "4days6seconds"
 
-        Returns
-        --------
-        :class:`list[tuple[int, str]]`:
-            A list of easily-comprehensible time components: [(4, "days"), (6, "seconds")]
+        :return: A list of easily-comprehensible time components: [(4, "days"), (6, "seconds")].
 
-        Raises
-        -------
-        :class:`ValueError`:
-            If the user fills in an invalid digit ("0..3" or "0.30.4" for example)
-        :class:`MissingQuantityException`:
-            If the user starts their input with a non-numeric character (should always start with a number :P)
-        :class:`MissingUnitException`:
-            If the user doesn't have a complete parse (typically because it ends with a numeric character).
+        :raise ValueError: If the user fills in an invalid digit ("0..3" or "0.30.4" for example)
+        :raise MissingQuantityException: If the user starts their input with a non-numeric character (should
+         always start with a number :P)
+        :raise MissingUnitException: If the user doesn't have a complete parse (typically because it ends with
+         a numeric character).
         """
         # This function was partially written by AI, to convert "2d4sec" to [(2, "d"), (4,"sec")]
 
@@ -91,20 +82,11 @@ class TimeParser:
         """
         Helper function to convert time strings from "year" to "y", etc.
 
-        Parameters
-        -----------
-        time_units :class:`list[tuple[int,str]]`:
-            An output from parse_time_string() containing a list of (4, "days") tuples.
+        :param time_units: An output from parse_time_string() containing a list of (4, "days") tuples.
 
-        Returns
-        --------
-        :class:`list[tuple[int,str]]`:
-            A list of tuples with shrunk time strings: (4, "d").
+        :returns: A list of tuples with shrunk time strings: (4, "d").
 
-        Raises
-        -------
-        :class:`ValueError`:
-            Input contains unrecognised datetime unit(s).
+        :raise ValueError: Input contains unrecognised datetime unit(s).
         """
         for unit_index in range(len(time_units)):
             # use index instead of iterating tuples in list because of the tuple component reassignment 3 lines down.
@@ -123,24 +105,16 @@ class TimeParser:
         """
         Helper function to turn strings like "3d5h10min4seconds" to a datetime in the future.
 
-        Parameters
-        -----------
-        time_string :class:`str`:
-            A string of a date format like "3d10min". Should not contain spaces (but it probably doesn't matter).
-        start_date :class:`datetime`:
-            The date to offset from.
 
-        Returns
-        --------
-        :class:`datetime.datetime`:
-            A datetime with an offset in the future (relative to the given datetime input) matching the input string.
+        :param time_string: A string of a date format like "3d10min". Should not contain spaces (but it
+         probably doesn't matter).
+        :param start_date: The date to offset from.
 
-        Raises
-        -------
-        :class:`ValueError`:
-            If the input is invalid.  
-            If the input contains unrecognised datetime units.  
-            If the "year" unit exceeds 3999 or if the "day" offset exceeds 1500000.
+        :returns: A datetime with an offset in the future (relative to the given datetime input) matching the
+         input string.
+
+        :raise ValueError: If the input is invalid; if the input contains unrecognised datetime units; or
+         if the "year" unit exceeds 3999 or if the "day" offset exceeds 1500000.
         """
         # - "next thursday at 3pm"
         # - "tomorrow"

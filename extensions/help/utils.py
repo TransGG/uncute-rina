@@ -10,23 +10,15 @@ from extensions.help.helppage import HelpPage
 def generate_help_page_embed(page: HelpPage, page_number: int, client: Bot) -> discord.Embed:
     """
     Helper function to generate an embed for a specific help page. This command is mainly to
-     prevent inconsistencies between the /help calling and updating functions.
+    prevent inconsistencies between the /help calling and updating functions.
     Page fields are appended after the description, in the order they are given in the list.
 
-    Parameters
-    -----------
-    page: :class:`HelpPage`
-        The help page to reference.
-    page_number: :class:`int`
-        The page number of the help page. This number is added as footer, but is also used for the
+    :param page: The help page to reference.
+    :param page_number: The page number of the help page. This number is added as footer, but is also used for the
          hue (HSV) value of the embed color.
-    client: :class:`Bot`
-        The bot instance for get_command_mention().
+    :param client: The bot instance for :py:meth:`Client.get_command_mention`.
 
-    Returns
-    --------
-    :class:`discord.Embed`:
-        An embed of the given help page.
+    :return: An embed of the given help page.
     """
     embed = discord.Embed(color=discord.Color.from_hsv((180 + page_number * 10) / 360, 0.4, 1),
                           title=page["title"],
@@ -44,19 +36,12 @@ def get_nearest_help_pages_from_page(page: int, pages: list[int]) -> tuple[int, 
     """
     Get the two nearest page numbers to a given page number.
 
-    Parameters
-    -----------
-    page: :class:`int`
-        The page number to get the two nearest page numbers for.
-    pages: :class:`list[int]`
-        A (sorted) list of page numbers to reference (e.g.
-        `[1, 2, 3, 4, 5, 6, 10, 11, 12, 21, 22, 23, 31, 32, 101, 111, 112]`)
+    :param page: The page number to get the two nearest page numbers for.
+    :param pages: A (sorted) list of page numbers to reference (e.g.
+     `[1, 2, 3, 4, 5, 6, 10, 11, 12, 21, 22, 23, 31, 32, 101, 111, 112]`)
 
-    Returns
-    --------
-    :class:`tuple[int, int]`
-        The two nearest page numbers. The first is found by looking before, the second looks ahead.
-        If looping around, [0] may be greater than [1].
+    :return: The two nearest page numbers. The first is found by looking before, the second looks ahead.
+     If looping around, [0] may be greater than [1].
     """
     if page > pages[-1]:
         return pages[-1], pages[0]

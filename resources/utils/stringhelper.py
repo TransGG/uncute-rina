@@ -5,18 +5,14 @@ def replace_string_command_mentions(text: str, client: Bot) -> str:
     """
     Converts strings with "%%command%%" into a command mention (</command:12345678912345678>).
 
-    Parameters
-    -----------
-    text: :class:`str`
-        The text in which to look for command mentions.
-    client: :class:`main.Bot`
-        The client with which to convert the command into a command mention.
+    :param text: The text in which to look for command mentions.
+    :param client: The client with which to convert the command into a command mention.
 
-    Returns
-    --------
-    :class:`str`
-        The input text, with every command instance replaced with its matching command mention.
-        Note: If the command does not exist, it will fill the mention with "/command" instead of "</command:1>"
+    :return: The input text, with every command instance replaced with its matching command mention.
+
+    .. note::
+
+        If the command does not exist, it will fill the mention with "/command" instead of "</command:1>".
     """
     while "%%" in text:
         command_start_index = text.index("%%")

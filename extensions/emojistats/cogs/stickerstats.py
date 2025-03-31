@@ -14,14 +14,9 @@ async def _add_to_sticker_data(sticker_name: str, async_rina_db: motorcore.Agnos
     """
     Helper function to add sticker data to the mongo database when a sticker is sent in chat.
 
-    Parameters
-    -----------
-    sticker_name: string
-        The sticker name.
-    async_rina_db: :class:`AgnosticDatabase`:
-        An async link to the MongoDB.
-    sticker_id: str
-        The sticker id, as string.
+    :param sticker_name: The sticker name.
+    :param async_rina_db: An async link to the MongoDB.
+    :param sticker_id: The sticker id, as string.
     """
     collection = async_rina_db["stickerstats"]
     query = {"id": sticker_id}

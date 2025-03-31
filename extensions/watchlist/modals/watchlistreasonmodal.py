@@ -6,24 +6,15 @@ class WatchlistReasonModal(discord.ui.Modal):
     """
     A modal allowing the user to add a user to the watchlist with a reason.
 
-    Attributes
-    -----------
-    add_to_watchlist_func: :class:`typing.Callable[
-            [discord.Interaction, discord.User, str, str | None, Optional[str]],
-            typing.Coroutine[Any, Any, None]]`
-        An async function from WatchList.add_to_watchlist(itx, user, reason, message_id, [warnings]) -> None to run with on_submit.
-    message: :class:`discord.Message` | :class:`None`
-        The message that was reported / marked for the watchlist.
-    reason_text: :class:`str`
-        The reason provided by the staff member to add the user to the watchlist.
-    timeout: :class:`int`
-        The timeout before the modal closes itself.
-    title: :class:`str`
-        The title of the embed.
-    user: :class:`discord.User`
-        The user that is being added to the watchlist.
-    value: :class:`int` | :class:`None`
-        1 if on_sumbit() was called, else None.
+    Attributes:
+        add_to_watchlist_func: An async function from WatchList.add_to_watchlist(itx, user, reason,
+         message_id, [warnings]) -> None to run with on_submit.
+        message: The message that was reported / marked for the watchlist.
+        reason_text: The reason provided by the staff member to add the user to the watchlist.
+        timeout: The timeout before the modal closes itself.
+        title: The title of the embed.
+        user: The user that is being added to the watchlist.
+        value: 1 if on_sumbit() was called, else None.
     """
 
     def __init__(

@@ -29,11 +29,11 @@ class StaffAddons(commands.Cog):
             await itx.response.send_message(text, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             return
         cmd_mention = itx.client.get_command_mention("editguildinfo")
-        await itx.client.get_guild_info(itx.guild, "vcLog", log=[
+        await itx.client.get_guild_info(itx.guild, "vcLog", log=(
             itx,
             "Couldn't send your message. You can't send messages in this server because "
             "the bot setup seems incomplete\n"
-            f"Use {cmd_mention} `mode:11` to fix this!"])
+            f"Use {cmd_mention} `mode:11` to fix this!"))
         try:
             # vcLog      = guild["vcLog"]
             await log_to_guild(itx.client, itx.guild,

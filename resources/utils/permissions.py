@@ -6,17 +6,10 @@ def is_verified(guild: discord.Guild, member: discord.Member | discord.User) -> 
     """
     Check if someone is verified.
 
-    Parameters
-    -----------
-    guild: :class:`discord.Guild`
-        A guild with roles to cycle through.
-    member: :class:`discord.Member` | :class:`discord.User`
-        A discord user with or without roles attribute.
+    :param guild: A guild with roles to cycle through.
+    :param member: A discord user with or without roles attribute.
 
-    Returns
-    --------
-    :class:`bool`
-        Whether the user is verified.
+    :return: Whether the user is verified.
     """
     if guild is None:
         return False
@@ -41,17 +34,10 @@ def is_staff(guild: discord.Guild, member: discord.Member | discord.User) -> boo
     """
     Check if someone is staff.
 
-    Parameters
-    -----------
-    guild: :class:`discord.Guild`
-        A guild with roles to cycle through.
-    member: :class:`discord.Member` | :class:`discord.User`
-        A discord user with or without roles attribute.
+    :param guild: A guild with roles to cycle through.
+    :param member: A discord user with or without roles attribute.
 
-    Returns
-    --------
-    :class:`bool`
-        Whether the user has a staff role.
+    :return: Whether the user has a staff role.
     """
     if guild is None:
         return False
@@ -80,17 +66,10 @@ def is_admin(guild: discord.Guild, member: discord.Member | discord.User) -> boo
     """
     Check if someone is an admin.
 
-    Parameters
-    -----------
-    guild: :class:`discord.Guild`
-        A guild with roles to cycle through.
-    member: :class:`discord.Member` | :class:`discord.User`
-        A discord user with or without roles attribute.
+    :param guild: A guild with roles to cycle through.
+    :param member: A discord user with or without roles attribute.
 
-    Returns
-    --------
-    `bool`
-        Whether the user has an admin role.
+    :return: Whether the user has an admin role.
     """
     if guild is None:
         return False

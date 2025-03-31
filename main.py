@@ -80,19 +80,11 @@ def get_token_data() -> tuple[
     Ensures the api_keys.json file contains all the bot's required keys, and
     uses these keys to start a link to the MongoDB.
 
-    Returns
-    --------
-    :class:`tuple[discord_token, other_api_keys, synchronous_db_connection, async_db_connection]`:
-        Tuple of discord bot token and database client cluster connections.
+    :return: Tuple of discord bot token, other api tokens, and a sync and async database client cluster connection.
 
-    Raises
-    -------
-    :class:`FileNotFoundError`:
-        if the api_keys.json file does not exist.
-    :class:`json.decoder.JSONDecodeError`:
-        if the api_keys.json file is not in correct JSON format.
-    :class:`KeyError`:
-        if the api_keys.json file is missing the api key for an api used in the program.
+    :raise FileNotFoundError: If the api_keys.json file does not exist.
+    :raise json.decoder.JSONDecodeError: If the api_keys.json file is not in correct JSON format.
+    :raise KeyError: If the api_keys.json file is missing the api key for an api used in the program.
     """
     load_progress.progress("Loading api keys...")
     try:
@@ -129,10 +121,7 @@ def get_version() -> str:
     Dumb code for cool version updates. Reads version file and matches with current version string. Updates file if
     string is newer, and adds another ".%d" for how often the bot has been started in this version.
 
-    Returns
-    --------
-    :class:`str`:
-        Current version/instance of the bot.
+    :return: Current version/instance of the bot.
     """
     load_progress.progress("Loading version...")
     file_version = BOT_VERSION.split(".")

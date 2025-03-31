@@ -18,18 +18,11 @@ async def get_or_fetch_starboard_messages(
     """
     Fetch list of all starboard messages, unless it is already fetching: then it waits until the
     other instance of the fetching function is done and retrieves the cached list. The list is
-    stored for STARBOARD_REFRESH_DELAY seconds.
+    stored for :py:const:`STARBOARD_REFRESH_DELAY` seconds.
 
-    Parameters
-    -----------
-    starboard_channel: :class:`discord.abc.GuildChannel` | :class:`discord.abc.PrivateChannel` |
-            :class:`discord.Thread` | :class:`None`
-        The starboard channel to fetch messages from.
+    :param starboard_channel: The starboard channel to fetch messages from.
 
-    Returns
-    --------
-    :class:`list[discord.Message]`:
-        A list of starboard messages (sent by the bot) in the starboard channel.
+    :return: A list of starboard messages (sent by the bot) in the starboard channel.
     """
     global busy_updating_starboard_messages, local_starboard_message_list, \
         local_starboard_message_list_refresh_timestamp
