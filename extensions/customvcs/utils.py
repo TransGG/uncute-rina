@@ -3,6 +3,7 @@ import discord
 
 BLACKLISTED_CHANNELS = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
 
+
 def is_vc_custom(
         voice_channel: discord.VoiceChannel,
         customvc_category_id: int,
@@ -36,4 +37,3 @@ def edit_permissionoverwrite(
     perms_dict = dict(perms)
     perms_dict.update(overwrites)
     return discord.PermissionOverwrite(**perms_dict)
-

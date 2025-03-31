@@ -1,5 +1,3 @@
-from typing import TypedDict
-
 import discord
 
 

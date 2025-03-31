@@ -5,7 +5,6 @@ from datetime import timezone
 import discord
 
 from resources.views.generics import create_simple_button
-from resources.customs.bot import Bot
 
 from extensions.reminders.utils import get_user_reminders
 

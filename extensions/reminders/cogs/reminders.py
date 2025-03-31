@@ -1,12 +1,7 @@
-from datetime import datetime, timedelta
-
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
-
-from extensions.reminders.objects import ReminderObject
 from extensions.reminders.objects import parse_and_create_reminder  # todo: put this in reminders.utils?
 
 
@@ -128,4 +123,3 @@ class RemindersCog(commands.GroupCog, name="reminder"):
         await itx.response.send_message(
             f"Successfully removed this reminder! You have {len(db_data['reminders'])} other reminders going.",
             ephemeral=True)
-

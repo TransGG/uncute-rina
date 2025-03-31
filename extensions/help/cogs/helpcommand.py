@@ -2,12 +2,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
 from resources.utils import is_admin
 from resources.utils.stringhelper import replace_string_command_mentions
 
 from extensions.help.helppages import help_pages, aliases, FIRST_PAGE
-from extensions.help.helppage import HelpPage
 from extensions.help.utils import get_nearest_help_pages_from_page, generate_help_page_embed
 from extensions.help.views.helppage import HelpPageView
 

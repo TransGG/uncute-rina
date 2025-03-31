@@ -1,6 +1,5 @@
 import discord
 
-from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild
 
 
@@ -32,9 +31,9 @@ class SendPubliclyTagView(discord.ui.View):
         if self.public_footer is None:
             self.public_footer = f"Triggered by {itx.user.name} ({itx.user.id})"
         else:
-            self.public_footer = f"Note: If you believe that this command was misused or abused, " + \
-                                 f"please do not argue in this channel. Instead, open a mod ticket " + \
-                                 f"and explain the situation there. Thank you."
+            self.public_footer = "Note: If you believe that this command was misused or abused, " + \
+                                 "please do not argue in this channel. Instead, open a mod ticket " + \
+                                 "and explain the situation there. Thank you."
             self.value = 2
         self.embed.set_footer(text=self.footer + self.public_footer)
         await itx.response.edit_message(content="Sent successfully!", embed=None, view=None)

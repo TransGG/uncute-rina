@@ -1,7 +1,5 @@
 import discord
 
-from resources.customs.bot import Bot
-
 
 class SendPublicButtonMath(discord.ui.View):
     def __init__(self, timeout=180):

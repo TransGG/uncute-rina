@@ -1,14 +1,14 @@
 import pytest
 
 from datetime import datetime, timedelta, timezone
-from time import mktime
 import asyncio
 
 from unit_tests.object import CustomObject
 
 from extensions.reminders.objects.reminderobject import _parse_reminder_time
 from extensions.reminders.exceptions import (
-    UnixTimestampInPastException, TimestampParseException, MalformedISODateTimeException
+    TimestampParseException,
+    # UnixTimestampInPastException, MalformedISODateTimeException
 )
 
 
@@ -29,6 +29,7 @@ def _get_custom_time1():
     return start_time
 
 # endregion Helper functions
+
 
 # region Correct functionality
 def test_output_nochange_match():

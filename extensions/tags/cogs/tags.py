@@ -1,4 +1,3 @@
-import typing  # for typing.Callable: for list of [tag send functions].
 from datetime import datetime  # to make report tag auto-trigger at most once every 15 minutes
 
 import discord

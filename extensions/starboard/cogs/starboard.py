@@ -1,9 +1,3 @@
-import asyncio
-# for sleep(1) while waiting for other starboard message fetching function instance.
-# See get_or_fetch_starboard_messages()
-from datetime import datetime, timezone
-# to track starboard refresh timestamps.
-
 import discord
 import discord.ext.commands as commands
 
@@ -133,12 +127,12 @@ async def _send_starboard_message(
                 embed.set_field_at(
                     0,
                     name=embed.fields[0].name,
-                    value=embed.fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+                    value=embed.fields[0].value + "\n\n(💔 +1 Unrecognized attachment type)")
             else:
                 embed_list[0].set_field_at(
                     0,
                     name=embed_list[0].fields[0].name,
-                    value=embed_list[0].fields[0].value + f"\n\n(💔 +1 Unrecognized attachment type)")
+                    value=embed_list[0].fields[0].value + "\n\n(💔 +1 Unrecognized attachment type)")
     if len(embed_list) == 0:
         embed_list.append(embed)
 

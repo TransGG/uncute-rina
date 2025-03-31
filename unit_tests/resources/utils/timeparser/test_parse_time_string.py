@@ -1,11 +1,5 @@
 import pytest
 
-from datetime import datetime, timedelta, timezone
-from time import mktime
-import asyncio
-
-from unit_tests.object import CustomObject
-
 from resources.utils.timeparser import TimeParser, MissingQuantityException, MissingUnitException
 
 
@@ -79,4 +73,3 @@ def test_parse_missing_unit2():
         TimeParser.parse_time_string("20days30")
 
 # endregion Malformed input
-

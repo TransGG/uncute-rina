@@ -9,7 +9,7 @@ class ProgressBar:
         self._progress_char = progress_char
         self._empty_char = empty_char
         if not (len(fill_char) == len(progress_char) == len(empty_char)):
-            raise ValueError(f"Progress characters must have the same length!")
+            raise ValueError("Progress characters must have the same length!")
         self._just_progressed = False
         self._previous_message_length = 0
 
@@ -21,7 +21,7 @@ class ProgressBar:
         # [###+ = 5 chars. Max step may be 4. Pad 0 characters. [###+]:
         pad_chars = self._max_steps - len(out) + 1
         if pad_chars < 0:
-            raise ValueError("Progress exceeded size of progress bar!")
+            raise OverflowError("Progress exceeded size of progress bar!")
         out += " "*pad_chars
         # [###+ ]
 

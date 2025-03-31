@@ -2,8 +2,6 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
-
 
 class TodoList(commands.Cog):
     def __init__(self):
@@ -38,7 +36,7 @@ class TodoList(commands.Cog):
             else:
                 todo_list = search["list"]
             todo_list.append(todo)
-            collection.update_one(query, {"$set": {f"list": todo_list}}, upsert=True)
+            collection.update_one(query, {"$set": {"list": todo_list}}, upsert=True)
             await itx.response.send_message(
                 f"Successfully added an item to your to-do list! "
                 f"({len(todo_list)} item{'s' * (len(todo_list) != 1)} in your to-do list now)",
@@ -79,7 +77,7 @@ class TodoList(commands.Cog):
                     f"Use {cmd_mention} `mode:Check` to see the IDs assigned to each item on your list",
                     ephemeral=True)
                 return
-            collection.update_one(query, {"$set": {f"list": todo_list}}, upsert=True)
+            collection.update_one(query, {"$set": {"list": todo_list}}, upsert=True)
             await itx.response.send_message(
                 f"Successfully removed '{todo}' from your to-do list. "
                 f"Your list now contains {len(todo_list)} item{'s' * (len(todo_list) != 1)}.",

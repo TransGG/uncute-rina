@@ -6,7 +6,6 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
 from resources.utils.permissions import is_staff  # to check if messages in the selfies channel were sent by staff
 from resources.checks import is_staff_check
 from resources.utils.utils import log_to_guild  # logging when a staff command is used
@@ -45,9 +44,6 @@ class StaffAddons(commands.Cog):
                 "(Add me to the thread by mentioning me, or let Rina see this channel)",
                 ephemeral=True)
             return
-        except:
-            await itx.response.send_message("Oops. Something went wrong!", ephemeral=True)
-            raise
         # No longer necessary: this gets caught by the on_app_command_error() event in the main file.
         await itx.response.send_message("Successfully sent!", ephemeral=True)
 
@@ -64,56 +60,53 @@ class StaffAddons(commands.Cog):
         output = "Attempting deletion...\n"
 
         await itx.response.send_message(output + "...", ephemeral=True)
+
+        await log_to_guild(itx.client, itx.guild,
+                           f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in "
+                           f"{itx.channel.mention} ({itx.channel.id}).")
+        message_delete_count: int = 0
+        queued_message_deletions: list[discord.Message] = []
+        # current ephemeral message's count content (status of deleting messages)
+        feedback_output_count_status: int = 0
+        async for message in itx.channel.history(limit=None,
+                                                 before=(datetime.now().astimezone() -
+                                                         timedelta(days=6, hours=23, minutes=30)),
+                                                 oldest_first=True):
+            message_date = int(message.created_at.timestamp())
+            if "[info]" in message.content.lower() and is_staff(message.guild, message.author):
+                continue
+            if time_now - message_date > 14 * 86400:
+                # 14 days, too old to remove by bulk
+                message_delete_count += 1
+                await message.delete()
+            elif time_now - message_date > 7 * 86400:
+                # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
+                queued_message_deletions.append(message)
+                if message_delete_count - feedback_output_count_status >= 50:
+                    feedback_output_count_status = message_delete_count - message_delete_count % 10  # round to 10s
+                    try:
+                        await itx.edit_original_response(
+                            content=output + f"\nRemoved {message_delete_count} messages older than 7 days "
+                                             f"in {itx.channel.mention} so far...")
+                    except discord.errors.HTTPException:
+                        pass  # ephemeral message timed out or something..
+
+            if len(queued_message_deletions) >= 100:
+                # can only bulk delete up to 100 msgs
+                message_delete_count += len(queued_message_deletions[:100])
+                await itx.channel.delete_messages(queued_message_deletions[:100],
+                                                  reason="Delete selfies older than 7 days")
+                queued_message_deletions = queued_message_deletions[100:]
+
+        if queued_message_deletions:
+            message_delete_count += len(queued_message_deletions)  # count remaining messages
+            await itx.channel.delete_messages(queued_message_deletions,
+                                              reason="Delete selfies older than 7 days")  # delete last few messages
+
         try:
-            await log_to_guild(itx.client, itx.guild,
-                               f"{itx.user} ({itx.user.id}) deleted messages older than 7 days, in "
-                               f"{itx.channel.mention} ({itx.channel.id}).")
-            message_delete_count: int = 0
-            queued_message_deletions: list[discord.Message] = []
-            # current ephemeral message's count content (status of deleting messages)
-            feedback_output_count_status: int = 0
-            async for message in itx.channel.history(limit=None,
-                                                     before=(datetime.now().astimezone() -
-                                                             timedelta(days=6, hours=23, minutes=30)),
-                                                     oldest_first=True):
-                message_date = int(message.created_at.timestamp())
-                if "[info]" in message.content.lower() and is_staff(message.guild, message.author):
-                    continue
-                if time_now - message_date > 14 * 86400:
-                    # 14 days, too old to remove by bulk
-                    message_delete_count += 1
-                    await message.delete()
-                elif time_now - message_date > 7 * 86400:
-                    # 7 days ; technically redundant due to loop's "before" kwarg, but better safe than sorry
-                    queued_message_deletions.append(message)
-                    if message_delete_count - feedback_output_count_status >= 50:
-                        feedback_output_count_status = message_delete_count - message_delete_count % 10  # round to 10s
-                        try:
-                            await itx.edit_original_response(
-                                content=output + f"\nRemoved {message_delete_count} messages older than 7 days "
-                                                 f"in {itx.channel.mention} so far...")
-                        except discord.errors.HTTPException:
-                            pass  # ephemeral message timed out or something..
-
-                if len(queued_message_deletions) >= 100:
-                    # can only bulk delete up to 100 msgs
-                    message_delete_count += len(queued_message_deletions[:100])
-                    await itx.channel.delete_messages(queued_message_deletions[:100],
-                                                      reason="Delete selfies older than 7 days")
-                    queued_message_deletions = queued_message_deletions[100:]
-
-            if queued_message_deletions:
-                message_delete_count += len(queued_message_deletions)  # count remaining messages
-                await itx.channel.delete_messages(queued_message_deletions,
-                                                  reason="Delete selfies older than 7 days")  # delete last few messages
-
-            try:
-                await itx.channel.send(f"Removed {message_delete_count} messages older than 7 days!")
-            except discord.Forbidden:
-                await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
-        except:
-            await itx.followup.send("Something went wrong!", ephemeral=True)
-            raise
+            await itx.channel.send(f"Removed {message_delete_count} messages older than 7 days!")
+        except discord.Forbidden:
+            await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
 
     @app_commands.command(name="version", description="Get bot version")
     async def get_bot_version(self, itx: discord.Interaction):

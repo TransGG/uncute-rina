@@ -1,4 +1,3 @@
-import json  # to read API json responses
 import random  # for dice rolls (/roll) and selecting a random staff interaction wait time
 import requests  # to read api calls
 
@@ -7,14 +6,11 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.utils.utils import log_to_guild  # to log add_poll_reactions
-
-from extensions.addons.equaldexregion import EqualDexRegion
-from extensions.addons.views.equaldex_additionalinfo import EqualDexAdditionalInfo
 
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
+
 
 def _product_in_list(mult_list: list):
     a = 1
@@ -113,13 +109,13 @@ class FunAddons(commands.Cog):
                 # people asked for no random headpats anymore; or make it opt-in. See GitHub #23
                 # try:
                 #     added_pat = True
-                #     await message.add_reaction("<:TPF_02_Pat:968285920421875744>") #headpatWait
+                #     await message.add_reaction("<:TPF_02_Pat:968285920421875744>")  #headpatWait
                 # except discord.errors.Forbidden:
-                #     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat "
+                #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
                 #                                                    f"reaction to {message.jump_url} (Forbidden): "
                 #                                                    f"They might have blocked Rina...')
                 # except discord.errors.HTTPException as ex:
-                #     await log_to_guild(self.client, message.guild, f'**:warning: Warning: **Couldn\'t add pat "
+                #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
                 #                                                    f"reaction to {message.jump_url}. "
                 #                                                    f"(HTTP/{ex.code}) "
                 #                                                    f"They might have blocked Rina...')
@@ -298,7 +294,7 @@ class FunAddons(commands.Cog):
                     except KeyError:
                         roll_db[roll] = 1
                 # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
-                # x.items() gives a list of tuples [(1,4),(2,1),(3,4),(4,1)] that is then sorted b
+                # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)] that is then sorted b
                 # the first item in the tuple.
                 roll_db = dict(sorted([x for x in roll_db.items()]))
                 details = "You rolled "

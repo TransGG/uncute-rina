@@ -5,7 +5,6 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
-from resources.customs.bot import Bot
 from resources.checks import is_admin_check
 
 from extensions.help.cogs import send_help_menu
@@ -149,8 +148,9 @@ async def _value_autocomplete(itx: discord.Interaction, current: str) -> list[ap
                     results.append(app_commands.Choice(name=potential_user.name, value=str(potential_user.id)))
         elif issubclass(attribute_type, discord.abc.GuildChannel):
             for channel in itx.guild.channels:
-                if (isinstance(channel, attribute_type) and
-                    (current in channel.name or str(channel.id).startswith(current))
+                if (
+                        isinstance(channel, attribute_type) and
+                        (current in channel.name or str(channel.id).startswith(current))
                 ):
                     results.append(app_commands.Choice(name=channel.name, value=str(channel.id)))
         elif issubclass(attribute_type, discord.abc.Messageable):
@@ -194,6 +194,7 @@ async def _value_autocomplete(itx: discord.Interaction, current: str) -> list[ap
         ]
     else:
         return []
+
 
 class SettingsCog(commands.Cog):
     def __init__(self):
@@ -288,10 +289,11 @@ class SettingsCog(commands.Cog):
                 attribute_raw = getattr(entry["attribute_ids"], setting, "<no value yet>")  # type: ignore
                 attribute_parsed = itx.client.get_guild_attribute(itx.guild, setting)
                 await itx.followup.send((f"The current value for '{setting}' is:\n"
-                                         f"Raw:\n- " +
-                                         str(attribute_raw) + "\n"
-                                         f"Parsed:\n- " +
-                                         str(ServerSettings.get_original(attribute_parsed)))[:2000],
+                                         f"Raw:\n"
+                                         f"- {attribute_raw}\n"
+                                         f"Parsed:\n"
+                                         f"- {ServerSettings.get_original(attribute_parsed)}"
+                                         )[:2000],
                                         ephemeral=True)
                 return
 
@@ -303,7 +305,7 @@ class SettingsCog(commands.Cog):
                 attribute_type, _ = get_attribute_type(setting)
                 await itx.followup.send((f"Could not parse `{value}` as value for "
                                          f"'{setting}' (expected {attribute_type.__name__}.\n"
-                                         f"(Notes: {[(k,v) for k,v in invalid_arguments.items()]}")[:1999] +")",
+                                         f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]}")[:1999] + ")",
                                         ephemeral=True)
                 return
 
@@ -441,16 +443,14 @@ class SettingsCog(commands.Cog):
             modified, created_new_document = await ServerSettings.set_module_state(
                 itx.client.async_rina_db, itx.guild.id, setting, enable)
 
-
             if not modified and not created_new_document:
                 # If the server's enabled modules already have this value
-                await itx.response.send_message(f"This module is already " +
+                await itx.response.send_message("This module is already " +
                                                 ("enabled" if enable else "disabled") +
-                                                f"!\n" + help_str, ephemeral=True)
+                                                "!\n" + help_str, ephemeral=True)
                 return
 
             await itx.response.defer(ephemeral=True)  # defer before any database calls
-
 
             try:
                 await itx.client.server_settings[itx.guild.id].reload(itx.client)

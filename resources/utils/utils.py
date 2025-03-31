@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, timedelta, timezone  # for logging, to show log time; and for parsetime
+from datetime import datetime, timezone  # for logging, to show log time; and for parsetime
 from enum import Enum
 import logging  # for debug (logger.info)
 import warnings  # for debug (if given wrong color)
@@ -46,7 +46,7 @@ class DebugColor(Enum):
 def debug(
         text: str = "",
         color: DebugColor | str = DebugColor.default,
-        add_time: bool =True,
+        add_time: bool = True,
         end="\n",
         advanced=False
 ) -> None:
@@ -179,11 +179,12 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
     return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
 
 
-async def executed_in_dms(*,
+async def executed_in_dms(
+        *,
         itx: discord.Interaction = None,
         message: discord.Message = None,
         channel: discord.DMChannel | discord.GroupChannel | discord.TextChannel | discord.StageChannel |
-                 discord.VoiceChannel | discord.Thread = None
+        discord.VoiceChannel | discord.Thread = None
 ) -> bool:
     # make this a check
     """

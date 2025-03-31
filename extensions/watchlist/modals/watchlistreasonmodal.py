@@ -36,7 +36,7 @@ class WatchlistReasonModal(discord.ui.Modal):
         self.add_to_watchlist_func = add_to_watchlist_func
 
         self.reason_text = discord.ui.TextInput(label=f'Reason for reporting {reported_user}'[:45],
-                                                placeholder=f"not required but recommended",
+                                                placeholder="not required but recommended",
                                                 style=discord.TextStyle.paragraph,
                                                 required=False)
         self.add_item(self.reason_text)

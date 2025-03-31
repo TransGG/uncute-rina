@@ -95,7 +95,8 @@ class ReminderObject:
 
 
 async def _handle_reminder_timestamp_parsing(
-        itx: discord.Interaction, reminder_datetime: str
+        itx: discord.Interaction,
+        reminder_datetime: str
 ) -> (datetime, discord.Interaction):
     # validate format
     # note: "t" here is lowercase because the reminder_datetime string gets lowercased...
@@ -157,7 +158,7 @@ async def _handle_reminder_timestamp_parsing(
             "6": (timestamp + timedelta(hours=18)),
             "7": (timestamp + timedelta(hours=24)),
         }
-        query = f"Since a date format doesn't tell me what time you want the reminder, you can pick a time yourself:"
+        query = "Since a date format doesn't tell me what time you want the reminder, you can pick a time yourself:"
         for option in options:
             query += f"\n  `{option}.` <t:{int(options[option].timestamp())}:F>"
         view = TimeOfDaySelection(list(options))

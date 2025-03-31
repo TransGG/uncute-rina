@@ -8,7 +8,6 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
 from resources.checks import is_staff_check  # cuz it's a staff command
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
@@ -133,7 +132,8 @@ async def _get_vc_activity(
                 else:
                     raise AssertionError(
                         f"Embed fields count was expected to be 3 or 2. Instead, it was '{len(embed.fields)}'")
-            except:  # TODO: try to figure out why it crashed that one time. Now with more details
+            except IndexError:
+                # TODO: try to figure out why it crashed that one time. Now with more details
                 # edit: Some actions, such as server-deafening another user, give a different log message.
                 if len(embed.fields) == 0:
                     raise Exception("Embed has no fields!")
@@ -202,9 +202,10 @@ class VCLogReader(commands.Cog):
             self, itx: discord.Interaction, requested_channel: str, lower_bound: str, upper_bound: str = None,
             msg_log_limit: int = 5000, user_ids: str | None = None
     ):
+        # todo: shorten this function
         if user_ids is None:
             user_ids = ""
-        select_user_ids: list[str] = user_ids.replace(" ","").split(",")
+        select_user_ids: list[str] = user_ids.replace(" ", "").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str = requested_channel
         warning = ""
@@ -306,7 +307,7 @@ class VCLogReader(commands.Cog):
             del intermediate_data[user_id]["time_temp"]
 
         data: VcLogGraphData = {"User": [], "Start": [], "Finish": []}
-        sorted_usernames = sorted(intermediate_data) # sort alphabetically so graph always uses the same order
+        sorted_usernames = sorted(intermediate_data)  # sort alphabetically so graph always uses the same order
         for user in sorted_usernames:
             for time_tuple in intermediate_data[user]["timestamps"]:
                 data["User"].append(intermediate_data[user]["name"])
@@ -344,12 +345,12 @@ class VCLogReader(commands.Cog):
         #   'large' is relative to the default font size, which is rcParams['font.size'] (default 10.0)
         #      https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
         #    The text sizes are as follows: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large']
-        #    Their values are as follows:   [   5.79,      6.94,     8.33,    10.0,     12.0,     14.4 ,     17.2]
+        #    Their values are as follows:   [   5.79,      6.94,     8.33,    10.0,     12.0,     14.4,      17.2]
         #      https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
         #    Each text size is 1.2x bigger than the previous, with `medium` by default 10.0
         # On the default scale (large), a graph can fit about 12 names. That would give 12*12=144 fontsize in a graph.
         # When more users are shown (eg. 30), that would bring the font size to 144 / 30 = 4.8,
-        scaling_label_size = min(max(144 / max(len(sorted_usernames),1) , 4), 12) # clamp to 4 <= size <= 12 (default)
+        scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)  # clamp to 4 <= size <= 12 (default)
 
         ax.set_yticks(range(len(labels)))
         ax.set_yticklabels(labels, scaling_label_size)

@@ -45,7 +45,7 @@ async def _create_uncool_watchlist_thread(client: Bot, user: discord.Member, wat
     # make and send uncool embed for the loading period while it sends the copyable version
     embed = discord.Embed(
         color=discord.Colour.from_rgb(r=33, g=33, b=33),
-        description=f"Loading WANTED entry...",  # {message.content}
+        description="Loading WANTED entry...",  # {message.content}
     )
 
     msg = await watch_channel.send("", embed=embed, allowed_mentions=discord.AllowedMentions.none())
@@ -55,7 +55,7 @@ async def _create_uncool_watchlist_thread(client: Bot, user: discord.Member, wat
     # thread.id will be the same as msg.id, because of discord structure
     add_to_watchlist_cache(user.id, thread.id)
     await thread.join()
-    # await thread.send("<@&986022587756871711>", silent=True) # silent messages don't work for this
+    # await thread.send("<@&986022587756871711>", silent=True)  # silent messages don't work for this
     joiner_msg = await thread.send("user-mention placeholder")
     await joiner_msg.edit(content=f"<@&{client.custom_ids['active_staff_role']}>")
     # targets = [] # potential workaround for the function above
@@ -76,7 +76,7 @@ async def _update_uncool_watchlist_embed(jump_url: str, reported_message_info, m
     # to plaintext
     embed = discord.Embed(
         color=discord.Colour.from_rgb(r=0, g=0, b=0),
-        title=f'',
+        title='',
         description=f"{reason}{reported_message_info}\n\n[Jump to plain version]({jump_url})",
         timestamp=datetime.now()
     )
@@ -85,7 +85,7 @@ async def _update_uncool_watchlist_embed(jump_url: str, reported_message_info, m
         url=f"https://warned.username/{user.id}/",
         icon_url=user.display_avatar.url
     )
-    # embed.set_footer(text=f"")
+    # embed.set_footer(text="")
     await msg.edit(embed=embed)
 
 
@@ -101,7 +101,7 @@ async def _add_to_watchlist(
         return
     if itx.client.is_me(user):
         await itx.response.send_message(
-            f"You just tried to add a watchlist to Uncute Rina. Are you sure about that.......?\n"
+            "You just tried to add a watchlist to Uncute Rina. Are you sure about that.......?\n"
             "If so, please send a message to Mia so she can remove this extra if-statement.", ephemeral=True)
         return
 

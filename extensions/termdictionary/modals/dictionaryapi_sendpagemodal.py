@@ -32,5 +32,5 @@ class DictionaryAPISendPageModal(discord.ui.Modal, title="Share single dictionar
                 ephemeral=True)
             return
         self.value = 1  # succeeded
-        await itx.response.send_message(f'Sending item...', ephemeral=True, delete_after=8)
+        await itx.response.send_message("Sending item...", ephemeral=True, delete_after=8)
         self.stop()

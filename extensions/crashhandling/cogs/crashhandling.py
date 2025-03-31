@@ -3,7 +3,6 @@ import traceback  # for crash logging
 import sys  # to stop the program (and automatically restart, thanks to pterodactyl)
 
 import discord
-from discord import app_commands
 from discord.ext import commands
 
 from resources.customs.bot import Bot

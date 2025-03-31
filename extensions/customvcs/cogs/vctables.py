@@ -4,7 +4,6 @@ import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
-from resources.customs.bot import Bot
 from resources.views.generics import GenericTwoButtonView
 from resources.utils.permissions import is_staff  # to prevent people in vc-tables from muting staff.
 from resources.utils.utils import log_to_guild  # to log custom vc changes
@@ -220,7 +219,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         first_rename_time = try_store_vc_rename(itx.user.voice.channel.id)
         if first_rename_time:
             await itx.followup.send(
-                f"This channel has been renamed too often in the past 10 minutes! (bcuz discord :P)\n" +
+                f"This channel has been renamed too often in the past 10 minutes! (bcuz discord :P)\n"
                 f"You can turn this into a VcTable in <t:{first_rename_time + 600}:R> "
                 f"(<t:{first_rename_time + 600}:t>).",
                 ephemeral=True)
@@ -358,13 +357,13 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if channel is None:
                 return
             if user is None:
-                await itx.response.send_message(f"You can add an owner to your VcTable using this command. Owners "
-                                                f"have the ability to add speakers, mute, add other owners, disband "
-                                                f"a vctable, or whitelist connecting and speaking. Give this to "
-                                                f"people you believe can help you with this.", ephemeral=True)
+                await itx.response.send_message("You can add an owner to your VcTable using this command. Owners "
+                                                "have the ability to add speakers, mute, add other owners, disband "
+                                                "a vctable, or whitelist connecting and speaking. Give this to "
+                                                "people you believe can help you with this.", ephemeral=True)
                 return
             if _is_vc_table_owner(channel, user):
-                await itx.response.send_message(f"This user is already an owner!", ephemeral=True)
+                await itx.response.send_message("This user is already an owner!", ephemeral=True)
                 return
             await channel.set_permissions(user, connect=True, speak=True, view_channel=True,
                                           read_message_history=True,
@@ -435,7 +434,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             warning = "\nThis user was muted before. Making them a speaker removed their mute." if \
                 _is_vctable_muted(channel, user) else ""
             if _is_vctable_speaker(channel, user):
-                await itx.response.send_message(f"This user is already a speaker!", ephemeral=True)
+                await itx.response.send_message("This user is already a speaker!", ephemeral=True)
                 return
             if not _is_vctable_authorized(channel, itx):
                 cmd_mention = itx.client.get_command_mention("vctable make_authorized_only")
@@ -462,12 +461,12 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                                 ephemeral=True)
                 return
             if _is_vc_table_owner(channel, user):
-                await itx.response.send_message(f"This user is an owner of this VcTable! If you want to reset "
-                                                f"their speaking permissions, un-owner them first!",
+                await itx.response.send_message("This user is an owner of this VcTable! If you want to reset "
+                                                "their speaking permissions, un-owner them first!",
                                                 ephemeral=True)
                 return
             if not _is_vctable_speaker(channel, user):
-                await itx.response.send_message(f"This user is not a speaker! You can't unspeech a non-speaker!",
+                await itx.response.send_message("This user is not a speaker! You can't unspeech a non-speaker!",
                                                 ephemeral=True)
                 return
             warning = ""
@@ -518,7 +517,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                                 ephemeral=True)
                 return
             if _is_vctable_participant(channel, user):
-                await itx.response.send_message(f"This user is already a participant!", ephemeral=True)
+                await itx.response.send_message("This user is already a participant!", ephemeral=True)
                 return
             warning = ""
             if not _is_vctable_locked(channel, itx):
@@ -610,11 +609,11 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             warning = ("\nThis user was a speaker before. Muting them overwrote this permissions and "
                        "removed their speaker permissions") if _is_vctable_speaker(channel, user) else ""
             if _is_vctable_muted(channel, user):
-                await itx.response.send_message(f"This user is already muted!", ephemeral=True)
+                await itx.response.send_message("This user is already muted!", ephemeral=True)
                 return
             if _is_vc_table_owner(channel, user):
                 await itx.response.send_message(
-                    f"This user is an owner of this VcTable! If you want to mute them, un-owner them first!",
+                    "This user is an owner of this VcTable! If you want to mute them, un-owner them first!",
                     ephemeral=True)
                 return
 
@@ -644,7 +643,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 return
             if not _is_vctable_muted(channel, user):
                 await itx.response.send_message(
-                    f"This user is already unmuted! Let people be silent if they wanna be >:(", ephemeral=True)
+                    "This user is already unmuted! Let people be silent if they wanna be >:(", ephemeral=True)
                 return
             await channel.set_permissions(user, speak=None, stream=None,
                                           reason="VcTable edited: unmuted participant")
@@ -666,7 +665,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
     # region Edit default role permissions
     @app_commands.command(name="make_authorized_only",
-                     description="Only let users speak if they are whitelisted by the owner")
+                          description="Only let users speak if they are whitelisted by the owner")
     async def vctable_authorized_only(self, itx: discord.Interaction):
         channel = await self.get_channel_if_owner(itx, "enable authorized-only")
         if channel is None:
@@ -678,7 +677,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                           reason="VcTable edited: disaled authorized-only for speaking")
             await channel.send(f"{itx.user.mention} disabled whitelist for speaking.",
                                allowed_mentions=discord.AllowedMentions.none())
-            await itx.response.send_message(f"Successfully disabled speaking whitelist.", ephemeral=True)
+            await itx.response.send_message("Successfully disabled speaking whitelist.", ephemeral=True)
             return
 
         # if authorized-only is disabled:
@@ -721,7 +720,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                           reason="VcTable edited: disabled viewing lock")
             await channel.send(f"{itx.user.mention} disabled whitelist for viewing this channel.",
                                allowed_mentions=discord.AllowedMentions.none())
-            await itx.response.send_message(f"Successfully disabled viewing whitelist.", ephemeral=True)
+            await itx.response.send_message("Successfully disabled viewing whitelist.", ephemeral=True)
             return
 
         # if lock is disabled:

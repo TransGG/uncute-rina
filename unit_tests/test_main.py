@@ -1,9 +1,10 @@
-import pytest
 from warnings import warn
 
 import os
 
 from main import EXTENSIONS
+
+# todo: add more tests. For example for expected crashes, and just overall testing each function.
 
 
 def test_warn_all_modules_enabled():

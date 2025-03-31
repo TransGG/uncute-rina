@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import types
 import typing
 import warnings
 
 import motor.core
-from typing import TypedDict, Required, Any, TypeVar, get_args, get_origin, Union, Callable, Type, Optional, Awaitable
+from typing import TypedDict, Any, TypeVar, Callable
 
 import discord
-import pymongo.results
 
 from .serverattributes import ServerAttributes
 from .serverattributeids import ServerAttributeIds
@@ -95,7 +93,7 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> tup
     }
 
     # remove all Nones
-    new_settings = {k:v for k,v in converted_settings.items() if v is not None}
+    new_settings = {k: v for k, v in converted_settings.items() if v is not None}
 
     return guild_id, ServerAttributeIds(**new_settings)
 
@@ -218,7 +216,6 @@ class ServerSettings:
                 output.append(get_name_or_id_maybe(att))
             return output
         return get_name_or_id_maybe(attribute)
-
 
     @staticmethod
     async def get_entry(async_rina_db: motor.core.AgnosticDatabase, guild_id: int) -> ServerSettingData | None:

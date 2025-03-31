@@ -2,8 +2,6 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
-
 
 class ToneIndicator(commands.Cog):
     @app_commands.command(name="toneindicator", description="Look for the definition of a tone indicator")

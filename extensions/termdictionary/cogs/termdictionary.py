@@ -8,7 +8,6 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.checks import is_staff_check  # for staff dictionary commands
-from resources.customs.bot import Bot
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
 from resources.utils.utils import log_to_guild
 

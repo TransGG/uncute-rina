@@ -52,6 +52,3 @@ def test_exception_invalid_time_term():
         TimeParser.shrink_time_terms(terms)
 
 # endregion Malformed input
-
-
-

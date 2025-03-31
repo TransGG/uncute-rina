@@ -2,9 +2,8 @@ import random
 
 import discord
 from discord.ext import commands
-from discord import app_commands
+import discord.app_commands as app_commands
 
-from resources.customs.bot import Bot
 from resources.views.generics import PageView, create_simple_button
 
 
@@ -27,13 +26,13 @@ class TestingCog(commands.GroupCog, name="testing"):
         embed = discord.Embed(title="did a log thing for x", color=16705372)
         embed.add_field(name="User", value=f"{target.mention} (`{target.id}`)", inline=True)
         embed.add_field(name="Moderator", value=f"{itx.user.mention}", inline=True)
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Rule", value=f">>> {rule}", inline=True)
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Reason", value=f">>> {reason}")
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Private Notes", value=f">>> {private_notes}")
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Role Changes", value=role_changes.replace("[[\\n]]", "\n"))
         # any channel in itx.client.custom_ids["staff_logs_category"] should work.
         await itx.client.get_channel(1143642283577725009).send(embed=embed)

@@ -1,14 +1,11 @@
-from typing import Callable
-
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
 from resources.utils.permissions import is_staff  # to let staff rename other people's custom vcs
-from resources.checks import is_staff_check, is_admin_check
+from resources.checks import is_admin_check
 from resources.utils.utils import log_to_guild  # to log custom vc changes
-from resources.views.generics import GenericTwoButtonView
 
 from extensions.customvcs.channel_rename_tracker import clear_vc_rename_log, try_store_vc_rename
 from extensions.customvcs.modals import CustomVcStaffEditorModal
@@ -82,11 +79,11 @@ async def _create_new_custom_vc(
     try:
         vc = await vc_category_for_vc.create_voice_channel(default_name, position=voice_channel.position + 1)
     except discord.errors.HTTPException:
-        await log_to_guild(client, member.guild, f"WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)")
+        await log_to_guild(client, member.guild, "WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)")
         raise
 
     try:
-        await member.move_to(vc, reason=f"Opened a new voice channel through the vc hub thing.")
+        await member.move_to(vc, reason="Opened a new voice channel through the vc hub thing.")
         await vc.send(
             f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). "
             f"Use {cmd_mention} to edit the name/user limit.",
@@ -99,8 +96,8 @@ async def _create_new_custom_vc(
         warning = str(ex) + ": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
         try:
             await member.move_to(None,
-                                 reason=f"Couldn't create a new Custom voice channel so kicked them from their "
-                                        f"current vc to prevent them staying in the main customvc hub")
+                                 reason="Couldn't create a new Custom voice channel so kicked them from their "
+                                        "current vc to prevent them staying in the main customvc hub")
             # no need to delete vc if they are kicked out of the channel, cause then the next event will
             # notice that they left the channel.
         except discord.HTTPException:
@@ -152,6 +149,7 @@ async def _handle_custom_voice_channel_leave_events(
         await _handle_delete_custom_vc(client, member, voice_channel)
 
     await _reset_voice_channel_permissions_if_vctable(client.custom_ids["vctable_prefix"], voice_channel)
+
 
 @app_commands.check(is_admin_check)
 async def _edit_guild_info_autocomplete(_: discord.Interaction, current: str) -> list[app_commands.Choice]:
@@ -270,7 +268,7 @@ class CustomVcs(commands.Cog):
             first_rename_time = try_store_vc_rename(channel.id)
             if first_rename_time:
                 await itx.response.send_message(
-                    f"You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n" +
+                    f"You can't edit your channel more than twice in 10 minutes! (bcuz discord :P)\n"
                     f"You can rename it again <t:{first_rename_time + 600}:R> (<t:{first_rename_time + 600}:t>).",
                     ephemeral=True)
                 return
@@ -311,7 +309,7 @@ class CustomVcs(commands.Cog):
                                    f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed VC ({channel.id}) "
                                    f"name \"{old_name}\" to \"{name}\" and "
                                    f"user limit from \"{old_limit}\" to \"{limit}\"{limit_info}")
-                await itx.response.send_message(warning + f"Voice channel name and user limit successfully edited.",
+                await itx.response.send_message(warning + "Voice channel name and user limit successfully edited.",
                                                 ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
@@ -495,7 +493,7 @@ class CustomVcs(commands.Cog):
                 print(emoji)
                 if type(emoji) is not discord.Emoji:
                     await itx.response.send_message(
-                        f"The ID you gave wasn't an emoji! (i think) (or not one I can use)", ephemeral=True)
+                        "The ID you gave wasn't an emoji! (i think) (or not one I can use)", ephemeral=True)
                     return
                 collection.update_one(query, {"$set": {options[option]: emoji.id}}, upsert=True)
             elif option == "32":

@@ -81,7 +81,7 @@ class StickerStats(commands.Cog):
             tz=timezone.utc
         ).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')
 
-        await itx.response.send_message(f"Data for {sticker}" + f"  ".replace(':', '\\:') +
+        await itx.response.send_message(f"Data for {sticker}" + "  ".replace(':', '\\:') +
                                         f"(`{sticker}`)\n"
                                         f"messageUsedCount: {msg_used}\n"
                                         f"Last used: {msg_last_use_time}",

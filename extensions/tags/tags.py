@@ -37,9 +37,9 @@ class Tags:
         if public:
             if anonymous:
                 if public_footer:
-                    embed.set_footer(text=f"Note: If you believe that this command was misused or abused, "
-                                          f"please do not argue in this channel. Instead, open a mod ticket "
-                                          f"and explain the situation there. Thank you.")
+                    embed.set_footer(text="Note: If you believe that this command was misused or abused, "
+                                          "please do not argue in this channel. Instead, open a mod ticket "
+                                          "and explain the situation there. Thank you.")
                 await itx.response.send_message("sending...", ephemeral=True)
                 try:
                     # try sending the message without replying to the previous ephemeral
@@ -58,7 +58,7 @@ class Tags:
                                            tag_name=tag_name)
             else:
                 view = SendPubliclyTagView(embed, timeout=60, tag_name=tag_name)
-            await itx.response.send_message(f"", embed=embed, view=view, ephemeral=True)
+            await itx.response.send_message("", embed=embed, view=view, ephemeral=True)
 
     # region Tags
     @staticmethod

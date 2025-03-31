@@ -4,8 +4,6 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
-
 from extensions.nameusage.views.pageview import GetTopPageView
 
 
@@ -117,7 +115,7 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
         embed.add_field(name="Column 2", value=result_page2)
         embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages) / 2)))
         view = GetTopPageView(pages, embed_title, timeout=60)
-        await itx.followup.send(f"", embed=embed, view=view, ephemeral=True)
+        await itx.followup.send("", embed=embed, view=view, ephemeral=True)
         await view.wait()
         if view.value is None:
             await itx.edit_original_response(view=None)

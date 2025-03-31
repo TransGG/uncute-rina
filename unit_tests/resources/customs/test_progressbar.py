@@ -8,6 +8,7 @@ from resources.customs.progressbar import ProgressBar
 def ends_with_color_reset(message: str) -> bool:
     return message.endswith("\033[0m")
 
+
 def ends_with_color_reset_and_carriage_return(message: str) -> bool:
     return message.endswith("\033[0m" + "\033[F")
 
@@ -68,6 +69,7 @@ def test_step(caplog):
     # Assert
     assert "[#    ]: b c d" == message
 
+
 def test_progress_newline(caplog):
     # Arrange
     progressbar = ProgressBar(4)
@@ -87,6 +89,7 @@ def test_progress_newline(caplog):
 
     # Assert
     assert "[+   ]: a b c" == message
+
 
 def test_step_no_newline(caplog):
     # Arrange
@@ -108,6 +111,7 @@ def test_step_no_newline(caplog):
 
     # Assert
     assert "[#    ]: b c d" == message
+
 
 def test_step_step(caplog):
     # Arrange
@@ -258,3 +262,13 @@ def test_short_bar_progress_step(caplog):
 
     # Assert
     assert "[#]: " == message
+
+
+def test_progress_overflow(caplog):
+    # Arrange
+    progressbar = ProgressBar(1)
+    progressbar.step("")
+
+    # Assert
+    with pytest.raises(OverflowError):
+        progressbar.step("")

@@ -1,7 +1,5 @@
 from typing import TypedDict
 
-from extensions.settings.objects import EnabledModules
-
 
 GuildId = int
 UserId = int
@@ -52,4 +50,3 @@ class ServerAttributeIds(TypedDict, total=False):
     starboard_upvote_emoji: EmojiId
     starboard_minimum_vote_count_for_downvote_delete: int
     voice_channel_logs_channel: MessageableChannelId
-

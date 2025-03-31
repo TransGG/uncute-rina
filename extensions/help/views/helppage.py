@@ -1,10 +1,9 @@
 import discord
 import random  # for random help page jump page number placeholder
 
-from resources.customs.bot import Bot
 from resources.modals.generics import SingleLineModal
 from resources.utils.stringhelper import replace_string_command_mentions
-from resources.views.generics import PageView, create_simple_button
+from resources.views.generics import PageView
 
 from extensions.help.utils import generate_help_page_embed, get_nearest_help_pages_from_page
 from extensions.help.helppage import HelpPage
@@ -86,4 +85,4 @@ class HelpPageView(PageView):
         self.pages = page_dict
         first_page_index = list(self.pages).index(first_page_key)
         super().__init__(first_page_index, len(self.pages) - 1, self.update_page)
-        self._children.append(self._children.pop(1))
+        self._children.append(self._children.pop(1))  # move jump_to_page button to the end of the view

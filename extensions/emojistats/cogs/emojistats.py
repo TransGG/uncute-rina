@@ -263,4 +263,3 @@ class EmojiStats(commands.Cog):
             output += "\nTop 10 emojis for " + source_type.replace("UsedCount", "") + "s:\n"
             output += '\n'.join(results)
         await itx.response.send_message(output, ephemeral=True)
-

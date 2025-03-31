@@ -1,7 +1,7 @@
 from __future__ import annotations
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from datetime import datetime  # for startup and crash logging, and Reminders
-from typing import Literal, TypedDict, TYPE_CHECKING
+from typing import TypedDict, TYPE_CHECKING
 
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
@@ -232,7 +232,7 @@ class Bot(commands.Bot):
             guild_id: int = guild_id.id
 
         if (self.server_settings is None or  # settings have not been fetched yet.
-            guild_id not in self.server_settings):  # return early
+                guild_id not in self.server_settings):  # return early
             return False
 
         modules = self.server_settings[guild_id].enabled_modules
@@ -247,8 +247,6 @@ class Bot(commands.Bot):
                 output.append(False)
 
         return output
-
-
 
     def is_me(self, user_id: discord.Member | discord.User | int):
         if isinstance(user_id, discord.User) or isinstance(user_id, discord.Member):

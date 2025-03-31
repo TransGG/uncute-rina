@@ -8,7 +8,6 @@ import motor.core as motorcore  # for typing
 import os  # for creating outputs/ directory
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 from pymongo import MongoClient
-from typing import Literal, TypedDict
 
 import discord  # for main discord bot functionality
 
@@ -69,6 +68,7 @@ start_progress = ProgressBar(7)
 #           Create and Delete voice channels
 #       use embeds (for starboard)
 #       use (external) emojis (for starboard, if you have external starboard reaction...?)
+
 
 def get_token_data() -> tuple[
     str,
@@ -259,11 +259,13 @@ def start_app():
 
     client.run(token, log_level=logging.WARNING)
 
+
 if __name__ == "__main__":
     try:
         start_app()
     except SystemExit:
         print("Exited the program forcefully using the kill switch")
+
 
 # region TODO:
 # - Translator

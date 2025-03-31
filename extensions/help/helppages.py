@@ -510,7 +510,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- [Attribute] Delete: Unset a value for the selected setting.\n"
                 "- [Attribute] Add: Used for lists. Add a value to the list for the selected setting.\n"
                 "- [Attribute] Remove: Used for lists. Remove a value from the list for the selected setting.\n"
-            ),(
+            ),
+            (
                 "Parameters (continued)",
                 "`value`: The value you want to give this setting.\n"
                 "- You don't have to set a value if you selected `mode:View`.\n"

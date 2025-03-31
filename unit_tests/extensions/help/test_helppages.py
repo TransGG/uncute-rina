@@ -1,9 +1,5 @@
 import pytest
 
-import discord
-
-from typing import TYPE_CHECKING
-
 from unit_tests.object import CustomObject
 from unit_tests.utils import get_embed_issues
 
@@ -53,6 +49,7 @@ def test_help_pages_attributes():
 def test_embed_lengths():
     # Arrange
     fake_client = CustomObject()
+
     def fake_get_command_mention(cmd: str):
         return "</" + cmd + ":" + "0"*19 + ">"
 

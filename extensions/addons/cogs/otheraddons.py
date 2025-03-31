@@ -1,5 +1,4 @@
 import json  # to read API json responses
-import random  # for dice rolls (/roll) and selecting a random staff interaction wait time
 import requests  # to read api calls
 
 import discord
@@ -8,9 +7,6 @@ import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
-
-from extensions.addons.equaldexregion import EqualDexRegion
-from extensions.addons.views.equaldex_additionalinfo import EqualDexAdditionalInfo
 
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
@@ -239,7 +235,7 @@ class OtherAddons(commands.Cog):
                 f"https://openexchangerates.org/api/latest.json?app_id={api_key}&show_alternative=true").text
             data = json.loads(response_api)
             if data.get("error", 0):
-                await itx.response.send_message(f"I'm sorry, something went wrong while trying to get the latest data",
+                await itx.response.send_message("I'm sorry, something went wrong while trying to get the latest data",
                                                 ephemeral=True)
                 return
             options = {x: [0, data['rates'][x], x] for x in data['rates']}

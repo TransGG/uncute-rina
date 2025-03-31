@@ -1,5 +1,4 @@
 import discord
-import discord.app_commands as app_commands
 
 from resources.utils.permissions import is_staff, is_admin
 

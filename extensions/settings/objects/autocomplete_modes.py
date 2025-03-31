@@ -1,9 +1,11 @@
 from enum import Enum
 
+
 class TypeAutocomplete(Enum):
     help = "Help"
     attribute = "Attribute"
     module = "Module"
+
 
 class ModeAutocomplete(Enum):
     set = "Set"

@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 import discord
 
 from resources.customs.bot import Bot
@@ -74,7 +72,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
         first_rename_time = try_store_vc_rename(channel.id, max_rename_limit=4)
         if first_rename_time:
             await itx.response.send_message(
-                f"You can't edit channels more than twice in 10 minutes. Discord API would queue the edit instead.\n" +
+                f"You can't edit channels more than twice in 10 minutes. Discord API would queue the edit instead.\n"
                 f"I have queued the previous two renaming edits. You can queue another rename "
                 f"<t:{first_rename_time + 600}:R> (<t:{first_rename_time + 600}:t>).",
                 ephemeral=True)
@@ -123,7 +121,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
                                    f"VC ({channel.id}) name \"{old_name}\" to \"{name}\" and user limit "
                                    f"from \"{old_limit}\" to \"{limit}\"{limit_info}")
                 await itx.response.send_message(
-                    warning + f"Staff: Voice channel name and user limit successfully edited.", ephemeral=True,
+                    warning + "Staff: Voice channel name and user limit successfully edited.", ephemeral=True,
                     allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]

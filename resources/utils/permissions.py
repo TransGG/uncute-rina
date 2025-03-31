@@ -1,6 +1,5 @@
 from __future__ import annotations
 import discord
-import discord.app_commands as app_commands
 
 from typing import TYPE_CHECKING
 

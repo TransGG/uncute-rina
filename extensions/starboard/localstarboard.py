@@ -3,8 +3,6 @@ from datetime import datetime, timezone
 
 import discord
 
-from resources.customs.bot import Bot
-
 
 local_starboard_message_list_refresh_timestamp = datetime.fromtimestamp(0, timezone.utc)
 STARBOARD_REFRESH_DELAY = 3000

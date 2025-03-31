@@ -121,10 +121,10 @@ async def _choose_and_send_compliment(
     base = f"{itx.user.mention} complimented {user.mention}!\n"
     # cmd_mention = client.get_command_mention("developer_request")
     # cmd_mention1 = client.get_command_mention("complimentblacklist")
-    suffix = f""  # ("\n\nPlease give suggestions for compliments! DM <@262913789375021056>, make a staff ticket, "
-    #                "or use {cmd_mention} to suggest one. Do you dislike this compliment? Use {cmd_mention1} "
-    #                "`location:being complimented` `mode:Add` `string: ` and block specific words (or the "
-    #                "letters \"e\" and \"o\" to block every compliment")
+    suffix = ""  # ("\n\nPlease give suggestions for compliments! DM <@262913789375021056>, make a staff ticket, "
+    #               "or use {cmd_mention} to suggest one. Do you dislike this compliment? Use {cmd_mention1} "
+    #               "`location:being complimented` `mode:Add` `string: ` and block specific words (or the "
+    #               "letters \"e\" and \"o\" to block every compliment")
     if itx.response.is_done():  # should happen if user used the modal to select a pronoun role
         try:
             await itx.channel.send(content=base + random.choice(quotes[compliment_type]) + suffix,
