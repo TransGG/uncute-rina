@@ -25,25 +25,15 @@ async def _fetch_starboard_original_message(
     """
     Uses the 'jump to original' link in a starboard message to fetch its original author's message.
 
-    Parameters
-    -----------
-    client: :class:`Bot`
-        The bot, to get the correct logging channel.
-    starboard_message: :class:`discord.Message`
-        The starboard message to get the original message of.
-    starboard_emoji: :class:`discord.Emoji`
-        The starboard upvote emoji, used in logging messages.
+    :param client: The bot, to get the correct logging channel.
+    :param starboard_message: The starboard message to get the original message of.
+    :param starboard_emoji: The starboard upvote emoji, used in logging messages.
 
-    Returns
-    --------
-    :class:`discord.Message`:
-        The original author's message.
-    :class:`None`:
-        If the original author's message was not found (no permission, or can't be found).
+    :return: The original author's message, or None if it was not found (``Forbidden`` or ``NotFound``).
 
-    Regards
-    --------
-    If the original message was deleted, it deletes its starboard message too.
+    .. note::
+
+        If the original message was deleted (``NotFound``), it deletes its starboard message too.
     """
     # find original message
     if len(starboard_message.embeds) == 0:
@@ -176,16 +166,10 @@ async def _update_starboard_message_score(
     Check a starboard message and original message's reactions and calculate its score. Negative scores can
     cause the message to be removed from the starboard.
 
-    Parameters
-    -----------
-    client: :class:`Bot`
-        The bot, to get the correct logging channel.
-    starboard_message: :class:`discord.Message`
-        The starboard message to update.
-    starboard_emoji: :class:`discord.Emoji`
-        The starboard upvote emoji (for scoring).
-    downvote_init_value: :class:`int`
-        The minimum required votes before a negative score can cause the message to be deleted.
+    :param client: The bot, to get the correct logging channel.
+    :param starboard_message: The starboard message to update.
+    :param starboard_emoji: The starboard upvote emoji (for scoring).
+    :param downvote_init_value: The minimum required votes before a negative score can cause the message to be deleted.
     """
     original_message: discord.Message = await _fetch_starboard_original_message(client, starboard_message,
                                                                                 starboard_emoji)
@@ -256,14 +240,9 @@ async def _delete_starboard_message(client: Bot, starboard_message: discord.Mess
     Handles custom starboard message deletion messages and preventing double logging messages when
     the bot removes a starboard message.
 
-    Parameters
-    -----------
-    client: :class:`Bot`
-        The bot, to get the correct logging channel.
-    starboard_message: :class:`discord.Message`
-        The starboard message to delete.
-    reason: :class:`str`
-        The reason for deletion.
+    :param client: The bot, to get the correct logging channel.
+    :param starboard_message: The starboard message to delete.
+    :param reason: The reason for deletion.
     """
     await log_to_guild(client, starboard_message.guild, reason)
     starboard_message_ids_marked_for_deletion.append(starboard_message.id)

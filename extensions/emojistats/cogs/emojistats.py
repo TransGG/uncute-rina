@@ -33,14 +33,9 @@ async def _add_to_emoji_data(
     """
     Helper function to add emoji data to the mongo database when an emoji is sent/replied in chat.
 
-    Parameters
-    -----------
-    emoji: :class:`tuple[animated, emoji_name, emoji_id]`
-        The emoji (kind of in format of <a:Emoji_Name1:0123456789>).
-    async_rina_db: :class:`AgnosticDatabase`
-        An async connection to Rina's MongoDb.
-    location: :class:`EmojiSendEnum`
-        Whether the emoji was used in a message or as a reaction.
+    :param emoji: The emoji (kind of in format of <a:Emoji_Name1:0123456789>).
+    :param async_rina_db: An async connection to Rina's MongoDb.
+    :param location: Whether the emoji was used in a message or as a reaction.
     """
 
     (animated, emoji_name, emoji_id) = emoji

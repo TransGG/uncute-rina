@@ -86,15 +86,9 @@ class FunAddons(commands.Cog):
         """
         A helper function to handle on_message events by users and randomly add a pat reaction to it.
 
-        Parameters
-        ----------
-        message :class:`discord.Message`
-            The message to (per chance) add a pat reaction to.
+        :param message: The message to (per chance) add a pat reaction to.
 
-        Returns
-        -------
-        :class:`bool`:
-            Whether a reaction was added to the message.
+        :return: Whether a reaction was added to the message.
         """
         # adding headpats every x messages
         self.headpat_wait += 1

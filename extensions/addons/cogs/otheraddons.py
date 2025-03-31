@@ -124,21 +124,13 @@ def _get_emoji_from_str(
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
-    Parameters
-    -----------
-    client: :class:`Bot`
-        The client/bot whose servers to check for the emoji.
-    emoji_str: :class:`str` | :class:`None`
-        The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
+    :param client: The client/bot whose servers to check for the emoji.
+    :param emoji_str: The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
 
-    Returns
-    --------
-    :class:`None`
-        if no emoji found, or it can't be used by the bot (not in the server).
-    :class:`discord.PartialEmoji`
-        if emoji is unicode.
-    :class:`discord.Emoji`
-        if emoji is valid and can be used but the bot.
+    Returns:
+        - ``None``: If no emoji found, or it can't be used by the bot (not in the server).
+        - ``discord.PartialEmoji``: If emoji is unicode.
+        - ``discord.Emoji``: If emoji is valid and can be used but the bot.
     """
     if emoji_str is None:
         return None

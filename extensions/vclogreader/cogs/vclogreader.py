@@ -27,23 +27,13 @@ async def _get_vc_activity(
     """
     Retrieve the most recent voice channel activity from the logger channel and convert into neat string.
 
-    Parameters
-    -----------
-    voice_log_channel: :class:`discord.abc.Messageable`
-        Channel from which you want to get the voice channel logs / information.
-    min_time: :class:`float`
-        A unix epoch timestamp for the earliest logs to fetch (up to how long ago).
-    max_time: :class:`float`
-        A unix epoch timestamp for the latest logs to fetch (up to how recent).
-    msg_limit: :class:`int`
-        How many log messages to look through.
+    :param voice_log_channel: Channel from which you want to get the voice channel logs / information.
+    :param min_time: A unix epoch timestamp for the earliest logs to fetch (up to how long ago).
+    :param max_time: A unix epoch timestamp for the latest logs to fetch (up to how recent).
+    :param msg_limit: How many log messages to look through.
 
-    Returns
-    --------
-    :class:`list[tuple[event_time_unix, (user_id, username), (previous_channel_id, name) |
-          None, (current_channel_id, name) | None ]]`
-        A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of
-                previous_channel or new_channel has a value.
+    :return: A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of
+     previous_channel or new_channel has a value.
     """
     output: list[tuple[float, tuple[int, str], tuple[int, str] | None, tuple[
         int, str] | None]] = []  # list of [(username, user_id), (joined_channel_id), (left_channel_id)]

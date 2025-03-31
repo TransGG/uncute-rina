@@ -87,15 +87,9 @@ class Bot(commands.Bot):
         """
         Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
 
-        Parameters
-        -----------
-        command_string: :class:`str`
-            Command you want to convert into a mention (without slash in front of it).
+        :param command_string: Command you want to convert into a mention (without slash in front of it).
 
-        Returns
-        --------
-        :class:`str`
-            The command mention, or the input (:param:`command_string`) if no command with the name was found.
+        :return: The command mention, or the input (*command_string*) if no command with the name was found.
         """
         args = command_string.split(" ") + [None, None]
         command_name, subcommand, subcommand_group = args[0:3]
@@ -122,30 +116,19 @@ class Bot(commands.Bot):
         return "/" + command_string
 
     async def get_guild_info(
-            self, guild_id: discord.Guild | int, *args: str, log: list[discord.Interaction | str] | None = None
+            self, guild_id: discord.Guild | int, *args: str, log: tuple[discord.Interaction, str] | None = None
     ):
         """
         Get a guild's server settings (from /editguildinfo, in cmd_customvcs).
 
-        Parameters
-        -----------
-        guild_id: :class:`discord.Guild` | :class:`int`
-            The guild or id from which you want to get the guild info / settings.
-        *args: :class:`str`
-            settings (or multiple) that you want to fetch.
-        log: :class:`list[discord.Interaction, str]` | :class:`None`, optional
-            A list of [itx, error_message], and will reply this error message to the given interaction if there's a
-             KeyError. Default: None.
+        :param guild_id: The guild or id from which you want to get the guild info / settings.
+        :param args: The setting(s) that you want to fetch.
+        :param log: A tuple of an interaction and error_message. The command will reply this error message to the
+         given interaction if any of the arguments could not be found.
 
-        Returns
-        --------
-        :class:`Any`
-            (whichever is given in the database)
+        :return: (whichever is given in the database)
 
-        Raises
-        -------
-        :class:`KeyError`
-            if guild is None, does not have data, or not the requested data.
+        :raise KeyError: If guild is None, does not have data, or not the requested data.
         """
         if guild_id is None:
             raise KeyError(f"'{guild_id}' is not a valid guild or id!")

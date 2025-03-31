@@ -175,28 +175,19 @@ async def _handle_reminder_timestamp_parsing(
 async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str) -> tuple[datetime, datetime]:
     """
     Parse a datetime string: relative to today (2d 11h); a ISO8601 timestamp; or a unix timestamp. It outputs
-     the reminder's datetime and interaction's creation time with timezone awareness. If the ISO timestamp gives
-     a date but no time, it will prompt the user to select a time of day, and then returns the respective datetime.
+    the reminder's datetime and interaction's creation time with timezone awareness. If the ISO timestamp gives
+    a date but no time, it will prompt the user to select a time of day, and then returns the respective datetime.
 
-    Parameters
-    -----------
-    itx: :class:`discord.Interaction`
-        The interaction to interpret as creation time, and with which to send a TimeOfDaySelection view.
-    reminder_datetime: :class:`str`
-        The string to interpret and convert into the datetime for the reminder.
+    :param itx: The interaction to interpret as creation time, and with which to send a TimeOfDaySelection view.
+    :param reminder_datetime: The string to interpret and convert into the datetime for the reminder.
 
-    Returns
-    --------
-    :class:`tuple[datetime.datetime, datetime.datetime]`:
-        A tuple of (reminder datetime, interaction creation time)
+    :return: A tuple of (reminder datetime, interaction creation time)
 
-    Raises
-    -------
-    UnixTimestampInPastException
-    MalformedISODateTimeException
-    TimestampParseException
-    MissingQuantityException
-    MissingUnitException
+    :raise UnixTimestampInPastException:
+    :raise MalformedISODateTimeException:
+    :raise TimestampParseException:
+    :raise MissingQuantityException:
+    :raise MissingUnitException:
     """
     # Parse reminder input to get a datetime for the reminder scheduler
     creation_time = itx.created_at  # utc

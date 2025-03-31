@@ -19,16 +19,12 @@ async def _reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice
     Reset a voice channel's permission overrides if the 'owners' of the voice channel
     table are no longer present/connected to the channel.
 
-    Parameters
-    -----------
-    vctable_prefix: :class:`str`
-        The prefix of voice channel tables, to remove/rename it if the vctable owners left.
-    voice_channel: :class:`discord.VoiceChannel`
-        The channel to reset permissions for.
+    :param vctable_prefix: The prefix of voice channel tables, to remove/rename it if the vctable owners left.
+    :param voice_channel: The channel to reset permissions for.
 
-    Regards
-    --------
-    This function does not check if the channel is actually a custom voice channel.
+    .. note::
+
+        This function does not check if the channel is actually a custom voice channel.
     """
     if len(voice_channel.overwrites) > len(
             voice_channel.category.overwrites):  # if VcTable, reset ownership; and all owners leave: reset all perms
@@ -69,18 +65,11 @@ async def _create_new_custom_vc(
     """
     A helper function to create a new custom voice channel
 
-    Parameters
-    -----------
-    client :class:`Bot`:
-        The Bot class to use for logging.
-    member :class:`discord.Member`:
-        The member that triggered the event/function.
-    voice_channel :class:`discord.VoiceChannel`:
-        The voice channel the user joined to trigger this function (the customvc hub)
-    customvc_category_id :class:`int`:
-        The category id to create the custom voice channel in.
-    customvc_hub_id :class:`int`:
-        The custom voice channel hub channel id.
+    :param client: The Bot class to use for logging.
+    :param member: The member that triggered the event/function.
+    :param voice_channel: The voice channel the user joined to trigger this function (the customvc hub)
+    :param customvc_category_id: The category id to create the custom voice channel in.
+    :param customvc_hub_id: The custom voice channel hub channel id.
     """
 
     default_name = "Untitled voice chat"
@@ -127,14 +116,9 @@ async def _handle_delete_custom_vc(client: Bot, member: discord.Member, voice_ch
     """
     Handle the deletion of a custom voice channel (and error handling)
 
-    Parameters
-    -----------
-    client: :class:`Bot`
-        The bot instance to log to guild with.
-    member: :class:`discord.Member`
-        The member to log as last in vc.
-    voice_channel: :class:`discord.VoiceChannel`
-        The voice channel to remove.
+    :param client: The bot instance to log to guild with.
+    :param member: The member to log as last in vc.
+    :param voice_channel: The voice channel to remove.
     """
     clear_vc_rename_log(voice_channel.id)
     try:
@@ -157,14 +141,9 @@ async def _handle_custom_voice_channel_leave_events(
     A helper function to handle the custom voice channel events when a user leaves a channel.
     This includes: channel deletion, vctable disbanding.
 
-    Parameters
-    -----------
-    client: :class:`Bot):`
-        The client to send logs with, and for the vctable prefix.
-    member: :class:`discord.Member`
-        The member to trigger the leave event.
-    voice_channel: :class:`discord.VoiceChannel`
-        The voice channel that the member left from.
+    :param client: The client to send logs with, and for the vctable prefix.
+    :param member: The member to trigger the leave event.
+    :param voice_channel: The voice channel that the member left from.
     """
     # The following events should only apply to custom voice channels:
 
@@ -260,9 +239,9 @@ class CustomVcs(commands.Cog):
             return
 
         cmd_mention = itx.client.get_command_mention("editguildinfo")
-        log = [itx,
+        log = (itx,
                f"Not enough data is configured to do this action! Please ask an admin to fix this with "
-               f"{cmd_mention} `mode:21`, `mode:22` or `mode:23`!"]
+               f"{cmd_mention} `mode:21`, `mode:22` or `mode:23`!")
         vc_hub, vc_log, vc_category = await itx.client.get_guild_info(
             itx.guild, "vcHub", "vcLog", "vcCategory", log=log)
         warning = ""

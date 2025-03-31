@@ -76,27 +76,19 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
     async def get_current_voice_channel(self, itx: discord.Interaction, action: str, from_event: bool = None):
         """Gets the voice channel of the command executor if it's a custom voice channel.
 
-        Parameters
-        -----------
-        itx: :class:`discord.Interaction`
-            The interaction from the original command.
-        action: :class:`str`
-            The action to note in the error message.
-        from_event: :class:`bool`, optional
-            Whether this event was executes from a non-command context. Default: None.
 
-        Returns
-        --------
-        :class:`discord.VoiceChannel`
-            The custom voice channel that the executor is in.
-        :class:`None`
-            If the user is not in a custom voice channel.
+        :param itx: The interaction from the original command.
+        :param action: The action to note in the error message.
+        :param from_event: Whether this event was executes from a non-command context. Default: None.
+
+        :return: The custom voice channel that the executor is in, or ``None`` if the user is not in a
+         custom voice channel.
         """
         log = None
         if not from_event:
             cmd_mention = itx.client.get_command_mention("editguildinfo")
-            log = [itx, f"Not enough data is configured to do this action! Please ask an admin to "
-                        f"fix this with {cmd_mention} `mode:21` or `mode:22`!"]
+            log = (itx, f"Not enough data is configured to do this action! Please ask an admin to "
+                        f"fix this with {cmd_mention} `mode:21` or `mode:22`!")
         vc_hub, vc_category = await itx.client.get_guild_info(itx.guild, "vcHub", "vcCategory", log=log)
 
         if itx.user.voice is None or itx.user.voice.channel is None:
@@ -122,21 +114,12 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         Gets the voice channel of the command executor if they are in a custom voice channel that has
         turned into a vctable AND they are the owner of that table.
 
-        Parameters
-        -----------
-        itx: :class:`discord.Interaction` | :class:`discord.Member`
-            The interaction from the original command.
-        action: :class:`str`
-            The action to note in the error message.
-        from_event: :class:`bool`, optional
-            Whether this event executes from a non-command context. Default: False.
+        :param itx: The interaction from the original command.
+        :param action: The action to note in the error message.
+        :param from_event: Whether this event executes from a non-command context. Default: False.
 
-        Returns
-        --------
-        :class:`discord.VoiceChannel`
-            The vctable that the executor is in.
-        :class:`None`
-            If the user is not in a custom voice channel, or is not owner of the vctable channel.
+        :return: The vctable that the executor is in, or None if the user is not in a custom voice channel or
+         is not owner of the vctable channel.
         """
         channel = await self.get_current_voice_channel(itx, action, from_event)
         if channel is None:
