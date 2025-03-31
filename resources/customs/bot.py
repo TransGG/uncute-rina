@@ -1,13 +1,16 @@
-from datetime import datetime  # for startup and crash logging, and Reminders
-import motor.core as motorcore  # for typing
+from __future__ import annotations
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
-from typing import Literal, TypedDict
+from datetime import datetime  # for startup and crash logging, and Reminders
+from typing import Literal, TypedDict, TYPE_CHECKING
 
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ServerSettings, ServerAttributes, EnabledModules
+if TYPE_CHECKING:
+    import motor.core as motorcore  # for typing
+    from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+
+    from extensions.settings.objects import ServerSettings, ServerAttributes, EnabledModules
 
 ApiTokenDict = TypedDict('ApiTokenDict',
                          {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
@@ -200,16 +203,26 @@ class Bot(commands.Bot):
         if guild_id not in self.server_settings:
             return None  # return early
 
+        print(self.server_settings[guild_id])
+        for attr, val in self.server_settings[guild_id].attributes.items():
+            print(attr, val)
+
         attributes = self.server_settings[guild_id].attributes
 
         output: list[discord.Guild | None | list[discord.Guild] | discord.abc.Messageable | discord.CategoryChannel |
                      discord.User | discord.Role | list[discord.Role] | str | discord.VoiceChannel | int |
                      list[discord.abc.Messageable] | discord.Emoji] = []
+
+        parent_server = attributes["parent_server"]
+
         for arg in args:
             if arg in attributes:
                 output.append(attributes[arg])
             elif arg not in ServerAttributes.__annotations__:
                 raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
+            elif parent_server is not None:
+                maybe_the_parent_server_has_it = self.get_guild_attribute(parent_server, arg)
+                output.append(maybe_the_parent_server_has_it)
             else:
                 output.append(None)
 
@@ -217,8 +230,20 @@ class Bot(commands.Bot):
 
     def is_module_enabled(
             self, guild_id: discord.Guild | int, *args: str
-    ) -> list[bool]:
+    ) -> bool | list[bool]:
+        """
+        Check if a module is enabled for the given server.
 
+        Parameters
+        ----------
+        guild_id: The server to check the module state for.
+        args: The module key(s) to get the state for.
+
+        Returns
+        -------
+        The enabled/disabled state of the module as boolean, or a list of booleans matching the list of
+         module keys given.
+        """
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
 

@@ -82,7 +82,7 @@ class TestingCog(commands.GroupCog, name="testing"):
 
     @app_commands.command(name="send_srmod_appeal_test", description="Send a test embed of a ban appeal")
     @app_commands.describe(username="The username you want to fill in")
-    async def send_pageview_test_embed(self, itx: discord.Interaction, username: str):
+    async def send_srmod_appeal_test(self, itx: discord.Interaction, username: str):
         embed: discord.Embed = discord.Embed(title="New Ban Appeal")
         embed.add_field(name="Which of the following are you appealing?", value="Discord Ban")
         embed.add_field(name="What is your discord username?", value=username)

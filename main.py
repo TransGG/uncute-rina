@@ -19,6 +19,7 @@ from resources.utils.utils import TESTING_ENVIRONMENT
 from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
 from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
 # ^ for fetching all watchlists on startup
+from extensions.settings.objects import ServerSettings
 
 
 program_start = datetime.now().astimezone()  # startup time after local imports
@@ -201,7 +202,11 @@ def start_app():
                             f"(in {datetime.now().astimezone() - program_start})")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
-        post_startup_progress = ProgressBar(1)
+        post_startup_progress = ProgressBar(2)
+        post_startup_progress.progress("Loading all server settings...")
+        client.server_settings = await ServerSettings.fetch_all(client)
+        post_startup_progress.step("Loaded server settings.")
+
         post_startup_progress.progress("Pre-loading all watchlist threads")
         watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
         if watchlist_channel is not None:  # if running on prod
@@ -242,7 +247,6 @@ def start_app():
         # can't use the commented out code because Rina is owned by someone else in the main server than
         # the dev server (=not me).
 
-        start_progress.step("Loaded server settings")
         start_progress.progress("Restarting ongoing reminders")
         collection = rina_db["reminders"]
         query = {}

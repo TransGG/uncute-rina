@@ -1,6 +1,7 @@
 from enum import Enum
 
 class TypeAutocomplete(Enum):
+    help = "Help"
     attribute = "Attribute"
     module = "Module"
 
