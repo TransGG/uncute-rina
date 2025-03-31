@@ -11,7 +11,7 @@ class ServerAttributes(TypedDict):
 
     qotw_suggestions_channel: discord.abc.Messageable | None
     developer_request_channel: discord.abc.Messageable | None
-    watchlist_channel: discord.abc.Messageable | None
+    watchlist_channel: discord.TextChannel | None  # needs to be able to have threads
     staff_reports_channel: discord.abc.Messageable | None
     ticket_create_channel: discord.abc.Messageable | None
     staff_logs_category: discord.CategoryChannel | None

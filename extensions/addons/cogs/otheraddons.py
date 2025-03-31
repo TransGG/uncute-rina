@@ -131,6 +131,12 @@ def _get_emoji_from_str(
         - ``None``: If no emoji found, or it can't be used by the bot (not in the server).
         - ``discord.PartialEmoji``: If emoji is unicode.
         - ``discord.Emoji``: If emoji is valid and can be used but the bot.
+
+    .. note::
+
+        :py:func:`discord.PartialEmoji.from_str` turns "e" into ``<PartialEmoji name="e", id=None>``
+        this means :py:func:`discord.PartialEmoji.is_unicode_emoji` will return ``True`` because ``id == None``
+        (and ``name != None`` is implied?) so it might still raise a NotFound error.
     """
     if emoji_str is None:
         return None
@@ -139,9 +145,7 @@ def _get_emoji_from_str(
     else:
         emoji_partial = discord.PartialEmoji.from_str(emoji_str)
         if emoji_partial is None or emoji_partial.is_unicode_emoji():
-            # note: PartialEmoji.from_str turns "e" into <PartialEmoji name="e", id=None>
-            #   this means .is_unicode_emoji will return True because id == None (and name != None?)
-            #   so it might still raise a NotFound error
+            # see docstring note
             return emoji_partial
         emoji = client.get_emoji(emoji_partial.id)
         if emoji is None:

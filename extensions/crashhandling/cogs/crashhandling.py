@@ -52,16 +52,21 @@ async def _send_crash_message(
             return  # prevent infinite logging loops, i guess
 
     error_caps = error_type.upper()
-    debug_message = (f"\n\n\n\n[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}] [{error_caps}]: {error_source}"
+    debug_message = (f"\n\n\n\n[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}]"
+                     f"[{error_caps}]: {error_source}"
                      f"\n\n{traceback_text}\n")
     debug(f"{debug_message}", add_time=False)
 
     channel = await log_guild.fetch_channel(vc_log)  # crashes if none
     msg = debug_message.replace("``",
                                 "`` ")
-    msg = "```" + msg + "```"
-    embed = discord.Embed(color=color, title=error_type + ' Log', description=msg[:4095])  # max length of 4096 chars
-    await channel.send(f"{client.bot_owner.mention}", embed=embed,
+    embeds = []
+    while len(msg) > 0 and len(embeds) < 10:
+        embed = discord.Embed(color=color, title=error_type + ' Log', description="```" + msg[:4090] + "```")
+        embeds.append(embed)
+        msg = msg[4090:]
+
+    await channel.send(f"{client.bot_owner.mention}", embeds=embeds,
                        allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
 
 

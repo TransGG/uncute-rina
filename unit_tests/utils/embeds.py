@@ -10,13 +10,14 @@ def get_embed_issues(embed: discord.Embed) -> list[str]:
     """
     Validate an embed object and return a list of potential issues.
 
-    Parameters
-    ----------
-    embed: The embed you want to validate
+    :param embed: The embed you want to validate
 
-    Returns
-    -------
-    A list of issue descriptions for embed content size length limits.
+    :return: A list of issue descriptions for embed content size length limits.
+
+    .. note::
+
+        This function is not perfect. Emojis like :newspaper: get converted to 📰, which would have a shorter
+        character length.
     """
     issues = []
     total_characters = 0
