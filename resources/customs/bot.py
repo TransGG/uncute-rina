@@ -200,8 +200,9 @@ class Bot(commands.Bot):
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
 
-        if guild_id not in self.server_settings:
-            return None  # return early
+        if (self.server_settings is None or  # settings have not been fetched yet.
+                guild_id not in self.server_settings):  # return early
+            return False
 
         print(self.server_settings[guild_id])
         for attr, val in self.server_settings[guild_id].attributes.items():
@@ -217,7 +218,7 @@ class Bot(commands.Bot):
 
         for arg in args:
             if arg in attributes:
-                output.append(attributes[arg])
+                output.append(attributes[arg])  # type: ignore
             elif arg not in ServerAttributes.__annotations__:
                 raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
             elif parent_server is not None:
@@ -247,15 +248,16 @@ class Bot(commands.Bot):
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
 
-        if guild_id not in self.server_settings:
-            return False  # return early
+        if (self.server_settings is None or  # settings have not been fetched yet.
+            guild_id not in self.server_settings):  # return early
+            return False
 
         modules = self.server_settings[guild_id].enabled_modules
 
         output: list[bool] = []
         for arg in args:
             if arg in modules:
-                output.append(modules[arg])
+                output.append(modules[arg])  # type: ignore
             elif arg not in EnabledModules.__annotations__:
                 raise ValueError(f"Module '{arg}' is not a valid module!")
             else:

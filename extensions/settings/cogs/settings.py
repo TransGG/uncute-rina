@@ -236,6 +236,7 @@ class SettingsCog(commands.Cog):
             value: str | None = None
     ):
         itx.response: discord.InteractionResponse  # noqa
+        itx.followup: discord.Webhook  # noqa
         help_cmd_mention = itx.client.get_command_mention("help")
         help_str = f"Use {help_cmd_mention} `page:900` for more info."
 
@@ -278,19 +279,21 @@ class SettingsCog(commands.Cog):
                 )
                 return
 
+            await itx.response.defer(ephemeral=True)  # defer before any database calls
+
             if modify_mode == ModeAutocomplete.view:
                 entry = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
                 if entry is None:
-                    await itx.response.send_message(f"This server has no data for '{setting}' yet.", ephemeral=True)
+                    await itx.followup.send(f"This server has no data for '{setting}' yet.", ephemeral=True)
                     return
                 attribute_raw = getattr(entry["attribute_ids"], setting, "<no value yet>")  # type: ignore
                 attribute_parsed = itx.client.get_guild_attribute(itx.guild, setting)
-                await itx.response.send_message((f"The current value for '{setting}' is:\n"
-                                                 f"Raw:\n- " +
-                                                 str(attribute_raw) + "\n"
-                                                 f"Parsed:\n- " +
-                                                 str(ServerSettings.get_original(attribute_parsed)))[:2000],
-                                                ephemeral=True)
+                await itx.followup.send((f"The current value for '{setting}' is:\n"
+                                         f"Raw:\n- " +
+                                         str(attribute_raw) + "\n"
+                                         f"Parsed:\n- " +
+                                         str(ServerSettings.get_original(attribute_parsed)))[:2000],
+                                        ephemeral=True)
                 return
 
             invalid_arguments = {}
@@ -299,10 +302,10 @@ class SettingsCog(commands.Cog):
             )
             if invalid_arguments and modify_mode != ModeAutocomplete.remove:  # allow removal of malformed data
                 attribute_type, _ = get_attribute_type(setting)
-                await itx.response.send_message((f"Could not parse `{value}` as value for "
-                                                 f"'{setting}' (expected {attribute_type.__name__}.\n"
-                                                 f"(Notes: {[(k,v) for k,v in invalid_arguments.items()]}")[:1999] +")",
-                                                ephemeral=True)
+                await itx.followup.send((f"Could not parse `{value}` as value for "
+                                         f"'{setting}' (expected {attribute_type.__name__}.\n"
+                                         f"(Notes: {[(k,v) for k,v in invalid_arguments.items()]}")[:1999] +")",
+                                        ephemeral=True)
                 return
 
             if hasattr(attribute, "id"):
@@ -329,8 +332,8 @@ class SettingsCog(commands.Cog):
                     items = []
 
                 if database_value in items:
-                    await itx.response.send_message(f"Couldn't add '{database_value}' to the list, because it was "
-                                                    f"already in it!", ephemeral=True)
+                    await itx.followup.send(f"Couldn't add '{database_value}' to the list, because it was "
+                                            f"already in it!", ephemeral=True)
                     return
 
                 items.append(database_value)
@@ -344,14 +347,14 @@ class SettingsCog(commands.Cog):
                     items = []
 
                 if not items:  # empty list
-                    await itx.response.send_message("Couldn't remove any item from the list, because there "
-                                                    "was nothing in it!", ephemeral=True)
+                    await itx.followup.send("Couldn't remove any item from the list, because there "
+                                            "was nothing in it!", ephemeral=True)
                     return
 
                 if database_value not in items:
                     if not value.isdecimal() or int(value) not in items:
-                        await itx.response.send_message(f"Couldn't remove '{database_value}' from the list, because "
-                                                        f"it wasn't in the list before either!", ephemeral=True)
+                        await itx.followup.send(f"Couldn't remove '{database_value}' from the list, because "
+                                                f"it wasn't in the list before either!", ephemeral=True)
                         return
                     else:
                         database_value = int(value)
@@ -365,7 +368,7 @@ class SettingsCog(commands.Cog):
                 # It shouldn't be None because `setting` is already in `attribute_keys` from ServerAttributes, and
                 #  the function checks keys of ServerAttributeIds, which should be identical.
 
-                await itx.response.send_message(
+                await itx.followup.send(
                     f"This attribute cannot be changed with this mode ('{mode}')\n"
                     f"It must be one of the following: " +
                     ', '.join([f"'{m}'" for m in expected_modify_mode]),  # [a,b,c] -> "'a', 'b', 'c'"
@@ -373,16 +376,34 @@ class SettingsCog(commands.Cog):
                 )
                 return
 
-            await itx.response.send_message(f"Successfully modified the value for '{setting}'!", ephemeral=True)
+            await itx.followup.send(f"Successfully modified the value for '{setting}'!", ephemeral=True)
 
         elif setting_type == TypeAutocomplete.module.value:
             module_keys = EnabledModules.__annotations__
 
             if setting is None:
-                await itx.response.send_message(("Here is a list of modules you can set:\n" +
-                                                 ", ".join(module_keys) +
-                                                 "\n" +
-                                                 help_str)[:2000], ephemeral=True)
+                disabled_modules = set([i for i in module_keys])
+                enabled_modules = set()
+
+                if itx.client.server_settings is None:
+                    await itx.response.send_message("No settings have been loaded yet! Please wait a little bit, or "
+                                                    "message @mysticmia about this error message.",
+                                                    ephemeral=True)
+                    return
+
+                server_setting: ServerSettings | None = itx.client.server_settings.get(itx.guild.id, None)
+                if server_setting:
+                    for module, val in server_setting.enabled_modules.items():
+                        if val:
+                            enabled_modules.add(module)
+                disabled_modules = disabled_modules - enabled_modules
+                enabled_modules_string = f"### Enabled:\n> {', '.join(enabled_modules)}\n" if enabled_modules else ""
+                disabled_modules_string = f"### Disabled:\n> {', '.join(disabled_modules)}\n" if disabled_modules else ""
+                await itx.response.send_message(
+                    ("Here is a list of modules you can set, and their values.\n" +
+                     enabled_modules_string + disabled_modules_string + help_str)[:2000],
+                    ephemeral=True
+                )
                 return
 
             if mode is None:
@@ -418,22 +439,34 @@ class SettingsCog(commands.Cog):
                                                 "'Enable', 'Disable', or 'View'.", ephemeral=True)
                 return
 
-            await ServerSettings.set_module_state(itx.client.async_rina_db, itx.guild.id, setting, enable)
+            modified, created_new_document = await ServerSettings.set_module_state(
+                itx.client.async_rina_db, itx.guild.id, setting, enable)
 
-            try:
-                await itx.client.server_settings[itx.guild.id].reload(itx.client, itx.client.async_rina_db)
-            except ParseError as ex:
-                await itx.response.send_message("Successfully set the module state!\n"
-                                                "Just one tiny problem... Reloading the server settings failed...\n"
-                                                "You should message Mia about this, or Cleo, to look into the database "
-                                                "and get more information about the problem:" +
-                                                ex.message, ephemeral=True)
+
+            if not modified and not created_new_document:
+                # If the server's enabled modules already have this value
+                await itx.response.send_message(f"This module is already " +
+                                                ("enabled" if enable else "disabled") +
+                                                f"!\n" + help_str, ephemeral=True)
                 return
 
-            await itx.response.send_message("Successfully set the module state!", ephemeral=True)
+            await itx.response.defer(ephemeral=True)  # defer before any database calls
+
+
+            try:
+                await itx.client.server_settings[itx.guild.id].reload(itx.client)
+            except ParseError as ex:
+                await itx.followup.send("Successfully set the module state!\n"
+                                        "Just one tiny problem... Reloading the server settings failed...\n"
+                                        "You should message Mia about this, or Cleo, to look into the database "
+                                        "and get more information about the problem:" +
+                                        ex.message, ephemeral=True)
+                return
+
+            await itx.followup.send("Successfully set the module state!", ephemeral=True)
 
         else:
-            await itx.response.send_message("That is not a valid type. Please use the options provided to you. " +
-                                            help_str,
-                                            ephemeral=True)
+            await itx.followup.send("That is not a valid type. Please use the options provided to you. " +
+                                    help_str,
+                                    ephemeral=True)
             return
