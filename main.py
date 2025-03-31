@@ -100,7 +100,7 @@ def get_token_data() -> tuple[
         tokens = {}
         bot_token: str = api_keys['Discord']
         missing_tokens: list[str] = []
-        for key in ApiTokenDict.__required_keys__:
+        for key in ApiTokenDict.__annotations__:
             # copy every other key to new dictionary to check if every key is in the file.
             if key not in api_keys:
                 missing_tokens.append(key)

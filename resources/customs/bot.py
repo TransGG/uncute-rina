@@ -201,7 +201,6 @@ class Bot(commands.Bot):
             return None  # return early
 
         attributes = self.server_settings[guild_id].attributes
-        attribute_keys = ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__)
 
         output: list[discord.Guild | None | list[discord.Guild] | discord.abc.Messageable | discord.CategoryChannel |
                      discord.User | discord.Role | list[discord.Role] | str | discord.VoiceChannel | int |
@@ -209,7 +208,7 @@ class Bot(commands.Bot):
         for arg in args:
             if arg in attributes:
                 output.append(attributes[arg])
-            elif arg not in attribute_keys:
+            elif arg not in ServerAttributes.__annotations__:
                 raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
             else:
                 output.append(None)
@@ -227,13 +226,12 @@ class Bot(commands.Bot):
             return False  # return early
 
         modules = self.server_settings[guild_id].enabled_modules
-        module_keys = EnabledModules.__required_keys__.union(EnabledModules.__optional_keys__)
 
         output: list[bool] = []
         for arg in args:
             if arg in modules:
                 output.append(modules[arg])
-            elif arg not in module_keys:
+            elif arg not in EnabledModules.__annotations__:
                 raise ValueError(f"Module '{arg}' is not a valid module!")
             else:
                 output.append(False)

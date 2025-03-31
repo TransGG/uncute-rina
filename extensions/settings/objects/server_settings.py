@@ -255,7 +255,7 @@ class ServerSettings:
     ) -> tuple[bool, bool]:
         if "." in parameter or "$" in parameter:
             raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{parameter}')")
-        if parameter not in ServerAttributeIds:
+        if parameter not in ServerAttributeIds.__annotations__:
             raise KeyError(f"'{parameter}' is not a valid Server Attribute.")
 
         collection: motor.MotorCollection = await async_rina_db[ServerSettings.DATABASE_KEY]

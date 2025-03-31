@@ -39,7 +39,7 @@ def test_help_pages_sorted():
 def test_help_pages_attributes():
     # Arrange
     invalid_pages = []
-    allowed_keys = HelpPage.__required_keys__.union(HelpPage.__optional_keys__)
+    allowed_keys = HelpPage.__annotations__
 
     for page_number, helppage in help_pages.items():
         for section_name in helppage:

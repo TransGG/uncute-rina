@@ -77,19 +77,18 @@ def test_migrate_output():
 
 def test_matching_keys():
     # Arrange
-    at = ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__)
-    atid = ServerAttributeIds.__required_keys__.union(ServerAttributeIds.__optional_keys__)
+    at = ServerAttributes.__annotations__.keys()
+    atid = ServerAttributeIds.__annotations__.keys()
 
     # Assert
     assert at == atid
 
 def test_no_bad_attribute_names():
     # Arrange
-    attribute_keys = ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__)
     invalid_names = []
 
     # Act
-    for attribute_key in attribute_keys:
+    for attribute_key in ServerAttributes.__annotations__:
         if "." in attribute_key or "$" in attribute_key:
             invalid_names.append(attribute_key)
 
@@ -101,11 +100,10 @@ def test_no_bad_attribute_names():
 
 def test_no_bad_attribute_id_names():
     # Arrange
-    attribute_id_keys = ServerAttributeIds.__required_keys__.union(ServerAttributeIds.__optional_keys__)
     invalid_names = []
 
     # Act
-    for attribute_id_key in attribute_id_keys:
+    for attribute_id_key in ServerAttributeIds.__annotations__:
         if "." in attribute_id_key or "$" in attribute_id_key:
             invalid_names.append(attribute_id_key)
 
@@ -116,11 +114,10 @@ def test_no_bad_attribute_id_names():
 
 def test_no_bad_module_names():
     # Arrange
-    enabled_module_keys = EnabledModules.__required_keys__.union(EnabledModules.__optional_keys__)
     invalid_names = []
 
     # Act
-    for enabled_module_key in enabled_module_keys:
+    for enabled_module_key in EnabledModules.__annotations__:
         if "." in enabled_module_key or "$" in enabled_module_key:
             invalid_names.append(enabled_module_key)
 

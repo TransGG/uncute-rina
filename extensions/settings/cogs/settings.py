@@ -37,13 +37,13 @@ async def _setting_autocomplete(itx: discord.Interaction, current: str) -> list[
     itx.namespace.type = typing.cast(str | None, itx.namespace.type)
 
     if itx.namespace.type == TypeAutocomplete.module.value:
-        module_keys = list(EnabledModules.__required_keys__.union(EnabledModules.__optional_keys__))
+        module_keys = EnabledModules.__annotations__
         return [
             app_commands.Choice(name=key, value=key) for key in module_keys
             if current.lower() in key.lower()
         ][:10]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
-        attribute_id_keys = list(ServerAttributeIds.__required_keys__.union(ServerAttributeIds.__optional_keys__))
+        attribute_id_keys = ServerAttributeIds.__annotations__
         return [
             app_commands.Choice(name=key, value=key) for key in attribute_id_keys
             if current.lower() in key.lower()
@@ -97,8 +97,7 @@ async def _mode_autocomplete(itx: discord.Interaction, current: str) -> list[app
     types = [ModeAutocomplete.view]
 
     if itx.namespace.type == TypeAutocomplete.module.value:
-        module_keys = list(EnabledModules.__required_keys__.union(EnabledModules.__optional_keys__))
-        if itx.namespace.setting in module_keys:
+        if itx.namespace.setting in EnabledModules.__annotations__:
             types += [ModeAutocomplete.enable, ModeAutocomplete.disable]
             return [
                 app_commands.Choice(name=key.value, value=key.value)
@@ -262,7 +261,7 @@ class SettingsCog(commands.Cog):
             return
 
         if setting_type == "Attribute":
-            attribute_keys = list(ServerAttributes.__required_keys__.union(ServerAttributes.__optional_keys__))
+            attribute_keys = ServerAttributes.__annotations__
 
             if setting not in attribute_keys:
                 await itx.response.send_message(
