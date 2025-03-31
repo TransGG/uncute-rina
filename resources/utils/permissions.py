@@ -87,20 +87,3 @@ def is_admin(guild: discord.Guild, member: discord.Member | discord.User) -> boo
             len(set(roles).intersection(member.roles)) > 0
             or member.id == 262913789375021056
             or len(set(role_ids).intersection(user_role_ids)) > 0)
-
-
-class InsufficientPermissionsCheckFailure(app_commands.CheckFailure):
-    pass
-
-# todo: apply is_staff_check to all functions that currently use is_staff
-
-def is_staff_check(itx: discord.Interaction):
-    if is_staff(itx.guild, itx.user):
-        return True
-    raise InsufficientPermissionsCheckFailure("User is not staff")
-
-def is_admin_check(itx: discord.Interaction):
-    if is_admin(itx.guild, itx.user):
-        return True
-    raise InsufficientPermissionsCheckFailure("User is not admin")
-

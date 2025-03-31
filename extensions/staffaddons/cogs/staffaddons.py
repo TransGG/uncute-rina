@@ -7,7 +7,8 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_staff  # for checking staff roles
+from resources.utils.permissions import is_staff  # to check if messages in the selfies channel were sent by staff
+from resources.checks import is_staff_check
 from resources.utils.utils import log_to_guild  # logging when a staff command is used
 
 
@@ -15,16 +16,11 @@ class StaffAddons(commands.Cog):
     def __init__(self):
         pass
 
+    @app_commands.check(is_staff_check)
     @app_commands.command(name="say", description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?",
                            reply_to_interaction="Show who sent the message?")
     async def say(self, itx: discord.Interaction, text: str, reply_to_interaction: bool = False):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message(
-                "Hi. sorry.. It would be too powerful to let you very cool person use this command.",
-                ephemeral=True
-            )
-            return
         if reply_to_interaction:
             await itx.response.send_message(text, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             return
@@ -55,14 +51,11 @@ class StaffAddons(commands.Cog):
         # No longer necessary: this gets caught by the on_app_command_error() event in the main file.
         await itx.response.send_message("Successfully sent!", ephemeral=True)
 
+    @app_commands.check(is_staff_check)
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
         # This function largely copies the built-in channel.purge() function with a check, but is more fancy by
         # offering a sort of progress update every 50-100 messages :D
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You don't have permissions to use this command. (for ratelimit reasons)",
-                                            ephemeral=True)
-            return
         time_now = int(datetime.now().timestamp())  # get time in unix
         if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
             await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
@@ -141,12 +134,9 @@ class StaffAddons(commands.Cog):
                 f"Bot is currently running on v{itx.client.version} (latest)\n(started <t:{unix}:D> at <t:{unix}:T>)",
                 ephemeral=not public)
 
+    @app_commands.check(is_staff_check)
     @app_commands.command(name="update", description="Update slash-commands")
     async def update_command_tree(self, itx: discord.Interaction):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("Only Staff can update the slash commands (to prevent ratelimiting)",
-                                            ephemeral=True)
-            return
         await itx.client.tree.sync()
         itx.client.commandList = await itx.client.tree.fetch_commands()
         await itx.response.send_message("Updated commands")

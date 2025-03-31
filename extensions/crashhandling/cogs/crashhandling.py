@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from resources.customs.bot import Bot
-from resources.utils.permissions import InsufficientPermissionsCheckFailure
+from resources.checks import InsufficientPermissionsCheckFailure
 from resources.utils.utils import debug, TESTING_ENVIRONMENT
 
 

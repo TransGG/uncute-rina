@@ -6,7 +6,7 @@ import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_admin, is_admin_check
+from resources.checks import is_admin_check
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import (
@@ -199,17 +199,16 @@ class SettingsCog(commands.Cog):
     def __init__(self):
         pass
 
+    @app_commands.check(is_admin_check)
     @app_commands.command(name="migrate", description="Migrate bot settings to new database.")
     async def migrate(
             self,
             itx: discord.Interaction
     ):
         itx.response: discord.InteractionResponse  # noqa
-        if not is_admin(itx.guild, itx.user):
-            pass
         await ServerSettings.migrate(itx.client.async_rina_db)
         await itx.response.send_message("Successfully migrated databases.", ephemeral=True)
-        itx.client.server_settings = await ServerSettings.fetch_all(client)
+        itx.client.server_settings = await ServerSettings.fetch_all(itx.client)
         await itx.edit_original_response(content="Migrated databases and re-fetched all server settings.")
 
     @app_commands.command(name="settings", description="Edit bot settings for this server.")

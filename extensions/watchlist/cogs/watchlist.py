@@ -5,13 +5,14 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_staff  # to test staff roles
+from resources.utils.permissions import is_staff  # to check role in _add_to_watchlist, as backup
+from resources.checks import is_staff_check  # the cog is pretty much only intended for staff use
 
 from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache
 from extensions.watchlist.modals import WatchlistReasonModal
 
 
-async def add_to_watchlist(  # todo: rename to _add_to_watchlist since private?
+async def _add_to_watchlist(  # todo: rename to _add_to_watchlist since private?
         # todo: cut this giant function into multiple smaller ones. jeez.
         itx: discord.Interaction,
         user: discord.Member,
@@ -206,6 +207,7 @@ class WatchList(commands.Cog):
         self.client.tree.add_command(self.ctx_menu_user)
         self.client.tree.add_command(self.ctx_menu_message)
 
+    @app_commands.check(is_staff_check)
     @app_commands.command(name="watchlist", description="Add a user to the watchlist.")
     @app_commands.describe(user="User to add", reason="Reason for adding", message_id="Message to add to reason")
     async def watchlist(self, itx: discord.Interaction, user: discord.User, reason: str = "", message_id: str = None):
@@ -217,8 +219,9 @@ class WatchList(commands.Cog):
                        "a server they're not in.\n"
                        "If they got banned, there's no reason to look out for them anymore ;)\n"
                        "It's also easier to mention them if you run it in the main server. Anyway,\n\n")
-        await add_to_watchlist(itx, user, reason, message_id, warning=warning)
+        await _add_to_watchlist(itx, user, reason, message_id, warning=warning)
 
+    @app_commands.check(is_staff_check)
     @app_commands.command(name="check_watchlist", description="Check if a user is on the watchlist.")
     @app_commands.describe(user="User to check")
     async def check_watchlist(self, itx: discord.Interaction, user: discord.User):
@@ -239,19 +242,15 @@ class WatchList(commands.Cog):
             await itx.followup.send(f"🟡 This user ({user.mention} `{user.id}`) is not yet on the watchlist.",
                                     ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
+    @app_commands.check(is_staff_check)
     async def watchlist_ctx_user(self, itx, user: discord.User):
-        if not is_staff(itx.guild, itx.user):  # is already checked in the main command, but saves people's time
-            await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
-            return
-        watchlist_reason_modal = WatchlistReasonModal(add_to_watchlist, "Add user to watchlist",
+        watchlist_reason_modal = WatchlistReasonModal(_add_to_watchlist, "Add user to watchlist",
                                                       user, None, 300)
         await itx.response.send_modal(watchlist_reason_modal)
 
+    @app_commands.check(is_staff_check)
     async def watchlist_ctx_message(self, itx, message: discord.Message):
-        if not is_staff(itx.guild, itx.user):  # is already checked in the main command, but saves people's time
-            await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
-            return
-        watchlist_reason_modal = WatchlistReasonModal(add_to_watchlist, "Add user to watchlist using message",
+        watchlist_reason_modal = WatchlistReasonModal(_add_to_watchlist, "Add user to watchlist using message",
                                                       message.author, message, 300)
         await itx.response.send_modal(watchlist_reason_modal)
 

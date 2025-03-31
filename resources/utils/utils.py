@@ -109,7 +109,7 @@ def debug(
     else:
         if type(color) is str:
             color = color.replace(" ", "").replace("-", "").replace("_", "")
-        color = getattr(DebugColor, color, None)
+            color = getattr(DebugColor, color, None)
         if color is None:
             warnings.warn("Invalid color given for debug function: " + color, SyntaxWarning)
             color = DebugColor.default

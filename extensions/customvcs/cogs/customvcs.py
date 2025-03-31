@@ -5,7 +5,8 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_verified, is_staff, is_admin  # to check permissions for staff commands
+from resources.utils.permissions import is_staff  # to let staff rename other people's custom vcs
+from resources.checks import is_staff_check, is_admin_check
 from resources.utils.utils import log_to_guild  # to log custom vc changes
 from resources.views.generics import GenericTwoButtonView
 
@@ -152,11 +153,8 @@ async def _handle_custom_voice_channel_leave_events(
 
     await _reset_voice_channel_permissions_if_vctable(client.custom_ids["vctable_prefix"], voice_channel)
 
-
-async def _edit_guild_info_autocomplete(itx: discord.Interaction, current: str) -> list[app_commands.Choice]:
-    if not is_admin(itx.guild, itx.user):
-        return [app_commands.Choice(name="Only admins can use this command!", value="No permission")]
-
+@app_commands.check(is_admin_check)
+async def _edit_guild_info_autocomplete(_: discord.Interaction, current: str) -> list[app_commands.Choice]:
     if current.startswith("1") or current.startswith("2") or current.startswith("3") or current.startswith(
             "4") or current.startswith("5"):
         options = [
@@ -233,11 +231,6 @@ class CustomVcs(commands.Cog):
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ):
-        if not is_verified(itx.guild, itx.user):
-            await itx.response.send_message("You can't edit voice channels because you aren't verified yet!",
-                                            ephemeral=True)
-            return
-
         cmd_mention = itx.client.get_command_mention("editguildinfo")
         log = (itx,
                f"Not enough data is configured to do this action! Please ask an admin to fix this with "
@@ -328,6 +321,7 @@ class CustomVcs(commands.Cog):
                                f"discord, probably because it's in a banned word list for discord's "
                                f"discovery <@262913789375021056>")
 
+    @app_commands.check(is_admin_check)
     @app_commands.command(name="editguildinfo", description="Edit guild settings (staff only)")
     @app_commands.describe(mode="Do you want to edit, or just see the values of the guild settings?",
                            option="What value do you want to edit?",
@@ -338,15 +332,7 @@ class CustomVcs(commands.Cog):
     ])
     @app_commands.autocomplete(option=_edit_guild_info_autocomplete)
     async def edit_guild_info(self, itx: discord.Interaction, mode: int, option: str, value: str):
-        # todo: move this out of customvcs, cause it's pretty unrelated by now.
-        # todo: rework this command to not require `value`
-        # todo: rework autocomplete so it's not dumb and hard to understand
-        if not is_admin(itx.guild, itx.user):
-            await itx.response.send_message(
-                "You don't have sufficient permissions to execute this command! (don't want you to break the bot ofc.)",
-                ephemeral=True)
-            return
-
+        # todo: delete command
         options = {
             "01": "Help: Main server settings",
             "02": "Help: Custom Voice Channels",

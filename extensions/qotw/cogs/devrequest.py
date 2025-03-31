@@ -4,8 +4,8 @@ import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
+from resources.checks import is_staff_check  # for dev request thread ping
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_staff  # for dev request thread ping
 
 
 emoji_color_options = {
@@ -80,15 +80,10 @@ class DevRequest(commands.Cog):
             await itx.followup.send("Something went wrong!", ephemeral=True)
             raise
 
+    @app_commands.check(is_staff_check)
     @app_commands.command(name="ping_open_dev_requests",
                           description="Send a message in closed green dev request threads")
     async def ping_open_developer_requests(self, itx: discord.Interaction):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message(
-                "You need to be staff to do this! It just sends \"boop\" to every dev request thread lol.",
-                ephemeral=True)
-            return
-
         await itx.response.send_message("`[   ]`: Fetching cached threads.", ephemeral=True)
         try:
             watchlist_channel = itx.client.get_channel(itx.client.custom_ids["staff_dev_request"])

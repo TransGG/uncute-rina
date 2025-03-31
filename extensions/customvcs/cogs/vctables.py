@@ -6,7 +6,7 @@ import discord.app_commands as app_commands
 
 from resources.customs.bot import Bot
 from resources.views.generics import GenericTwoButtonView
-from resources.utils.permissions import is_verified, is_staff, is_admin  # to check permissions for staff commands
+from resources.utils.permissions import is_staff  # to prevent people in vc-tables from muting staff.
 from resources.utils.utils import log_to_guild  # to log custom vc changes
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename

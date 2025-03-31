@@ -9,7 +9,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_staff  # to check staff roles
+from resources.checks import is_staff_check  # cuz it's a staff command
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
@@ -192,6 +192,7 @@ class VCLogReader(commands.Cog):
     def __init__(self):
         pass
 
+    @app_commands.check(is_staff_check)
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
                            upper_bound="Get data up to [period] minutes ago",
@@ -206,9 +207,6 @@ class VCLogReader(commands.Cog):
         select_user_ids: list[str] = user_ids.replace(" ","").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str = requested_channel
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You don't have permissions to use this command.", ephemeral=True)
-            return
         warning = ""
         if type(requested_channel) is discord.app_commands.AppCommandChannel:
             voice_channel = itx.client.get_channel(requested_channel.id)

@@ -3,7 +3,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_admin
+from resources.utils import is_admin
 from resources.utils.stringhelper import replace_string_command_mentions
 
 from extensions.help.helppages import help_pages, aliases, FIRST_PAGE
@@ -41,6 +41,7 @@ async def send_help_menu(itx: discord.Interaction, requested_page: int = FIRST_P
     await itx.response.send_message(embed=embed,
                                     view=HelpPageView(requested_page, help_pages, user_is_staff),
                                     ephemeral=True)
+
 
 async def _help_page_autocomplete(itx: discord.Interaction, current: str) -> list[app_commands.Choice[int]]:
     results = []

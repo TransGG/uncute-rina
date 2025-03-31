@@ -7,9 +7,9 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.checks import is_staff_check  # for staff dictionary commands
 from resources.customs.bot import Bot
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
-from resources.utils.permissions import is_staff  # for staff dictionary commands
 from resources.utils.utils import log_to_guild
 
 from extensions.termdictionary.views import DictionaryApi_PageView, UrbanDictionary_PageView
@@ -405,17 +405,13 @@ class TermDictionary(commands.Cog):
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="define", description="Add a dictionary entry for a word!")
     @app_commands.describe(
         term="This is the main word for the dictionary entry: Egg, Hormone Replacement Therapy (HRT), (case sens.)",
         definition="Give this term a definition",
         synonyms="Add synonyms (SEPARATE WITH \", \")")
     async def define(self, itx: discord.Interaction, term: str, definition: str, synonyms: str = ""):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't add words to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
-
         def simplify(q):
             if type(q) is str:
                 return q.lower().translate(del_separators_table)
@@ -459,16 +455,13 @@ class TermDictionary(commands.Cog):
                                f"(with synonyms: {synonyms}): {definition}",
             ephemeral=True)
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="redefine", description="Edit a dictionary entry for a word!")
     @app_commands.describe(
         term="This is the main word for the dictionary entry (case sens.) Example: Egg, Hormone "
              "Replacement Therapy (HRT), etc.",
         definition="Redefine this definition")
     async def redefine(self, itx: discord.Interaction, term: str, definition: str):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't add words to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -485,14 +478,11 @@ class TermDictionary(commands.Cog):
                            f"of '{term}' to '{definition}'")
         await itx.response.send_message(f"Successfully redefined '{term}'", ephemeral=True)
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="undefine", description="Remove a dictionary entry for a word!")
     @app_commands.describe(
         term="What word do you need to undefine (case sensitive). Example: Egg, Hormone Replacement Therapy (HRT), etc")
     async def undefine(self, itx: discord.Interaction, term: str):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't remove words to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -507,6 +497,7 @@ class TermDictionary(commands.Cog):
 
         await itx.response.send_message(f"Successfully undefined '{term}'", ephemeral=True)
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="editsynonym", description="Add a synonym to a previously defined word")
     @app_commands.describe(
         term="This is the main word for the dictionary entry (case sens.): Egg, Hormone Transfer Therapy, etc",
@@ -517,10 +508,6 @@ class TermDictionary(commands.Cog):
         discord.app_commands.Choice(name='Remove a synonym', value=2),
     ])
     async def edit_synonym(self, itx: discord.Interaction, term: str, mode: int, synonym: str):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't add synonyms to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
