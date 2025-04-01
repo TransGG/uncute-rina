@@ -114,7 +114,9 @@ async def _value_autocomplete(itx: discord.Interaction, current: str) -> list[ap
 
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
         if itx.namespace.mode == ModeAutocomplete.view.value:
-            return [app_commands.Choice(name="This parameter is unnecessary when viewing a state", value="-")]
+            return [app_commands.Choice(name="This parameter is unnecessary when viewing an attribute.", value="-")]
+        elif itx.namespace.mode == ModeAutocomplete.delete.value:
+            return [app_commands.Choice(name="This parameter is unnecessary when deleting an attribute.", value="-")]
 
         attribute_type, _ = get_attribute_type(itx.namespace.setting)
         if attribute_type is None:
@@ -237,7 +239,7 @@ async def _handle_settings_attribute(
         if entry is None:
             await itx.followup.send(f"This server has no data for '{setting}' yet.", ephemeral=True)
             return
-        attribute_raw = getattr(entry["attribute_ids"], setting, "<no value yet>")  # type: ignore
+        attribute_raw = entry["attribute_ids"].get(setting, "<no value yet>")  # type: ignore
         attribute_parsed = itx.client.get_guild_attribute(itx.guild, setting)
         await itx.followup.send((f"The current value for '{setting}' is:\n"
                                  f"Raw:\n"
@@ -247,85 +249,96 @@ async def _handle_settings_attribute(
                                  )[:2000],
                                 ephemeral=True)
         return
-
-    invalid_arguments = {}
-    attribute = parse_attribute(
-        itx.client, itx.guild, setting, value, invalid_arguments=invalid_arguments
-    )
-    if invalid_arguments and modify_mode != ModeAutocomplete.remove:  # allow removal of malformed data
-        attribute_type, _ = get_attribute_type(setting)
-        await itx.followup.send((f"Could not parse `{value}` as value for "
-                                 f"'{setting}' (expected {attribute_type.__name__}.\n"
-                                 f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]}")[:1999] + ")",
-                                ephemeral=True)
-        return
-
-    if hasattr(attribute, "id"):
-        # guild, channel, emoji, role, user
-        database_value = attribute.id
-    else:
-        # int, str
-        database_value = attribute
-
-    if modify_mode == ModeAutocomplete.set:
-        await ServerSettings.set_attribute(
-            itx.client.async_rina_db, itx.guild.id, setting, database_value
-        )
     elif modify_mode == ModeAutocomplete.delete:
         await ServerSettings.remove_attribute(
             itx.client.async_rina_db, itx.guild.id, setting
         )
-    elif modify_mode == ModeAutocomplete.add:
-        result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
-        if result is not None:
-            items = getattr(result["attribute_ids"], setting, [])  # type: ignore
-        else:
-            # if guild has no info yet
-            items = []
-
-        if database_value in items:
-            await itx.followup.send(f"Couldn't add '{database_value}' to the list, because it was "
-                                    f"already in it!", ephemeral=True)
-            return
-
-        items.append(database_value)
-        await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
-    elif modify_mode == ModeAutocomplete.remove:
-        result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
-        if result is not None:
-            items = result["attribute_ids"].get(setting, [])  # type: ignore
-        else:
-            # if guild has no info yet
-            items = []
-
-        if not items:  # empty list
-            await itx.followup.send("Couldn't remove any item from the list, because there "
-                                    "was nothing in it!", ephemeral=True)
-            return
-
-        if database_value not in items:
-            if not value.isdecimal() or int(value) not in items:
-                await itx.followup.send(f"Couldn't remove '{database_value}' from the list, because "
-                                        f"it wasn't in the list before either!", ephemeral=True)
-                return
-            else:
-                database_value = int(value)
-
-        del items[items.index(database_value)]
-        await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
     else:
-        # confirm if expected attribute type also matches the given attribute type
-        expected_modify_mode = get_attribute_autocomplete_mode(setting)
-        assert expected_modify_mode is not None
-        # It shouldn't be None because `setting` is already in `attribute_keys` from ServerAttributes, and
-        #  the function checks keys of ServerAttributeIds, which should be identical.
-
-        await itx.followup.send(
-            f"This attribute cannot be changed with this mode ('{modify_mode.value}')\n"
-            f"It must be one of the following: " +
-            ', '.join([f"'{m}'" for m in expected_modify_mode]),  # [a,b,c] -> "'a', 'b', 'c'"
-            ephemeral=True
+        invalid_arguments = {}
+        attribute = parse_attribute(
+            itx.client, itx.guild, setting, value, invalid_arguments=invalid_arguments
         )
+        if invalid_arguments and modify_mode not in [ModeAutocomplete.remove, ModeAutocomplete.remove]:
+            # allow removal of malformed data
+            attribute_type, _ = get_attribute_type(setting)
+            await itx.followup.send((f"Could not parse `{value}` as value for "
+                                     f"'{setting}' (expected {attribute_type.__name__}.\n"
+                                     f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]}")[:1999] + ")",
+                                    ephemeral=True)
+            return
+
+        if hasattr(attribute, "id"):
+            # guild, channel, emoji, role, user
+            database_value = attribute.id
+        else:
+            # int, str
+            database_value = attribute
+
+        if modify_mode == ModeAutocomplete.set:
+            await ServerSettings.set_attribute(
+                itx.client.async_rina_db, itx.guild.id, setting, database_value
+            )
+        elif modify_mode == ModeAutocomplete.add:
+            result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
+            if result is not None:
+                items = getattr(result["attribute_ids"], setting, [])  # type: ignore
+            else:
+                # if guild has no info yet
+                items = []
+
+            if database_value in items:
+                await itx.followup.send(f"Couldn't add '{database_value}' to the list, because it was "
+                                        f"already in it!", ephemeral=True)
+                return
+
+            items.append(database_value)
+            await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
+        elif modify_mode == ModeAutocomplete.remove:
+            result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
+            if result is not None:
+                items = result["attribute_ids"].get(setting, [])  # type: ignore
+            else:
+                # if guild has no info yet
+                items = []
+
+            if not items:  # empty list
+                await itx.followup.send("Couldn't remove any item from the list, because there "
+                                        "was nothing in it!", ephemeral=True)
+                return
+
+            if database_value not in items:
+                if not value.isdecimal() or int(value) not in items:
+                    await itx.followup.send(f"Couldn't remove '{database_value}' from the list, because "
+                                            f"it wasn't in the list before either!", ephemeral=True)
+                    return
+                else:
+                    database_value = int(value)
+
+            del items[items.index(database_value)]
+            await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
+        else:
+            # confirm if expected attribute type also matches the given attribute type
+            expected_modify_mode = get_attribute_autocomplete_mode(setting)
+            assert expected_modify_mode is not None
+            # It shouldn't be None because `setting` is already in `attribute_keys` from ServerAttributes, and
+            #  the function checks keys of ServerAttributeIds, which should be identical.
+
+            await itx.followup.send(
+                f"This attribute cannot be changed with this mode ('{modify_mode.value}')\n"
+                f"It must be one of the following: " +
+                ', '.join([f"'{m.value}'" for m in expected_modify_mode]),  # [a,b,c] -> "'a', 'b', 'c'"
+                ephemeral=True
+            )
+            return
+
+    try:
+        await itx.client.server_settings[itx.guild.id].reload(itx.client)
+    except ParseError as ex:
+        await itx.followup.send("Successfully set the module state!\n"
+                                "Just one tiny problem... Reloading the server settings failed...\n"
+                                "You should message Mia about this, or Cleo, to look into the database "
+                                "and get more information about the problem:" +
+                                ex.message, ephemeral=True)
         return
 
     await itx.followup.send(f"Successfully modified the value for '{setting}'!", ephemeral=True)
