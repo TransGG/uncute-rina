@@ -232,7 +232,8 @@ def start_app():
                 client.log_channel = await client.fetch_channel(986304081234624554)
             else:
                 client.log_channel = await client.fetch_channel(1062396920187863111)
-        client.bot_owner = await client.fetch_user(262913789375021056)  # (await client.application_info()).owner
+        client.bot_owner = await client.fetch_user(262913789375021056)
+        # client.bot_owner = (await client.application_info()).owner  # or client.owner / client.owner_id :P
         # can't use the commented out code because Rina is owned by someone else in the main server than
         # the dev server (=not me).
 

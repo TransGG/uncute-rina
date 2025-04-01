@@ -238,7 +238,7 @@ class CustomVcs(commands.Cog):
         warning = ""
 
         if itx.user.voice is None:
-            if is_staff(itx.guild, itx.user):
+            if is_staff(itx, itx.user):
                 await itx.response.send_modal(CustomVcStaffEditorModal(itx.client, vc_hub, vc_log, vc_category))
                 return
             await itx.response.send_message("You must be connected to a voice channel to use this command",

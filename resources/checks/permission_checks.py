@@ -6,12 +6,12 @@ from .errors import InsufficientPermissionsCheckFailure
 
 
 def is_staff_check(itx: discord.Interaction):
-    if is_staff(itx.guild, itx.user):
+    if is_staff(itx, itx.user):
         return True
     raise InsufficientPermissionsCheckFailure("User is not staff")
 
 
 def is_admin_check(itx: discord.Interaction):
-    if is_admin(itx.guild, itx.user):
+    if is_admin(itx, itx.user):
         return True
     raise InsufficientPermissionsCheckFailure("User is not admin")

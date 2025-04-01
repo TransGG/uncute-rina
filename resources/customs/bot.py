@@ -1,7 +1,7 @@
 from __future__ import annotations
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from datetime import datetime  # for startup and crash logging, and Reminders
-from typing import TypedDict, TYPE_CHECKING
+from typing import TypedDict, TYPE_CHECKING, TypeVar
 
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 ApiTokenDict = TypedDict('ApiTokenDict',
                          {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
+
+T = TypeVar('T')
 
 
 class Bot(commands.Bot):
@@ -166,26 +168,26 @@ class Bot(commands.Bot):
             raise
 
     def get_guild_attribute(
-            self, guild_id: discord.Guild | int, *args: str
-    ):
+            self, guild_id: discord.Guild | int, *args: str, default: T = None
+    ) -> object | T | list[object | T]:
         """
         Get ServerSettings attributes for the given guild.
 
-        Parameters
-        ----------
-        guild_id: The guild or guild id of the server you want to get attributes for.
-        args: The attribute(s) to get the values of. Must be keys of ServerAttributes.
+        :param guild_id: The guild or guild id of the server you want to get attributes for.
+        :param args: The attribute(s) to get the values of. Must be keys of ServerAttributes.
+        :param default: The default value to return if the attribute is not found. If multiple args were provided,
 
-        Returns
-        -------
-        A list of the values of the given attribute keys, .
+        :return: A single or list of values matching the requested attributes, with *default* if
+         attributes are not found.
         """
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
 
         if (self.server_settings is None or  # settings have not been fetched yet.
                 guild_id not in self.server_settings):  # return early
-            return False
+            if type(args) is list:
+                return [default] * len(args)
+            return default
 
         print(self.server_settings[guild_id])
         for attr, val in self.server_settings[guild_id].attributes.items():
@@ -208,7 +210,7 @@ class Bot(commands.Bot):
                 maybe_the_parent_server_has_it = self.get_guild_attribute(parent_server, arg)
                 output.append(maybe_the_parent_server_has_it)
             else:
-                output.append(None)
+                output.append(default)
 
         return output
 
@@ -218,14 +220,10 @@ class Bot(commands.Bot):
         """
         Check if a module is enabled for the given server.
 
-        Parameters
-        ----------
-        guild_id: The server to check the module state for.
-        args: The module key(s) to get the state for.
+        :param guild_id: The server to check the module state for.
+        :param args: The module key(s) to get the state for.
 
-        Returns
-        -------
-        The enabled/disabled state of the module as boolean, or a list of booleans matching the list of
+        :return: The enabled/disabled state of the module as boolean, or a list of booleans matching the list of
          module keys given.
         """
         if type(guild_id) is discord.Guild:

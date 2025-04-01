@@ -96,7 +96,7 @@ async def _add_to_watchlist(
         message_id: str | None = None,
         warning=""
 ):
-    if not is_staff(itx.guild, itx.user):
+    if not is_staff(itx, itx.user):
         await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
         return
     if itx.client.is_me(user):
@@ -254,7 +254,7 @@ class WatchList(commands.Cog):
     @app_commands.command(name="check_watchlist", description="Check if a user is on the watchlist.")
     @app_commands.describe(user="User to check")
     async def check_watchlist(self, itx: discord.Interaction, user: discord.User):
-        if not is_staff(itx.guild, itx.user):
+        if not is_staff(itx, itx.user):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
 

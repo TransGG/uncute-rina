@@ -28,7 +28,7 @@ async def send_help_menu(itx: discord.Interaction, requested_page: int = FIRST_P
         )
         return
 
-    user_is_staff = is_admin(itx.guild, itx.user)
+    user_is_staff = is_admin(itx, itx.user)
     if not user_is_staff and help_pages[requested_page].get("staff_only", False):
         # user is not staff but the page is staff-only
         await itx.response.send_message("This page is only available to admins.", ephemeral=True)
@@ -45,7 +45,7 @@ async def _help_page_autocomplete(itx: discord.Interaction, current: str) -> lis
     results = []
     added_pages = []
 
-    user_is_staff = is_admin(itx.guild, itx.user)
+    user_is_staff = is_admin(itx, itx.user)
 
     if current.isdecimal():
         current_page = None

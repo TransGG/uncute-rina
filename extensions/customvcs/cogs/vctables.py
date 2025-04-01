@@ -617,7 +617,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                     ephemeral=True)
                 return
 
-            if is_staff(itx.guild, user):
+            if is_staff(itx, user):
                 await itx.response.send_message(
                     "You can't mute staff members! If you have an issue with staff, make a ticket or DM an admin!",
                     ephemeral=True)

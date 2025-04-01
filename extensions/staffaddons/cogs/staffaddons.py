@@ -110,7 +110,7 @@ class StaffAddons(commands.Cog):
 
     @app_commands.command(name="version", description="Get bot version")
     async def get_bot_version(self, itx: discord.Interaction):
-        public = is_staff(itx.guild, itx.user)
+        public = is_staff(itx, itx.user)
         # get most recently pushed bot version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]

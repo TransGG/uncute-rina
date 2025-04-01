@@ -19,11 +19,6 @@ def is_verified(itx: discord.Interaction[Bot], member: discord.Member | discord.
     return is_staff(itx, member)
 
 
-# def isVerifier(itx: discord.Interaction):
-#     roles = [discord.utils.find(lambda r: r.name == 'Verifier', itx.guild.roles)]
-#     return len(set(roles).intersection(itx.user.roles)) > 0 or is_admin(itx.guild, itx.user)
-
-
 def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.User) -> bool:
     """
     Check if someone is staff.
@@ -33,10 +28,13 @@ def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
 
     :return: Whether the user has a staff role.
     """
-    staff_roles: list[discord.Role] = itx.client.get_guild_attribute(itx.guild, "staff_roles")
+    staff_roles: list[discord.Role | None] | None = itx.client.get_guild_attribute(itx.guild, "staff_roles")
+    if staff_roles is None:
+        staff_roles = []
+    roles_set: set[discord.Role] = set(staff_roles) - { None }
     return (
         is_admin(itx, member) or
-        len(set(staff_roles).intersection(member.roles)) > 0
+        len(roles_set.intersection(member.roles)) > 0
     )
 
 
@@ -49,8 +47,12 @@ def is_admin(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
 
     :return: Whether the user has an admin role.
     """
-    admin_roles: list[discord.Role] = itx.client.get_guild_attribute(itx.guild, "admin_roles")
+    admin_roles: list[discord.Role | None] | None = itx.client.get_guild_attribute(itx.guild, "admin_roles")
+    if admin_roles is None:
+        admin_roles = []
+    roles_set: set[discord.Role] = set(admin_roles) - { None }
     return (
-            is_admin(itx, member) or
-            len(set(admin_roles).intersection(member.roles)) > 0
+            member.id == itx.guild.owner_id or
+            member.id == itx.client.bot_owner.id or
+            len(roles_set.intersection(member.roles)) > 0
     )
