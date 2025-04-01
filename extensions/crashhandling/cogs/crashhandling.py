@@ -6,7 +6,12 @@ import discord
 from discord.ext import commands
 
 from resources.customs.bot import Bot
-from resources.checks import InsufficientPermissionsCheckFailure
+from resources.checks import (
+    InsufficientPermissionsCheckFailure,
+    CommandDoesNotSupportDMsCheckFailure,
+    ModuleNotEnabledCheckFailure
+)
+from resources.utils import is_admin
 from resources.utils.utils import debug, TESTING_ENVIRONMENT
 
 
@@ -69,7 +74,14 @@ async def _send_crash_message(
                        allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
 
 
-async def _reply(itx: discord.Interaction, message: str):
+async def _reply(itx: discord.Interaction, message: str) -> None:
+    """
+    A helper function to handle replying to an interaction by either using :py:func:`~discord.Webhook.send` or
+    :py:func:`~discord.InteractionResponse.send_message`, depending on whether a response
+
+    :param itx: The interaction to respond to.
+    :param message: The message to respond with.
+    """
     try:
         if itx.response.is_done():
             await itx.followup.send(message, ephemeral=True)
@@ -124,11 +136,31 @@ class CrashHandling(commands.Cog):
         await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
         commanderror_cooldown = datetime.now().astimezone()
 
-    async def on_app_command_error(self, itx: discord.Interaction, error):
+    async def on_app_command_error(self, itx: discord.Interaction[Bot], error: discord.app_commands.AppCommandError):
         global appcommanderror_cooldown
 
-        if type(error) is InsufficientPermissionsCheckFailure:
+        error_type = type(error)
+        if error_type is InsufficientPermissionsCheckFailure:
             await itx.response.send_message("You do not have the permissions to run this command!",
+                                            ephemeral=True)
+            return
+        elif error_type is CommandDoesNotSupportDMsCheckFailure:
+            await itx.response.send_message("This command does not work in DMs. Please run this in a server instead.",
+                                            ephemeral=True)
+            return
+        elif error_type is ModuleNotEnabledCheckFailure:
+            error: ModuleNotEnabledCheckFailure
+            if is_admin(itx, itx.user):
+                cmd_mention = itx.client.get_command_mention("settings")
+                cmd_mention_help = itx.client.get_command_mention("help")
+                await itx.response.send_message(
+                    f"This module is not enabled! Enable it using the following command:\n"
+                    f"- {cmd_mention} `type:Module` `setting:{error.module_key}` `mode:Enable`\n"
+                    f"Make sure you also set the required attributes for this module. The required "
+                    f"attributes for modules and commands are explained in {cmd_mention_help}.",
+                    ephemeral=True)
+            await itx.response.send_message("This module is not enabled! Ask an admin to enable this module, "
+                                            "or have them hide this command from users in the server settings.",
                                             ephemeral=True)
             return
 
