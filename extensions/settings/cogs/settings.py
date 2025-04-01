@@ -1,4 +1,5 @@
-import typing
+from __future__ import annotations
+import typing  # for typing.cast and TYPE_CHECKING
 
 import discord
 import discord.ext.commands as commands
@@ -12,6 +13,9 @@ from extensions.settings.objects import (
     ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules, TypeAutocomplete, ModeAutocomplete,
     parse_attribute, get_attribute_type
 )
+
+if typing.TYPE_CHECKING:
+    from resources.customs.bot import Bot
 
 
 # todo: maybe a function to re-fetch settings for a specific server
@@ -34,17 +38,6 @@ def get_attribute_autocomplete_mode(attribute_key: str) -> list[ModeAutocomplete
     -------
     The mode autocomplete-type, or None if the attribute is not a valid key.
     """
-    # attribute_keys = ServerAttributeIds.__annotations__.keys()
-    # # list(ServerAttributeIds.__required_keys__.union(ServerAttributeIds.__optional_keys__))
-    # attribute_types = typing.get_type_hints(ServerAttributeIds)
-    # if attribute_key in attribute_keys:
-    #     attribute_type = attribute_types[attribute_key]
-    #     if typing.get_origin(attribute_type) is list:
-    #         return attribute_type_list
-    #     else:
-    #         return attribute_type_single_value
-    # return None
-
     _, in_list = get_attribute_type(attribute_key)
     if in_list:
         return attribute_type_list
@@ -196,6 +189,246 @@ async def _value_autocomplete(itx: discord.Interaction, current: str) -> list[ap
         return []
 
 
+async def _handle_settings_attribute(
+        itx: discord.Interaction[Bot],
+        help_str: str,
+        setting: str | None,
+        modify_mode: ModeAutocomplete | None,
+        value: str | None,
+):
+    """
+    A helper function to handle setting server attributes.
+    :param itx: The interaction with which to respond to messages, and itx.client to execute database actions.
+    :param help_str: A help string to append to error messages.
+    :param setting: The key of the attribute to change.
+    :param modify_mode: The mode to use when modifying the attribute.
+    :param value: The value to give the attribute or remove from the attribute (depending on the *modify_mode*.
+    """
+    attribute_keys = ServerAttributes.__annotations__
+
+    if setting is None:
+        await itx.response.send_message(("Here is a list of attributes you can set:\n" +
+                                         ", ".join(attribute_keys) +
+                                         "\n" +
+                                         help_str)[:2000], ephemeral=True)
+        return
+
+    if modify_mode is None:
+        await itx.response.send_message("You didn't set a mode!" + help_str, ephemeral=True)
+        return
+
+    if setting not in attribute_keys:
+        await itx.response.send_message(
+            "This is not a valid setting. Please choose one of the autocompleted settings after "
+            "setting `type:Attribute`.\n"
+            "If you filled in `type:Module` and loaded the earlier autocomplete for that instead "
+            "(and the autocomplete cache doesn't let you reload the settings), you can clear your "
+            "whole chatbox and re-type the command to reset the autocomplete cache (discord is "
+            "silly) (on Desktop at least). Otherwise reopen the app, maybe that works.\n" +
+            help_str,
+            ephemeral=True
+        )
+        return
+
+    await itx.response.defer(ephemeral=True)  # defer before any database calls
+
+    if modify_mode == ModeAutocomplete.view:
+        entry = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
+        if entry is None:
+            await itx.followup.send(f"This server has no data for '{setting}' yet.", ephemeral=True)
+            return
+        attribute_raw = getattr(entry["attribute_ids"], setting, "<no value yet>")  # type: ignore
+        attribute_parsed = itx.client.get_guild_attribute(itx.guild, setting)
+        await itx.followup.send((f"The current value for '{setting}' is:\n"
+                                 f"Raw:\n"
+                                 f"- {attribute_raw}\n"
+                                 f"Parsed:\n"
+                                 f"- {ServerSettings.get_original(attribute_parsed)}"
+                                 )[:2000],
+                                ephemeral=True)
+        return
+
+    invalid_arguments = {}
+    attribute = parse_attribute(
+        itx.client, itx.guild, setting, value, invalid_arguments=invalid_arguments
+    )
+    if invalid_arguments and modify_mode != ModeAutocomplete.remove:  # allow removal of malformed data
+        attribute_type, _ = get_attribute_type(setting)
+        await itx.followup.send((f"Could not parse `{value}` as value for "
+                                 f"'{setting}' (expected {attribute_type.__name__}.\n"
+                                 f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]}")[:1999] + ")",
+                                ephemeral=True)
+        return
+
+    if hasattr(attribute, "id"):
+        # guild, channel, emoji, role, user
+        database_value = attribute.id
+    else:
+        # int, str
+        database_value = attribute
+
+    if modify_mode == ModeAutocomplete.set:
+        await ServerSettings.set_attribute(
+            itx.client.async_rina_db, itx.guild.id, setting, database_value
+        )
+    elif modify_mode == ModeAutocomplete.delete:
+        await ServerSettings.remove_attribute(
+            itx.client.async_rina_db, itx.guild.id, setting
+        )
+    elif modify_mode == ModeAutocomplete.add:
+        result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
+        if result is not None:
+            items = getattr(result["attribute_ids"], setting, [])  # type: ignore
+        else:
+            # if guild has no info yet
+            items = []
+
+        if database_value in items:
+            await itx.followup.send(f"Couldn't add '{database_value}' to the list, because it was "
+                                    f"already in it!", ephemeral=True)
+            return
+
+        items.append(database_value)
+        await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
+    elif modify_mode == ModeAutocomplete.remove:
+        result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
+        if result is not None:
+            items = result["attribute_ids"].get(setting, [])  # type: ignore
+        else:
+            # if guild has no info yet
+            items = []
+
+        if not items:  # empty list
+            await itx.followup.send("Couldn't remove any item from the list, because there "
+                                    "was nothing in it!", ephemeral=True)
+            return
+
+        if database_value not in items:
+            if not value.isdecimal() or int(value) not in items:
+                await itx.followup.send(f"Couldn't remove '{database_value}' from the list, because "
+                                        f"it wasn't in the list before either!", ephemeral=True)
+                return
+            else:
+                database_value = int(value)
+
+        del items[items.index(database_value)]
+        await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
+    else:
+        # confirm if expected attribute type also matches the given attribute type
+        expected_modify_mode = get_attribute_autocomplete_mode(setting)
+        assert expected_modify_mode is not None
+        # It shouldn't be None because `setting` is already in `attribute_keys` from ServerAttributes, and
+        #  the function checks keys of ServerAttributeIds, which should be identical.
+
+        await itx.followup.send(
+            f"This attribute cannot be changed with this mode ('{modify_mode.value}')\n"
+            f"It must be one of the following: " +
+            ', '.join([f"'{m}'" for m in expected_modify_mode]),  # [a,b,c] -> "'a', 'b', 'c'"
+            ephemeral=True
+        )
+        return
+
+    await itx.followup.send(f"Successfully modified the value for '{setting}'!", ephemeral=True)
+
+
+async def _handle_settings_module(
+        itx: discord.Interaction[Bot],
+        help_str: str,
+        setting: str | None,
+        modify_mode: str | None
+):
+    """
+    A helper function to handle setting server attributes.
+    :param itx: The interaction with which to respond to messages, and itx.client to execute database actions.
+    :param help_str: A help string to append to error messages.
+    :param setting: The key of the attribute to change.
+    :param modify_mode: The mode to use when modifying the attribute.
+    """
+    module_keys = EnabledModules.__annotations__
+
+    if setting is None:
+        disabled_modules = set([i for i in module_keys])
+        enabled_modules = set()
+
+        if itx.client.server_settings is None:
+            await itx.response.send_message("No settings have been loaded yet! Please wait a little bit, or "
+                                            "message @mysticmia about this error message.",
+                                            ephemeral=True)
+            return
+
+        server_setting: ServerSettings | None = itx.client.server_settings.get(itx.guild.id, None)
+        if server_setting:
+            for module, val in server_setting.enabled_modules.items():
+                if val:
+                    enabled_modules.add(module)
+        disabled_modules = disabled_modules - enabled_modules
+        enabled_modules_string = f"### Enabled:\n> {', '.join(enabled_modules)}\n" if enabled_modules else ""
+        disabled_modules_string = f"### Disabled:\n> {', '.join(disabled_modules)}\n" if disabled_modules else ""
+        await itx.response.send_message(
+            ("Here is a list of modules you can set, and their values.\n" +
+             enabled_modules_string + disabled_modules_string + help_str)[:2000],
+            ephemeral=True
+        )
+        return
+
+    if modify_mode is None:
+        await itx.response.send_message("You didn't set a mode!" + help_str, ephemeral=True)
+        return
+
+    if setting not in module_keys:
+        await itx.response.send_message(
+            "This is not a valid setting. Please choose one of the autocompleted settings after "
+            "setting `type:Module`.\n"
+            "If you filled in `type:Attribute` and loaded the earlier autocomplete for that instead "
+            "(and the autocomplete cache doesn't let you reload the settings), you can clear your "
+            "whole chatbox and re-type the command to reset the autocomplete cache (discord is "
+            "silly) (on Desktop at least). Otherwise reopen the app, maybe that works.\n" +
+            help_str,
+            ephemeral=True
+        )
+        return
+
+    if modify_mode == ModeAutocomplete.view:
+        module_enabled = itx.client.is_module_enabled(itx.guild, setting)
+        state_str = 'Enabled' if module_enabled else 'Disabled'
+        await itx.response.send_message(f"The module '{setting}' is currently '{state_str}'.",
+                                        ephemeral=True)
+        return
+    elif modify_mode == ModeAutocomplete.enable:
+        enable = True
+    elif modify_mode == ModeAutocomplete.disable:
+        enable = False
+    else:
+        await itx.response.send_message("That is not a valid mode for this setting!"
+                                        "When setting the mode for a Module, it must be either"
+                                        "'Enable', 'Disable', or 'View'.", ephemeral=True)
+        return
+
+    modified, created_new_document = await ServerSettings.set_module_state(
+        itx.client.async_rina_db, itx.guild.id, setting, enable)
+
+    if not modified and not created_new_document:
+        # If the server's enabled modules already have this value
+        await itx.response.send_message("This module is already " +
+                                        ("enabled" if enable else "disabled") +
+                                        "!\n" + help_str, ephemeral=True)
+        return
+
+    await itx.response.defer(ephemeral=True)  # defer before any database calls
+
+    try:
+        await itx.client.server_settings[itx.guild.id].reload(itx.client)
+    except ParseError as ex:
+        await itx.followup.send("Successfully set the module state!\n"
+                                "Just one tiny problem... Reloading the server settings failed...\n"
+                                "You should message Mia about this, or Cleo, to look into the database "
+                                "and get more information about the problem:" +
+                                ex.message, ephemeral=True)
+        return
+
+    await itx.followup.send("Successfully set the module state!", ephemeral=True)
+
+
 class SettingsCog(commands.Cog):
     def __init__(self):
         pass
@@ -253,217 +486,10 @@ class SettingsCog(commands.Cog):
             await send_help_menu(itx, requested_page=900)
 
         elif setting_type == TypeAutocomplete.attribute.value:
-            attribute_keys = ServerAttributes.__annotations__
-
-            if setting is None:
-                await itx.response.send_message(("Here is a list of attributes you can set:\n" +
-                                                 ", ".join(attribute_keys) +
-                                                 "\n" +
-                                                 help_str)[:2000], ephemeral=True)
-                return
-
-            if mode is None:
-                await itx.response.send_message("You didn't set a mode!" + help_str, ephemeral=True)
-                return
-
-            if setting not in attribute_keys:
-                await itx.response.send_message(
-                    "This is not a valid setting. Please choose one of the autocompleted settings after "
-                    "setting `type:Attribute`.\n"
-                    "If you filled in `type:Module` and loaded the earlier autocomplete for that instead "
-                    "(and the autocomplete cache doesn't let you reload the settings), you can clear your "
-                    "whole chatbox and re-type the command to reset the autocomplete cache (discord is "
-                    "silly) (on Desktop at least). Otherwise reopen the app, maybe that works.\n" +
-                    help_str,
-                    ephemeral=True
-                )
-                return
-
-            await itx.response.defer(ephemeral=True)  # defer before any database calls
-
-            if modify_mode == ModeAutocomplete.view:
-                entry = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
-                if entry is None:
-                    await itx.followup.send(f"This server has no data for '{setting}' yet.", ephemeral=True)
-                    return
-                attribute_raw = getattr(entry["attribute_ids"], setting, "<no value yet>")  # type: ignore
-                attribute_parsed = itx.client.get_guild_attribute(itx.guild, setting)
-                await itx.followup.send((f"The current value for '{setting}' is:\n"
-                                         f"Raw:\n"
-                                         f"- {attribute_raw}\n"
-                                         f"Parsed:\n"
-                                         f"- {ServerSettings.get_original(attribute_parsed)}"
-                                         )[:2000],
-                                        ephemeral=True)
-                return
-
-            invalid_arguments = {}
-            attribute = parse_attribute(
-                itx.client, itx.guild, setting, value, invalid_arguments=invalid_arguments
-            )
-            if invalid_arguments and modify_mode != ModeAutocomplete.remove:  # allow removal of malformed data
-                attribute_type, _ = get_attribute_type(setting)
-                await itx.followup.send((f"Could not parse `{value}` as value for "
-                                         f"'{setting}' (expected {attribute_type.__name__}.\n"
-                                         f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]}")[:1999] + ")",
-                                        ephemeral=True)
-                return
-
-            if hasattr(attribute, "id"):
-                # guild, channel, emoji, role, user
-                database_value = attribute.id
-            else:
-                # int, str
-                database_value = attribute
-
-            if modify_mode == ModeAutocomplete.set:
-                await ServerSettings.set_attribute(
-                    itx.client.async_rina_db, itx.guild.id, setting, database_value
-                )
-            elif modify_mode == ModeAutocomplete.delete:
-                await ServerSettings.remove_attribute(
-                    itx.client.async_rina_db, itx.guild.id, setting
-                )
-            elif modify_mode == ModeAutocomplete.add:
-                result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
-                if result is not None:
-                    items = getattr(result["attribute_ids"], setting, [])  # type: ignore
-                else:
-                    # if guild has no info yet
-                    items = []
-
-                if database_value in items:
-                    await itx.followup.send(f"Couldn't add '{database_value}' to the list, because it was "
-                                            f"already in it!", ephemeral=True)
-                    return
-
-                items.append(database_value)
-                await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
-            elif modify_mode == ModeAutocomplete.remove:
-                result = await ServerSettings.get_entry(itx.client.async_rina_db, itx.guild.id)
-                if result is not None:
-                    items = result["attribute_ids"].get(setting, [])  # type: ignore
-                else:
-                    # if guild has no info yet
-                    items = []
-
-                if not items:  # empty list
-                    await itx.followup.send("Couldn't remove any item from the list, because there "
-                                            "was nothing in it!", ephemeral=True)
-                    return
-
-                if database_value not in items:
-                    if not value.isdecimal() or int(value) not in items:
-                        await itx.followup.send(f"Couldn't remove '{database_value}' from the list, because "
-                                                f"it wasn't in the list before either!", ephemeral=True)
-                        return
-                    else:
-                        database_value = int(value)
-
-                del items[items.index(database_value)]
-                await ServerSettings.set_attribute(itx.client.async_rina_db, itx.guild.id, setting, items)
-            else:
-                # confirm if expected attribute type also matches the given attribute type
-                expected_modify_mode = get_attribute_autocomplete_mode(setting)
-                assert expected_modify_mode is not None
-                # It shouldn't be None because `setting` is already in `attribute_keys` from ServerAttributes, and
-                #  the function checks keys of ServerAttributeIds, which should be identical.
-
-                await itx.followup.send(
-                    f"This attribute cannot be changed with this mode ('{mode}')\n"
-                    f"It must be one of the following: " +
-                    ', '.join([f"'{m}'" for m in expected_modify_mode]),  # [a,b,c] -> "'a', 'b', 'c'"
-                    ephemeral=True
-                )
-                return
-
-            await itx.followup.send(f"Successfully modified the value for '{setting}'!", ephemeral=True)
+            await _handle_settings_attribute(itx, help_str, setting, modify_mode, value)
 
         elif setting_type == TypeAutocomplete.module.value:
-            module_keys = EnabledModules.__annotations__
-
-            if setting is None:
-                disabled_modules = set([i for i in module_keys])
-                enabled_modules = set()
-
-                if itx.client.server_settings is None:
-                    await itx.response.send_message("No settings have been loaded yet! Please wait a little bit, or "
-                                                    "message @mysticmia about this error message.",
-                                                    ephemeral=True)
-                    return
-
-                server_setting: ServerSettings | None = itx.client.server_settings.get(itx.guild.id, None)
-                if server_setting:
-                    for module, val in server_setting.enabled_modules.items():
-                        if val:
-                            enabled_modules.add(module)
-                disabled_modules = disabled_modules - enabled_modules
-                enabled_modules_string = f"### Enabled:\n> {', '.join(enabled_modules)}\n" if enabled_modules else ""
-                disabled_modules_string = f"### Disabled:\n> {', '.join(disabled_modules)}\n" if disabled_modules else ""
-                await itx.response.send_message(
-                    ("Here is a list of modules you can set, and their values.\n" +
-                     enabled_modules_string + disabled_modules_string + help_str)[:2000],
-                    ephemeral=True
-                )
-                return
-
-            if mode is None:
-                await itx.response.send_message("You didn't set a mode!" + help_str, ephemeral=True)
-                return
-
-            if setting not in module_keys:
-                await itx.response.send_message(
-                    "This is not a valid setting. Please choose one of the autocompleted settings after "
-                    "setting `type:Module`.\n"
-                    "If you filled in `type:Attribute` and loaded the earlier autocomplete for that instead "
-                    "(and the autocomplete cache doesn't let you reload the settings), you can clear your "
-                    "whole chatbox and re-type the command to reset the autocomplete cache (discord is "
-                    "silly) (on Desktop at least). Otherwise reopen the app, maybe that works.\n" +
-                    help_str,
-                    ephemeral=True
-                )
-                return
-
-            if modify_mode == ModeAutocomplete.view:
-                module_enabled = itx.client.is_module_enabled(itx.guild, setting)
-                state_str = 'Enabled' if module_enabled else 'Disabled'
-                await itx.response.send_message(f"The module '{setting}' is currently '{state_str}'.",
-                                                ephemeral=True)
-                return
-            elif modify_mode == ModeAutocomplete.enable:
-                enable = True
-            elif modify_mode == ModeAutocomplete.disable:
-                enable = False
-            else:
-                await itx.response.send_message("That is not a valid mode for this setting!"
-                                                "When setting the mode for a Module, it must be either"
-                                                "'Enable', 'Disable', or 'View'.", ephemeral=True)
-                return
-
-            modified, created_new_document = await ServerSettings.set_module_state(
-                itx.client.async_rina_db, itx.guild.id, setting, enable)
-
-            if not modified and not created_new_document:
-                # If the server's enabled modules already have this value
-                await itx.response.send_message("This module is already " +
-                                                ("enabled" if enable else "disabled") +
-                                                "!\n" + help_str, ephemeral=True)
-                return
-
-            await itx.response.defer(ephemeral=True)  # defer before any database calls
-
-            try:
-                await itx.client.server_settings[itx.guild.id].reload(itx.client)
-            except ParseError as ex:
-                await itx.followup.send("Successfully set the module state!\n"
-                                        "Just one tiny problem... Reloading the server settings failed...\n"
-                                        "You should message Mia about this, or Cleo, to look into the database "
-                                        "and get more information about the problem:" +
-                                        ex.message, ephemeral=True)
-                return
-
-            await itx.followup.send("Successfully set the module state!", ephemeral=True)
-
+            await _handle_settings_module(itx, help_str, setting, modify_mode)
         else:
             await itx.followup.send("That is not a valid type. Please use the options provided to you. " +
                                     help_str,
