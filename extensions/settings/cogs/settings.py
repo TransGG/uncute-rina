@@ -15,7 +15,7 @@ from extensions.settings.objects import (
 )
 
 if typing.TYPE_CHECKING:
-    from resources.customs.bot import Bot
+    from resources.customs import Bot
 
 
 # todo: maybe a function to re-fetch settings for a specific server

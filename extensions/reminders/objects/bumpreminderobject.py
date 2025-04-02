@@ -2,7 +2,7 @@ import discord
 from datetime import datetime, timedelta
 
 from extensions.settings.objects import AttributeKeys
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 
 class BumpReminderObject:

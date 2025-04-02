@@ -10,7 +10,7 @@ import discord.ext.commands as commands
 
 from extensions.settings.objects import AttributeKeys
 from resources.checks import is_staff_check, MissingAttributesCheckFailure  # cuz it's a staff command
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel

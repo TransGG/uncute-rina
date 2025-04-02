@@ -1,6 +1,6 @@
 import discord
 
-from resources.customs.bot import Bot
+from resources.customs import Bot
 from resources.utils.utils import log_to_guild
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename

@@ -13,7 +13,7 @@ from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
 
 if typing.TYPE_CHECKING:
-    from resources.customs.bot import Bot
+    from resources.customs import Bot
 
 
 GuildId = int

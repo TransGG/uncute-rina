@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import discord
 
-from resources.customs.bot import Bot
+from resources.customs import Bot
 from resources.utils.timeparser import TimeParser, MissingQuantityException, MissingUnitException
 
 from extensions.reminders.exceptions import (

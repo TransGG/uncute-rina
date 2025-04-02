@@ -8,7 +8,7 @@ import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys
 from resources.checks.command_checks import module_not_disabled_check
-from resources.customs.bot import Bot
+from resources.customs import Bot
 from resources.utils.utils import log_to_guild
 # ^ to warn when bot can't add headpat reaction (typically because user blocked Rina)
 

@@ -6,7 +6,7 @@ import discord.ext.commands as commands
 
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import module_enabled_check, not_in_dms_check
-from resources.customs.bot import Bot
+from resources.customs import Bot
 # ^ to specify which tags can be used in which servers (e.g. Mature role not in EnbyPlace)
 from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
 

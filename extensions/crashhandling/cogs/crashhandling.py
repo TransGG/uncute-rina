@@ -5,7 +5,7 @@ import sys  # to stop the program (and automatically restart, thanks to pterodac
 import discord
 from discord.ext import commands
 
-from resources.customs.bot import Bot
+from resources.customs import Bot
 from resources.checks import (
     InsufficientPermissionsCheckFailure,
     CommandDoesNotSupportDMsCheckFailure,

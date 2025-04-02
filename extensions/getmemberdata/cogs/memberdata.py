@@ -10,7 +10,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.checks import not_in_dms_check
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 
 async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):

@@ -12,7 +12,7 @@ from resources.checks import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
 
 if TYPE_CHECKING:
-    from resources.customs.bot import Bot
+    from resources.customs import Bot
 
 
 TESTING_ENVIRONMENT = 2  # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)

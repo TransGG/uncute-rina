@@ -1,7 +1,7 @@
 import discord
 
 from resources.utils.utils import log_to_guild
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 
 class SendPubliclyTagView(discord.ui.View):

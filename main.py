@@ -11,8 +11,8 @@ from pymongo import MongoClient
 
 import discord  # for main discord bot functionality
 
-from resources.customs.bot import Bot, ApiTokenDict
-from resources.customs.progressbar import ProgressBar
+from resources.customs import Bot, ProgressBar
+from resources.customs import ApiTokenDict
 from resources.utils.utils import TESTING_ENVIRONMENT
 
 from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)

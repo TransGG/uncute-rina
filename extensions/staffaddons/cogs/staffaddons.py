@@ -73,7 +73,7 @@ class StaffAddons(commands.Cog):
                                                          timedelta(days=6, hours=23, minutes=30)),
                                                  oldest_first=True):
             message_date = int(message.created_at.timestamp())
-            if "[info]" in message.content.lower() and is_staff(message.guild, message.author):
+            if "[info]" in message.content.lower() and is_staff(itx, message.author):
                 continue
             if time_now - message_date > 14 * 86400:
                 # 14 days, too old to remove by bulk

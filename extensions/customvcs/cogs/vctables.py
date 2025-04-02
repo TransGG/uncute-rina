@@ -9,7 +9,7 @@ from resources.checks import module_enabled_check, MissingAttributesCheckFailure
 from resources.views.generics import GenericTwoButtonView
 from resources.checks.permissions import is_staff  # to prevent people in vc-tables from muting staff.
 from resources.utils.utils import log_to_guild  # to log custom vc changes
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 from extensions.customvcs.utils import is_vc_custom, BLACKLISTED_CHANNELS, edit_permissionoverwrite

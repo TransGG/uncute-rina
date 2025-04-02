@@ -1,7 +1,7 @@
 from __future__ import annotations
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
 from datetime import datetime  # for startup and crash logging, and Reminders
-from typing import TypedDict, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
@@ -10,12 +10,11 @@ import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 
 from extensions.settings.objects import AttributeKeys, EnabledModules, ServerAttributes
+from .api_token_dict import ApiTokenDict
 
 if TYPE_CHECKING:
     from extensions.settings.objects import ServerSettings
 
-ApiTokenDict = TypedDict('ApiTokenDict',
-                         {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
 
 T = TypeVar('T')
 G = TypeVar('G')

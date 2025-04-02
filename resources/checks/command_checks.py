@@ -7,7 +7,7 @@ import discord.app_commands as app_commands
 from resources.checks.errors import ModuleNotEnabledCheckFailure, CommandDoesNotSupportDMsCheckFailure
 
 if TYPE_CHECKING:
-    from resources.customs.bot import Bot
+    from resources.customs import Bot
 
 
 def module_enabled_check(module_key):

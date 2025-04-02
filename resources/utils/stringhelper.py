@@ -1,4 +1,4 @@
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 
 def replace_string_command_mentions(text: str, client: Bot) -> str:

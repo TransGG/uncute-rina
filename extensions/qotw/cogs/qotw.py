@@ -7,7 +7,7 @@ import discord.ext.commands as commands
 from extensions.settings.objects import ModuleKeys, AttributeKeys
 from resources.checks import not_in_dms_check, module_enabled_check, MissingAttributesCheckFailure
 from resources.utils.utils import get_mod_ticket_channel
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 
 class QOTW(commands.Cog):

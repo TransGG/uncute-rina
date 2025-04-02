@@ -2,7 +2,7 @@ import discord
 import discord.ext.commands as commands
 
 from extensions.settings.objects import AttributeKeys
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 
 class BanAppealReactionsAddon(commands.Cog):

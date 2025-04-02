@@ -1,6 +1,6 @@
 import discord
 
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 from extensions.reminders.objects import ReminderDict
 

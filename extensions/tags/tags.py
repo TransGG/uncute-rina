@@ -2,8 +2,7 @@ from typing import Callable
 
 import discord
 
-from resources.customs.bot import Bot
-from resources.customs.enabledservers import EnabledServers
+from resources.customs import Bot, EnabledServers
 from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
 from resources.utils.utils import log_to_guild
 # ^ for logging when people send tags anonymously (in case someone abuses the anonymity)

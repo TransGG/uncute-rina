@@ -7,7 +7,7 @@ import discord.app_commands as app_commands
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
     module_enabled_check  # for dev request thread ping
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 
 emoji_color_options = {

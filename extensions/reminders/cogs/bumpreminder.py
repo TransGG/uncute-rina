@@ -4,7 +4,7 @@ import discord
 import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.customs.bot import Bot
+from resources.customs import Bot
 
 from extensions.reminders.objects import BumpReminderObject
 

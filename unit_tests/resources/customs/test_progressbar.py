@@ -2,7 +2,7 @@ import pytest
 
 import logging
 
-from resources.customs.progressbar import ProgressBar
+from resources.customs import ProgressBar
 
 
 def ends_with_color_reset(message: str) -> bool:

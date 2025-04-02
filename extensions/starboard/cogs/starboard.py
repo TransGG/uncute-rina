@@ -4,7 +4,7 @@ import discord.ext.commands as commands
 from extensions.settings.objects import ModuleKeys, AttributeKeys
 from resources.checks import module_enabled_check
 from resources.checks.command_checks import is_in_dms
-from resources.customs.bot import Bot
+from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
 from extensions.starboard.localstarboard import (

@@ -1,6 +1,6 @@
 import discord
 
-from resources.customs.bot import Bot
+from resources.customs import Bot
 from resources.utils.stringhelper import replace_string_command_mentions
 
 from extensions.help.helppage import HelpPage

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from extensions.settings.objects import AttributeKeys
 
 if TYPE_CHECKING:
-    from resources.customs.bot import Bot
+    from resources.customs import Bot
 
 
 def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.User) -> bool:
