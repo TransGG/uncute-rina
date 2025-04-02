@@ -22,7 +22,7 @@ def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
         itx.guild, AttributeKeys.staff_roles)
     if staff_roles is None:
         staff_roles = []
-    roles_set: set[discord.Role] = set(staff_roles) - { None }
+    roles_set: set[discord.Role] = set(staff_roles) - {None}
     return (
         is_admin(itx, member) or
         len(roles_set.intersection(member.roles)) > 0
@@ -42,7 +42,7 @@ def is_admin(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
         itx.guild, AttributeKeys.admin_roles)
     if admin_roles is None:
         admin_roles = []
-    roles_set: set[discord.Role] = set(admin_roles) - { None }
+    roles_set: set[discord.Role] = set(admin_roles) - {None}
     return (
             member.id == itx.guild.owner_id or
             member.id == itx.client.bot_owner.id or

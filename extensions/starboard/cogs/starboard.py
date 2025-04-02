@@ -1,9 +1,7 @@
 import discord
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.checks import module_enabled_check
-from resources.checks.command_checks import is_in_dms
+from extensions.settings.objects import AttributeKeys
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
@@ -269,7 +267,7 @@ async def _handle_starboard_create_or_update(
 
     elif reaction.count == star_minimum:
         if client.is_me(message.author):
-        # can't starboard Rina's message
+            # can't starboard Rina's message
             return
         if message.channel.id in channel_blacklist:
             return
@@ -319,7 +317,7 @@ class Starboard(commands.Cog):
 
         if None in [star_channel, star_minimum, channel_blacklist, starboard_emoji, downvote_init_value]:
             return
-        channel_blacklist: list[discord.abc.Messageable] = list(set(channel_blacklist) - { None })
+        channel_blacklist: list[discord.abc.Messageable] = list(set(channel_blacklist) - {None})
 
         if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji and
@@ -372,10 +370,10 @@ class Starboard(commands.Cog):
         for reaction in message.reactions:
             if reaction.emoji == starboard_emoji:
                 await _handle_starboard_create_or_update(
-                    client, reaction,payload, message, star_channel, starboard_emoji, channel_blacklist,
+                    self.client, reaction, payload, message, star_channel, starboard_emoji, channel_blacklist,
                     star_minimum, downvote_init_value)
 
-    @ commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id is None:
             return
@@ -434,7 +432,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_upvote_emoji
             )
 
-        if None in [star_channel, starboard_emoji, downvote_init_value]:
+        if None in [star_channel, starboard_emoji]:
             return
 
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable

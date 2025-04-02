@@ -159,7 +159,7 @@ class Tags:
         if mod_ticket_channel_id:
             ticket_string = f"making a ticket in <#{mod_ticket_channel_id}>"
         else:
-            ticket_string = f"contacting staff."
+            ticket_string = "contacting staff."
         embed = discord.Embed(
             title="TEB role (Image Ban)",
             description="**Why can't I send images in the server? Why are my .GIFs only sending links and not "
@@ -289,7 +289,7 @@ class Tags:
         if mod_ticket_channel:
             ticket_string = f"making a ticket in <#{mod_ticket_channel.id}>"
         else:
-            ticket_string = f"contacting staff."
+            ticket_string = "contacting staff."
         embed = discord.Embed(
             title="Mature role and \\#mature\\-chat",
             description="Our server is accessible to people of all ages. Because of that, you may often "

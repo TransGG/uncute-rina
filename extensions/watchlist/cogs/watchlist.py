@@ -220,6 +220,7 @@ async def _add_to_watchlist(
         await itx.followup.send(warning + ":white_check_mark: Successfully added user to watchlist.",
                                 ephemeral=True)
 
+
 @app_commands.check(is_staff_check)
 @module_enabled_check(ModuleKeys.watchlist)
 @app_commands.context_menu(name="Add user to watchlist")
@@ -227,6 +228,7 @@ async def watchlist_ctx_user(itx: discord.Interaction, user: discord.User):
     watchlist_reason_modal = WatchlistReasonModal(_add_to_watchlist, "Add user to watchlist",
                                                   user, None, 300)
     await itx.response.send_modal(watchlist_reason_modal)
+
 
 @app_commands.check(is_staff_check)
 @module_enabled_check(ModuleKeys.watchlist)

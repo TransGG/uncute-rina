@@ -44,7 +44,7 @@ class QOTW(commands.Cog):
             description="Loading question...",
         )
         # send the uncool embed
-        msg = await confirm_channel.send(
+        msg = await qotw_channel.send(
             "",
             embed=embed,
             allowed_mentions=discord.AllowedMentions.none(),

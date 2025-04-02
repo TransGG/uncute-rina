@@ -7,8 +7,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys
-from resources.checks import is_staff_check, module_enabled_check  # for staff dictionary commands
+from resources.checks import is_staff_check  # for staff dictionary commands
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
 from resources.utils.utils import log_to_guild
 
@@ -102,7 +101,6 @@ class TermDictionary(commands.Cog):
         #     though this sounds like a bad idea Xd.
         #  - Should also have an integration without custom dictionary that users can install.
         #  - Make all pageviews into actual PageView views.
-
 
         def simplify(q):
             if type(q) is str:

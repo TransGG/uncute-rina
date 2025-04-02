@@ -2,6 +2,7 @@ import discord
 
 from resources.utils.utils import log_to_guild
 from resources.customs import Bot
+from extensions.settings.objects import AttributeKeys
 
 
 class SendPubliclyTagView(discord.ui.View):
