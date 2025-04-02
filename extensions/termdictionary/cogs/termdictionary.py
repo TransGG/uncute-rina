@@ -7,7 +7,8 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.checks import is_staff_check  # for staff dictionary commands
+from extensions.settings.objects import ModuleKeys
+from resources.checks import is_staff_check, module_enabled_check  # for staff dictionary commands
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
 from resources.utils.utils import log_to_guild
 
@@ -17,68 +18,69 @@ from extensions.termdictionary.views import DictionaryApi_PageView, UrbanDiction
 del_separators_table = str.maketrans({" ": "", "-": "", "_": ""})
 
 
+async def dictionary_autocomplete(itx: discord.Interaction, current: str):
+    def simplify(q):
+        if type(q) is str:
+            return q.lower().translate(del_separators_table)
+        if type(q) is list:
+            return [text.lower().translate(del_separators_table) for text in q]
+
+    terms = []
+    if current == '':
+        return []
+
+    # find results in custom dictionary
+    collection = itx.client.rina_db["termDictionary"]
+    query = {"synonyms": simplify(current)}
+    search = collection.find(query)
+    for item in search:
+        if simplify(current) in simplify(item["synonyms"]):
+            terms.append(item["term"])
+
+    # get list of choices from online
+    response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
+    data = json.loads(response_api)
+    # find exact results online
+    if len(data) != 0:
+        for item in data:
+            if item['term'].split("|")[0] not in terms:
+                if simplify(current) in simplify(item['term'].split('|')):
+                    terms.append(item['term'].split('|')[0])
+
+        # then, find whichever other terms are there (append / last) online
+        for item in data:
+            if item['term'].split("|")[0] not in terms:
+                terms.append(item['term'].split("|")[0])
+
+    # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
+    # but only if there aren't already 7 responses; to prevent extra loading time
+    if len(terms) < 7:
+        response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{current}').text
+        data = json.loads(response_api)
+        if type(data) is not dict:
+            for result in data:
+                if result["word"].capitalize() not in terms:
+                    terms.append(result["word"].capitalize())
+    # same for Urban Dictionary, searching only if there are no results for the others
+    if len(terms) < 1:
+        response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
+        data = json.loads(response_api)['list']
+        for result in data:
+            if result["word"].capitalize() + " ([from UD])" not in terms:
+                terms.append(result["word"].capitalize() + " ([from UD])")
+
+    # limit choices to the first 7
+    terms = terms[:7]
+
+    return [
+        app_commands.Choice(name=term, value=term.replace(" ([from UD])", ""))
+        for term in terms
+    ]
+
+
 class TermDictionary(commands.Cog):
     def __init__(self):
         pass
-
-    async def dictionary_autocomplete(self, itx: discord.Interaction, current: str):
-        def simplify(q):
-            if type(q) is str:
-                return q.lower().translate(del_separators_table)
-            if type(q) is list:
-                return [text.lower().translate(del_separators_table) for text in q]
-
-        terms = []
-        if current == '':
-            return []
-
-        # find results in custom dictionary
-        collection = itx.client.rina_db["termDictionary"]
-        query = {"synonyms": simplify(current)}
-        search = collection.find(query)
-        for item in search:
-            if simplify(current) in simplify(item["synonyms"]):
-                terms.append(item["term"])
-
-        # get list of choices from online
-        response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
-        data = json.loads(response_api)
-        # find exact results online
-        if len(data) != 0:
-            for item in data:
-                if item['term'].split("|")[0] not in terms:
-                    if simplify(current) in simplify(item['term'].split('|')):
-                        terms.append(item['term'].split('|')[0])
-
-            # then, find whichever other terms are there (append / last) online
-            for item in data:
-                if item['term'].split("|")[0] not in terms:
-                    terms.append(item['term'].split("|")[0])
-
-        # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
-        # but only if there aren't already 7 responses; to prevent extra loading time
-        if len(terms) < 7:
-            response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{current}').text
-            data = json.loads(response_api)
-            if type(data) is not dict:
-                for result in data:
-                    if result["word"].capitalize() not in terms:
-                        terms.append(result["word"].capitalize())
-        # same for Urban Dictionary, searching only if there are no results for the others
-        if len(terms) < 1:
-            response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
-            data = json.loads(response_api)['list']
-            for result in data:
-                if result["word"].capitalize() + " ([from UD])" not in terms:
-                    terms.append(result["word"].capitalize() + " ([from UD])")
-
-        # limit choices to the first 7
-        terms = terms[:7]
-
-        return [
-            app_commands.Choice(name=term, value=term.replace(" ([from UD])", ""))
-            for term in terms
-        ]
 
     @app_commands.command(name="dictionary", description="Look for the definition of a trans-related term!")
     @app_commands.describe(term="This is your search query. What do you want to look for?",
@@ -93,12 +95,20 @@ class TermDictionary(commands.Cog):
     ])
     @app_commands.autocomplete(term=dictionary_autocomplete)
     async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
+        # todo: rewrite this whole command.
+        #  - Make the sources an enum.
+        #  - Allow going to the next source if you're not satisfied with a dictionary's result.
+        #  - Perhaps make a view with multi-selectable options for which sources you would want to search through
+        #     though this sounds like a bad idea Xd.
+        #  - Should also have an integration without custom dictionary that users can install.
+        #  - Make all pageviews into actual PageView views.
+
+
         def simplify(q):
             if type(q) is str:
                 return q.lower().translate(del_separators_table)
             if type(q) is list:
                 return [text.lower().translate(del_separators_table) for text in q]
-
         # test if mode has been left unset or if mode has been selected: decides whether to move to the
         # online API search or not.
         result_str = ""

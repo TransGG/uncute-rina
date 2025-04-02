@@ -18,7 +18,7 @@ class BumpReminder(commands.Cog):
         if not self.client.is_module_enabled(message.guild, ModuleKeys.bump_reminder):
             return
 
-        bump_bot: discord.User | None = await self.client.get_guild_attribute(
+        bump_bot: discord.User | None = self.client.get_guild_attribute(
             message.guild, AttributeKeys.bump_reminder_bot)
         if bump_bot is None:
             return

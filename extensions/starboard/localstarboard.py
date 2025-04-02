@@ -11,7 +11,7 @@ busy_updating_starboard_messages = False
 
 
 async def get_or_fetch_starboard_messages(
-        starboard_channel: discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None
+        starboard_channel: discord.abc.Messageable
 ) -> list[discord.Message]:
     """
     Fetch list of all starboard messages, unless it is already fetching: then it waits until the

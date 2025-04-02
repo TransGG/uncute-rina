@@ -11,6 +11,10 @@ class EnabledModules(TypedDict, total=False):
     qotw: bool
     dev_requests: bool
     bump_reminder: bool
+    selfies_channel_deletion: bool
+    tags: bool
+    custom_dictionary: bool
+    watchlist: bool
 
 
 class ModuleKeys:
@@ -28,3 +32,7 @@ class ModuleKeys:
     qotw: Literal["qotw"] = "qotw"
     dev_requests: Literal["dev_requests"] = "dev_requests"
     bump_reminder: Literal["bump_reminder"] = "bump_reminder"
+    selfies_channel_deletion: Literal["selfies_channel_deletion"] = "selfies_channel_deletion"
+    tags: Literal["tags"] = "tags"
+    custom_dictionary: Literal["custom_dictionary"] = "custom_dictionary"
+    watchlist: Literal["watchlist"] = "watchlist"

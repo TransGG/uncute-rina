@@ -1,6 +1,9 @@
 import discord
 import discord.ext.commands as commands
 
+from extensions.settings.objects import ModuleKeys, AttributeKeys
+from resources.checks import module_enabled_check
+from resources.checks.command_checks import is_in_dms
 from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
@@ -34,7 +37,7 @@ async def _fetch_starboard_original_message(
         await log_to_guild(client, starboard_message.guild,
                            f"{starboard_emoji} :x: Starboard message {starboard_message.id} was ignored "
                            f"(starboard's message had no embeds)")
-        return
+        return None
     text = starboard_message.embeds[0].fields[0].value  # "[Jump!]({msgLink})"
     link = text.split("(")[1]
     # Initial attempt to use [:-1] to remove the final ")" character doesn't work if there are unknown
@@ -54,7 +57,7 @@ async def _fetch_starboard_original_message(
             f"starboard message: {starboard_message.channel.id}/{starboard_message.id}, link text: {text}\n"
             f"recovered channel id: {channel_id}"
         )
-        return
+        return None
 
     try:
         original_message = await ch.fetch_message(message_id)
@@ -63,12 +66,12 @@ async def _fetch_starboard_original_message(
         await _delete_starboard_message(client, starboard_message,
                                         f"{starboard_emoji} :x: Starboard message {starboard_message.id} was removed "
                                         f"(from {message_id}) (original message could not be found)")
-        return
+        return None
     except discord.errors.Forbidden:
         await log_to_guild(client, starboard_message.guild,
                            f":warning: Couldn't fetch starboard message "
                            f"[{starboard_message.id}]({starboard_message.jump_url}) from this channel ({ch.mention})!")
-        return
+        return None
     return original_message
 
 
@@ -174,19 +177,17 @@ async def _update_starboard_message_score(
     reaction_total = 0
     # get message's starboard-reacters
     for reaction in original_message.reactions:
-        if reaction.is_custom_emoji():
-            if getattr(reaction.emoji, "id", None) == starboard_emoji.id:
-                async for user in reaction.users():
-                    if user.id not in star_reacters:
-                        star_reacters.append(user.id)
+        if reaction.emoji == starboard_emoji:
+            async for user in reaction.users():
+                if user.id not in star_reacters:
+                    star_reacters.append(user.id)
 
     # get starboard's starboard-reacters
     for reaction in starboard_message.reactions:
-        if reaction.is_custom_emoji():
-            if getattr(reaction.emoji, "id", None) == starboard_emoji.id:
-                async for user in reaction.users():
-                    if user.id not in star_reacters:
-                        star_reacters.append(user.id)
+        if reaction.emoji == starboard_emoji:
+            async for user in reaction.users():
+                if user.id not in star_reacters:
+                    star_reacters.append(user.id)
 
     star_stat = len(star_reacters)
     if client.user.id in star_reacters:
@@ -244,20 +245,84 @@ async def _delete_starboard_message(client: Bot, starboard_message: discord.Mess
     delete_from_local_starboard(starboard_message.id)
 
 
+async def _handle_starboard_create_or_update(
+        client: Bot,
+        reaction: discord.Reaction,
+        payload: discord.RawReactionActionEvent,
+        message: discord.Message,
+        star_channel: discord.abc.Messageable,
+        starboard_emoji: discord.PartialEmoji | discord.Emoji,
+        channel_blacklist: list[discord.abc.Messageable],
+        star_minimum: int,
+        downvote_init_value: int,
+):
+    if reaction.me:
+        # check if this message is already in the starboard. If so, update it
+        starboard_messages = await get_or_fetch_starboard_messages(star_channel)
+        for star_message in starboard_messages:
+            for embed in star_message.embeds:
+                if embed.footer.text == str(message.id):
+                    await _update_starboard_message_score(client, star_message, starboard_emoji,
+                                                          downvote_init_value)
+                    return
+        return
+
+    elif reaction.count == star_minimum:
+        if client.is_me(message.author):
+        # can't starboard Rina's message
+            return
+        if message.channel.id in channel_blacklist:
+            return
+
+        try:
+            # Try to add the initial starboard emoji to starboarded message
+            # to prevent duplicate entries in starboard.
+            await message.add_reaction(starboard_emoji)
+        except discord.errors.Forbidden:
+            # If "Reaction blocked", then maybe message author blocked Rina.
+            # Thus, I can't track if Rina added it to starboard already or not.
+            await log_to_guild(
+                client,
+                client.get_guild(payload.guild_id),
+                f'**:warning: Warning: **Couldn\'t add starboard emoji to {message.jump_url}. '
+                f'They might have blocked Rina...')
+            return
+
+        await _send_starboard_message(client, message, star_channel, reaction)
+
+
 class Starboard(commands.Cog):
     def __init__(self, client: Bot):
         self.client: Bot = client
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id in [None, self.client.custom_ids["staff_server_id"]]:
-            return  # TODO: implement server-dependent module toggling
-        _star_channel, star_minimum, channel_blacklist, starboard_emoji_id, downvote_init_value = \
-            await self.client.get_guild_info(
-                payload.guild_id, "starboardChannel", "starboardCountMinimum", "starboardBlacklistedChannels",
-                "starboardEmoji", "starboardDownvoteInitValue")
+        if payload.guild_id is None:
+            return
+        if not self.client.is_module_enabled(guild_id=payload.guild_id):
+            return
+
+        star_channel: discord.abc.Messageable | None
+        star_minimum: int | None
+        channel_blacklist: list[discord.abc.Messageable | None] | None
+        starboard_emoji: discord.Emoji | None
+        downvote_init_value: int | None
+        star_channel, star_minimum, channel_blacklist, starboard_emoji, downvote_init_value = \
+            self.client.get_guild_attribute(
+                payload.guild_id,
+                AttributeKeys.starboard_channel,
+                AttributeKeys.starboard_minimum_upvote_count,
+                AttributeKeys.starboard_blacklisted_channels,
+                AttributeKeys.starboard_upvote_emoji,
+                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
+            )
+
+        if None in [star_channel, star_minimum, channel_blacklist, starboard_emoji, downvote_init_value]:
+            return
+        channel_blacklist: list[discord.abc.Messageable] = list(set(channel_blacklist) - { None })
+
         if self.client.is_me(payload.member) or \
-                (getattr(payload.emoji, "id", None) != starboard_emoji_id and
+                (getattr(payload.emoji, "id", None) != starboard_emoji and
                  getattr(payload.emoji, "name", None) != "❌"):
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
             return
@@ -283,16 +348,12 @@ class Starboard(commands.Cog):
                 f"In this case, the user reacted with a '{repr(payload.emoji)}' emoji")
             return
 
-        star_channel = self.client.get_channel(_star_channel)
-        starboard_emoji = self.client.get_emoji(starboard_emoji_id)
-
         if message.channel.id == star_channel.id:
             if not self.client.is_me(message.author):
                 return  # only needs to update the message if it's a rina starboard message of course...
 
-            starboard_original_message: discord.Message | None = await _fetch_starboard_original_message(self.client,
-                                                                                                         message,
-                                                                                                         starboard_emoji)
+            starboard_original_message: discord.Message | None = await _fetch_starboard_original_message(
+                self.client, message, starboard_emoji)
             if (starboard_original_message is not None and
                     starboard_original_message.author.id == payload.user_id and
                     payload.emoji.name == "❌"):
@@ -309,60 +370,39 @@ class Starboard(commands.Cog):
             return
 
         for reaction in message.reactions:
-            if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
-                # So reaction.emoji == starboard_emoji
-                if reaction.me:
-                    # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
-                    for star_message in starboard_messages:
-                        for embed in star_message.embeds:
-                            if embed.footer.text == str(message.id):
-                                await _update_starboard_message_score(self.client, star_message, starboard_emoji,
-                                                                      downvote_init_value)
-                                return
-                    return
-                elif reaction.count == star_minimum:
-                    if self.client.is_me(message.author):
-                        # can't starboard Rina's message
-                        return
-                    if message.channel.id in channel_blacklist:
-                        return
+            if reaction.emoji == starboard_emoji:
+                await _handle_starboard_create_or_update(
+                    client, reaction,payload, message, star_channel, starboard_emoji, channel_blacklist,
+                    star_minimum, downvote_init_value)
 
-                    try:
-                        # Try to add the initial starboard emoji to starboarded message
-                        # to prevent duplicate entries in starboard.
-                        await message.add_reaction(starboard_emoji)
-                    except discord.errors.Forbidden:
-                        # If "Reaction blocked", then maybe message author blocked Rina.
-                        # Thus, I can't track if Rina added it to starboard already or not.
-                        await log_to_guild(
-                            self.client,
-                            self.client.get_guild(payload.guild_id),
-                            f'**:warning: Warning: **Couldn\'t add starboard emoji to {message.jump_url}. '
-                            f'They might have blocked Rina...')
-                        return
-
-                    await _send_starboard_message(self.client, message, star_channel, reaction)
-
-    @commands.Cog.listener()
+    @ commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id in [None, self.client.custom_ids["staff_server_id"]]:
+        if payload.guild_id is None:
             return
-        _star_channel, starboard_emoji_id, downvote_init_value = await self.client.get_guild_info(
-            payload.guild_id,
-            "starboardChannel",
-            "starboardEmoji",
-            "starboardDownvoteInitValue")
-        if getattr(payload.emoji, "id", None) != starboard_emoji_id and \
-                getattr(payload.emoji, "name", None) != "❌":
+        if not self.client.is_module_enabled(guild_id=payload.guild_id):
+            return
+
+        star_channel: discord.abc.Messageable | None
+        starboard_emoji: discord.Emoji | None
+        downvote_init_value: int | None
+        star_channel, starboard_emoji, downvote_init_value = \
+            self.client.get_guild_attribute(
+                payload.guild_id,
+                AttributeKeys.starboard_channel,
+                AttributeKeys.starboard_upvote_emoji,
+                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
+            )
+
+        if None in [star_channel, starboard_emoji, downvote_init_value]:
+            return
+
+        if payload.emoji != starboard_emoji and payload.emoji.name != "❌":
             # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
             return
+
         # get the message id from payload.message_id through the channel (with payload.channel_id) (oof lengthy process)
         ch = self.client.get_channel(payload.channel_id)
         message = await ch.fetch_message(payload.message_id)
-
-        star_channel = self.client.get_channel(_star_channel)
-        starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
         if message.channel.id == star_channel.id:
             if len(message.embeds) > 0:
@@ -370,32 +410,31 @@ class Starboard(commands.Cog):
             return
 
         for reaction in message.reactions:
-            if getattr(reaction.emoji, "id", None) == starboard_emoji_id:
-                if reaction.me:
-                    # check if this message is already in the starboard. If so, update it
-                    starboard_messages = await get_or_fetch_starboard_messages(star_channel)
-                    for star_message in starboard_messages:
-                        for embed in star_message.embeds:
-                            if embed.footer.text == str(message.id):
-                                await _update_starboard_message_score(self.client, star_message, starboard_emoji,
-                                                                      downvote_init_value)
-                                return
+            if reaction.emoji == starboard_emoji and reaction.me:
+                # check if this message is already in the starboard. If so, update it
+                starboard_messages = await get_or_fetch_starboard_messages(star_channel)
+                for star_message in starboard_messages:
+                    for embed in star_message.embeds:
+                        if embed.footer.text == str(message.id):
+                            await _update_starboard_message_score(self.client, star_message, starboard_emoji,
+                                                                  downvote_init_value)
+                            return
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
-        if message_payload.guild_id in [None, self.client.custom_ids["staff_server_id"]]:
+        if not self.client.is_module_enabled(guild_id=message_payload.guild_id):
             return
-        _star_channel, starboard_emoji_id = await self.client.get_guild_info(message_payload.guild_id,
-                                                                             "starboardChannel", "starboardEmoji")
-        star_channel = self.client.get_channel(_star_channel)
-        starboard_emoji = self.client.get_emoji(starboard_emoji_id)
 
-        if star_channel is None:
-            guild = self.client.get_guild(message_payload.guild_id)
-            await log_to_guild(self.client, guild,
-                               f":warning: Couldn't find starboard channel from guild info on message delete!\n"
-                               f"message payload: {message_payload.guild_id}/{message_payload.channel_id}/{message_payload.message_id}\n"
-                               f"recovered channel id: {_star_channel}")
+        star_channel: discord.abc.Messageable | None
+        starboard_emoji: discord.Emoji | None
+        star_channel, starboard_emoji = \
+            self.client.get_guild_attribute(
+                message_payload.guild_id,
+                AttributeKeys.starboard_channel,
+                AttributeKeys.starboard_upvote_emoji
+            )
+
+        if None in [star_channel, starboard_emoji, downvote_init_value]:
             return
 
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
@@ -409,28 +448,31 @@ class Starboard(commands.Cog):
                                f"(from {message_payload.message_id}) "
                                f"(Starboard message was deleted manually).")
             return
-        elif message_payload.channel_id != star_channel.id:
-            # check if this message's is in the starboard. If so, delete it
-            starboard_messages = await get_or_fetch_starboard_messages(star_channel)
-            for star_message in starboard_messages:
-                for embed in star_message.embeds:
-                    if embed.footer.text == str(message_payload.message_id):
-                        try:
-                            image = star_message.embeds[0].image.url
-                        except AttributeError:
-                            image = ""
-                        try:
-                            msg_link = str(message_payload.message_id) + "  |  " + (
-                                await self.client.get_channel(message_payload.channel_id).fetch_message(
-                                    message_payload.message_id)).jump_url
-                        except discord.NotFound:
-                            msg_link = str(message_payload.message_id) + " (couldn't get jump link)"
 
-                        await _delete_starboard_message(
-                            self.client,
-                            star_message,
-                            f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "
-                            f"(original message was removed (this starboard message's linked id matched "
-                            f"the removed message's)). "
-                            f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
-                        return
+        # check if this message's is in the starboard. If so, delete it
+        starboard_messages = await get_or_fetch_starboard_messages(star_channel)
+        for star_message in starboard_messages:
+            for embed in star_message.embeds:
+                if embed.footer.text != str(message_payload.message_id):
+                    continue
+
+                try:
+                    image = star_message.embeds[0].image.url
+                except AttributeError:
+                    image = ""
+
+                try:
+                    msg_link = str(message_payload.message_id) + "  |  " + (
+                        await self.client.get_channel(message_payload.channel_id).fetch_message(
+                            message_payload.message_id)).jump_url
+                except discord.NotFound:
+                    msg_link = str(message_payload.message_id) + " (couldn't get jump link)"
+
+                await _delete_starboard_message(
+                    self.client,
+                    star_message,
+                    f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "
+                    f"(original message was removed (this starboard message's linked id matched "
+                    f"the removed message's)). "
+                    f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
+                return

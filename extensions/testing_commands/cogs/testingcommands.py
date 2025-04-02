@@ -9,6 +9,7 @@ from resources.views.generics import PageView, create_simple_button
 
 class TestingCog(commands.GroupCog, name="testing"):
     def __init__(self):
+        # todo: try to implement tests for commands instead of doing roundabout ways like these.
         pass
 
     @app_commands.command(name="send_fake_watchlist_modlog", description="make a fake user modlog report")

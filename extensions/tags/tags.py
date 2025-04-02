@@ -4,7 +4,7 @@ import discord
 
 from resources.customs.bot import Bot
 from resources.customs.enabledservers import EnabledServers
-from resources.utils.utils import get_mod_ticket_channel_id  # for ticket channel id in Report tag
+from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
 from resources.utils.utils import log_to_guild
 # ^ for logging when people send tags anonymously (in case someone abuses the anonymity)
 
@@ -71,18 +71,20 @@ class Tags:
             anonymous=True
     ):
         # additional_info = [message.author.name, message.author.id]
-        mod_ticket_channel_id = get_mod_ticket_channel_id(client, context.guild.id)
+        mod_ticket_channel = get_mod_ticket_channel(client, context.guild.id)
+        ticket_string = f"create a mod ticket in <#{mod_ticket_channel.id}> or " if mod_ticket_channel else ""
+
         embed = discord.Embed(
             title='Reporting a message or scenario',
             description="Hi there! If anyone is making you uncomfortable, or you want to "
                         "report or prevent a rule-breaking situation, you can `Right Click "
                         "Message > Apps > Report Message` to notify our staff confidentially. "
-                        f"You can also create a mod ticket in <#{mod_ticket_channel_id}> or DM a staff "
+                        f"You can also {ticket_string}DM a staff "
             # mod_ticked_channel_id = #contact-staff
                         "member.")
         embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
         if isinstance(context, discord.Interaction):
-            await Tags.tag_message(tag_name, context, client, public, anonymous, embed, public_footer=True)
+            await Tags.tag_message(tag_name, context, public, anonymous, embed, public_footer=True)
         else:
             if additional_info is not None:
                 embed.set_footer(text=f"Triggered by {additional_info[0]} ({additional_info[1]})")
@@ -154,7 +156,11 @@ class Tags:
 
     @staticmethod
     async def send_imagebanrole_info(tag_name: str, itx: discord.Interaction, public, anonymous):
-        mod_ticket_channel_id = get_mod_ticket_channel_id(itx.client, itx.guild.id)
+        mod_ticket_channel_id = get_mod_ticket_channel(itx.client, itx.guild.id)
+        if mod_ticket_channel_id:
+            ticket_string = f"making a ticket in <#{mod_ticket_channel_id}>"
+        else:
+            ticket_string = f"contacting staff."
         embed = discord.Embed(
             title="TEB role (Image Ban)",
             description="**Why can't I send images in the server? Why are my .GIFs only sending links and not "
@@ -166,7 +172,7 @@ class Tags:
                         "method we use to prevent trolls and other bad actors from spamming our server.\n"
                         "\n"
                         "If you've been active on the server for a bit and need this role removed, please "
-                        f"don't hesitate to make a ticket in <#{mod_ticket_channel_id}>.\n"
+                        f"don't hesitate to {ticket_string}.\n"
                         "Do note that mods will *only* remove the role if you have been active enough in the "
                         "server and weren't given the role from a warning."
         )
@@ -280,7 +286,11 @@ class Tags:
 
     @staticmethod
     async def send_maturerole_info(tag_name: str, itx: discord.Interaction, public, anonymous):
-        mod_ticket_channel_id = get_mod_ticket_channel_id(itx.client, itx)
+        mod_ticket_channel: discord.abc.Messageable | None = get_mod_ticket_channel(itx.client, itx)
+        if mod_ticket_channel:
+            ticket_string = f"making a ticket in <#{mod_ticket_channel.id}>"
+        else:
+            ticket_string = f"contacting staff."
         embed = discord.Embed(
             title="Mature role and \\#mature\\-chat",
             description="Our server is accessible to people of all ages. Because of that, you may often "
@@ -289,8 +299,8 @@ class Tags:
                         "right conversation partners. In such cases, the \\# mature-chat may be something for you!\n"
                         "\n"
                         "The channel is 18+, with the intention of keeping the chat more mature. You must still follow "
-                        "all server rules.\n"
-                        f"Access the channel by making a ticket in <#{mod_ticket_channel_id}>!"
+                        "all server rules.\n"  # todo: make these tags be toggleable per server.
+                        "Access the channel by " + ticket_string + "!"
         )
         await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 

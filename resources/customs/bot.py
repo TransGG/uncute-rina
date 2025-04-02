@@ -9,13 +9,16 @@ import discord.ext.commands as commands
 import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 
+from extensions.settings.objects import AttributeKeys, EnabledModules, ServerAttributes
+
 if TYPE_CHECKING:
-    from extensions.settings.objects import ServerSettings, ServerAttributes, EnabledModules, AttributeKeys
+    from extensions.settings.objects import ServerSettings
 
 ApiTokenDict = TypedDict('ApiTokenDict',
                          {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
 
 T = TypeVar('T')
+G = TypeVar('G')
 
 
 class Bot(commands.Bot):
@@ -43,6 +46,7 @@ class Bot(commands.Bot):
 
     @property
     def custom_ids(self):
+        # todo: remove entirely
         production_ids = {
             "staff_server_id": 981730502987898960,
             "staff_qotw_channel": 1019706498609319969,
@@ -125,6 +129,7 @@ class Bot(commands.Bot):
     async def get_guild_info(
             self, guild_id: discord.Guild | int, *args: str, log: tuple[discord.Interaction, str] | None = None
     ):
+        # todo: remove entirely
         """
         Get a guild's server settings (from /editguildinfo, in cmd_customvcs).
 
@@ -168,28 +173,30 @@ class Bot(commands.Bot):
             raise
 
     def get_guild_attribute(
-            self, guild_id: discord.Guild | int, *args: str, default: T = None
-    ) -> object | T | list[object | T]:
+            self, guild_id: discord.Guild | int, *args: str, default: T = None, default_in_list: G = None
+    ) -> object | T | list[object | G]:
         """
         Get ServerSettings attributes for the given guild.
 
         :param guild_id: The guild or guild id of the server you want to get attributes for.
         :param args: The attribute(s) to get the values of. Must be keys of ServerAttributes.
-        :param default: The default value to return if the attribute is not found. If multiple args were provided,
+        :param default: The value to return if attribute was not found.
+        :param default_in_list: The value to return if an attribute in a list was not found.
 
         :return: A single or list of values matching the requested attributes, with *default* if
          attributes are not found.
         """
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
+        if len(args) == 0:
+            raise ValueError("You must provide at least one argument!")
 
         if (self.server_settings is None or  # settings have not been fetched yet.
                 guild_id not in self.server_settings):  # return early
-            if type(args) is list:
+            if len(args) > 1:
                 return [default] * len(args)
             return default
 
-        print(self.server_settings[guild_id])
         for attr, val in self.server_settings[guild_id].attributes.items():
             print(attr, val)
 
@@ -210,14 +217,14 @@ class Bot(commands.Bot):
                 maybe_the_parent_server_has_it = self.get_guild_attribute(parent_server, arg)
                 output.append(maybe_the_parent_server_has_it)
             else:
-                output.append(default)
+                output.append(default_in_list)
 
         if len(output) == 1:
             return output[0]
         return output
 
     def is_module_enabled(
-            self, guild_id: discord.Guild | int, *args: str
+            self, guild_id: discord.Guild | int | None, *args: str
     ) -> bool | list[bool]:
         """
         Check if a module is enabled for the given server.

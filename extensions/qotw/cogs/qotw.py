@@ -4,9 +4,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys
-from resources.checks import not_in_dms_check, module_enabled_check
-from resources.utils.utils import get_mod_ticket_channel_id
+from extensions.settings.objects import ModuleKeys, AttributeKeys
+from resources.checks import not_in_dms_check, module_enabled_check, MissingAttributesCheckFailure
+from resources.utils.utils import get_mod_ticket_channel
+from resources.customs.bot import Bot
 
 
 class QOTW(commands.Cog):
@@ -17,19 +18,26 @@ class QOTW(commands.Cog):
     @app_commands.describe(question="What question would you like to add?")
     @app_commands.check(not_in_dms_check)
     @module_enabled_check(ModuleKeys.qotw)
-    async def qotw(self, itx: discord.Interaction, question: str):
+    async def qotw(self, itx: discord.Interaction[Bot], question: str):
         if len(question) > 400:
-            channel_id = get_mod_ticket_channel_id(itx.client, guild_id=itx.guild.id)
+            ticket_channel: discord.abc.Messageable | None = get_mod_ticket_channel(itx.client, guild_id=itx.guild.id)
+            if ticket_channel:
+                special_request_string = f"make a ticket (in <#{ticket_channel.id}>)."
+            else:
+                special_request_string = "contact staff directly."
             await itx.response.send_message(
-                f"Please make your question shorter! (400 characters) If you have a special request, "
-                f"please make a ticket (in <#{channel_id}>)",
-                ephemeral=True)
+                "Please make your question shorter! (400 characters). If you have a special request, please " +
+                special_request_string, ephemeral=True)
             await itx.followup.send("-# " + question, ephemeral=True)
             return
-        await itx.response.defer(ephemeral=True)
 
         # get channel of where this message has to be sent
-        confirm_channel = itx.client.get_channel(itx.client.custom_ids["staff_qotw_channel"])
+        qotw_channel = itx.client.get_guild_attribute(itx.guild, AttributeKeys.qotw_suggestions_channel)
+        if not qotw_channel:
+            raise MissingAttributesCheckFailure(AttributeKeys.qotw_suggestions_channel)
+
+        await itx.response.defer(ephemeral=True)
+
         # make uncool embed for the loading period while it sends the copyable version
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=33, g=33, b=33),

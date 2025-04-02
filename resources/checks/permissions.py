@@ -3,20 +3,10 @@ import discord
 
 from typing import TYPE_CHECKING
 
+from extensions.settings.objects import AttributeKeys
+
 if TYPE_CHECKING:
     from resources.customs.bot import Bot
-
-
-def is_verified(itx: discord.Interaction[Bot], member: discord.Member | discord.User) -> bool:
-    """
-    Check if someone is verified.
-
-    :param itx: The interaction with ``itx.client.server_settings`` and ``itx.guild``.
-    :param member: A discord user with or without roles attribute.
-
-    :return: Whether the user is verified.
-    """
-    return is_staff(itx, member)
 
 
 def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.User) -> bool:
@@ -28,7 +18,8 @@ def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
 
     :return: Whether the user has a staff role.
     """
-    staff_roles: list[discord.Role | None] | None = itx.client.get_guild_attribute(itx.guild, "staff_roles")
+    staff_roles: list[discord.Role | None] | None = itx.client.get_guild_attribute(
+        itx.guild, AttributeKeys.staff_roles)
     if staff_roles is None:
         staff_roles = []
     roles_set: set[discord.Role] = set(staff_roles) - { None }
@@ -47,7 +38,8 @@ def is_admin(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
 
     :return: Whether the user has an admin role.
     """
-    admin_roles: list[discord.Role | None] | None = itx.client.get_guild_attribute(itx.guild, "admin_roles")
+    admin_roles: list[discord.Role | None] | None = itx.client.get_guild_attribute(
+        itx.guild, AttributeKeys.admin_roles)
     if admin_roles is None:
         admin_roles = []
     roles_set: set[discord.Role] = set(admin_roles) - { None }

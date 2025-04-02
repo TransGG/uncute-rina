@@ -31,9 +31,10 @@ class DevRequest(commands.Cog):
         developer_request_channel, developer_role = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.developer_request_channel, AttributeKeys.developer_request_reaction_role)
         if developer_request_channel is None or developer_role is None:
-            missing = []
-            if developer_request_channel is None: missing.append(AttributeKeys.developer_request_channel)
-            if developer_role is None: missing.append(AttributeKeys.developer_request_reaction_role)
+            missing = [key for key, value in {
+                AttributeKeys.developer_request_channel: developer_request_channel,
+                AttributeKeys.developer_request_reaction_role: developer_role}
+                       if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
         if len(suggestion) > 4000:

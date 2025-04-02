@@ -89,7 +89,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         """
         vc_hub: discord.VoiceChannel
         vc_category: discord.CategoryChannel
-        vc_hub, vc_category = await itx.client.get_guild_attribute(
+        vc_hub, vc_category = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.custom_vc_create_channel, AttributeKeys.custom_vc_category)
         if vc_hub is None or vc_category is None:
             if from_event:

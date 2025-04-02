@@ -4,9 +4,11 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.checks import module_enabled_check, not_in_dms_check
 from resources.customs.bot import Bot
 # ^ to specify which tags can be used in which servers (e.g. Mature role not in EnbyPlace)
-from resources.utils.utils import get_mod_ticket_channel_id  # for ticket channel id in Report tag
+from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
 
 from extensions.tags.tags import Tags, tag_info_dict
 
@@ -18,6 +20,7 @@ async def _tag_autocomplete(itx: discord.Interaction, current: str):
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
 
+    # only show tags that are enabled in the server
     options = [i.lower() for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
     return [
                app_commands.Choice(name=term, value=term)
@@ -50,20 +53,17 @@ class TagFunctions(commands.Cog):
         self.client = client
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         global report_message_reminder_unix
-        if message.author.bot:
+        if message.guild is None or message.author.bot:
             return
 
-        for staff_role_mention in ["<@&981735650971775077>",  # transplace moderator
-                                   "<@&1012954384142966807>",  # transplace sr. mod
-                                   "<@&981735525784358962>",  # transplace admin
-                                   #    "<@&1109905190372524132>", # transonance admin
-                                   #    "<@&1108771208931049544>", # transonance staff
-                                   #    "<@&1087014898418061363>", # enbyplace moderator
-                                   #    "<@&1087014898418061365>", # enbyplace sr. mod
-                                   #    "<@&1087014898418061367>", # enbyplace admin
-                                   ]:
+        staff_role_list, admin_role_list = self.client.get_guild_attribute(
+            message.guild, AttributeKeys.staff_roles, AttributeKeys.admin_roles, default=[])
+        staff_roles = set(staff_role_list + admin_role_list)
+        staff_role_mentions = [f"<@&{role.id}>" for role in staff_roles if staff_roles is not None]
+
+        for staff_role_mention in staff_role_mentions:
             if staff_role_mention in message.content:
                 time_now = int(datetime.now().timestamp())  # get time in unix
                 if time_now - report_message_reminder_unix > 900:  # 15 minutes
@@ -77,16 +77,20 @@ class TagFunctions(commands.Cog):
     @app_commands.describe(public="Show everyone in chat? (default: yes)")
     @app_commands.describe(anonymous="Hide your name when sending the message publicly? (default: yes)")
     @app_commands.autocomplete(tag=_tag_autocomplete)
+    @module_enabled_check(ModuleKeys.tags)
     async def tag(self, itx: discord.Interaction, tag: str, public: bool = True, anonymous: bool = True):
         options = [i for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
         tag = tag.lower()
         if tag in options:
             await tag_info_dict[tag][1](tag, itx, public=public, anonymous=anonymous)
         elif tag in tag_info_dict:
-            ticket_channel = get_mod_ticket_channel_id(itx.client, itx)
+            ticket_channel = get_mod_ticket_channel(itx.client, itx)
+            if ticket_channel:
+                ticket_string = f"make a staff ticket (<#{ticket_channel.id}>)."
+            else:
+                ticket_string = "please tell staff to double-check."
             await itx.response.send_message(
-                f"This tag is not enabled in this server! If you think this is a mistake, make "
-                f"a staff ticket (<#{ticket_channel}>).",
+                "This tag is not enabled in this server! If you think this is a mistake, " + ticket_string,
                 ephemeral=True)
         elif tag == "help":
             await itx.response.send_message("List of tags currently available to send:\n" +
@@ -97,7 +101,11 @@ class TagFunctions(commands.Cog):
     @app_commands.command(name="remove-role", description="Remove one of your agreement roles")
     @app_commands.describe(role_name="The name of the role to remove")
     @app_commands.autocomplete(role_name=_role_autocomplete)
+    @app_commands.check(not_in_dms_check)
     async def remove_role(self, itx: discord.Interaction, role_name: str):
+        # todo: move this function out of this cog, since it's not a tag command; more a staff-like command.
+        itx.user: discord.Member  # noqa  # it shouldn't be a discord.User cause the app_command check prevents DMs.
+
         role_options = {
             "npa": ["NPA", 1126160553145020460],
             "nva": ["NVA", 1126160612620243044],

@@ -4,9 +4,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.settings.objects import ModuleKeys
 from resources.customs.bot import Bot
 from resources.checks.permissions import is_staff  # to check role in _add_to_watchlist, as backup
-from resources.checks import is_staff_check  # the cog is pretty much only intended for staff use
+from resources.checks import is_staff_check, module_enabled_check  # the cog is pretty much only intended for staff use
 
 from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache
 from extensions.watchlist.modals import WatchlistReasonModal
@@ -219,26 +220,33 @@ async def _add_to_watchlist(
         await itx.followup.send(warning + ":white_check_mark: Successfully added user to watchlist.",
                                 ephemeral=True)
 
+@app_commands.check(is_staff_check)
+@module_enabled_check(ModuleKeys.watchlist)
+@app_commands.context_menu(name="Add user to watchlist")
+async def watchlist_ctx_user(itx: discord.Interaction, user: discord.User):
+    watchlist_reason_modal = WatchlistReasonModal(_add_to_watchlist, "Add user to watchlist",
+                                                  user, None, 300)
+    await itx.response.send_modal(watchlist_reason_modal)
+
+@app_commands.check(is_staff_check)
+@module_enabled_check(ModuleKeys.watchlist)
+@app_commands.context_menu(name="Add msg to watchlist")
+async def watchlist_ctx_message(itx: discord.Interaction, message: discord.Message):
+    watchlist_reason_modal = WatchlistReasonModal(_add_to_watchlist, "Add user to watchlist using message",
+                                                  message.author, message, 300)
+    await itx.response.send_modal(watchlist_reason_modal)
+
 
 class WatchList(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
+        self.client.tree.add_command(watchlist_ctx_user)
+        self.client.tree.add_command(watchlist_ctx_message)
 
-        # setting ContextMenu here, because apparently you can't use that decorator in classes..?
-        self.ctx_menu_user = app_commands.ContextMenu(
-            name='Add user to watchlist',
-            callback=self.watchlist_ctx_user,
-        )
-        self.ctx_menu_message = app_commands.ContextMenu(
-            name='Add msg to watchlist',
-            callback=self.watchlist_ctx_message,
-        )
-        self.client.tree.add_command(self.ctx_menu_user)
-        self.client.tree.add_command(self.ctx_menu_message)
-
-    @app_commands.check(is_staff_check)
     @app_commands.command(name="watchlist", description="Add a user to the watchlist.")
     @app_commands.describe(user="User to add", reason="Reason for adding", message_id="Message to add to reason")
+    @app_commands.check(is_staff_check)
+    @module_enabled_check(ModuleKeys.watchlist)
     async def watchlist(self, itx: discord.Interaction, user: discord.User, reason: str = "", message_id: str = None):
         try:
             user = await app_commands.transformers.MemberTransformer().transform(itx, user)
@@ -250,9 +258,10 @@ class WatchList(commands.Cog):
                        "It's also easier to mention them if you run it in the main server. Anyway,\n\n")
         await _add_to_watchlist(itx, user, reason, message_id, warning=warning)
 
-    @app_commands.check(is_staff_check)
     @app_commands.command(name="check_watchlist", description="Check if a user is on the watchlist.")
     @app_commands.describe(user="User to check")
+    @app_commands.check(is_staff_check)
+    @module_enabled_check(ModuleKeys.watchlist)
     async def check_watchlist(self, itx: discord.Interaction, user: discord.User):
         if not is_staff(itx, itx.user):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
@@ -270,18 +279,6 @@ class WatchList(commands.Cog):
         else:
             await itx.followup.send(f"🟡 This user ({user.mention} `{user.id}`) is not yet on the watchlist.",
                                     ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
-
-    @app_commands.check(is_staff_check)
-    async def watchlist_ctx_user(self, itx, user: discord.User):
-        watchlist_reason_modal = WatchlistReasonModal(_add_to_watchlist, "Add user to watchlist",
-                                                      user, None, 300)
-        await itx.response.send_modal(watchlist_reason_modal)
-
-    @app_commands.check(is_staff_check)
-    async def watchlist_ctx_message(self, itx, message: discord.Message):
-        watchlist_reason_modal = WatchlistReasonModal(_add_to_watchlist, "Add user to watchlist using message",
-                                                      message.author, message, 300)
-        await itx.response.send_modal(watchlist_reason_modal)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

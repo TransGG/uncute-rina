@@ -15,7 +15,7 @@ class BumpReminderObject:
     async def send_reminder(self):
         bump_channel: discord.abc.Messageable | None
         bump_role: discord.Role | None
-        bump_channel, bump_role = await self.client.get_guild_attribute(
+        bump_channel, bump_role = self.client.get_guild_attribute(
             self.guild, AttributeKeys.bump_reminder_channel, AttributeKeys.bump_reminder_role)
 
         if bump_channel is None or bump_role is None:

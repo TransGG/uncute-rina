@@ -67,5 +67,8 @@ class DictionaryApi_PageView(discord.ui.View):
                                     embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
         # only let someone send 3 of the entries in a dictionary before disabling to prevent spam
+        # todo: remove this limit, it's not necessary: people can always just re-type the /dictionary command and
+        #  print more than 3, so it would just be a bother. It also says the user who ran the command so it's
+        #  not anonymous spam and allows staff to punish the user accordingly.
         if self.printouts == 3:
             self.stop()

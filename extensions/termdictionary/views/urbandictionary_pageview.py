@@ -3,6 +3,7 @@ import discord
 
 class UrbanDictionary_PageView(discord.ui.View):
     def __init__(self, pages, timeout=None):
+        # todo: just make this a PageView
         super().__init__()
         self.value = None
         self.timeout = timeout

@@ -6,8 +6,9 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.settings.objects import ModuleKeys
 from resources.checks.permissions import is_staff  # to check if messages in the selfies channel were sent by staff
-from resources.checks import is_staff_check
+from resources.checks import is_staff_check, module_enabled_check
 from resources.utils.utils import log_to_guild  # logging when a staff command is used
 
 
@@ -23,35 +24,34 @@ class StaffAddons(commands.Cog):
         if reply_to_interaction:
             await itx.response.send_message(text, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             return
-        cmd_mention = itx.client.get_command_mention("editguildinfo")
-        await itx.client.get_guild_info(itx.guild, "vcLog", log=(
-            itx,
-            "Couldn't send your message. You can't send messages in this server because "
-            "the bot setup seems incomplete\n"
-            f"Use {cmd_mention} `mode:11` to fix this!"))
+
+        await log_to_guild(
+            itx.client,
+            itx.guild,
+            f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}",
+            crash_if_not_found=True,
+            ignore_dms=True
+        )
         try:
-            # vcLog      = guild["vcLog"]
-            await log_to_guild(itx.client, itx.guild,
-                               f"{itx.user.nick or itx.user.name} ({itx.user.id}) said a message using Rina: {text}")
             text = text.replace("[[\\n]]", "\n").replace("[[del]]", "")
             await itx.channel.send(f"{text}",
                                    allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True,
                                                                             replied_user=True))
         except discord.Forbidden:
             await itx.response.send_message(
-                "Forbidden! I can't send a message in this channel/thread because I "
-                "can't see it or because I'm not added to it yet!\n"
-                "(Add me to the thread by mentioning me, or let Rina see this channel)",
+                "Forbidden: I'm not allowed to send a message in this channel.",
                 ephemeral=True)
             return
         # No longer necessary: this gets caught by the on_app_command_error() event in the main file.
         await itx.response.send_message("Successfully sent!", ephemeral=True)
 
     @app_commands.check(is_staff_check)
+    @module_enabled_check(ModuleKeys.selfies_channel_deletion)
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
     async def delete_week_selfies(self, itx: discord.Interaction):
         # This function largely copies the built-in channel.purge() function with a check, but is more fancy by
         # offering a sort of progress update every 50-100 messages :D
+        # todo attribute: add selfies channel(s)
         time_now = int(datetime.now().timestamp())  # get time in unix
         if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
             await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
@@ -110,7 +110,6 @@ class StaffAddons(commands.Cog):
 
     @app_commands.command(name="version", description="Get bot version")
     async def get_bot_version(self, itx: discord.Interaction):
-        public = is_staff(itx, itx.user)
         # get most recently pushed bot version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]
@@ -120,12 +119,12 @@ class StaffAddons(commands.Cog):
                 await itx.response.send_message(
                     f"Bot is currently running on v{itx.client.version} (latest: v{latest_version})\n"
                     f"(started <t:{unix}:D> at <t:{unix}:T>)",
-                    ephemeral=not public)
+                    ephemeral=False)
                 return
         else:
             await itx.response.send_message(
                 f"Bot is currently running on v{itx.client.version} (latest)\n(started <t:{unix}:D> at <t:{unix}:T>)",
-                ephemeral=not public)
+                ephemeral=False)
 
     @app_commands.check(is_staff_check)
     @app_commands.command(name="update", description="Update slash-commands")

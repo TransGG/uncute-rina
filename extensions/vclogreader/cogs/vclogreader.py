@@ -8,7 +8,9 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.checks import is_staff_check  # cuz it's a staff command
+from extensions.settings.objects import AttributeKeys
+from resources.checks import is_staff_check, MissingAttributesCheckFailure  # cuz it's a staff command
+from resources.customs.bot import Bot
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
@@ -188,21 +190,99 @@ async def _get_vc_activity(
     return output
 
 
+async def _make_bar_graph(df, lower_bound, sorted_usernames, upper_bound, voice_channel):
+    df["Diff"] = df.Finish - df.Start
+    color = "crimson"
+    fig, ax = plt.subplots(figsize=(6, 3))
+    fig.suptitle(f"VC data in '{voice_channel.id}' from T-{lower_bound / 60} to T-{upper_bound / 60}")
+    labels = []
+    for i, task in enumerate(df.groupby("User")):
+        labels.append(task[0])
+        graph_data = task[1][["Start", "Diff"]]
+        ax.broken_barh(graph_data.values, (i - 0.4, 0.8), color=color)
+    ax.set_xticks(ax.get_xticks())
+    # workaround to remove upcoming warning (warning about changing labels without preventing potential overlaps)
+    tick_labels = [x.get_position()[0] for x in ax.xaxis.get_ticklabels()]
+    label_time_text_format = "%H:%M"
+    if tick_labels[-1] - tick_labels[0] < 5 * 60:
+        label_time_text_format = "%H:%M:%S"
+    elif tick_labels[-1] - tick_labels[0] > 86400:
+        label_time_text_format = "%Y-%m-%dT%H:%M"
+    ax.set_xticklabels(
+        [datetime.fromtimestamp(x, tz=timezone.utc).strftime(label_time_text_format) for x in tick_labels],
+        rotation=30)
+    # Default y-tick labels have a font size of rcParams['axes.titlesize'], which corresponds to 'large'.
+    #      https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html
+    #   'large' is relative to the default font size, which is rcParams['font.size'] (default 10.0)
+    #      https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
+    #    The text sizes are as follows: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large']
+    #    Their values are as follows:   [   5.79,      6.94,     8.33,    10.0,     12.0,     14.4,      17.2]
+    #      https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
+    #    Each text size is 1.2x bigger than the previous, with `medium` by default 10.0
+    # On the default scale (large), a graph can fit about 12 names. That would give 12*12=144 fontsize in a graph.
+    # When more users are shown (eg. 30), that would bring the font size to 144 / 30 = 4.8,
+    scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)  # clamp to 4 <= size <= 12 (default)
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels, scaling_label_size)
+    ax.set_xlabel("time (utc+0)")
+    plt.tight_layout()
+    plt.savefig('outputs/vcLogs.png', dpi=300)
+
+
+async def _format_data_for_graph(events, max_time, min_time, select_user_ids, voice_channel):
+    intermediate_data: dict[int, dict[
+        typing.Literal["name", "time_temp", "timestamps"],
+        str | None | float | list[tuple[float, float]]
+    ]] = {}
+    for event in events:
+        unix, user, from_channel, to_channel = event
+        from_channel = from_channel[0] if from_channel else from_channel
+        # set as its ID if not None (prevent TypeError: 'NoneType' object is not subscriptable)
+        to_channel = to_channel[0] if to_channel else to_channel
+        user_id = user[0]
+        if len(select_user_ids) != 0 and user_id not in select_user_ids:
+            continue
+        if voice_channel.id not in [from_channel, to_channel]:
+            continue
+        if user[0] not in intermediate_data:
+            intermediate_data[user_id] = {"name": user[1], "time_temp": None, "timestamps": []}
+
+        if from_channel == voice_channel.id:
+            if intermediate_data[user_id]["time_temp"] is None:
+                intermediate_data[user_id]["timestamps"].append((min_time, unix))
+            else:
+                intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], unix))
+                intermediate_data[user_id]["time_temp"] = None
+        elif to_channel == voice_channel.id:
+            intermediate_data[user_id]["time_temp"] = unix
+    for user_id in intermediate_data:
+        if intermediate_data[user_id]["time_temp"]:
+            intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], max_time))
+        del intermediate_data[user_id]["time_temp"]
+    data: VcLogGraphData = {"User": [], "Start": [], "Finish": []}
+    sorted_usernames = sorted(intermediate_data)  # sort alphabetically so graph always uses the same order
+    for user in sorted_usernames:
+        for time_tuple in intermediate_data[user]["timestamps"]:
+            data["User"].append(intermediate_data[user]["name"])
+            data["Start"].append(time_tuple[0])
+            data["Finish"].append(time_tuple[1])
+    return data, sorted_usernames
+
+
 class VCLogReader(commands.Cog):
     def __init__(self):
         pass
 
-    @app_commands.check(is_staff_check)
     @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
                            upper_bound="Get data up to [period] minutes ago",
                            msg_log_limit="How many logs should I use to make the graph (default: 5000)",
                            user_ids="Specific user ids to filter the graph for (separate with comma)")
+    @app_commands.check(is_staff_check)
     async def get_voice_channel_data(
-            self, itx: discord.Interaction, requested_channel: str, lower_bound: str, upper_bound: str = None,
+            self, itx: discord.Interaction[Bot], requested_channel: str, lower_bound: str, upper_bound: str = None,
             msg_log_limit: int = 5000, user_ids: str | None = None
     ):
-        # todo: shorten this function
         if user_ids is None:
             user_ids = ""
         select_user_ids: list[str] = user_ids.replace(" ", "").split(",")
@@ -224,19 +304,11 @@ class VCLogReader(commands.Cog):
                                                members=[])
             warning = "Warning: This channel is not a voice channel, or has been deleted!\n\n"
 
-        cmd_mention = itx.client.get_command_mention("editguildinfo")
-        try:
-            log_channel_id = await itx.client.get_guild_info(itx.guild_id, "vcActivityLogChannel")
-        except KeyError:
-            await itx.response.send_message(
-                f"Error: No log channel found! Set one with {cmd_mention} `mode:Edit` `option:51` `value:`.",
-                ephemeral=True)
-            return
-        log_channel = itx.client.get_channel(log_channel_id)
-        if log_channel is None:
-            await itx.response.send_message(
-                f"Error: The given log channel id ({log_channel_id}) yielded no valid channels!", ephemeral=True)
-            return
+        vc_activity_logs_channel = itx.client.get_guild_attribute(
+            itx.guild_id, AttributeKeys.voice_channel_activity_logs_channel)
+
+        if vc_activity_logs_channel is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.voice_channel_activity_logs_channel)
 
         if upper_bound is None:
             upper_bound = 0  # 0 minutes from now
@@ -266,97 +338,20 @@ class VCLogReader(commands.Cog):
         min_time: float = current_time - lower_bound
         max_time: float = current_time - upper_bound
 
-        events = await _get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
+        events = await _get_vc_activity(vc_activity_logs_channel, min_time, max_time, msg_log_limit)
 
         if max_time == current_time:  # current_time - 0 == current_time
-            # if looking until the current time/date, add fake "leave" event for every person that is currently
-            # still in the voice channel. This ensures that even [those that haven't joined or left during the
-            # given time frame] will still be plotted on the graph.
+            # If looking until the current time/date, add fake "leave" event for every person that is currently
+            #  still in the voice channel. This ensures that even [those that haven't joined or left during the
+            #  given time frame] will still be plotted on the graph.
             for member in voice_channel.members:
                 events.append((current_time, (member.id, member.name), (voice_channel.id, voice_channel.name), None))
 
-        intermediate_data: dict[int, dict[
-            typing.Literal["name", "time_temp", "timestamps"],
-            str | None | float | list[tuple[float, float]]
-        ]] = {}
-
-        for event in events:
-            unix, user, from_channel, to_channel = event
-            from_channel = from_channel[0] if from_channel else from_channel
-            # set as its ID if not None (prevent TypeError: 'NoneType' object is not subscriptable)
-            to_channel = to_channel[0] if to_channel else to_channel
-            user_id = user[0]
-            if len(select_user_ids) != 0 and user_id not in select_user_ids:
-                continue
-            if voice_channel.id not in [from_channel, to_channel]:
-                continue
-            if user[0] not in intermediate_data:
-                intermediate_data[user_id] = {"name": user[1], "time_temp": None, "timestamps": []}
-
-            if from_channel == voice_channel.id:
-                if intermediate_data[user_id]["time_temp"] is None:
-                    intermediate_data[user_id]["timestamps"].append((min_time, unix))
-                else:
-                    intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], unix))
-                    intermediate_data[user_id]["time_temp"] = None
-            elif to_channel == voice_channel.id:
-                intermediate_data[user_id]["time_temp"] = unix
-        for user_id in intermediate_data:
-            if intermediate_data[user_id]["time_temp"]:
-                intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], max_time))
-            del intermediate_data[user_id]["time_temp"]
-
-        data: VcLogGraphData = {"User": [], "Start": [], "Finish": []}
-        sorted_usernames = sorted(intermediate_data)  # sort alphabetically so graph always uses the same order
-        for user in sorted_usernames:
-            for time_tuple in intermediate_data[user]["timestamps"]:
-                data["User"].append(intermediate_data[user]["name"])
-                data["Start"].append(time_tuple[0])
-                data["Finish"].append(time_tuple[1])
+        data, sorted_usernames = await _format_data_for_graph(
+            events, max_time, min_time, select_user_ids, voice_channel)
 
         df = pd.DataFrame(data=data)
-        df["Diff"] = df.Finish - df.Start
-
-        color = "crimson"
-        fig, ax = plt.subplots(figsize=(6, 3))
-        fig.suptitle(f"VC data in '{voice_channel.id}' from T-{lower_bound / 60} to T-{upper_bound / 60}")
-
-        labels = []
-        for i, task in enumerate(df.groupby("User")):
-            labels.append(task[0])
-            graph_data = task[1][["Start", "Diff"]]
-            ax.broken_barh(graph_data.values, (i - 0.4, 0.8), color=color)
-
-        ax.set_xticks(ax.get_xticks())
-        # workaround to remove upcoming warning (warning about changing labels without preventing potential overlaps)
-
-        tick_labels = [x.get_position()[0] for x in ax.xaxis.get_ticklabels()]
-        label_time_text_format = "%H:%M"
-        if tick_labels[-1] - tick_labels[0] < 5 * 60:
-            label_time_text_format = "%H:%M:%S"
-        elif tick_labels[-1] - tick_labels[0] > 86400:
-            label_time_text_format = "%Y-%m-%dT%H:%M"
-        ax.set_xticklabels(
-            [datetime.fromtimestamp(x, tz=timezone.utc).strftime(label_time_text_format) for x in tick_labels],
-            rotation=30)
-
-        # Default y-tick labels have a font size of rcParams['axes.titlesize'], which corresponds to 'large'.
-        #      https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html
-        #   'large' is relative to the default font size, which is rcParams['font.size'] (default 10.0)
-        #      https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
-        #    The text sizes are as follows: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large']
-        #    Their values are as follows:   [   5.79,      6.94,     8.33,    10.0,     12.0,     14.4,      17.2]
-        #      https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
-        #    Each text size is 1.2x bigger than the previous, with `medium` by default 10.0
-        # On the default scale (large), a graph can fit about 12 names. That would give 12*12=144 fontsize in a graph.
-        # When more users are shown (eg. 30), that would bring the font size to 144 / 30 = 4.8,
-        scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)  # clamp to 4 <= size <= 12 (default)
-
-        ax.set_yticks(range(len(labels)))
-        ax.set_yticklabels(labels, scaling_label_size)
-        ax.set_xlabel("time (utc+0)")
-        plt.tight_layout()
-        plt.savefig('outputs/vcLogs.png', dpi=300)
+        await _make_bar_graph(df, lower_bound, sorted_usernames, upper_bound, voice_channel)
         await itx.followup.send(
             warning +
             f"VC activity from {voice_channel.mention} (`{voice_channel.id}`) from {lower_bound / 60} to "

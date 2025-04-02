@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 import discord
 
 from extensions.settings.objects import AttributeKeys, ServerSettings
+from resources.checks import MissingAttributesCheckFailure
+from resources.checks.command_checks import is_in_dms
 
 if TYPE_CHECKING:
     from resources.customs.bot import Bot
@@ -127,7 +129,7 @@ def debug(
     logger.info(f"{time}{text}{DebugColor.default.value}" + end.replace('\r', '\033[F'))
 
 
-def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | discord.Interaction) -> int:
+def get_mod_ticket_channel(client: Bot, guild_id: int | discord.Guild | discord.Interaction) -> discord.abc.Messageable | None:
     """
     Fetch the #contact-staff ticket channel for a specific guild.
 
@@ -135,47 +137,65 @@ def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | disco
     :param guild_id: A class with a guild_id or guild property.
 
     :return: The matching guild's ticket channel id.
+    :raise MissingAttributesCheckFailure: If the guild has no ticket channel defined in its settings.
     """
     if type(guild_id) is discord.Interaction:
         guild_id = guild_id.guild_id
     ticket_channel: discord.abc.Messageable | None = client.get_guild_attribute(
         guild_id, AttributeKeys.ticket_create_channel)
-    if ticket_channel is None:
-        return None  # todo: what does this return?
 
-    return ticket_channel.id  # todo: why not just return the channel itself
+    return ticket_channel
 
 
-async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | discord.Message:
+async def log_to_guild(
+        client: Bot,
+        guild: discord.Guild,
+        msg: str,
+        *,
+        crash_if_not_found: bool = False,
+        ignore_dms: bool = False
+) -> bool:
     """
     Log a message to a guild's logging channel (vcLog)
 
     :param client: The bot class with :py:func:`Bot.get_guild_info` to find logging channel.
     :param guild: Guild of the logging channel
     :param msg: Message you want to send to this logging channel
+    :param crash_if_not_found: Whether to crash if the guild does not have a logging channel.
+     Useful if this originated from an application command.
+    :param ignore_dms: Whether to crash if the command was run in DMs.
 
-    :return: if client.vcLog channel is defined
+    :return: ``True`` if a log was sent successfully, else ``False``.
 
     :raise KeyError: If client.vcLog channel is undefined.
      Note: It still outputs the given message to console and to the client's default log channel.
+    :raise MissingAttributesCheckFailure: If no logging channel is defined.
     """
-    log_channel: discord.abc.Messageable = await client.get_guild_attribute(guild, AttributeKeys.log_channel)
+    log_channel: discord.abc.Messageable = client.get_guild_attribute(guild, AttributeKeys.log_channel)
     if log_channel is None:
+        if ignore_dms and is_in_dms(guild):
+            return False
+        if crash_if_not_found:
+            raise MissingAttributesCheckFailure(AttributeKeys.log_channel)
+
+        # get current value for log_channel in the guild.
         entry = await ServerSettings.get_entry(client.async_rina_db, guild.id)
         if entry is None:
             attribute_raw = "<no server data>"
         else:
             attribute_raw = str(entry["attribute_ids"].get(
                 AttributeKeys.log_channel, "<no attribute data>"))  # noqa
+
         debug("Exception in log_channel (log_channel could not be loaded):\n"
               "    guild: " + repr(guild) +
               "\n"
               "    log_channel_id: " + attribute_raw +
               "\n"
               "    log message: " + msg, color="orange")
-        return
+        return False
 
-    return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+    await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+    return True
 
 
 async def executed_in_dms(
