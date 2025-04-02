@@ -6,11 +6,11 @@ from typing import TypedDict, TYPE_CHECKING, TypeVar
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
 
-if TYPE_CHECKING:
-    import motor.core as motorcore  # for typing
-    from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+import motor.core as motorcore  # for typing
+from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 
-    from extensions.settings.objects import ServerSettings, ServerAttributes, EnabledModules
+if TYPE_CHECKING:
+    from extensions.settings.objects import ServerSettings, ServerAttributes, EnabledModules, AttributeKeys
 
 ApiTokenDict = TypedDict('ApiTokenDict',
                          {'MongoDB': str, 'Open Exchange Rates': str, 'Wolfram Alpha': str, 'Equaldex': str})
@@ -199,7 +199,7 @@ class Bot(commands.Bot):
                      discord.User | discord.Role | list[discord.Role] | str | discord.VoiceChannel | int |
                      list[discord.abc.Messageable] | discord.Emoji] = []
 
-        parent_server = attributes["parent_server"]
+        parent_server = attributes[AttributeKeys.parent_server]
 
         for arg in args:
             if arg in attributes:
@@ -212,6 +212,8 @@ class Bot(commands.Bot):
             else:
                 output.append(default)
 
+        if len(output) == 1:
+            return output[0]
         return output
 
     def is_module_enabled(
@@ -246,7 +248,14 @@ class Bot(commands.Bot):
 
         return output
 
-    def is_me(self, user_id: discord.Member | discord.User | int):
+    def is_me(self, user_id: discord.Member | discord.User | int) -> bool:
+        """
+        Check whether the given user is the bot.
+
+        :param user_id: The user or user id to check.
+        :return: ``True`` if the given user is the bot, otherwise ``False``.
+        """
         if isinstance(user_id, discord.User) or isinstance(user_id, discord.Member):
             user_id = user_id.id
+        # could also use hasattr(user_id, "id") for a more generic approach... but this should work fine enough.
         return self.user.id == user_id

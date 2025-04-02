@@ -12,6 +12,7 @@ import discord.ext.commands as commands
 from resources.customs.bot import Bot
 
 from extensions.emojistats.emojisendsource import EmojiSendSource
+from resources.checks import not_in_dms_check
 
 
 #   Rina.emojistats         # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
@@ -64,6 +65,9 @@ async def _add_to_emoji_data(
 class EmojiStats(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
+        # todo: Emojis are tracked by id, but not per guild. That means the leaderboard is the same in every guild.
+        #  Perhaps somehow rework this module so emojis are tracked by guild as well. somehow. Migrate or something.
+        #  Same counts for StickerStats
 
     emojistats = app_commands.Group(name='emojistats',
                                     description='Get information about emoji usage in messages and reactions')
@@ -109,6 +113,7 @@ class EmojiStats(commands.Cog):
     @emojistats.command(name="getemojidata", description="Get emoji usage data from an ID!")
     @app_commands.rename(emoji_name="emoji")
     @app_commands.describe(emoji_name="Emoji you want to get data of")
+    @app_commands.check(not_in_dms_check)
     async def get_emoji_data(self, itx: discord.Interaction, emoji_name: str):
         if ":" in emoji_name:
             emoji_name = emoji_name.strip().split(":")[2][:-1]
@@ -125,7 +130,7 @@ class EmojiStats(commands.Cog):
         if emoji is None:
             await itx.response.send_message(
                 "That emoji doesn't have data yet. It hasn't been used since we started tracking the "
-                "data yet. (<t:1660156260:R>, <t:1660156260:F>)",
+                "data yet. (<t:1660156260:R>, <t:1660156260:F>, or since Rina joined the server)",
                 ephemeral=True)
             return
 
@@ -160,14 +165,18 @@ class EmojiStats(commands.Cog):
         discord.app_commands.Choice(name='Static/Image emojis', value=2),
         discord.app_commands.Choice(name='Both', value=3)
     ])
+    @app_commands.check(not_in_dms_check)
     async def get_unused_emojis(
-            self, itx: discord.Interaction, public: bool = False,
+            self,
+            itx: discord.Interaction,
+            public: bool = False,
             max_results: int = 10,
             used_max: int = sys.maxsize,
             msg_max: int = sys.maxsize,
             react_max: int = sys.maxsize,
             animated: int = 3
     ):
+        # todo: this command is so hard to follow. Maybe make a help command or something.
         await itx.response.defer(ephemeral=not public)
 
         unused_emojis = []
@@ -240,6 +249,7 @@ class EmojiStats(commands.Cog):
         await itx.followup.send(content=header + output)
 
     @emojistats.command(name="getemojitop10", description="Get top 10 most used emojis")
+    @app_commands.check(not_in_dms_check)
     async def get_emoji_top_10(self, itx: discord.Interaction):
         collection = itx.client.async_rina_db["emojistats"]
         output = ""

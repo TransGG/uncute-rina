@@ -5,7 +5,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_staff  # to check role in _add_to_watchlist, as backup
+from resources.checks.permissions import is_staff  # to check role in _add_to_watchlist, as backup
 from resources.checks import is_staff_check  # the cog is pretty much only intended for staff use
 
 from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache

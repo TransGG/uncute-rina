@@ -2,7 +2,7 @@ import pytest
 
 import typing
 
-from extensions.settings.objects import ServerAttributes, ServerAttributeIds, EnabledModules
+from extensions.settings.objects import ServerAttributes, ServerAttributeIds, EnabledModules, AttributeKeys
 from extensions.settings.objects.server_settings import convert_old_settings_to_new
 
 
@@ -79,9 +79,24 @@ def test_matching_keys():
     # Arrange
     at = ServerAttributes.__annotations__.keys()
     atid = ServerAttributeIds.__annotations__.keys()
+    atk = set(i for i in dir(AttributeKeys) if not i.startswith("_"))
 
     # Assert
     assert at == atid
+    assert set(at) == atk
+    # for assurance
+    assert sorted(set(at)) == sorted(at)
+
+
+def test_attribute_key_attribute_match_value():
+    attribute_keys = [i for i in dir(AttributeKeys) if not i.startswith("_")]
+    incorrect_keys = []
+
+    for attribute_key in attribute_keys:
+        if getattr(AttributeKeys, attribute_key) != attribute_key:
+            incorrect_keys.append(attribute_key)
+
+    assert incorrect_keys == []
 
 
 def test_no_bad_attribute_names():

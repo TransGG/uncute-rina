@@ -9,8 +9,11 @@ class ServerAttributes(TypedDict):
     parent_server: discord.Guild | None
     child_servers: list[discord.Guild]
 
+    admin_roles: list[discord.Role]
+    staff_roles: list[discord.Role]
+
     qotw_suggestions_channel: discord.abc.Messageable | None
-    developer_request_channel: discord.abc.Messageable | None
+    developer_request_channel: discord.TextChannel | None  # needs to be able to have threads
     watchlist_channel: discord.TextChannel | None  # needs to be able to have threads
     staff_reports_channel: discord.abc.Messageable | None
     ticket_create_channel: discord.abc.Messageable | None
@@ -21,15 +24,13 @@ class ServerAttributes(TypedDict):
     developer_request_reaction_role: discord.Role | None
     aegis_ping_role: discord.Role | None
 
-    staff_roles: list[discord.Role]
-    admin_roles: list[discord.Role]
-
     ban_appeal_webhook: discord.User | None
-    vctable_prefix: str | None
 
+    vctable_prefix: str | None
     custom_vc_create_channel: discord.VoiceChannel | None
-    log_channel: discord.abc.Messageable | None
     custom_vc_category: discord.CategoryChannel | None
+
+    log_channel: discord.abc.Messageable | None
     starboard_channel: discord.abc.Messageable | None
     starboard_minimum_upvote_count: int | None
     bump_reminder_channel: discord.abc.Messageable | None

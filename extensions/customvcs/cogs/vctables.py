@@ -4,9 +4,12 @@ import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
+from extensions.settings.objects import ModuleKeys, AttributeKeys
+from resources.checks import module_enabled_check, MissingAttributesCheckFailure
 from resources.views.generics import GenericTwoButtonView
-from resources.utils.permissions import is_staff  # to prevent people in vc-tables from muting staff.
+from resources.checks.permissions import is_staff  # to prevent people in vc-tables from muting staff.
 from resources.utils.utils import log_to_guild  # to log custom vc changes
+from resources.customs.bot import Bot
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 from extensions.customvcs.utils import is_vc_custom, BLACKLISTED_CHANNELS, edit_permissionoverwrite
@@ -42,16 +45,16 @@ def _is_vctable_participant(channel: discord.VoiceChannel, target: discord.Role 
     return channel.overwrites[target].view_channel is True
 
 
-def _is_vctable_authorized(channel, itx: discord.Interaction) -> bool:
-    if itx.guild.default_role not in channel.overwrites:
+def _is_vctable_authorized(channel, guild: discord.Guild) -> bool:
+    if guild.default_role not in channel.overwrites:
         return False
-    return channel.overwrites[itx.guild.default_role].speak is False
+    return channel.overwrites[guild.default_role].speak is False
 
 
-def _is_vctable_locked(channel, itx: discord.Interaction) -> bool:
-    if itx.guild.default_role not in channel.overwrites:
+def _is_vctable_locked(channel, guild: discord.Guild) -> bool:
+    if guild.guild.default_role not in channel.overwrites:
         return False
-    return channel.overwrites[itx.guild.default_role].view_channel is False
+    return channel.overwrites[guild.guild.default_role].view_channel is False
 
 # endregion Permission checks
 
@@ -72,7 +75,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         self.blacklisted_channels = BLACKLISTED_CHANNELS
 
     # region VcTable utilities
-    async def get_current_voice_channel(self, itx: discord.Interaction, action: str, from_event: bool = None):
+    async def get_current_voice_channel(self, itx: discord.Interaction[Bot], action: str, from_event: bool = None):
         """Gets the voice channel of the command executor if it's a custom voice channel.
 
 
@@ -82,13 +85,19 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
         :return: The custom voice channel that the executor is in, or ``None`` if the user is not in a
          custom voice channel.
+        :raise MissingAttributesCheckFailure: If any guild attributes are missing.
         """
-        log = None
-        if not from_event:
-            cmd_mention = itx.client.get_command_mention("editguildinfo")
-            log = (itx, f"Not enough data is configured to do this action! Please ask an admin to "
-                        f"fix this with {cmd_mention} `mode:21` or `mode:22`!")
-        vc_hub, vc_category = await itx.client.get_guild_info(itx.guild, "vcHub", "vcCategory", log=log)
+        vc_hub: discord.VoiceChannel
+        vc_category: discord.CategoryChannel
+        vc_hub, vc_category = await itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.custom_vc_create_channel, AttributeKeys.custom_vc_category)
+        if vc_hub is None or vc_category is None:
+            if from_event:
+                return
+            missing = []
+            if vc_hub is None: missing.append(AttributeKeys.custom_vc_create_channel)
+            if vc_category is None: missing.append(AttributeKeys.custom_vc_category)
+            raise MissingAttributesCheckFailure(*missing)
 
         if itx.user.voice is None or itx.user.voice.channel is None:
             if not from_event:
@@ -119,6 +128,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
         :return: The vctable that the executor is in, or None if the user is not in a custom voice channel or
          is not owner of the vctable channel.
+        :raise MissingAttributesCheckFailure: If any guild attributes are missing. (carried from
+         :py:meth:`_is_vc_table_owner`)
         """
         channel = await self.get_current_voice_channel(itx, action, from_event)
         if channel is None:
@@ -141,9 +152,14 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
     @app_commands.command(name="create", description="Turn your custom vc into a cool vc")
     @app_commands.describe(owners="A list of extra owners for your VcTable. Separate with comma",
                            name="Give the channel a different name (api efficiency)")
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def vctable_create(
-            self, itx: discord.Interaction, owners: str = "", name: app_commands.Range[str, 3, 35] | None = None
+            self, itx: discord.Interaction[Bot], owners: str = "", name: app_commands.Range[str, 3, 35] | None = None
     ):
+        vctable_prefix: str | None = itx.client.get_guild_attribute(itx.guild, AttributeKeys.vctable_prefix)
+        if vctable_prefix is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.vctable_prefix)
+
         warning = ""
 
         owners = owners.split(",")
@@ -260,14 +276,19 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                            f"{itx.user.mention} ({itx.user.id}) turned a CustomVC ({user_vc.id}) into a VcTable")
 
         try:
-            await user_vc.edit(name=itx.client.custom_ids["vctable_prefix"] + name)
+            await user_vc.edit(name=vctable_prefix + name)
             await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n" + warning,
                                     ephemeral=True)
         except discord.errors.NotFound:
             await itx.followup.send("I was unable to name your VcTable, but I managed to set the permissions for it.")
 
+    @module_enabled_check(ModuleKeys.vc_tables)
     @app_commands.command(name="disband", description="reset permissions and convert vctable back to customvc")
     async def vctable_disband(self, itx: discord.Interaction):
+        vctable_prefix: str | None = itx.client.get_guild_attribute(itx.guild, AttributeKeys.vctable_prefix)
+        if vctable_prefix is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.vctable_prefix)
+
         channel = await self.get_channel_if_owner(itx, "disband VcTable")
         if channel is None:
             return
@@ -280,8 +301,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             allowed_mentions=discord.AllowedMentions.none())
         # remove channel's name prefix (separately from the overwrites due to things like ratelimiting)
         await itx.response.send_message("Successfully disbanded VcTable.", ephemeral=True)
-        if channel.name.startswith(itx.client.custom_ids["vctable_prefix"]):
-            new_channel_name = channel.name[len(itx.client.custom_ids["vctable_prefix"]):]
+        if channel.name.startswith(vctable_prefix):
+            new_channel_name = channel.name[len(vctable_prefix):]
             try_store_vc_rename(channel.id, max_rename_limit=3)
             # same as on_voice_state_update:
             # allow max 3 renamed: if a staff queued a rename due to rules, it'd be queued at 3.
@@ -292,6 +313,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 pass
 
     @app_commands.command(name="about", description="Get information about this CustomVC add-on feature")
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def vctable_help(self, itx: discord.Interaction):
         embed1 = discord.Embed(
             color=discord.Colour.from_rgb(r=255, g=153, b=204),
@@ -338,6 +360,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Remove owner', value=2),
         discord.app_commands.Choice(name='Check owners', value=3)
     ])
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_owners(self, itx: discord.Interaction, mode: int, user: discord.Member | None = None):
         if itx.user == user and mode != 3:
             if mode == 1:
@@ -414,6 +437,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Remove speaker', value=2),
         discord.app_commands.Choice(name='Check speakers', value=3)
     ])
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_speakers(self, itx: discord.Interaction, mode: int, user: discord.Member | None = None):
         if itx.user == user and mode != 3:
             await itx.response.send_message("You can't edit your own speaking permissions!", ephemeral=True)
@@ -436,7 +460,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             if _is_vctable_speaker(channel, user):
                 await itx.response.send_message("This user is already a speaker!", ephemeral=True)
                 return
-            if not _is_vctable_authorized(channel, itx):
+            if not _is_vctable_authorized(channel, itx.guild):
                 cmd_mention = itx.client.get_command_mention("vctable make_authorized_only")
                 warning += f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             await channel.set_permissions(user, speak=True,
@@ -470,7 +494,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                                 ephemeral=True)
                 return
             warning = ""
-            if not _is_vctable_authorized(channel, itx):
+            if not _is_vctable_authorized(channel, itx.guild):
                 cmd_mention = itx.client.get_command_mention("vctable make_authorized_only")
                 warning = f"\nThis has no purpose until you enable 'authorized-only' using {cmd_mention}."
             await channel.set_permissions(user, speak=None,
@@ -497,6 +521,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Remove participant', value=2),
         discord.app_commands.Choice(name='Check participants', value=3)
     ])
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_participants(self, itx: discord.Interaction, mode: int, user: discord.Member | None = None):
         if itx.user == user and mode != 3:
             await itx.response.send_message("You can't edit your own participation permissions!", ephemeral=True)
@@ -520,7 +545,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 await itx.response.send_message("This user is already a participant!", ephemeral=True)
                 return
             warning = ""
-            if not _is_vctable_locked(channel, itx):
+            if not _is_vctable_locked(channel, itx.guild):
                 cmd_mention = itx.client.get_command_mention("vctable lock")
                 warning += f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             await channel.set_permissions(user, view_channel=True, read_message_history=True,
@@ -562,7 +587,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                     ephemeral=True)
                 return
             warning = ""
-            if _is_vctable_locked(channel, itx):
+            if _is_vctable_locked(channel, itx.guild):
                 cmd_mention = itx.client.get_command_mention("vctable lock")
                 warning = f"\nThis has no purpose until you activate the 'lock' using {cmd_mention}."
             await channel.set_permissions(user, view_channel=None, read_message_history=None,
@@ -589,6 +614,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Unmute participant', value=2),
         discord.app_commands.Choice(name='Check muted participants', value=3)
     ])
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_muted_participants(
             self, itx: discord.Interaction, mode: int, user: discord.Member | None = None
     ):
@@ -666,12 +692,13 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
     # region Edit default role permissions
     @app_commands.command(name="make_authorized_only",
                           description="Only let users speak if they are whitelisted by the owner")
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def vctable_authorized_only(self, itx: discord.Interaction):
         channel = await self.get_channel_if_owner(itx, "enable authorized-only")
         if channel is None:
             return
 
-        if _is_vctable_authorized(channel, itx):
+        if _is_vctable_authorized(channel, itx.guild):
             await channel.set_permissions(itx.guild.default_role,
                                           speak=None,
                                           reason="VcTable edited: disaled authorized-only for speaking")
@@ -708,13 +735,14 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             await itx.edit_original_response(content="Cancelling...", view=None)
 
     @app_commands.command(name="lock", description="Only let users view vc if they are whitelisted by the owner")
+    @module_enabled_check(ModuleKeys.vc_tables)
     async def vctable_lock(self, itx: discord.Interaction):
         channel = await self.get_channel_if_owner(itx, "enable vctable lock")
         if channel is None:
             return
 
         # if lock is enabled -> (the role overwrite is not nonexistant and is False):
-        if _is_vctable_locked(channel, itx):
+        if _is_vctable_locked(channel, itx.guild):
             await channel.set_permissions(itx.guild.default_role,
                                           view_channel=None, read_message_history=None,
                                           reason="VcTable edited: disabled viewing lock")

@@ -17,6 +17,9 @@ class ServerAttributeIds(TypedDict, total=False):
     parent_server: GuildId
     child_servers: list[GuildId]
 
+    admin_roles: list[RoleId]
+    staff_roles: list[RoleId]
+
     qotw_suggestions_channel: MessageableChannelId
     developer_request_channel: MessageableChannelId
     watchlist_channel: MessageableChannelId
@@ -28,9 +31,6 @@ class ServerAttributeIds(TypedDict, total=False):
     watchlist_reaction_role: RoleId
     developer_request_reaction_role: RoleId
     aegis_ping_role: RoleId
-
-    staff_roles: list[RoleId]
-    admin_roles: list[RoleId]
 
     ban_appeal_webhook: int
     vctable_prefix: str

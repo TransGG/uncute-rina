@@ -9,6 +9,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.checks import not_in_dms_check
 from resources.customs.bot import Bot
 
 
@@ -60,6 +61,7 @@ class MemberData(commands.Cog):
                            upper_bound="Get data up to [period] days ago",
                            doubles="If someone joined twice, are they counted double? (y/n or 1/0)",
                            public="Send the output to everyone in the channel")
+    @app_commands.check(not_in_dms_check)
     async def get_member_data(
             self, itx: discord.Interaction, lower_bound: str, upper_bound: str = None, doubles: bool = False,
             public: bool = False

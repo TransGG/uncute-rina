@@ -6,7 +6,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.utils.permissions import is_staff  # to check if messages in the selfies channel were sent by staff
+from resources.checks.permissions import is_staff  # to check if messages in the selfies channel were sent by staff
 from resources.checks import is_staff_check
 from resources.utils.utils import log_to_guild  # logging when a staff command is used
 

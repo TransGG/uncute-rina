@@ -7,6 +7,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.checks import not_in_dms_check
 from resources.customs.bot import Bot
 
 
@@ -52,6 +53,7 @@ class StickerStats(commands.Cog):
     @stickerstats.command(name="getstickerdata", description="Get sticker usage data from an ID!")
     @app_commands.rename(sticker_name="sticker")
     @app_commands.describe(sticker_name="Sticker you want to get data of")
+    @app_commands.check(not_in_dms_check)
     async def get_sticker_data(self, itx: discord.Interaction, sticker_name: str):
         if ":" in sticker_name:
             # idk why people would, but idk the format for stickers so ill just assume <name:id> or something idk
@@ -68,7 +70,8 @@ class StickerStats(commands.Cog):
         sticker_response = await collection.find_one(query)
         if sticker_response is None:
             await itx.response.send_message("That sticker doesn't have data yet. It hasn't been used since "
-                                            "we started tracking the data yet. (<t:1729311000:R>, <t:1729311000:F>)",
+                                            "we started tracking the data yet. (<t:1729311000:R>, <t:1729311000:F>,"
+                                            "or since Rina joined the server)",
                                             ephemeral=True)
             return
 
@@ -91,6 +94,7 @@ class StickerStats(commands.Cog):
     @app_commands.describe(public="Do you want everyone in this channel to be able to see this result?",
                            max_results="How many stickers do you want to retrieve at most? (may return fewer)",
                            used_max="Up to how many times may the sticker have been used? (default: 10)")
+    @app_commands.check(not_in_dms_check)
     async def get_unused_stickers(
             self, itx: discord.Interaction, public: bool = False,
             max_results: int = 10, used_max: int = sys.maxsize
@@ -152,6 +156,7 @@ class StickerStats(commands.Cog):
         await itx.followup.send(content=header + output)
 
     @stickerstats.command(name="getstickertop10", description="Get top 10 most used stickers")
+    @app_commands.check(not_in_dms_check)
     async def get_sticker_top_10(self, itx: discord.Interaction):
         collection = itx.client.async_rina_db["stickerstats"]
         output = ""

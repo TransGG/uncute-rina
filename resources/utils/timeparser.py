@@ -147,10 +147,22 @@ class TimeParser:
                 timedict[unit[1]] += unit[0]
 
         # check non-whole numbers, and shift "0.2m" to 0.2*60 = 12 seconds
-        def decimals(time):
+        def decimals(time: float) -> float:
+            """
+            Get the decimal values of a floating point number.
+
+            :param time: The floating point number to get the decimal values of.
+            :return: The floating point section of the given number. Examples: 13.42 -> 0.42, -34.9 -> -0.9.
+            """
             return time - int(time)
 
-        def is_whole(time):
+        def is_whole(time: float) -> bool:
+            """
+            Check if a number has no decimal places.
+
+            :param time: The floating point number to check.
+            :return: Whether the given floating point number is a whole number.
+            """
             return time - int(time) == 0
 
         if not is_whole(timedict["y"]):

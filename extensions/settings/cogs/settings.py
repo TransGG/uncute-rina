@@ -6,7 +6,7 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
-from resources.checks import is_admin_check
+from resources.checks import is_admin_check, not_in_dms_check
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import (
@@ -473,6 +473,7 @@ class SettingsCog(commands.Cog):
     @app_commands.autocomplete(mode=_mode_autocomplete)
     @app_commands.autocomplete(value=_value_autocomplete)
     @app_commands.check(is_admin_check)
+    @app_commands.check(not_in_dms_check)
     async def settings(
             self,
             itx: discord.Interaction,

@@ -8,8 +8,8 @@ from typing import TypedDict, Any, TypeVar, Callable
 
 import discord
 
-from .serverattributes import ServerAttributes
-from .serverattributeids import ServerAttributeIds
+from .server_attributes import ServerAttributes
+from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
 
 if typing.TYPE_CHECKING:

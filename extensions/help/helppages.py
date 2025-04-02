@@ -557,6 +557,3 @@ for page in help_pages:
     if page in aliases:
         continue
     aliases[page] = [help_pages[page]["title"]]
-
-assert len(aliases) == len(help_pages)  # all pages have an alias
-assert all(len(alias_list) > 0 for alias_list in aliases.values())  # all alias lists are not empty

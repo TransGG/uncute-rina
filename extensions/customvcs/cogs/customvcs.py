@@ -2,9 +2,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.settings.objects import ModuleKeys, AttributeKeys
 from resources.customs.bot import Bot
-from resources.utils.permissions import is_staff  # to let staff rename other people's custom vcs
-from resources.checks import is_admin_check
+from resources.checks.permissions import is_staff  # to let staff rename other people's custom vcs
+from resources.checks import is_admin_check, module_enabled_check, MissingAttributesCheckFailure
 from resources.utils.utils import log_to_guild  # to log custom vc changes
 
 from extensions.customvcs.channel_rename_tracker import clear_vc_rename_log, try_store_vc_rename
@@ -57,8 +58,11 @@ async def _reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice
 
 
 async def _create_new_custom_vc(
-        client: Bot, member: discord.Member, voice_channel: discord.VoiceChannel, customvc_category_id: int,
-        customvc_hub_id: int
+        client: Bot,
+        member: discord.Member,
+        voice_channel: discord.VoiceChannel,
+        customvc_category: discord.CategoryChannel,
+        customvc_hub: discord.VoiceChannel,
 ):
     """
     A helper function to create a new custom voice channel
@@ -66,18 +70,16 @@ async def _create_new_custom_vc(
     :param client: The Bot class to use for logging.
     :param member: The member that triggered the event/function.
     :param voice_channel: The voice channel the user joined to trigger this function (the customvc hub)
-    :param customvc_category_id: The category id to create the custom voice channel in.
-    :param customvc_hub_id: The custom voice channel hub channel id.
+    :param customvc_category: The category to create the custom voice channel in.
+    :param customvc_hub: The custom voice channel hub channel.
     """
 
     default_name = "Untitled voice chat"
     warning = ""
-    vc_category_for_vc = voice_channel.category
-    vc_category_for_vc.id = customvc_category_id
     cmd_mention = client.get_command_mention("editvc")
 
     try:
-        vc = await vc_category_for_vc.create_voice_channel(default_name, position=voice_channel.position + 1)
+        vc = await customvc_category.create_voice_channel(default_name, position=voice_channel.position + 1)
     except discord.errors.HTTPException:
         await log_to_guild(client, member.guild, "WARNING: COULDN'T CREATE CUSTOM VOICE CHANNEL: TOO MANY (max 50?)")
         raise
@@ -88,8 +90,8 @@ async def _create_new_custom_vc(
             f"Voice channel <#{vc.id}> ({vc.id}) created by <@{member.id}> ({member.id}). "
             f"Use {cmd_mention} to edit the name/user limit.",
             allowed_mentions=discord.AllowedMentions.none())
-        for custom_vc in vc_category_for_vc.voice_channels:
-            if custom_vc.id == customvc_hub_id or custom_vc.id == vc.id:
+        for custom_vc in customvc_category.voice_channels:
+            if custom_vc.id == customvc_hub or custom_vc.id == vc.id:
                 continue
             await custom_vc.edit(position=custom_vc.position + 1)
     except discord.HTTPException as ex:
@@ -209,32 +211,44 @@ class CustomVcs(commands.Cog):
     async def on_voice_state_update(
             self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState
     ):
-        if member.guild.id == self.client.custom_ids["staff_server_id"]:
+        if not self.client.is_module_enabled(member.guild, ModuleKeys.custom_vcs):
             return
-        customvc_hub_id, customvc_category_id = await self.client.get_guild_info(member.guild, "vcHub", "vcCategory")
+
+        customvc_hub: discord.VoiceChannel | None
+        customvc_category: discord.CategoryChannel | None
+        customvc_hub, customvc_category = await self.client.get_guild_attribute(
+            member.guild, AttributeKeys.custom_vc_create_channel, AttributeKeys.custom_vc_category)
+        if customvc_hub is None or customvc_category is None:
+            return  # todo: confirm if I should just return here or try to send to a log channel?
+
         if before.channel is not None and before.channel in before.channel.guild.voice_channels:
-            if is_vc_custom(before.channel, customvc_category_id, customvc_hub_id, self.blacklisted_channels):
+            if is_vc_custom(before.channel, customvc_category, customvc_hub, self.blacklisted_channels):
                 # only run if this voice state regards a custom voice channel
                 await _handle_custom_voice_channel_leave_events(self.client, member, before.channel)
 
         if after.channel is not None:
-            if after.channel.id == customvc_hub_id:
-                await _create_new_custom_vc(self.client, member, after.channel, customvc_category_id, customvc_hub_id)
+            if after.channel.id == customvc_hub:
+                await _create_new_custom_vc(self.client, member, after.channel, customvc_category, customvc_hub)
 
     @app_commands.command(name="editvc", description="Edit your voice channel name or user limit")
     @app_commands.describe(name="Give your voice channel a name!",
                            limit="Give your voice channel a user limit!")
+    @module_enabled_check(ModuleKeys.custom_vcs)
     async def edit_custom_vc(
             self, itx: discord.Interaction,
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ):
-        cmd_mention = itx.client.get_command_mention("editguildinfo")
-        log = (itx,
-               f"Not enough data is configured to do this action! Please ask an admin to fix this with "
-               f"{cmd_mention} `mode:21`, `mode:22` or `mode:23`!")
         vc_hub, vc_log, vc_category = await itx.client.get_guild_info(
-            itx.guild, "vcHub", "vcLog", "vcCategory", log=log)
+            itx.guild,
+            AttributeKeys.custom_vc_create_channel,
+            AttributeKeys.log_channel,
+            AttributeKeys.custom_vc_category
+        )
+
+        if None in (vc_hub, vc_log, vc_category):
+            raise MissingAttributesCheckFailure(*[i for i in (vc_hub, vc_log, vc_category) if i is None])
+
         warning = ""
 
         if itx.user.voice is None:
@@ -252,7 +266,7 @@ class CustomVcs(commands.Cog):
             await itx.response.send_message("You can't change that voice channel's name!", ephemeral=True)
             return
         if name is not None:
-            if name.startswith("〙"):
+            if name.startswith("〙"):  # todo attribute: make this character a ServerAttribute too.
                 await itx.response.send_message("Due to the current layout, you can't change your channel to "
                                                 "something starting with '〙'. Sorry for the inconvenience",
                                                 ephemeral=True)

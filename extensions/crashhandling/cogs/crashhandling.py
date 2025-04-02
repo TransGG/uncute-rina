@@ -9,7 +9,7 @@ from resources.customs.bot import Bot
 from resources.checks import (
     InsufficientPermissionsCheckFailure,
     CommandDoesNotSupportDMsCheckFailure,
-    ModuleNotEnabledCheckFailure
+    ModuleNotEnabledCheckFailure, MissingAttributesCheckFailure
 )
 from resources.utils import is_admin
 from resources.utils.utils import debug, TESTING_ENVIRONMENT
@@ -77,17 +77,26 @@ async def _send_crash_message(
 async def _reply(itx: discord.Interaction, message: str) -> None:
     """
     A helper function to handle replying to an interaction by either using :py:func:`~discord.Webhook.send` or
-    :py:func:`~discord.InteractionResponse.send_message`, depending on whether a response
+    :py:func:`~discord.InteractionResponse.send_message`, depending on if a response has been responded to already.
 
     :param itx: The interaction to respond to.
     :param message: The message to respond with.
+
+    .. note::
+
+        The function will always try to respond to the interaction ephemerally.
     """
+    itx.response: discord.InteractionResponse  # noqa
+    itx.followup: discord.Webhook  # noqa
     try:
         if itx.response.is_done():
             await itx.followup.send(message, ephemeral=True)
         else:
-            await itx.response.send_message(message, ephemeral=True)
-    except discord.errors.NotFound:  # ex: 404 interaction not found, eg. took too long
+            try:
+                await itx.response.send_message(message, ephemeral=True)
+            except discord.errors.NotFound:  # interaction not found, e.g. took too long
+                await itx.followup.send(message, ephemeral=True)
+    except discord.errors.NotFound:
         pass  # prevent other code from not running
 
 
@@ -136,7 +145,8 @@ class CrashHandling(commands.Cog):
         await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
         commanderror_cooldown = datetime.now().astimezone()
 
-    async def on_app_command_error(self, itx: discord.Interaction[Bot], error: discord.app_commands.AppCommandError):
+    @staticmethod
+    async def on_app_command_error(itx: discord.Interaction[Bot], error: discord.app_commands.AppCommandError):
         global appcommanderror_cooldown
 
         error_type = type(error)
@@ -162,6 +172,14 @@ class CrashHandling(commands.Cog):
             await itx.response.send_message("This module is not enabled! Ask an admin to enable this module, "
                                             "or have them hide this command from users in the server settings.",
                                             ephemeral=True)
+            return
+        elif error_type is MissingAttributesCheckFailure:
+            error: MissingAttributesCheckFailure
+            cmd_mention = itx.client.get_command_mention("settings")
+            await _reply(itx, f"Your command failed to completely execute because it relied on certain "
+                              f"server attributes that were not defined! An admin will have to run "
+                              f"{cmd_mention} `type:Attribute` `setting: ` for the following attribute(s):\n"
+                              f"> " + ', '.join(error.attributes))
             return
 
         if datetime.now().astimezone() - appcommanderror_cooldown < timedelta(seconds=60):

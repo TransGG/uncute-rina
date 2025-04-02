@@ -4,6 +4,8 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.settings.objects import ModuleKeys
+from resources.checks import not_in_dms_check, module_enabled_check
 from resources.utils.utils import get_mod_ticket_channel_id
 
 
@@ -13,6 +15,8 @@ class QOTW(commands.Cog):
 
     @app_commands.command(name="qotw", description="Suggest a question for the weekly queue!")
     @app_commands.describe(question="What question would you like to add?")
+    @app_commands.check(not_in_dms_check)
+    @module_enabled_check(ModuleKeys.qotw)
     async def qotw(self, itx: discord.Interaction, question: str):
         if len(question) > 400:
             channel_id = get_mod_ticket_channel_id(itx.client, guild_id=itx.guild.id)

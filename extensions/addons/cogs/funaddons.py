@@ -1,5 +1,5 @@
 import random  # for dice rolls (/roll) and selecting a random staff interaction wait time
-import requests  # to read api calls
+from typing import TypeVar
 
 import discord
 import discord.app_commands as app_commands
@@ -7,12 +7,22 @@ import discord.ext.commands as commands
 
 from resources.customs.bot import Bot
 
+from extensions.settings.objects import ModuleKeys
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 
-def _product_in_list(mult_list: list):
+T = TypeVar('T', int, float)
+
+
+def _product_of_list(mult_list: list[T]) -> T:
+    """
+    Multiply all elements in a list.
+
+    :param mult_list: The list to multiply.
+    :return: The multiplied total.
+    """
     a = 1
     for x in mult_list:
         a *= x
@@ -20,6 +30,11 @@ def _product_in_list(mult_list: list):
 
 
 def _generate_roll(query: str) -> list[int]:
+    """
+    A helper command to generate a dice roll from a dice string representation "2d6"
+    :param query: The string representing the dice roll.
+    :return: A list of outcomes following from the dice roll. 2d6 will return a list with 2 integers, ranging from 1-6.
+    """
     # print(query)
     temp: list[str | int] = query.split("d")
     # 2d4 = ["2","4"]
@@ -46,7 +61,13 @@ def _generate_roll(query: str) -> list[int]:
             faces += x
         else:
             break
+
     remainder = temp[1][len(faces):]  # (take the length of the now-still-string faces variable)
+    if len(remainder) > 0:
+        raise TypeError(f"Idk what happened, but you probably filled something in incorrectly:\n"
+                        f"I parsed dice roll '{query}' into a roll of '{dice}' dice with '{faces}' faces, "
+                        f"but got left with '{remainder}'. ({dice}d{faces} and {remainder})")
+
     try:
         dice = int(dice)
     except ValueError:
@@ -57,8 +78,6 @@ def _generate_roll(query: str) -> list[int]:
         raise TypeError(
             f"You have to roll a die with a numerical number of faces! (You tried to roll {dice} dice with "
             f"'{faces}' faces)")
-    if len(remainder) > 0:
-        raise TypeError("Idk what happened, but you probably filled something in incorrectly.")
     if dice >= 1000000:
         raise OverflowError(
             f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop "
@@ -68,14 +87,49 @@ def _generate_roll(query: str) -> list[int]:
             f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. "
             f"Please bowl with a sphere of fewer than 1 million faces...")
 
-    return [(negative * -2 + 1) * random.randint(1, faces) for _ in range(dice)]
+    negativity: int = (negative * -2 + 1)  # turn a boolean 0 or 1 into a 1 or -1
+    return [negativity * random.randint(1, faces) for _ in range(dice)]
+
+
+async def _handle_awawa_reaction(client: Bot, message: discord.Message) -> bool:
+    """
+    Add headpats to a given message if its content is ababababa or awawawawawawawawa etc.
+    :param client: The bot with server_settings.
+    :param message: The message to check and add reactions to.
+    :return: Whether the pat reaction is added.
+    """
+    # adding headpats on abababa or awawawawa
+    msg_content = message.content.lower()
+    emoji_str = "<:TPF_02_Pat:968285920421875744>"
+    if len(msg_content) > 5 and (msg_content.startswith("aba") or msg_content.startswith("awa")):
+        # check if the message content is /(ab|aw)+a/i
+        replaced = msg_content.replace("ab", "").replace("aw", "")
+        if replaced == "a":
+            try:
+                # todo attribute: Pat emoji ; also don't need the second message.add_reaction then.
+                #  there is also an emoji lower.
+                await message.add_reaction(emoji_str)
+                return True
+            except discord.errors.Forbidden:  # blocked rina :(, or just no perms
+                pass
+
+    if len(msg_content) > 9 and msg_content.startswith("a"):
+        if any(char not in set("abw") for char in msg_content):
+            return False
+
+        try:
+            await message.add_reaction(emoji_str)
+            return True
+        except discord.errors.Forbidden:  # blocked rina :(, or just no perms
+            pass
+
+    return False
 
 
 class FunAddons(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
         self.headpat_wait = 0
-        self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN, STAFF_CONTACT_CHECK_WAIT_MAX)
         self.rude_comments_opinion_cooldown = 0
 
     def handle_random_pat_reaction(self, message: discord.Message) -> bool:
@@ -88,7 +142,9 @@ class FunAddons(commands.Cog):
         """
         # adding headpats every x messages
         self.headpat_wait += 1
-        if self.headpat_wait >= 1000:
+        if self.headpat_wait >= 1000:  # todo: do we want server-specific headpat times? if so, todo attribute: .
+            # todo attribute: add headpat channel blacklist. Should also look if messages are in thread of this channel.
+            #  Should also be able to be categories.
             if (
                     (type(message.channel) is discord.Thread and
                      message.channel.parent == 987358841245151262) or  # <#welcome-verify>
@@ -124,132 +180,16 @@ class FunAddons(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        added_pat = False
-        if not message.author.bot:
-            added_pat = self.handle_random_pat_reaction(message)
-
-        # adding headpats on abababa or awawawawa
-        msg_content = message.content.lower()
-        if not added_pat and len(msg_content) > 5 and (msg_content.startswith("aba") or msg_content.startswith("awa")):
-            replaced = msg_content.replace("ab", "").replace("aw", "")
-            if replaced == "a":
-                try:
-                    added_pat = True
-                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
-                except discord.errors.Forbidden:  # blocked rina :(
-                    pass
-                except discord.errors.HTTPException as ex:
-                    if ex.code == 10014:  # bad request (emoji doesnt exist: cause it's dev testing environment)
-                        await message.add_reaction("☺")  # :relaxed:
-                    else:
-                        raise
-        if not added_pat and len(msg_content) > 9 and msg_content.startswith("a"):
-            for char in msg_content:
-                if char not in "abw":
-                    break
-            else:
-                try:
-                    added_pat = True
-                    await message.add_reaction("<:TPF_02_Pat:968285920421875744>")
-                except discord.errors.Forbidden:  # blocked rina :(
-                    pass
-                except discord.errors.HTTPException as ex:
-                    if ex.code == 10014:  # bad request (emoji doesnt exist: cause it's dev testing environment)
-                        await message.add_reaction("☺")  # :relaxed:
-                    else:
-                        raise
 
         if message.author.bot:
             return
 
-        # embed "This conversation was powered by friendship" every x messages # TODO: re-enable code someday
-        if False:  # (self.staff_contact_check_wait == 0 or
-            #     (self.staff_contact_check_wait < -10 and  # make sure it only sends once (and <-10 for backup)
-            #      self.staff_contact_check_wait % 6 == 0)):
-            if message.channel.id in [960920453705257061, 999165241894109194, 999165867625566218, 999167335938150410]:
-                # TransPlace [general, trans masc treehouse, trans fem forest, enby enclave]
-                # TODO: when cleo adds "report" func to EnbyPlace (or other servers in general),
-                #  add those server's channel IDs too.
+        added_pat = False
+        if self.client.is_module_enabled(message.guild, ModuleKeys.headpat_reactions):
+            added_pat = self.handle_random_pat_reaction(message)
 
-                if message.guild.id == self.client.custom_ids.get("enbyplace_server_id"):
-                    mod_ticket_channel_id = 1186054373986537522
-                elif message.guild.id == self.client.custom_ids.get("transonance_server_id"):
-                    mod_ticket_channel_id = 1108789589558177812
-                else:  # elif context.guild_id == client.custom_ids.get("transplace_server_id"):
-                    mod_ticket_channel_id = 995343855069175858
-                cmd_mention = self.client.get_command_mention("tag")
-
-                options = [
-                    "This conversation was powered by friendship.",
-                    "This conversation was brought to you by the mods' dwindling patience.",
-                    "This conversation was brought to you by **emotional damage**!"
-                    "This conversation was powdered by friendship and glitter.",
-                    "This conversation was brought to you by trans rights"
-                    "This conversation was brought to you by the dwindling patience of the mods.",
-                    "This conversation has been trying to reach you about your car's extended warranty.",
-                    "This conversation was sponsored by Raid Shadow Legends, one of the biggest mobile role-"
-                    "playing gam...",
-                    "This conversation was sponsored by Spotify; Want a break from the ads?",
-                    "This conversation was sponsored by Homestuck",
-                    "This conversation was brought to you by Flex Seal! To show the power of Flex Tape, I sawed "
-                    "this boat in half!",
-                    "Want to advertise? Call 0900 0000 to place an AD!",
-                    "Do you have suggestions for what to place here? Ping mysticmia and share!",
-                    "1",  # "Fun fact: ",
-                ]
-                superpower = random.choice(options)
-
-                if superpower == "1":
-                    response = requests.get('https://api.api-ninjas.com/v1/facts?limit=1', headers={
-                        # These were headers that were in the browser testing api, but apparently I
-                        # only need this one to make it work lol
-                        "Origin": "https://api-ninjas.com",
-                        # "X-Api-Key": "YOUR_API_KEY",
-                        # "Host": "api.api-ninjas.com",
-                        # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 "
-                        #               "Firefox/123.0",
-                        # "Accept": "*/*",
-                        # "Accept-Language": "en-US,en;q=0.5",
-                        # "Accept-Encoding": "gzip, deflate, br",
-                        # "Referer": "https://api-ninjas.com/",
-                        # "Connection": "keep-alive",
-                        # "Sec-Fetch-Dest": "empty",
-                        # "Sec-Fetch-Mode": "cors",
-                        # "Sec-Fetch-Site": "same-site",
-                        # "Sec-GPC": "1",
-                        # "TE": "trailers"
-                    }).json()[0]["fact"]
-                    starter = random.choice(["This conversation is cool and all, but did you know ", "Fun fact: "])
-                    response = starter + response[0].lower() + response[1:]
-                    # make first letter lowercase, so it fits with the rest of the sentence
-                    if len(response) > 256:  # embed title length limit is 256 chars.
-                        header = options[0]
-                    else:
-                        header = response
-                else:
-                    header = superpower
-
-                embed = discord.Embed(
-                    color=discord.Color.from_hsv(205 / 360, 65 / 100, 100 / 100),
-                    title=header,
-                    description=f"See someone breaking the rules? Unsure about a situation? You can always "
-                                f"contact staff! Reach us in <#{mod_ticket_channel_id}>, or report a user/message "
-                                f"with our bot (more info: {cmd_mention} `tag:report`) (Gives staff a bit more "
-                                f"context :). You may always ping/dm a staff member or Moderators if necessary."
-                )
-                await message.channel.send(embed=embed)
-                self.staff_contact_check_wait = random.randint(STAFF_CONTACT_CHECK_WAIT_MIN,
-                                                               STAFF_CONTACT_CHECK_WAIT_MAX)
-        self.staff_contact_check_wait -= 1
-
-        # give opinion on people hating on rina
-        self.rude_comments_opinion_cooldown -= 1
-        if self.rude_comments_opinion_cooldown < 0:
-            if self.client.user.id in [user.id for user in message.mentions]:
-                if (":" in message.content and
-                        "middlefinger" in message.content.lower().replace(" ", "")):
-                    await message.reply("That's kind of rude... Why would you do that?")
-                    self.rude_comments_opinion_cooldown = STAFF_CONTACT_CHECK_WAIT_MIN * 8
+        if not added_pat:
+            await _handle_awawa_reaction(self.client, message)
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",
@@ -327,14 +267,14 @@ class FunAddons(commands.Cog):
                                             ephemeral=True)
                     return
             _add = advanced.replace('-', '+-').split('+')
-            add = [section for section in _add if len(section) > 0]
+            add = [add_section for add_section in _add if len(add_section) > 0]
             # print("add:       ",add)
             multiply = []
-            for section in add:
-                multiply.append(section.split('*'))
+            for add_section in add:
+                multiply.append(add_section.split('*'))
             # print("multiply:  ",multiply)
             try:
-                result = [[sum(_generate_roll(query)) for query in section] for section in multiply]
+                result = [[sum(_generate_roll(query)) for query in mult_section] for mult_section in multiply]
             except (TypeError, ValueError, OverflowError) as ex:
                 ex = repr(ex).split("(", 1)
                 ex_type = ex[0]
@@ -348,8 +288,8 @@ class FunAddons(commands.Cog):
             if "*" in advanced:
                 out += [' + '.join([' * '.join([str(x) for x in section]) for section in result])]
             if "+" in advanced or '-' in advanced:
-                out += [' + '.join([str(_product_in_list(section)) for section in result])]
-            out += [str(sum([_product_in_list(section) for section in result]))]
+                out += [' + '.join([str(_product_of_list(section)) for section in result])]
+            out += [str(sum([_product_of_list(section) for section in result]))]
             output = discord.utils.escape_markdown('\n= '.join(out))
             if len(output) >= 1950:
                 output = ("Your result was too long! I couldn't send it. Try making your rolls a bit smaller, "

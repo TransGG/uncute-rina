@@ -5,9 +5,11 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.settings.objects import ModuleKeys
+from resources.checks import ModuleNotEnabledCheckFailure
+from resources.checks.command_checks import is_in_dms
 from resources.customs.bot import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
-
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -174,25 +176,6 @@ class OtherAddons(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        try:  # mention targeted user if added to mod-ticket with /add target:@user
-            # message.channel.category.id
-            if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
-                print("embeds:", len(message.embeds), "| message.author.id:", message.author.id)
-                if message.author.id == 557628352828014614 and len(message.embeds) == 1:
-                    # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
-                    components = message.embeds[0].description.split(" ")
-                    print("components:", repr(components))
-                    print("@" in components[0])
-                    print(f'{components[1]} {components[2]} {components[3]} == "added to ticket"',
-                          f"{components[1]} {components[2]} {components[3]}" == "added to ticket")
-                    if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
-                        await message.channel.send("Obligatory ping to notify newly added user: " + components[0],
-                                                   allowed_mentions=discord.AllowedMentions.all())
-        except (AttributeError, discord.errors.ClientException):
-            # channel.category apparently discord raises ClientException: Parent channel not found,
-            # instead of attribute error
-            pass
-
         if message.author.bot:
             return
 
@@ -235,7 +218,8 @@ class OtherAddons(commands.Cog):
                 f"https://openexchangerates.org/api/latest.json?app_id={api_key}&show_alternative=true").text
             data = json.loads(response_api)
             if data.get("error", 0):
-                await itx.response.send_message("I'm sorry, something went wrong while trying to get the latest data",
+                await itx.response.send_message("I'm sorry, something went wrong while trying to get "
+                                                "the latest currency exchange rates",
                                                 ephemeral=True)
                 return
             options = {x: [0, data['rates'][x], x] for x in data['rates']}
@@ -270,9 +254,13 @@ class OtherAddons(commands.Cog):
                            downvote_emoji="What emoji do you want to react second?",
                            neutral_emoji="Neutral emoji option (placed between the up/downvote)")
     async def add_poll_reactions(
-            self, itx: discord.Interaction, message_id: str,
+            self, itx: discord.Interaction[Bot], message_id: str,
             upvote_emoji: str, downvote_emoji: str, neutral_emoji: str | None = None
     ):
+        if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(itx.guild, ModuleKeys.poll_reactions):
+            # Server specifically disabled this feature.
+            raise ModuleNotEnabledCheckFailure(ModuleKeys.poll_reactions)
+
         errors = []
         message: None | discord.Message = None  # happy IDE
         if message_id.isdecimal():
@@ -288,17 +276,18 @@ class OtherAddons(commands.Cog):
         else:
             errors.append("- The message ID needs to be a number!")
 
-        upvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(itx.client, upvote_emoji)
+        MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
+        upvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, upvote_emoji)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
 
-        downvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(itx.client, downvote_emoji)
+        downvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, downvote_emoji)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
 
         if neutral_emoji is None:
-            neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(itx.client,
-                                                                                               neutral_emoji)
+            neutral_emoji: MaybeEmoji = _get_emoji_from_str(
+                itx.client, neutral_emoji)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
@@ -332,8 +321,10 @@ class OtherAddons(commands.Cog):
             else:
                 await itx.edit_original_response(content=":warning: Adding emojis failed!")
         cmd_mention = itx.client.get_command_mention("add_poll_reactions")
-        await log_to_guild(itx.client, itx.guild,
-                           f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
+
+        if not is_in_dms(itx.guild):
+            await log_to_guild(itx.client, itx.guild,
+                               f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
 
     @app_commands.command(name="get_rina_command_mention",
                           description="Sends a hidden command mention for your command")

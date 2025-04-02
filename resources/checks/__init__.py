@@ -5,7 +5,8 @@ __all__ = [
     'not_in_dms_check',
     'InsufficientPermissionsCheckFailure',
     'CommandDoesNotSupportDMsCheckFailure',
-    'ModuleNotEnabledCheckFailure'
+    'ModuleNotEnabledCheckFailure',
+    'MissingAttributesCheckFailure'
 ]
 
 
@@ -14,5 +15,6 @@ from .command_checks import  not_in_dms_check, module_enabled_check
 from .errors import (
     InsufficientPermissionsCheckFailure,
     ModuleNotEnabledCheckFailure,
-    CommandDoesNotSupportDMsCheckFailure
+    CommandDoesNotSupportDMsCheckFailure,
+    MissingAttributesCheckFailure
 )

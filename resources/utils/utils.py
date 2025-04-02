@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 import discord
 
+from extensions.settings.objects import AttributeKeys, ServerSettings
+
 if TYPE_CHECKING:
     from resources.customs.bot import Bot
 
@@ -136,15 +138,12 @@ def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | disco
     """
     if type(guild_id) is discord.Interaction:
         guild_id = guild_id.guild_id
-    if type(guild_id) is discord.Guild:  # can be merged technically but whatevs
-        guild_id = guild_id.guild_id
+    ticket_channel: discord.abc.Messageable | None = client.get_guild_attribute(
+        guild_id, AttributeKeys.ticket_create_channel)
+    if ticket_channel is None:
+        return None  # todo: what does this return?
 
-    if guild_id == client.custom_ids.get("enbyplace_server_id"):
-        return client.custom_ids.get("enbyplace_ticket_channel_id")
-    elif guild_id == client.custom_ids.get("transonance_server_id"):
-        return client.custom_ids.get("transonance_ticket_channel_id")
-    else:  # elif context.guild_id == client.custom_ids.get("transplace_server_id"):
-        return client.custom_ids.get("transplace_ticket_channel_id")
+    return ticket_channel.id  # todo: why not just return the channel itself
 
 
 async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | discord.Message:
@@ -160,22 +159,22 @@ async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | di
     :raise KeyError: If client.vcLog channel is undefined.
      Note: It still outputs the given message to console and to the client's default log channel.
     """
-    try:
-        log_channel_id = await client.get_guild_info(guild, "vcLog")
-    except KeyError:
-        msg = "__**THIS MESSAGE CAUSES THE CRASH BELOW**__\n" + msg
-        await client.log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
-        raise
-
-    log_channel: discord.abc.GuildChannel | discord.Thread | None = client.get_channel(log_channel_id)
+    log_channel: discord.abc.Messageable = await client.get_guild_attribute(guild, AttributeKeys.log_channel)
     if log_channel is None:
+        entry = await ServerSettings.get_entry(client.async_rina_db, guild.id)
+        if entry is None:
+            attribute_raw = "<no server data>"
+        else:
+            attribute_raw = str(entry["attribute_ids"].get(
+                AttributeKeys.log_channel, "<no attribute data>"))  # noqa
         debug("Exception in log_channel (log_channel could not be loaded):\n"
               "    guild: " + repr(guild) +
               "\n"
-              "    log_channel_id: " + str(log_channel_id) +
+              "    log_channel_id: " + attribute_raw +
               "\n"
               "    log message: " + msg, color="orange")
         return
+
     return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
 
 

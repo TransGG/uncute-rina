@@ -4,7 +4,7 @@ from unit_tests.object import CustomObject
 from unit_tests.utils import get_embed_issues
 
 from extensions.help.helppage import HelpPage
-from extensions.help.helppages import help_pages
+from extensions.help.helppages import help_pages, aliases
 from extensions.help.utils import generate_help_page_embed
 
 
@@ -63,3 +63,16 @@ def test_embed_lengths():
         if potential_issues:
             issues = f"Page '{page_number}' embed issues:\n- " + "\n- ".join(potential_issues)
             pytest.fail(issues)
+
+
+def test_aliases_for_each_help_page():
+    assert len(aliases) == len(help_pages)  # all pages have an alias
+
+
+def test_each_alias_list_is_not_empty():
+    empty_alias_lists = []
+    for page, alias in aliases.items():
+        if len(alias) == 0:
+            empty_alias_lists.append(page)
+
+    assert empty_alias_lists == []

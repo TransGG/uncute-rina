@@ -4,7 +4,9 @@ import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
-from resources.checks import is_staff_check  # for dev request thread ping
+from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
+    module_enabled_check  # for dev request thread ping
 from resources.customs.bot import Bot
 
 
@@ -22,8 +24,19 @@ class DevRequest(commands.Cog):
 
     @app_commands.command(name="developer_request", description="Suggest a bot idea to the TransPlace developers!")
     @app_commands.describe(suggestion="What idea would you like to share?")
-    async def developer_request(self, itx: discord.Interaction, suggestion: app_commands.Range[str, 25, 1500]):
-        if len(suggestion) > 1500:
+    @module_enabled_check(ModuleKeys.dev_requests)
+    async def developer_request(self, itx: discord.Interaction[Bot], suggestion: app_commands.Range[str, 25, 1500]):
+        developer_request_channel: discord.TextChannel | None
+        developer_role: discord.Role | None
+        developer_request_channel, developer_role = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.developer_request_channel, AttributeKeys.developer_request_reaction_role)
+        if developer_request_channel is None or developer_role is None:
+            missing = []
+            if developer_request_channel is None: missing.append(AttributeKeys.developer_request_channel)
+            if developer_role is None: missing.append(AttributeKeys.developer_request_reaction_role)
+            raise MissingAttributesCheckFailure(*missing)
+
+        if len(suggestion) > 4000:
             await itx.response.send_message("Your suggestion won't fit! Please make your suggestion shorter. "
                                             "If you have a special request, you could make a ticket too "
                                             "(in #contact-staff)",
@@ -31,15 +44,13 @@ class DevRequest(commands.Cog):
             return
         await itx.response.defer(ephemeral=True)
 
-        # get channel of where this message has to be sent
-        watchlist_channel = itx.client.get_channel(itx.client.custom_ids["staff_dev_request"])
         # make uncool embed for the loading period while it sends the copyable version
         embed = discord.Embed(
             color=discord.Colour.from_rgb(r=33, g=33, b=33),
             description="Loading request...",
         )
         # send the uncool embed
-        msg = await watchlist_channel.send(
+        msg = await developer_request_channel.send(
             "",
             embed=embed,
             allowed_mentions=discord.AllowedMentions.none(),
@@ -77,13 +88,17 @@ class DevRequest(commands.Cog):
         await itx.followup.send("Successfully added your suggestion! The developers will review your idea, "
                                 "and perhaps inform you when it gets added :D", ephemeral=True)
 
-    @app_commands.check(is_staff_check)
     @app_commands.command(name="ping_open_dev_requests",
                           description="Send a message in closed green dev request threads")
-    async def ping_open_developer_requests(self, itx: discord.Interaction):
+    @app_commands.check(is_staff_check)
+    @module_enabled_check(ModuleKeys.dev_requests)
+    async def ping_open_developer_requests(self, itx: discord.Interaction[Bot]):
         await itx.response.send_message("`[+  ]`: Fetching cached threads.", ephemeral=True)
+        watchlist_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.developer_request_channel)
+        if watchlist_channel is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.developer_request_channel)
 
-        watchlist_channel = itx.client.get_channel(itx.client.custom_ids["staff_dev_request"])
         threads: list[discord.Thread] = []
         pinged_thread_count = 0
         async for thread in watchlist_channel.archived_threads(limit=None):
@@ -136,25 +151,24 @@ class DevRequest(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if (payload.guild_id != self.client.custom_ids["staff_server_id"] or
-                payload.channel_id != self.client.custom_ids["staff_dev_request"]):
+        if payload.guild_id is None:
+            return
+        dev_request_channel: discord.TextChannel = self.client.get_guild_attribute(
+            payload.guild_id, AttributeKeys.developer_request_channel)
+        if dev_request_channel is None:
+            return
+        if dev_request_channel.id != payload.channel_id:
             return
 
-        emoji_color_selection = {
-            "🔴": discord.Colour.from_rgb(r=255, g=100, b=100),
-            "🟡": discord.Colour.from_rgb(r=255, g=255, b=172),
-            "🟢": discord.Colour.from_rgb(r=100, g=255, b=100),
-            "🔵": discord.Colour.from_rgb(r=172, g=172, b=255)
-        }
-        if getattr(payload.emoji, "name", None) not in emoji_color_selection:
+        if getattr(payload.emoji, "name", None) not in emoji_color_options:
             return
-        channel: discord.TextChannel = await self.client.fetch_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+
+        message = await dev_request_channel.fetch_message(payload.message_id)
         if not self.client.is_me(message.author):
             return
         if len(message.embeds) != 1:
             return
         embed = message.embeds[0]
-        embed.colour = emoji_color_selection[payload.emoji.name]
+        embed.colour = emoji_color_options[payload.emoji.name]
         await message.edit(embed=embed)
         await message.remove_reaction(payload.emoji.name, payload.member)

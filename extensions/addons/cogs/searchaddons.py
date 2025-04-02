@@ -112,6 +112,7 @@ class SearchAddons(commands.Cog):
 
     @app_commands.command(name="math", description="Ask Wolfram Alpha a question")
     async def math(self, itx: discord.Interaction, query: str):
+        # todo: shorten function / split, and re-investigate the API docs to see if I can parse stuff better
         await itx.response.defer(ephemeral=True)
         if query.lower() in ["help", "what is this", "what is this?"]:
             await itx.followup.send(

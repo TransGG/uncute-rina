@@ -1,6 +1,6 @@
 import discord
 
-from resources.utils.permissions import is_staff, is_admin
+from resources.checks.permissions import is_staff, is_admin
 
 from .errors import InsufficientPermissionsCheckFailure
 
