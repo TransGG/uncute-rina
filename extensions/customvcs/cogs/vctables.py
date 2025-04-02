@@ -89,8 +89,9 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         """
         vc_hub: discord.VoiceChannel
         vc_category: discord.CategoryChannel
-        vc_hub, vc_category = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.custom_vc_create_channel, AttributeKeys.custom_vc_category)
+        vc_hub, vc_category = itx.client.get_guild_attribute(itx.guild,
+                                                             AttributeKeys.custom_vc_create_channel,
+                                                             AttributeKeys.custom_vc_category)
         if vc_hub is None or vc_category is None:
             if from_event:
                 return
@@ -157,7 +158,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
     async def vctable_create(
             self, itx: discord.Interaction[Bot], owners: str = "", name: app_commands.Range[str, 3, 35] | None = None
     ):
-        vctable_prefix: str | None = itx.client.get_guild_attribute(itx.guild, AttributeKeys.vctable_prefix)
+        vctable_prefix: str | None = itx.client.get_guild_attribute(itx.guild,
+                                                                    AttributeKeys.vctable_prefix)
         if vctable_prefix is None:
             raise MissingAttributesCheckFailure(AttributeKeys.vctable_prefix)
 

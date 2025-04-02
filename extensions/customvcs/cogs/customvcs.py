@@ -217,7 +217,8 @@ class CustomVcs(commands.Cog):
         customvc_hub: discord.VoiceChannel | None
         customvc_category: discord.CategoryChannel | None
         customvc_hub, customvc_category = self.client.get_guild_attribute(
-            member.guild, AttributeKeys.custom_vc_create_channel, AttributeKeys.custom_vc_category)
+            member.guild, AttributeKeys.custom_vc_create_channel,
+            AttributeKeys.custom_vc_category)
         if customvc_hub is None or customvc_category is None:
             return  # todo: confirm if I should just return here or try to send to a log channel?
 

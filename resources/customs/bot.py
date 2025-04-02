@@ -33,7 +33,8 @@ class Bot(commands.Bot):
             self,
             api_tokens: ApiTokenDict,
             version: str,
-            rina_db: PyMongoDatabase, async_rina_db: motorcore.AgnosticDatabase,
+            rina_db: PyMongoDatabase,
+            async_rina_db: motorcore.AgnosticDatabase,
             *args, **kwargs
     ):
         self.api_tokens: ApiTokenDict = api_tokens
@@ -126,7 +127,10 @@ class Bot(commands.Bot):
         return "/" + command_string
 
     async def get_guild_info(
-            self, guild_id: discord.Guild | int, *args: str, log: tuple[discord.Interaction, str] | None = None
+            self,
+            guild_id: discord.Guild | int,
+            *args: str,
+            log: tuple[discord.Interaction, str] | None = None
     ):
         # todo: remove entirely
         """
@@ -172,18 +176,21 @@ class Bot(commands.Bot):
             raise
 
     def get_guild_attribute(
-            self, guild_id: discord.Guild | int, *args: str, default: T = None, default_in_list: G = None
-    ) -> object | T | list[object | G]:
+            self,
+            guild_id: discord.Guild | int,
+            *args: str,
+            default: T = None
+    ) -> object | list[object] | T:
         """
         Get ServerSettings attributes for the given guild.
 
-        :param guild_id: The guild or guild id of the server you want to get attributes for.
-        :param args: The attribute(s) to get the values of. Must be keys of ServerAttributes.
+        :param guild_id: The guild or guild id of the server you want to
+         get attributes for.
+        :param args: The attribute(s) to get the values of. Must be keys
+         of ServerAttributes.
         :param default: The value to return if attribute was not found.
-        :param default_in_list: The value to return if an attribute in a list was not found.
-
-        :return: A single or list of values matching the requested attributes, with *default* if
-         attributes are not found.
+        :return: A single or list of values matching the requested attributes,
+         with *default* if attributes are not found.
         """
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
@@ -201,11 +208,13 @@ class Bot(commands.Bot):
 
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[discord.Guild | None | list[discord.Guild] | discord.abc.Messageable | discord.CategoryChannel |
-                     discord.User | discord.Role | list[discord.Role] | str | discord.VoiceChannel | int |
+        output: list[discord.Guild | None | list[discord.Guild] |
+                     discord.abc.Messageable | discord.CategoryChannel |
+                     discord.User | discord.Role | list[discord.Role] |
+                     str | discord.VoiceChannel | int |
                      list[discord.abc.Messageable] | discord.Emoji] = []
 
-        parent_server = attributes[AttributeKeys.parent_server]
+        parent_server = attributes[AttributeKeys.parent_server]  # type: ignore
 
         for arg in args:
             if arg in attributes:
@@ -213,10 +222,11 @@ class Bot(commands.Bot):
             elif arg not in ServerAttributes.__annotations__:
                 raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
             elif parent_server is not None:
-                maybe_the_parent_server_has_it = self.get_guild_attribute(parent_server, arg)
+                maybe_the_parent_server_has_it = self.get_guild_attribute(
+                    parent_server, arg)
                 output.append(maybe_the_parent_server_has_it)
             else:
-                output.append(default_in_list)
+                output.append(default)
 
         if len(output) == 1:
             return output[0]

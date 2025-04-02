@@ -190,7 +190,9 @@ async def _get_vc_activity(
     return output
 
 
-async def _make_bar_graph(df, lower_bound, sorted_usernames, upper_bound, voice_channel):
+async def _make_bar_graph(
+        df, lower_bound, sorted_usernames, upper_bound, voice_channel
+):
     df["Diff"] = df.Finish - df.Start
     color = "crimson"
     fig, ax = plt.subplots(figsize=(6, 3))
@@ -229,7 +231,9 @@ async def _make_bar_graph(df, lower_bound, sorted_usernames, upper_bound, voice_
     plt.savefig('outputs/vcLogs.png', dpi=300)
 
 
-async def _format_data_for_graph(events, max_time, min_time, select_user_ids, voice_channel):
+async def _format_data_for_graph(
+        events, max_time, min_time, select_user_ids, voice_channel
+):
     intermediate_data: dict[int, dict[
         typing.Literal["name", "time_temp", "timestamps"],
         str | None | float | list[tuple[float, float]]
@@ -273,7 +277,8 @@ class VCLogReader(commands.Cog):
     def __init__(self):
         pass
 
-    @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
+    @app_commands.command(name="getvcdata",
+                          description="Get recent voice channel usage data.")
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
                            upper_bound="Get data up to [period] minutes ago",
                            msg_log_limit="How many logs should I use to make the graph (default: 5000)",

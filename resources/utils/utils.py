@@ -171,7 +171,8 @@ async def log_to_guild(
      Note: It still outputs the given message to console and to the client's default log channel.
     :raise MissingAttributesCheckFailure: If no logging channel is defined.
     """
-    log_channel: discord.abc.Messageable = client.get_guild_attribute(guild, AttributeKeys.log_channel)
+    log_channel: discord.abc.Messageable = client.get_guild_attribute(guild,
+                                                                      AttributeKeys.log_channel)
     if log_channel is None:
         if ignore_dms and is_in_dms(guild):
             return False

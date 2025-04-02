@@ -31,9 +31,12 @@ def _product_of_list(mult_list: list[T]) -> T:
 
 def _generate_roll(query: str) -> list[int]:
     """
-    A helper command to generate a dice roll from a dice string representation "2d6"
+    A helper command to generate a dice roll from a dice string
+    representation "2d6"
+
     :param query: The string representing the dice roll.
-    :return: A list of outcomes following from the dice roll. 2d6 will return a list with 2 integers, ranging from 1-6.
+    :return: A list of outcomes following from the dice roll. 2d6 will return
+    a list with 2 integers, ranging from 1-6.
     """
     # print(query)
     temp: list[str | int] = query.split("d")
@@ -42,7 +45,8 @@ def _generate_roll(query: str) -> list[int]:
     # 4 = 4
     # [] (huh?)
     if len(temp) > 2:
-        raise ValueError("Can't have more than 1 'd' in the query of your die!")
+        raise ValueError("Can't have more than 1 'd' in the "
+                         "query of your die!")
     if len(temp) == 1:
         try:
             temp[0] = int(temp[0])
@@ -50,7 +54,8 @@ def _generate_roll(query: str) -> list[int]:
             raise TypeError(f"You can't do operations with '{temp[0]}'")
         return [temp[0]]
     if len(temp) < 1:
-        raise ValueError(f"I couldn't understand what you meant with {query} ({str(temp)})")
+        raise ValueError(f"I couldn't understand what you meant with "
+                         f"{query} ({str(temp)})")
     dice = temp[0]
     negative = dice.startswith("-")
     if negative:
@@ -62,55 +67,71 @@ def _generate_roll(query: str) -> list[int]:
         else:
             break
 
-    remainder = temp[1][len(faces):]  # (take the length of the now-still-string faces variable)
+    # see what hasn't been parsed yet
+    remainder = temp[1][len(faces):]
     if len(remainder) > 0:
-        raise TypeError(f"Idk what happened, but you probably filled something in incorrectly:\n"
-                        f"I parsed dice roll '{query}' into a roll of '{dice}' dice with '{faces}' faces, "
-                        f"but got left with '{remainder}'. ({dice}d{faces} and {remainder})")
+        raise TypeError(
+            f"Idk what happened, but you probably filled something in "
+            f"incorrectly:\n"
+            f"I parsed dice roll '{query}' into a roll of '{dice}' dice "
+            f"with '{faces}' faces, but got left with '{remainder}'. "
+            f"({dice}d{faces} and {remainder})"
+        )
 
     try:
         dice = int(dice)
     except ValueError:
-        raise ValueError(f"You have to roll a numerical number of dice! (You tried to roll '{dice}' dice)")
+        raise ValueError(f"You have to roll a numerical number of dice! "
+                         f"(You tried to roll '{dice}' dice)")
     try:
         faces = int(faces)
     except ValueError:
         raise TypeError(
-            f"You have to roll a die with a numerical number of faces! (You tried to roll {dice} dice with "
+            f"You have to roll a die with a numerical number of faces! "
+            f"(You tried to roll {dice} dice with "
             f"'{faces}' faces)")
     if dice >= 1000000:
         raise OverflowError(
-            f"Sorry, if I let you roll `{dice:,}` dice, then the universe will implode, and Rina will stop "
-            f"responding to commands. Please stay below 1 million dice...")
+            f"Sorry, if I let you roll `{dice:,}` dice, the universe will "
+            f"implode, and Rina will stop responding to commands. "
+            f"Please stay below 1 million dice...")
     if faces >= 1000000:
         raise OverflowError(
-            f"Uh.. At that point, you're basically rolling a sphere. Even earth has fewer faces than `{faces:,}`. "
-            f"Please bowl with a sphere of fewer than 1 million faces...")
+            f"Uh.. At that point, you're basically rolling a sphere. Even "
+            f"earth has less than `{faces:,}` faces. Please bowl with a "
+            f"sphere of fewer than 1 million faces...")
 
-    negativity: int = (negative * -2 + 1)  # turn a boolean 0 or 1 into a 1 or -1
+    # turn a boolean 0 or 1 into a 1 or -1
+    negativity: int = (negative * -2 + 1)
     return [negativity * random.randint(1, faces) for _ in range(dice)]
 
 
-async def _handle_awawa_reaction(client: Bot, message: discord.Message) -> bool:
+async def _handle_awawa_reaction(
+        message: discord.Message
+) -> bool:
     """
-    Add headpats to a given message if its content is ababababa or awawawawawawawawa etc.
-    :param client: The bot with server_settings.
+    Add headpats to a given message if its content is ababababa or
+    awawawawawawawawa etc.
+
     :param message: The message to check and add reactions to.
     :return: Whether the pat reaction is added.
     """
     # adding headpats on abababa or awawawawa
     msg_content = message.content.lower()
     emoji_str = "<:TPF_02_Pat:968285920421875744>"
-    if len(msg_content) > 5 and (msg_content.startswith("aba") or msg_content.startswith("awa")):
+    if len(msg_content) > 5 and (msg_content.startswith("aba") or
+                                 msg_content.startswith("awa")):
         # check if the message content is /(ab|aw)+a/i
         replaced = msg_content.replace("ab", "").replace("aw", "")
         if replaced == "a":
             try:
-                # todo attribute: Pat emoji ; also don't need the second message.add_reaction then.
-                #  there is also an emoji lower.
+                # todo attribute: Pat emoji ; also don't need the second
+                #  message.add_reaction then.
+                #  There is also an emoji lower.
                 await message.add_reaction(emoji_str)
                 return True
-            except discord.errors.Forbidden:  # blocked rina :(, or just no perms
+            except discord.errors.Forbidden:
+                # user blocked rina :(, or just no perms
                 pass
 
     if len(msg_content) > 9 and msg_content.startswith("a"):
@@ -142,7 +163,8 @@ class FunAddons(commands.Cog):
         """
         # adding headpats every x messages
         self.headpat_wait += 1
-        if self.headpat_wait >= 1000:  # todo: do we want server-specific headpat times? if so, todo attribute: .
+        if self.headpat_wait >= 1000:
+            # todo: do we want server-specific headpat times?
             # todo attribute: add headpat channel blacklist. Should also look if messages are in thread of this channel.
             #  Should also be able to be categories.
             if (
@@ -150,9 +172,10 @@ class FunAddons(commands.Cog):
                      message.channel.parent == 987358841245151262) or  # <#welcome-verify>
                     message.channel.name.startswith('ticket-') or
                     message.channel.name.startswith('closed-') or
-                    message.channel.category.id in [959584962443632700, 959590295777968128,
-                                                    959928799309484032, 1041487583475138692,
-                                                    995330645901455380, 995330667665707108] or
+                    message.channel.category.id in [
+                        959584962443632700, 959590295777968128,
+                        959928799309484032, 1041487583475138692,
+                        995330645901455380, 995330667665707108] or
                     # <#Bulletin Board>, <#Moderation Logs>,
                     # <#Verifier Archive>, <#Events>,
                     # <#Open Tickets>, <#Closed Tickets>
@@ -189,7 +212,7 @@ class FunAddons(commands.Cog):
             added_pat = self.handle_random_pat_reaction(message)
 
         if not added_pat:
-            await _handle_awawa_reaction(self.client, message)
+            await _handle_awawa_reaction(message)
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",

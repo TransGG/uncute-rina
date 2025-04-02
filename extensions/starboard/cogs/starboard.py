@@ -302,7 +302,7 @@ class Starboard(commands.Cog):
 
         star_channel: discord.abc.Messageable | None
         star_minimum: int | None
-        channel_blacklist: list[discord.abc.Messageable | None] | None
+        channel_blacklist: list[discord.abc.Messageable] | None
         starboard_emoji: discord.Emoji | None
         downvote_init_value: int | None
         star_channel, star_minimum, channel_blacklist, starboard_emoji, downvote_init_value = \
@@ -315,9 +315,9 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
             )
 
-        if None in [star_channel, star_minimum, channel_blacklist, starboard_emoji, downvote_init_value]:
+        if None in [star_channel, star_minimum, channel_blacklist,
+                    starboard_emoji, downvote_init_value]:
             return
-        channel_blacklist: list[discord.abc.Messageable] = list(set(channel_blacklist) - {None})
 
         if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji and
@@ -395,16 +395,18 @@ class Starboard(commands.Cog):
             return
 
         if payload.emoji != starboard_emoji and payload.emoji.name != "❌":
-            # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
+            # only run starboard code if the reactions tracked are actually
+            #  starboard emojis (or the downvote emoji)
             return
 
-        # get the message id from payload.message_id through the channel (with payload.channel_id) (oof lengthy process)
+        # get the message id from payload.message_id through the channel
         ch = self.client.get_channel(payload.channel_id)
         message = await ch.fetch_message(payload.message_id)
 
         if message.channel.id == star_channel.id:
             if len(message.embeds) > 0:
-                await _update_starboard_message_score(self.client, message, starboard_emoji, downvote_init_value)
+                await _update_starboard_message_score(
+                    self.client, message, starboard_emoji, downvote_init_value)
             return
 
         for reaction in message.reactions:
@@ -414,8 +416,9 @@ class Starboard(commands.Cog):
                 for star_message in starboard_messages:
                     for embed in star_message.embeds:
                         if embed.footer.text == str(message.id):
-                            await _update_starboard_message_score(self.client, star_message, starboard_emoji,
-                                                                  downvote_init_value)
+                            await _update_starboard_message_score(
+                                self.client, star_message, starboard_emoji,
+                                downvote_init_value)
                             return
 
     @commands.Cog.listener()
@@ -425,12 +428,11 @@ class Starboard(commands.Cog):
 
         star_channel: discord.abc.Messageable | None
         starboard_emoji: discord.Emoji | None
-        star_channel, starboard_emoji = \
-            self.client.get_guild_attribute(
-                message_payload.guild_id,
-                AttributeKeys.starboard_channel,
-                AttributeKeys.starboard_upvote_emoji
-            )
+        star_channel, starboard_emoji = self.client.get_guild_attribute(
+            message_payload.guild_id,
+            AttributeKeys.starboard_channel,
+            AttributeKeys.starboard_upvote_emoji
+        )
 
         if None in [star_channel, starboard_emoji]:
             return
@@ -460,9 +462,11 @@ class Starboard(commands.Cog):
                     image = ""
 
                 try:
-                    msg_link = str(message_payload.message_id) + "  |  " + (
-                        await self.client.get_channel(message_payload.channel_id).fetch_message(
-                            message_payload.message_id)).jump_url
+                    channel = self.client.get_channel(message_payload.channel_id)
+                    msg = await channel.fetch_message(message_payload.message_id)
+                    msg_link = (str(message_payload.message_id)
+                                + "  |  "
+                                + msg.jump_url)
                 except discord.NotFound:
                     msg_link = str(message_payload.message_id) + " (couldn't get jump link)"
 

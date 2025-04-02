@@ -291,10 +291,10 @@ class OtherAddons(commands.Cog):
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
-        if itx.guild.id != itx.client.custom_ids["staff_server_id"]:
-            blacklisted_channels = await itx.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
-            if itx.channel.id in blacklisted_channels:
-                errors.append("- :no_entry: You are not allowed to use this command in this channel!")
+        blacklisted_channels = itx.client.get_guild_attribute(itx.guild,
+                                                              "pollReactionsBlacklist")
+        if blacklisted_channels and itx.channel.id in blacklisted_channels:
+            errors.append("- :no_entry: You are not allowed to use this command in this channel!")
 
         if errors or not message:
             await itx.response.send_message("Couldn't add poll reactions:\n" + '\n'.join(errors), ephemeral=True)

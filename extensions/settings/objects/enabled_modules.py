@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal
+from typing import TypedDict
 
 
 class EnabledModules(TypedDict, total=False):
@@ -23,16 +23,16 @@ class ModuleKeys:
     :py:func:`~resources.customs.bot.Bot.is_module_enabled` by simply referencing this class' attribute
     rather than using magic strings.
     """
-    starboard: Literal["starboard"] = "starboard"
-    headpat_reactions: Literal["headpat_reactions"] = "headpat_reactions"
-    poll_reactions: Literal["poll_reactions"] = "poll_reactions"
-    compliments: Literal["compliments"] = "compliments"
-    custom_vcs: Literal["custom_vcs"] = "custom_vcs"
-    vc_tables: Literal["vc_tables"] = "vc_tables"
-    qotw: Literal["qotw"] = "qotw"
-    dev_requests: Literal["dev_requests"] = "dev_requests"
-    bump_reminder: Literal["bump_reminder"] = "bump_reminder"
-    selfies_channel_deletion: Literal["selfies_channel_deletion"] = "selfies_channel_deletion"
-    tags: Literal["tags"] = "tags"
-    custom_dictionary: Literal["custom_dictionary"] = "custom_dictionary"
-    watchlist: Literal["watchlist"] = "watchlist"
+    starboard = "starboard"
+    headpat_reactions = "headpat_reactions"
+    poll_reactions = "poll_reactions"
+    compliments = "compliments"
+    custom_vcs = "custom_vcs"
+    vc_tables = "vc_tables"
+    qotw = "qotw"
+    dev_requests = "dev_requests"
+    bump_reminder = "bump_reminder"
+    selfies_channel_deletion = "selfies_channel_deletion"
+    tags = "tags"
+    custom_dictionary = "custom_dictionary"
+    watchlist = "watchlist"

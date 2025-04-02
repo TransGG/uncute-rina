@@ -32,7 +32,8 @@ class QOTW(commands.Cog):
             return
 
         # get channel of where this message has to be sent
-        qotw_channel = itx.client.get_guild_attribute(itx.guild, AttributeKeys.qotw_suggestions_channel)
+        qotw_channel = itx.client.get_guild_attribute(itx.guild,
+                                                      AttributeKeys.qotw_suggestions_channel)
         if not qotw_channel:
             raise MissingAttributesCheckFailure(AttributeKeys.qotw_suggestions_channel)
 
