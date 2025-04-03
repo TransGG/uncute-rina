@@ -3,6 +3,7 @@ from typing import Callable
 import discord
 
 from extensions.settings.objects import AttributeKeys
+from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot, EnabledServers
 from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
 from resources.utils.utils import log_to_guild
@@ -17,7 +18,7 @@ class Tags:
 
     @staticmethod
     async def tag_message(
-            tag_name: str, itx: discord.Interaction, public: bool, anonymous: bool,
+            tag_name: str, itx: discord.Interaction[Bot], public: bool, anonymous: bool,
             embed: discord.Embed, public_footer: bool = False
     ):
         """
@@ -48,7 +49,13 @@ class Tags:
                     msg = await itx.followup.send(embed=embed, ephemeral=False, wait=True)
                 log_msg += f", in {itx.channel.mention} (`{itx.channel.id}`)\n[Jump to the tag message]({msg.jump_url})"
                 await log_to_guild(itx.client, itx.guild, log_msg)
-                staff_message_reports_channel = itx.client.get_channel(itx.client.custom_ids["staff_reports_channel"])
+
+                staff_message_reports_channel = itx.client.get_guild_attribute(
+                    itx.guild, AttributeKeys.staff_reports_channel)
+                if staff_message_reports_channel is None:
+                    # todo: make sending these messages to a special channel a module?
+                    raise MissingAttributesCheckFailure(AttributeKeys.staff_reports_channel)
+
                 await staff_message_reports_channel.send(log_msg)
             else:
                 await itx.response.send_message(embed=embed)
@@ -342,13 +349,14 @@ class Tags:
         await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod
-    async def send_enabling_embeds_info(tag_name: str, itx: discord.Interaction, public, anonymous):
+    async def send_enabling_embeds_info(tag_name: str, itx: discord.Interaction[Bot], public, anonymous):
         txt = ("**Enabling Embeds**\n"
                "Embeds are a neat feature in discord that let you preview websites and show certain messages "
                "in a nicer format. Many bots make use of embeds to lay out information, as do I.\n"
                "Users can enable and disable this setting manually. Simply go to `Discord > App Settings > Chat > "
                "Embeds and Link Previews > Show embeds and previews website links pasted into chat` and toggle "
                "that setting.")
+        # no embeds here because .. there isn't any
         if anonymous:
             if public:
                 await itx.response.send_message("sending...", ephemeral=True)
@@ -359,8 +367,10 @@ class Tags:
                                f"in {itx.channel.mention} (`{itx.channel.id}`)\n"
                                f"[Jump to the tag message]({msg.jump_url})")
                     await log_to_guild(itx.client, itx.guild, log_msg)
-                    staff_message_reports_channel = itx.client.get_channel(
-                        itx.client.custom_ids["staff_reports_channel"]
+
+                    # todo: make sending these messages to a special channel a module?
+                    staff_message_reports_channel = itx.client.get_guild_attribute(
+                        itx.guild, AttributeKeys.staff_reports_channel
                     )
                     await staff_message_reports_channel.send(log_msg)
                 except discord.Forbidden:

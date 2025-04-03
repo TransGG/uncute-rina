@@ -35,7 +35,7 @@ class TestingCog(commands.GroupCog, name="testing"):
         embed.add_field(name="Private Notes", value=f">>> {private_notes}")
         embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Role Changes", value=role_changes.replace("[[\\n]]", "\n"))
-        # any channel in itx.client.custom_ids["staff_logs_category"] should work.
+        # any channel in AttributeKeys.staff_logs_category should work.
         await itx.client.get_channel(1143642283577725009).send(embed=embed)
 
     @app_commands.command(name="send_pageview_test", description="Send a test embed with page buttons")

@@ -4,10 +4,11 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys
+from extensions.settings.objects import ModuleKeys, AttributeKeys
 from resources.customs import Bot
 from resources.checks.permissions import is_staff  # to check role in _add_to_watchlist, as backup
-from resources.checks import is_staff_check, module_enabled_check  # the cog is pretty much only intended for staff use
+from resources.checks import is_staff_check, module_enabled_check, \
+    MissingAttributesCheckFailure  # the cog is pretty much only intended for staff use
 
 from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache
 from extensions.watchlist.modals import WatchlistReasonModal
@@ -58,17 +59,16 @@ async def _create_uncool_watchlist_thread(client: Bot, user: discord.Member, wat
     await thread.join()
     # await thread.send("<@&986022587756871711>", silent=True)  # silent messages don't work for this
     joiner_msg = await thread.send("user-mention placeholder")
-    await joiner_msg.edit(content=f"<@&{client.custom_ids['active_staff_role']}>")
-    # targets = [] # potential workaround for the function above
-    # async for user in thread.guild.fetch_members(limit=None):
-    #     for role in user.roles:
-    #         if role.id in [996802301283020890, 1086348907530965022, 986022587756871711]:
-    #             targets.append(user.id)
-    #             break
-    #     if len(targets) > 50:
-    #         await joiner_msg.edit(content="<@&996802301283020890>")
-    #         targets = []
-    await joiner_msg.delete()
+    active_staff_role: discord.Guild | None = client.get_guild_attribute(
+        watch_channel.guild, AttributeKeys.watchlist_reaction_role)
+    if active_staff_role is None:
+        cmd_mention_settings = client.get_command_mention("settings")
+        await joiner_msg.edit(
+            content=f"No role has been set up to be pinged when a watchlist "
+                    f"is created. Use {cmd_mention_settings} to add one.")
+    else:
+        await joiner_msg.edit(content=f"<@&{active_staff_role.id}>")
+        await joiner_msg.delete()
     return msg, thread
 
 
@@ -91,7 +91,7 @@ async def _update_uncool_watchlist_embed(jump_url: str, reported_message_info, m
 
 
 async def _add_to_watchlist(
-        itx: discord.Interaction,
+        itx: discord.Interaction[Bot],
         user: discord.Member,
         reason: str = "",
         message_id: str | None = None,
@@ -119,6 +119,12 @@ async def _add_to_watchlist(
                                 reason[:2000 - 52 - 3] + "...", ephemeral=True)  # because I'm nice
         return
 
+    # get channel of where this message has to be sent
+    watch_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
+        itx.guild, AttributeKeys.staff_watch_channel)
+    if watch_channel is None:
+        raise MissingAttributesCheckFailure(AttributeKeys.watchlist_channel)
+
     # await itx.response.defer(ephemeral=True)
     await itx.response.send_message(
         "Adding user to watchlist...\n\n"
@@ -127,8 +133,7 @@ async def _add_to_watchlist(
         "duplicate thread for the user, :)",
         ephemeral=True
     )
-    # get channel of where this message has to be sent
-    watch_channel = itx.client.get_channel(itx.client.custom_ids["staff_watch_channel"])
+
     # get message that supports the report / report reason
     reported_message = None  # to make IDE happy
     if message_id is None:
@@ -206,7 +211,7 @@ async def _add_to_watchlist(
 
     reason = reason.replace("\\n", "\n")
     if reason:
-        c = await thread.send(f"Reason: {reason}", allowed_mentions=discord.AllowedMentions.none())
+        c = await thread.send(f"Reason: {reason}"[:2000], allowed_mentions=discord.AllowedMentions.none())
         if copyable_version is None:
             copyable_version = c
 
@@ -264,15 +269,17 @@ class WatchList(commands.Cog):
     @app_commands.describe(user="User to check")
     @app_commands.check(is_staff_check)
     @module_enabled_check(ModuleKeys.watchlist)
-    async def check_watchlist(self, itx: discord.Interaction, user: discord.User):
+    async def check_watchlist(self, itx: discord.Interaction[Bot], user: discord.User):
         if not is_staff(itx, itx.user):
             await itx.response.send_message("You don't have the right permissions to do this.", ephemeral=True)
             return
 
         await itx.response.defer(ephemeral=True)
-
-        watch_channel = itx.client.get_channel(itx.client.custom_ids["staff_watch_channel"])
-        watchlist_index = await get_or_fetch_watchlist_index(watch_channel)
+        watchlist_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.watchlist_channel)
+        if watchlist_channel is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.watchlist_channel)
+        watchlist_index = await get_or_fetch_watchlist_index(watchlist_channel)
         on_watchlist: bool = user.id in watchlist_index
 
         if on_watchlist:
@@ -284,14 +291,31 @@ class WatchList(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not message.guild or message.guild.id != self.client.custom_ids["staff_server_id"]:
+        if not module_enabled_check(ModuleKeys.watchlist):
             return
-        if message.author.id != self.client.custom_ids["badeline_bot"]:
+        staff_logs_category: discord.CategoryChannel | None
+        badeline_bot: discord.User | None
+        watchlist_channel: discord.TextChannel | None
+        staff_logs_category, badeline_bot, watchlist_channel = self.client.get_guild_attribute(
+            message.guild,
+            AttributeKeys.staff_logs_category,
+            AttributeKeys.badeline_bot,
+            AttributeKeys.watchlist_channel
+        )
+        if None in [staff_logs_category, badeline_bot]:
+            missing = [key for key, value in {
+                AttributeKeys.staff_logs_category: staff_logs_category,
+                AttributeKeys.badeline_bot: badeline_bot,
+                AttributeKeys.watchlist_channel: watchlist_channel}
+                if value is None]
+            raise MissingAttributesCheckFailure(*missing)
+
+        if message.author.id != badeline_bot.id:
+            # Don't compare author == badeline_bot, because author can be
+            #  a discord.Member, whereas badeline_bot would be a discord.User
             return
-        try:
-            if message.channel.category.id != self.client.custom_ids["staff_logs_category"]:
-                return
-        except discord.errors.ClientException:
+
+        if message.channel.category != staff_logs_category:
             return
         if type(message.channel) is discord.Thread:  # ignore the #rules channel with its threads
             return
@@ -316,15 +340,10 @@ class WatchList(commands.Cog):
                         else:
                             raise Exception("User id was not an id!")
 
-        watch_channel: discord.TextChannel = self.client.get_channel(self.client.custom_ids["staff_watch_channel"])
-        watchlist_index = await get_or_fetch_watchlist_index(watch_channel)
+        watchlist_index = await get_or_fetch_watchlist_index(watchlist_channel)
         on_watchlist: bool = reported_user_id in watchlist_index
 
-        # for thread in watch_channel.threads:
         if on_watchlist:
-            thread: discord.Thread = await watch_channel.guild.fetch_channel(watchlist_index[reported_user_id])
+            thread: discord.Thread = await watchlist_channel.guild.fetch_channel(
+                watchlist_index[reported_user_id])
             await message.forward(thread)
-            # await thread.send(f"This user (<@{reported_user_id}>, `{reported_user_id}`) has an "
-            #                   f"[infraction]({message.jump_url}) in {message.channel.mention}.",
-            #                   embeds=message.embeds,
-            #                   allowed_mentions=discord.AllowedMentions.none())

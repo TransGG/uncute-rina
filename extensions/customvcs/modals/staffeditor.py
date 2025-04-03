@@ -7,7 +7,9 @@ from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 
 
 class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s channel'):
-    def __init__(self, client: Bot, vc_hub: int, vc_log, vc_category):
+    def __init__(
+            self, client: Bot, vc_hub: int, vc_log, vc_category, vctable_prefix
+    ):
         super().__init__()
         self.vcHub = vc_hub
         self.vcLog = vc_log
@@ -16,7 +18,7 @@ class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s chan
         self.channel_id = discord.ui.TextInput(label='Channel Id', placeholder="Which channel do you want to edit",
                                                required=True)
         self.name = discord.ui.TextInput(label='Name', placeholder="Give your voice channel a name", required=False,
-                                         max_length=100 - len(client.custom_ids["vctable_prefix"]))
+                                         max_length=100 - len(vctable_prefix))
         self.limit = discord.ui.TextInput(label='Limit', placeholder="Give your voice channel a user limit",
                                           required=False)
         self.add_item(self.channel_id)

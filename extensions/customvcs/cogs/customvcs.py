@@ -135,7 +135,10 @@ async def _handle_delete_custom_vc(client: Bot, member: discord.Member, voice_ch
 
 
 async def _handle_custom_voice_channel_leave_events(
-        client: Bot, member: discord.Member, voice_channel: discord.VoiceChannel
+        client: Bot,
+        member: discord.Member,
+        voice_channel: discord.VoiceChannel,
+        vctable_prefix: str
 ):
     """
     A helper function to handle the custom voice channel events when a user leaves a channel.
@@ -150,7 +153,7 @@ async def _handle_custom_voice_channel_leave_events(
     if len(voice_channel.members) == 0:
         await _handle_delete_custom_vc(client, member, voice_channel)
 
-    await _reset_voice_channel_permissions_if_vctable(client.custom_ids["vctable_prefix"], voice_channel)
+    await _reset_voice_channel_permissions_if_vctable(vctable_prefix, voice_channel)
 
 
 class CustomVcs(commands.Cog):
@@ -168,20 +171,24 @@ class CustomVcs(commands.Cog):
 
         customvc_hub: discord.VoiceChannel | None
         customvc_category: discord.CategoryChannel | None
-        customvc_hub, customvc_category = self.client.get_guild_attribute(
+        vctable_prefix: str | None
+        customvc_hub, customvc_category, vctable_prefix = self.client.get_guild_attribute(
             member.guild, AttributeKeys.custom_vc_create_channel,
-            AttributeKeys.custom_vc_category)
-        if customvc_hub is None or customvc_category is None:
+            AttributeKeys.custom_vc_category,
+            AttributeKeys.vctable_prefix)
+        if None in [customvc_hub, customvc_category, vctable_prefix]:
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: customvc_hub,
-                AttributeKeys.custom_vc_category: customvc_category}
+                AttributeKeys.custom_vc_category: customvc_category,
+                AttributeKeys.vctable_prefix: vctable_prefix}
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
         if before.channel is not None and before.channel in before.channel.guild.voice_channels:
             if is_vc_custom(before.channel, customvc_category, customvc_hub, self.blacklisted_channels):
                 # only run if this voice state regards a custom voice channel
-                await _handle_custom_voice_channel_leave_events(self.client, member, before.channel)
+                await _handle_custom_voice_channel_leave_events(
+                    self.client, member, before.channel, vctable_prefix)
 
         if after.channel is not None:
             if after.channel.id == customvc_hub:
@@ -196,18 +203,20 @@ class CustomVcs(commands.Cog):
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ):
-        vc_hub, vc_log, vc_category = itx.client.get_guild_attribute(
+        vc_hub, vc_log, vc_category, vctable_prefix = itx.client.get_guild_attribute(
             itx.guild,
             AttributeKeys.custom_vc_create_channel,
             AttributeKeys.log_channel,
-            AttributeKeys.custom_vc_category
+            AttributeKeys.custom_vc_category,
+            AttributeKeys.vctable_prefix
         )
 
-        if None in (vc_hub, vc_log, vc_category):
+        if None in (vc_hub, vc_log, vc_category, vctable_prefix):
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: vc_hub,
                 AttributeKeys.log_channel: vc_log,
-                AttributeKeys.custom_vc_category: vc_category}
+                AttributeKeys.custom_vc_category: vc_category,
+                AttributeKeys.vctable_prefix: vctable_prefix}
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
@@ -215,7 +224,9 @@ class CustomVcs(commands.Cog):
 
         if itx.user.voice is None:
             if is_staff(itx, itx.user):
-                await itx.response.send_modal(CustomVcStaffEditorModal(itx.client, vc_hub, vc_log, vc_category))
+                staff_modal = CustomVcStaffEditorModal(
+                    itx.client, vc_hub, vc_log, vc_category, vctable_prefix)
+                await itx.response.send_modal(staff_modal)
                 return
             await itx.response.send_message("You must be connected to a voice channel to use this command",
                                             ephemeral=True)
@@ -236,8 +247,9 @@ class CustomVcs(commands.Cog):
             if name == "Untitled voice chat":
                 warning += "Are you really going to change it to that..\n"
             if len(itx.user.voice.channel.overwrites) > len(
-                    itx.user.voice.channel.category.overwrites):  # if VcTable, add prefix
-                name = itx.client.custom_ids["vctable_prefix"] + name
+                    itx.user.voice.channel.category.overwrites):
+                # if VcTable, add prefix
+                name = vctable_prefix + name
 
         if name is not None:
             # don't add cooldown if you only change the limit, not the name

@@ -196,10 +196,19 @@ def start_app():
         post_startup_progress.step("Loaded server settings.")
 
         post_startup_progress.progress("Pre-loading all watchlist threads")
-        watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
-        if watchlist_channel is not None:  # if running on prod
-            await get_or_fetch_watchlist_index(watchlist_channel)
-        post_startup_progress.step("Loaded watchlist threads.")
+        # todo: add support for multiple watchlist channels...
+        watchlist_channel: discord.TextChannel | None = client.get_guild_attribute(
+            )
+        if:
+            if:
+                if:
+        # todo: this needs to be fixed asap
+
+        # watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
+        # if watchlist_channel is not None:  # if running on prod
+        #     await get_or_fetch_watchlist_index(watchlist_channel)
+        #
+        # post_startup_progress.step("Loaded watchlist threads.")
 
     @client.event
     async def setup_hook():

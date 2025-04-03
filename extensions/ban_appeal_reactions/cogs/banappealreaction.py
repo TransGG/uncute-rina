@@ -65,14 +65,24 @@ class BanAppealReactionsAddon(commands.Cog):
             thread = await message.create_thread(name=f"App-{platform[0]}-{username[:80]}",
                                                  auto_archive_duration=10080)
         except discord.errors.Forbidden:
-            raise  # no permission to send message (should be reported to staff server owner I suppose)
+            # no permission to send message (should be reported to staff
+            # server owner I suppose)
+            raise
         except discord.errors.HTTPException:
             # I expect this HTTP exception to have code=400 "BAD REQUEST"
             thread = await message.create_thread(name=f"Appeal-{platform[0]}-Malformed username",
                                                  auto_archive_duration=10080)
         await thread.join()
         joiner_msg = await thread.send("user-mention placeholder")
-        # surely pinging active staffs should only make those with the original channel perms be
-        # able to see it, right...?
-        await joiner_msg.edit(content=f"<@&{self.client.custom_ids['active_staff_role']}>")
-        await joiner_msg.delete()
+
+        ban_appeal_role = self.client.get_guild_attribute(
+            message.guild, AttributeKeys.ban_appeal_reaction_role)
+        if ban_appeal_role is None:
+            cmd_mention_settings = self.client.get_command_mention("settings")
+            await joiner_msg.edit(
+                content=f"No role has been set up to be pinged after a "
+                        f"ban appeal is created. Use {cmd_mention_settings} "
+                        f"to add one.")
+        else:
+            await joiner_msg.edit(content=f"<@&{ban_appeal_role.id}>")
+            await joiner_msg.delete()

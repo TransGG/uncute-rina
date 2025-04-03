@@ -64,11 +64,21 @@ class DevRequest(commands.Cog):
         # send a plaintext version of the question, and copy a link to it
         copyable_version = await thread.send(f"{suggestion}", allowed_mentions=discord.AllowedMentions.none())
 
-        # mention developers in a message edit, adding them all to the thread without mentioning them
-        # and do the same for the requester, though this will only work if they're in the staff server..
+        # Mention developers in a message edit, adding them all to the thread
+        # without mentioning them and do the same for the requester, though
+        # this will only work if they're in the staff server..
         joiner_msg = await thread.send("role mention placeholder")
-        await joiner_msg.edit(content=f"<@&{itx.client.custom_ids['staff_developer_role']}> <@{itx.user.id}>")
-        await joiner_msg.delete()
+        developer_role = itx.client.get_guild_attribute(
+            itx.user.guild, AttributeKeys.developer_request_channel)
+        if developer_role is None:
+            cmd_mention_settings = itx.client.get_command_mention("settings")
+            await joiner_msg.edit(
+                content=f"No role has been set up to be pinged after a "
+                        f"developer request is created. Use "
+                        f"{cmd_mention_settings} to add one.")
+        else:
+            await joiner_msg.edit(content=f"<@&{developer_role.id}> <@{itx.user.id}>")
+            await joiner_msg.delete()
 
         # edit the uncool embed to make it cool: Show question, link to plaintext, and upvotes/downvotes
         embed = discord.Embed(
