@@ -1,7 +1,8 @@
 import discord
 import discord.ext.commands as commands
 
-from extensions.settings.objects import AttributeKeys
+from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 
 
@@ -11,10 +12,13 @@ class BanAppealReactionsAddon(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        if not self.client.is_module_enabled(
+                message.guild, ModuleKeys.ban_appeal_reactions):
+            return
         ban_appeal_webhook: discord.User | None = self.client.get_guild_attribute(
             message.guild, AttributeKeys.ban_appeal_webhook)
         if ban_appeal_webhook is None:
-            return
+            raise MissingAttributesCheckFailure(AttributeKeys.ban_appeal_webhook)
 
         if message.author.id != ban_appeal_webhook.id:
             return
@@ -36,8 +40,10 @@ class BanAppealReactionsAddon(commands.Cog):
         await message.add_reaction("🤷")
         await message.add_reaction("👎")
 
+        field_name = appeal_embed.fields[1].name
+        field_value = appeal_embed.fields[1].value
         # get appeal person's username (expected username)
-        platform_field_name = appeal_embed.fields[1].name.lower()
+        platform_field_name = field_name.lower()
         if "reddit username" in platform_field_name:
             platform = "reddit"
         elif "minecraft username" in platform_field_name:
@@ -47,11 +53,14 @@ class BanAppealReactionsAddon(commands.Cog):
         elif "discord username" in platform_field_name:
             platform = "discord"
         else:
-            raise AssertionError(f"Embed field 2 name of ban appeal webhook should contain "
-                                 f"'discord/reddit/revolt/minecraft username' but was "
-                                 f"'{appeal_embed.fields[1].name}' / '{appeal_embed.fields[1].value}' instead!")
+            raise AssertionError(
+                f"Embed field 2 name of ban appeal webhook should contain "
+                f"'discord/reddit/revolt/minecraft username' but was "
+                f"'{field_name}' / '{field_value}' "
+                f"instead!"
+            )
 
-        username: str = appeal_embed.fields[1].value
+        username: str = field_value
         try:
             thread = await message.create_thread(name=f"App-{platform[0]}-{username[:80]}",
                                                  auto_archive_duration=10080)

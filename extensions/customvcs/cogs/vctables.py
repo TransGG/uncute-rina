@@ -76,15 +76,16 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
 
     # region VcTable utilities
     async def get_current_voice_channel(self, itx: discord.Interaction[Bot], action: str, from_event: bool = None):
-        """Gets the voice channel of the command executor if it's a custom voice channel.
-
+        """Gets the voice channel of the command executor if it's
+        a custom voice channel.
 
         :param itx: The interaction from the original command.
         :param action: The action to note in the error message.
-        :param from_event: Whether this event was executes from a non-command context. Default: None.
+        :param from_event: Whether this event was executes from a
+         non-command context.
 
-        :return: The custom voice channel that the executor is in, or ``None`` if the user is not in a
-         custom voice channel.
+        :return: The custom voice channel that the executor is in, or
+         ``None`` if the user is not in a custom voice channel.
         :raise MissingAttributesCheckFailure: If any guild attributes are missing.
         """
         vc_hub: discord.VoiceChannel
@@ -93,8 +94,6 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                                                              AttributeKeys.custom_vc_create_channel,
                                                              AttributeKeys.custom_vc_category)
         if vc_hub is None or vc_category is None:
-            if from_event:
-                return
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: vc_hub,
                 AttributeKeys.custom_vc_category: vc_category}

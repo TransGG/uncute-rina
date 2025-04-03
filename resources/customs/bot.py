@@ -9,7 +9,8 @@ import discord.ext.commands as commands
 import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
 
-from extensions.settings.objects import AttributeKeys, EnabledModules, ServerAttributes
+from extensions.settings.objects import (
+    AttributeKeys, EnabledModules, ServerAttributes)
 from .api_token_dict import ApiTokenDict
 
 if TYPE_CHECKING:
@@ -203,12 +204,9 @@ class Bot(commands.Bot):
                 return [default] * len(args)
             return default
 
-        for attr, val in self.server_settings[guild_id].attributes.items():
-            print(attr, val)
-
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[discord.Guild | None | list[discord.Guild] |
+        output: list[discord.Guild | T | list[discord.Guild] |
                      discord.abc.Messageable | discord.CategoryChannel |
                      discord.User | discord.Role | list[discord.Role] |
                      str | discord.VoiceChannel | int |
@@ -217,13 +215,16 @@ class Bot(commands.Bot):
         parent_server = attributes[AttributeKeys.parent_server]  # type: ignore
 
         for arg in args:
-            if arg in attributes:
-                output.append(attributes[arg])  # type: ignore
-            elif arg not in ServerAttributes.__annotations__:
+            if arg not in attributes:
+                assert arg not in ServerAttributes.__annotations__
                 raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
+
+            att_value = attributes[arg]  # type:ignore
+            if att_value is not None:
+                output.append(att_value)
             elif parent_server is not None:
                 maybe_the_parent_server_has_it = self.get_guild_attribute(
-                    parent_server, arg)
+                    parent_server, arg, default=default)
                 output.append(maybe_the_parent_server_has_it)
             else:
                 output.append(default)
@@ -273,5 +274,6 @@ class Bot(commands.Bot):
         """
         if isinstance(user_id, discord.User) or isinstance(user_id, discord.Member):
             user_id = user_id.id
-        # could also use hasattr(user_id, "id") for a more generic approach... but this should work fine enough.
+        # Could also use hasattr(user_id, "id") for a more generic approach...
+        #  But this should work fine enough.
         return self.user.id == user_id

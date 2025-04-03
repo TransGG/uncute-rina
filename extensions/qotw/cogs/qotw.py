@@ -34,7 +34,7 @@ class QOTW(commands.Cog):
         # get channel of where this message has to be sent
         qotw_channel = itx.client.get_guild_attribute(itx.guild,
                                                       AttributeKeys.qotw_suggestions_channel)
-        if not qotw_channel:
+        if qotw_channel is None:
             raise MissingAttributesCheckFailure(AttributeKeys.qotw_suggestions_channel)
 
         await itx.response.defer(ephemeral=True)

@@ -15,9 +15,6 @@ if TYPE_CHECKING:
     from resources.customs import Bot
 
 
-TESTING_ENVIRONMENT = 2  # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
-
-
 class DebugColor(Enum):
     # todo: move to own file
     default = "\033[0m"
@@ -149,7 +146,7 @@ def get_mod_ticket_channel(client: Bot, guild_id: int | discord.Guild | discord.
 
 async def log_to_guild(
         client: Bot,
-        guild: discord.Guild,
+        guild: discord.Guild | int | None,
         msg: str,
         *,
         crash_if_not_found: bool = False,
@@ -171,8 +168,8 @@ async def log_to_guild(
      Note: It still outputs the given message to console and to the client's default log channel.
     :raise MissingAttributesCheckFailure: If no logging channel is defined.
     """
-    log_channel: discord.abc.Messageable = client.get_guild_attribute(guild,
-                                                                      AttributeKeys.log_channel)
+    log_channel: discord.abc.Messageable = client.get_guild_attribute(
+        guild, AttributeKeys.log_channel)
     if log_channel is None:
         if ignore_dms and is_in_dms(guild):
             return False

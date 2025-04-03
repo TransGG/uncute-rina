@@ -46,7 +46,7 @@ def not_in_dms_check(itx: discord.Interaction[Bot]) -> bool:
     return True
 
 
-def is_in_dms(guild: discord.Guild | int) -> bool:
+def is_in_dms(guild: discord.Guild | int | None) -> bool:
     """
     A simple function to check if a command was run in a DM.
     :param guild: The guild or guild id to check...... This function is just a one-liner...

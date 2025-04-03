@@ -13,7 +13,6 @@ import discord  # for main discord bot functionality
 
 from resources.customs import Bot, ProgressBar
 from resources.customs import ApiTokenDict
-from resources.utils.utils import TESTING_ENVIRONMENT
 
 from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
 from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
@@ -225,13 +224,10 @@ def start_app():
         start_progress.progress("Loading server settings")
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
-        except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound,
-                discord.errors.Forbidden):  # one of these
+        except discord.errors.Forbidden:
             client.running_on_production = False
-            if TESTING_ENVIRONMENT == 1:
-                client.log_channel = await client.fetch_channel(986304081234624554)
-            else:
-                client.log_channel = await client.fetch_channel(1062396920187863111)
+            client.log_channel = await client.fetch_channel(986304081234624554)
+            # client.log_channel = await client.fetch_channel(1062396920187863111)
         client.bot_owner = await client.fetch_user(262913789375021056)
         # client.bot_owner = (await client.application_info()).owner  # or client.owner / client.owner_id :P
         # can't use the commented out code because Rina is owned by someone else in the main server than

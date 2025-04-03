@@ -5,14 +5,14 @@ import sys  # to stop the program (and automatically restart, thanks to pterodac
 import discord
 from discord.ext import commands
 
+from extensions.settings.objects import AttributeKeys
 from resources.customs import Bot
 from resources.checks import (
     InsufficientPermissionsCheckFailure,
     CommandDoesNotSupportDMsCheckFailure,
     ModuleNotEnabledCheckFailure, MissingAttributesCheckFailure
 )
-from resources.utils import is_admin
-from resources.utils.utils import debug, TESTING_ENVIRONMENT
+from resources.utils import is_admin, log_to_guild, debug
 
 
 appcommanderror_cooldown: datetime = datetime.fromtimestamp(0, timezone.utc)
@@ -37,23 +37,28 @@ async def _send_crash_message(
     :param color: Color of the discord embed.
     :param itx: Interaction with a potential guild. This might allow Rina to send the crash log to that guild instead.
     """
-    log_guild: discord.Guild
-    try:
-        log_guild = itx.guild
-        vc_log = await client.get_guild_info(itx.guild, "vcLog")
-    except (AttributeError, KeyError):  # no guild settings, or itx -> 'NoneType' has no attribute '.guild'
-        try:
-            log_guild = await client.fetch_guild(959551566388547676)
-        except discord.errors.NotFound:
-            if TESTING_ENVIRONMENT == 1:
-                log_guild = await client.fetch_guild(985931648094834798)
-            else:
-                log_guild = await client.fetch_guild(981615050664075404)
+    log_channel = None
+    if hasattr(itx, "guild"):
+        log_channel = await client.get_guild_attribute(
+            itx.guild, AttributeKeys.log_channel)
+    if log_channel is None:
+        # no guild settings, or itx -> 'NoneType' has no attribute '.guild'
+        backup_guild_ids = [959551566388547676, 985931648094834798,
+                            981615050664075404]
+        possible_log_channels = [
+            client.get_guild_attribute(guild_id)
+            for guild_id in backup_guild_ids
+        ]
+        # grab the first non-None logging channel
+        for channel in possible_log_channels:
+            if channel is None:
+                continue
+            log_channel = channel
+            break
 
-        try:
-            vc_log = await client.get_guild_info(log_guild, "vcLog")
-        except KeyError:
-            return  # prevent infinite logging loops, i guess
+    if log_channel is None:
+        # prevent infinite logging loops
+        return
 
     error_caps = error_type.upper()
     debug_message = (f"\n\n\n\n[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}]"
@@ -61,17 +66,24 @@ async def _send_crash_message(
                      f"\n\n{traceback_text}\n")
     debug(f"{debug_message}", add_time=False)
 
-    channel = await log_guild.fetch_channel(vc_log)  # crashes if none
+    # prevent the code block from being escaped by other inner tick marks
     msg = debug_message.replace("``",
                                 "`` ")
     embeds = []
     while len(msg) > 0 and len(embeds) < 10:
-        embed = discord.Embed(color=color, title=error_type + ' Log', description="```" + msg[:4090] + "```")
+        # 4090 = 4096 (max description length of embeds) - len(2 * "```")
+        embed = discord.Embed(
+            title=error_type + ' Log',
+            description="```" + msg[:4090] + "```",
+            color=color,
+        )
         embeds.append(embed)
         msg = msg[4090:]
 
-    await channel.send(f"{client.bot_owner.mention}", embeds=embeds,
-                       allowed_mentions=discord.AllowedMentions(users=[client.bot_owner]))
+    await log_channel.send(
+        f"{client.bot_owner.mention}", embeds=embeds,
+        allowed_mentions=discord.AllowedMentions(users=[client.bot_owner])
+    )
 
 
 async def _reply(itx: discord.Interaction, message: str) -> None:
@@ -134,13 +146,46 @@ class CrashHandling(commands.Cog):
             await message.channel.send("Yes. Yes you are.")
 
     async def on_error(self, event: str, *_args, **_kwargs):
-        # msg = '\n\n          '.join([repr(i) for i in args])+"\n\n"
-        # msg += '\n\n                   '.join([repr(i) for i in kwargs])
         global commanderror_cooldown
         if datetime.now().astimezone() - commanderror_cooldown < timedelta(seconds=10):
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if
             # within 10 seconds
             return
+
+        potential_guild: discord.Guild | int | None = None
+        for arg in [*_args, *(_kwargs.values())]:
+            if hasattr(arg, "guild") and arg.guild is not None:
+                # on_message has `Message` with `guild.id` (but no guild_id)
+                potential_guild = arg.guild
+                break
+            if hasattr(arg, "guild_id") and arg.guild_id is not None:
+                # RawReaction events have guild_id (but no guild.id)
+                potential_guild = arg.guild_id
+                break
+
+        exception_and_message = traceback.format_exc(limit=0)
+        exception_name = exception_and_message.split(":", 2)[0]
+        if exception_name == MissingAttributesCheckFailure.__name__:
+            exception_message = exception_and_message.split(": ", 2)[1]
+            # format_exc ends with a newline.
+            exception_message = exception_message.strip()
+            # MissingAttributesCheckFailure.attributes is a list: remove '[]'
+            exception_message = exception_message[1:-1]
+            # missing_attributes = exception_message.split(", ")
+            cmd_mention = self.client.get_command_mention("settings")
+            await log_to_guild(
+                self.client,
+                potential_guild,
+                f"A module ran into an error! This is likely because "
+                f"the module was enabled, but did not have the required "
+                f"attributes configured to execute its features.\n"
+                f"Use {cmd_mention} `type:Attribute` `setting: ` to set "
+                f"these missing attributes:"
+                f"> {exception_message}"  # + ", ".join(missing_attributes)
+            )
+            commanderror_cooldown = datetime.now().astimezone()
+            return
+
         msg = traceback.format_exc()
         await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
         commanderror_cooldown = datetime.now().astimezone()

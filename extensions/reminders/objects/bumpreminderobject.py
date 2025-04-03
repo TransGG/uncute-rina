@@ -1,7 +1,8 @@
 import discord
 from datetime import datetime, timedelta
 
-from extensions.settings.objects import AttributeKeys
+from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 
 
@@ -13,6 +14,10 @@ class BumpReminderObject:
         client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
 
     async def send_reminder(self):
+        if not self.client.is_module_enabled(
+                self.guild, ModuleKeys.bump_reminder):
+            return
+
         bump_channel: discord.abc.Messageable | None
         bump_role: discord.Role | None
         bump_channel, bump_role = self.client.get_guild_attribute(
@@ -20,7 +25,11 @@ class BumpReminderObject:
             AttributeKeys.bump_reminder_role)
 
         if bump_channel is None or bump_role is None:
-            return
+            missing = [key for key, value in {
+                AttributeKeys.bump_reminder_channel: bump_channel,
+                AttributeKeys.bump_reminder_role: bump_role}
+                if value is None]
+            raise MissingAttributesCheckFailure(*missing)
 
         await bump_channel.send(f"{bump_role.mention} The next bump is ready!",
                                 allowed_mentions=discord.AllowedMentions(roles=[bump_role]))

@@ -1,6 +1,5 @@
 import traceback  # to pass traceback into error return message
 from datetime import datetime, timezone  # to plot and sort voice chat logs
-from logging import currentframe
 
 import matplotlib.pyplot as plt
 import pandas as pd  # to plot voice channel timeline graph

@@ -218,7 +218,11 @@ class CustomVcs(commands.Cog):
             member.guild, AttributeKeys.custom_vc_create_channel,
             AttributeKeys.custom_vc_category)
         if customvc_hub is None or customvc_category is None:
-            return  # todo: confirm if I should just return here or try to send to a log channel?
+            missing = [key for key, value in {
+                AttributeKeys.custom_vc_create_channel: customvc_hub,
+                AttributeKeys.custom_vc_category: customvc_category}
+                if value is None]
+            raise MissingAttributesCheckFailure(*missing)
 
         if before.channel is not None and before.channel in before.channel.guild.voice_channels:
             if is_vc_custom(before.channel, customvc_category, customvc_hub, self.blacklisted_channels):
@@ -234,11 +238,11 @@ class CustomVcs(commands.Cog):
                            limit="Give your voice channel a user limit!")
     @module_enabled_check(ModuleKeys.custom_vcs)
     async def edit_custom_vc(
-            self, itx: discord.Interaction,
+            self, itx: discord.Interaction[Bot],
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ):
-        vc_hub, vc_log, vc_category = await itx.client.get_guild_info(
+        vc_hub, vc_log, vc_category = itx.client.get_guild_attribute(
             itx.guild,
             AttributeKeys.custom_vc_create_channel,
             AttributeKeys.log_channel,
@@ -246,7 +250,12 @@ class CustomVcs(commands.Cog):
         )
 
         if None in (vc_hub, vc_log, vc_category):
-            raise MissingAttributesCheckFailure(*[i for i in (vc_hub, vc_log, vc_category) if i is None])
+            missing = [key for key, value in {
+                AttributeKeys.custom_vc_create_channel: vc_hub,
+                AttributeKeys.log_channel: vc_log,
+                AttributeKeys.custom_vc_category: vc_category}
+                if value is None]
+            raise MissingAttributesCheckFailure(*missing)
 
         warning = ""
 

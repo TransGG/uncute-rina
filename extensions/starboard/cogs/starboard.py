@@ -2,6 +2,7 @@ import discord
 import discord.ext.commands as commands
 
 from extensions.settings.objects import AttributeKeys
+from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
@@ -317,7 +318,14 @@ class Starboard(commands.Cog):
 
         if None in [star_channel, star_minimum, channel_blacklist,
                     starboard_emoji, downvote_init_value]:
-            return
+            missing = [key for key, value in {
+                AttributeKeys.starboard_channel: star_channel,
+                AttributeKeys.starboard_minimum_upvote_count: star_minimum,
+                AttributeKeys.starboard_blacklisted_channels: channel_blacklist,
+                AttributeKeys.starboard_upvote_emoji: starboard_emoji,
+                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete: downvote_init_value}
+                if value is None]
+            raise MissingAttributesCheckFailure(*missing)
 
         if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji and
@@ -392,7 +400,12 @@ class Starboard(commands.Cog):
             )
 
         if None in [star_channel, starboard_emoji, downvote_init_value]:
-            return
+            missing = [key for key, value in {
+                AttributeKeys.starboard_channel: star_channel,
+                AttributeKeys.starboard_upvote_emoji: starboard_emoji,
+                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete: downvote_init_value}
+                if value is None]
+            raise MissingAttributesCheckFailure(*missing)
 
         if payload.emoji != starboard_emoji and payload.emoji.name != "❌":
             # only run starboard code if the reactions tracked are actually
@@ -435,7 +448,11 @@ class Starboard(commands.Cog):
         )
 
         if None in [star_channel, starboard_emoji]:
-            return
+            missing = [key for key, value in {
+                AttributeKeys.starboard_channel: star_channel,
+                AttributeKeys.starboard_upvote_emoji: starboard_emoji}
+                if value is None]
+            raise MissingAttributesCheckFailure(*missing)
 
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
             # this prevents having two 'message deleted' logs for manual deletion of starboard message

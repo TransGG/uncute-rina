@@ -4,6 +4,7 @@ import discord
 import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
+from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 
 from extensions.reminders.objects import BumpReminderObject
@@ -15,13 +16,14 @@ class BumpReminder(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not self.client.is_module_enabled(message.guild, ModuleKeys.bump_reminder):
+        if not self.client.is_module_enabled(
+                message.guild, ModuleKeys.bump_reminder):
             return
 
         bump_bot: discord.User | None = self.client.get_guild_attribute(
             message.guild, AttributeKeys.bump_reminder_bot)
         if bump_bot is None:
-            return
+            raise MissingAttributesCheckFailure(AttributeKeys.bump_reminder_bot)
 
         if len(message.embeds) > 0:
             if message.embeds[0].description is not None:

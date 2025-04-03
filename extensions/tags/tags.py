@@ -2,6 +2,7 @@ from typing import Callable
 
 import discord
 
+from extensions.settings.objects import AttributeKeys
 from resources.customs import Bot, EnabledServers
 from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
 from resources.utils.utils import log_to_guild
@@ -90,18 +91,23 @@ class Tags:
             await context.send(embed=embed)
 
     @staticmethod
-    async def send_customvc_info(tag_name: str, itx: discord.Interaction, public, anonymous):
-        vc_hub = await itx.client.get_guild_info(itx.guild, "vcHub")
+    async def send_customvc_info(tag_name: str, itx: discord.Interaction[Bot], public, anonymous):
+        vc_hub = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.custom_vc_create_channel)
+        vc_hub_mention = f"<#{vc_hub.id}>" if vc_hub else "<missing channel>"
 
-        cmd_mention = itx.client.get_command_mention('editvc')
-        cmd_mention2 = itx.client.get_command_mention('vctable about')
+        cmd_mention_editvc = itx.client.get_command_mention('editvc')
+        cmd_mention_vctable_about = itx.client.get_command_mention('vctable about')
         embed = discord.Embed(
             title="TransPlace's custom voice channels (vc)",
-            description=f"In our server, you can join <#{vc_hub}> to create a custom vc. You "
-                        f"are then moved to this channel automatically. You can change the name and user "
-                        f"limit of this channel with the {cmd_mention} command. When everyone leaves the "
-                        f"channel, the channel is deleted automatically."
-                        f"You can use {cmd_mention2} for additional features.")
+            description=f"In our server, you can join {vc_hub_mention} to "
+                        f"create a custom vc. You are then moved to this "
+                        f"channel automatically. You can change the name and "
+                        f"user limit of this channel with the "
+                        f"{cmd_mention_editvc} command. When everyone leaves "
+                        f"the channel, the channel is deleted automatically. "
+                        f"You can use {cmd_mention_vctable_about} for "
+                        f"additional features.")
         await Tags.tag_message(tag_name, itx, public, anonymous, embed)
 
     @staticmethod

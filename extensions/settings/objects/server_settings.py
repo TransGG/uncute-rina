@@ -422,13 +422,15 @@ class ServerSettings:
                 parsed_values = []
                 for value in attribute_value:
                     parsed_value = parse_attribute(
-                        client, guild, attribute, value, invalid_arguments=invalid_arguments)
+                        client, guild, attribute, value,
+                        invalid_arguments=invalid_arguments)
                     if parsed_value is not None:
                         parsed_values.append(parsed_value)
+                new_settings[attribute] = parsed_values
             else:
                 new_settings[attribute] = parse_attribute(
-                    client, guild, attribute, attribute_value, invalid_arguments=invalid_arguments
-                )
+                    client, guild, attribute, attribute_value,
+                    invalid_arguments=invalid_arguments)
 
         if invalid_arguments:
             raise ParseError("Some server settings could not be parsed: \n- " + '\n- '.join(

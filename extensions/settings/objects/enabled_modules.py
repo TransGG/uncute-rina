@@ -16,6 +16,8 @@ class EnabledModules(TypedDict, total=False):
     tags: bool
     custom_dictionary: bool
     watchlist: bool
+    aegis_ping_reactions: bool
+    ban_appeal_reactions: bool
 
 
 class ModuleKeys:
@@ -38,3 +40,5 @@ class ModuleKeys:
     tags = "tags"
     custom_dictionary = "custom_dictionary"
     watchlist = "watchlist"
+    aegis_ping_reactions = "aegis_ping_reactions"
+    ban_appeal_reactions = "ban_appeal_reactions"

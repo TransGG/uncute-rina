@@ -153,12 +153,13 @@ class DevRequest(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id is None:
+        if not self.client.is_module_enabled(payload.guild_id, ModuleKeys.dev_requests):
             return
         dev_request_channel: discord.TextChannel = self.client.get_guild_attribute(
             payload.guild_id, AttributeKeys.developer_request_channel)
         if dev_request_channel is None:
-            return
+            raise MissingAttributesCheckFailure(AttributeKeys.developer_request_channel)
+
         if dev_request_channel.id != payload.channel_id:
             return
 
