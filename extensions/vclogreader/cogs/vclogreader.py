@@ -25,7 +25,7 @@ def extract_id_and_name(embed: discord.Embed, field_number: int) -> tuple[str, s
     """
     A helper function to extract id and name from Logger Bot or Anna's
     voice channel logs.
-    
+
     :param embed: The embed to extract from.
     :param field_number: The field number inside the id containing
      the channel information.

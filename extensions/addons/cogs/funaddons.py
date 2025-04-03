@@ -7,7 +7,7 @@ import discord.ext.commands as commands
 
 from resources.customs import Bot
 
-from extensions.settings.objects import ModuleKeys
+from extensions.settings.objects import ModuleKeys, AttributeKeys
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -107,10 +107,10 @@ def _generate_roll(query: str) -> list[int]:
 
 
 async def _handle_awawa_reaction(
-        message: discord.Message
+        message: discord.Message, awawawa_emoji: discord.Emoji,
 ) -> bool:
     """
-    Add headpats to a given message if its content is ababababa or
+    Add an emoji to a given message if its content is ababababa or
     awawawawawawawawa etc.
 
     :param message: The message to check and add reactions to.
@@ -118,17 +118,14 @@ async def _handle_awawa_reaction(
     """
     # adding headpats on abababa or awawawawa
     msg_content = message.content.lower()
-    emoji_str = "<:TPF_02_Pat:968285920421875744>"
+
     if len(msg_content) > 5 and (msg_content.startswith("aba") or
                                  msg_content.startswith("awa")):
         # check if the message content is /(ab|aw)+a/i
         replaced = msg_content.replace("ab", "").replace("aw", "")
         if replaced == "a":
             try:
-                # todo attribute: Pat emoji ; also don't need the second
-                #  message.add_reaction then.
-                #  There is also an emoji lower.
-                await message.add_reaction(emoji_str)
+                await message.add_reaction(awawawa_emoji)
                 return True
             except discord.errors.Forbidden:
                 # user blocked rina :(, or just no perms
@@ -139,7 +136,7 @@ async def _handle_awawa_reaction(
             return False
 
         try:
-            await message.add_reaction(emoji_str)
+            await message.add_reaction(awawawa_emoji)
             return True
         except discord.errors.Forbidden:  # blocked rina :(, or just no perms
             pass
@@ -153,11 +150,15 @@ class FunAddons(commands.Cog):
         self.headpat_wait = 0
         self.rude_comments_opinion_cooldown = 0
 
-    def handle_random_pat_reaction(self, message: discord.Message) -> bool:
+    def handle_random_pat_reaction(
+            self, message: discord.Message, headpat_emoji: discord.Emoji
+    ) -> bool:
         """
-        A helper function to handle on_message events by users and randomly add a pat reaction to it.
+        A helper function to handle on_message events by users
+        and randomly add a pat reaction to it.
 
         :param message: The message to (per chance) add a pat reaction to.
+        :param headpat_emoji: The emoji to add to the message.
 
         :return: Whether a reaction was added to the message.
         """
@@ -184,11 +185,11 @@ class FunAddons(commands.Cog):
                 pass
             else:
                 self.headpat_wait = 0
-                # TODO: re-enable code someday
-                # people asked for no random headpats anymore; or make it opt-in. See GitHub #23
+                # # TODO: re-enable code someday
+                # # people asked for no random headpats anymore; or make it opt-in. See GitHub #23
                 # try:
                 #     added_pat = True
-                #     await message.add_reaction("<:TPF_02_Pat:968285920421875744>")  #headpatWait
+                #     await message.add_reaction(headpat_emoji)  #headpatWait
                 # except discord.errors.Forbidden:
                 #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
                 #                                                    f"reaction to {message.jump_url} (Forbidden): "
@@ -198,21 +199,28 @@ class FunAddons(commands.Cog):
                 #                                                    f"reaction to {message.jump_url}. "
                 #                                                    f"(HTTP/{ex.code}) "
                 #                                                    f"They might have blocked Rina...')
-                return True
+                # return True
         return False
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-
         if message.author.bot:
             return
 
-        added_pat = False
         if self.client.is_module_enabled(message.guild, ModuleKeys.headpat_reactions):
-            added_pat = self.handle_random_pat_reaction(message)
+            headpat_emoji: discord.Emoji | None = self.client.get_guild_attribute(
+                message.guild, AttributeKeys.headpat_emoji)
+            if headpat_emoji is None:
+                return
+            self.handle_random_pat_reaction(message, headpat_emoji)
+            return
 
-        if not added_pat:
-            await _handle_awawa_reaction(message)
+        if self.client.is_module_enabled(message.guild, ModuleKeys.awawawa_reactions):
+            awawawa_emoji: discord.Emoji | None = self.client.get_guild_attribute(
+                message.guild, AttributeKeys.awawawa_emoji)
+            if awawawa_emoji is None:
+                return
+            await _handle_awawa_reaction(message, awawawa_emoji)
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
     @app_commands.describe(dice="How many dice do you want to roll?",

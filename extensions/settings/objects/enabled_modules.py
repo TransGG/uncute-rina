@@ -4,6 +4,7 @@ from typing import TypedDict
 class EnabledModules(TypedDict, total=False):
     starboard: bool
     headpat_reactions: bool
+    awawawa_reactions: bool
     poll_reactions: bool
     compliments: bool
     custom_vcs: bool
@@ -25,6 +26,7 @@ class ModuleKeys:
     """
     starboard = "starboard"
     headpat_reactions = "headpat_reactions"
+    awawawa_reactions = "awawawa_reactions"
     poll_reactions = "poll_reactions"
     compliments = "compliments"
     custom_vcs = "custom_vcs"
