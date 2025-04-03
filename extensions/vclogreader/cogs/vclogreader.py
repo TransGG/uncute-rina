@@ -1,5 +1,7 @@
 import traceback  # to pass traceback into error return message
 from datetime import datetime, timezone  # to plot and sort voice chat logs
+from logging import currentframe
+
 import matplotlib.pyplot as plt
 import pandas as pd  # to plot voice channel timeline graph
 import typing
@@ -19,6 +21,31 @@ from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
 
 
+def extract_id_and_name(embed: discord.Embed, field_number: int) -> tuple[str, str]:
+    """
+    A helper function to extract id and name from Logger Bot or Anna's
+    voice channel logs.
+    
+    :param embed: The embed to extract from.
+    :param field_number: The field number inside the id containing
+     the channel information.
+    :return: A tuple of the extracted id and name.
+    """
+    # split "<#234567> (Channel Name)" to "234567"
+    channel_id = (
+        embed.fields[field_number].value
+        .split("#", 1)[1]
+        .split(">", 1)[0]
+    )
+    # split "<#234567> (Channel Name)" to "Channel Name"
+    channel_name = (
+        embed.fields[field_number].value
+        .split(">", 1)[1]
+        .split("(", 1)[1][:-1]
+    )
+    return channel_id, channel_name
+
+
 async def _get_vc_activity(
         voice_log_channel: discord.abc.Messageable,
         min_time: float,
@@ -36,8 +63,13 @@ async def _get_vc_activity(
     :return: A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of
      previous_channel or new_channel has a value.
     """
-    output: list[tuple[float, tuple[int, str], tuple[int, str] | None, tuple[
-        int, str] | None]] = []  # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
+    # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
+    output: list[tuple[
+        float,
+        tuple[int, str],
+        tuple[int, str] | None,
+        tuple[int, str] | None]
+    ] = []
 
     async for message in voice_log_channel.history(after=datetime.fromtimestamp(min_time, tz=timezone.utc),
                                                    before=datetime.fromtimestamp(max_time, tz=timezone.utc),
@@ -99,28 +131,25 @@ async def _get_vc_activity(
                     continue
                 # Could be done more efficiently but oh well. Not like this is suitable for any
                 # other bot either anyway. And I'm limited by discord API anyway.
+
                 if len(embed.fields) == 3:  # user moved channels (3 fields: previous/current channel, and IDs)
                     if event_type != "moved":
                         raise AssertionError(f"type '{event_type}' is not a valid type (should be 'moved')")
-                    current_channel_data.append(embed.fields[0].value.split("#", 1)[1].split(">", 1)[0])
-                    # split <#234567> (Channel Name) to 234567
-                    current_channel_data.append(embed.fields[0].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                    # split <#234567> (Channel Name) to Channel Name
-                    previous_channel_data.append(embed.fields[1].value.split("#", 1)[1].split(">", 1)[0])
-                    # split <#123456> (Channel Name) to 123456
-                    previous_channel_data.append(embed.fields[1].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                    # split <#123456> (Channel Name) to Channel Name
+                    current_id, current_name = extract_id_and_name(embed, 0)
+                    current_channel_data.append(current_id)
+                    current_channel_data.append(current_name)
+                    previous_id, previous_name = extract_id_and_name(embed, 1)
+                    previous_channel_data.append(previous_id)
+                    previous_channel_data.append(previous_name)
                 elif len(embed.fields) == 2:
                     if event_type == "joined":
-                        current_channel_data.append(embed.fields[0].value.split("#", 1)[1].split(">", 1)[0])
-                        # split <#123456> (Channel Name) to 123456
-                        current_channel_data.append(embed.fields[0].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                        # split <#123456> (Channel Name) to Channel Name
+                        current_id, current_name = extract_id_and_name(embed, 0)
+                        current_channel_data.append(current_id)
+                        current_channel_data.append(current_name)
                     elif event_type == "left":
-                        previous_channel_data.append(embed.fields[0].value.split("#", 1)[1].split(">", 1)[0])
-                        # split <#234567> (Channel Name) to 234567
-                        previous_channel_data.append(embed.fields[0].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                        # split <#234567> (Channel Name) to Channel Name
+                        previous_id, previous_name = extract_id_and_name(embed, 0)
+                        previous_channel_data.append(previous_id)
+                        previous_channel_data.append(previous_name)
                     else:
                         raise AssertionError(
                             f"type '{event_type}' is not a valid type (should be 'joined' or 'left')")
@@ -167,28 +196,29 @@ async def _get_vc_activity(
                         f"'User', 'Old', 'New', or 'Channel')")
             user_data.append(username)
 
-            data: tuple[float, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None] = [
-                embed.timestamp.timestamp()  # unix timestamp of event
-            ]
-            # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second
-            # variable if this works too. (long live python?)
-            # todo, use dedicated variables to declare data as (a,b,c) instead.
+            event_timestamp = embed.timestamp.timestamp()
 
             try:
-                data.append((int(user_data[0]), user_data[1]))
+                "A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of"
+                "previous_channel or new_channel has a value."
+                event_user = (int(user_data[0]), user_data[1])
 
                 if len(previous_channel_data) == 0:
-                    data.append(None)
+                    previous_channel = None
                 else:
-                    data.append((int(previous_channel_data[0]), previous_channel_data[1]))
+                    previous_channel = (int(previous_channel_data[0]),
+                                        previous_channel_data[1])
 
                 if len(current_channel_data) == 0:
-                    data.append(None)
+                    current_channel = None
                 else:
-                    data.append((int(current_channel_data[0]), current_channel_data[1]))
+                    current_channel = (int(current_channel_data[0]),
+                                       current_channel_data[1])
             except ValueError:
                 raise AssertionError(f"IDs were not numeric!\nFull error:\n{traceback.format_exc()}")
-            output.append(tuple(data))
+
+            data = (event_timestamp, event_user, previous_channel, current_channel)
+            output.append(data)
 
     return output
 
