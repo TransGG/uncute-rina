@@ -203,11 +203,11 @@ class SearchAddons(commands.Cog):
                         # only 1 value, instead of a list. So just make a list of 1 value instead.
                         assumption["values"] = [assumption["values"]]
                     for value_index in range(len(assumption["values"])):
-                        assumption_data["${desc" + str(value_index + 1) + "}"] = assumption["values"][value_index][
-                            "desc"]
+                        assumption_data["${desc" + str(value_index + 1) + "}"] = \
+                            assumption["values"][value_index]["desc"]
                         try:
-                            assumption_data["${word" + str(value_index + 1) + "}"] = assumption["values"][value_index][
-                                "word"]
+                            assumption_data["${word" + str(value_index + 1) + "}"] = \
+                                assumption["values"][value_index]["word"]
                         except KeyError:
                             pass  # the "word" variable is only there sometimes. for some stupid reason.
 

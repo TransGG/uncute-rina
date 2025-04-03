@@ -40,7 +40,7 @@ def is_admin(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
         itx.guild, AttributeKeys.admin_roles, default=[])
     roles_set: set[discord.Role] = set(admin_roles)
     return (
-            member.id == itx.guild.owner_id or
-            member.id == itx.client.bot_owner.id or
-            len(roles_set.intersection(member.roles)) > 0
+        member.id == itx.guild.owner_id or
+        member.id == itx.client.bot_owner.id or
+        len(roles_set.intersection(member.roles)) > 0
     )

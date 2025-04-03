@@ -22,10 +22,9 @@ async def _tag_autocomplete(itx: discord.Interaction, current: str):
 
     # only show tags that are enabled in the server
     options = [i.lower() for i in tag_info_dict if itx.guild_id in tag_info_dict[i][2]]
-    return [
-               app_commands.Choice(name=term, value=term)
-               for term in options if current.lower() in term
-           ][:15]
+    return [app_commands.Choice(name=term, value=term)
+            for term in options if current.lower() in term
+            ][:15]
 
 
 async def _role_autocomplete(itx: discord.Interaction, current: str):
@@ -40,10 +39,9 @@ async def _role_autocomplete(itx: discord.Interaction, current: str):
                     current.lower() in role_options[role.id][1].lower()):
                 options.append(role.id)
     if options:
-        return [
-                   app_commands.Choice(name=role_options[role_id][0], value=role_options[role_id][1])
-                   for role_id in options
-               ][:15]
+        return [app_commands.Choice(name=role_options[role_id][0], value=role_options[role_id][1])
+                for role_id in options
+                ][:15]
     else:
         return [app_commands.Choice(name="You don't have any roles to remove!", value="none")]
 

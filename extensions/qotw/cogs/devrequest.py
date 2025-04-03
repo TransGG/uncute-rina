@@ -35,7 +35,7 @@ class DevRequest(commands.Cog):
             missing = [key for key, value in {
                 AttributeKeys.developer_request_channel: developer_request_channel,
                 AttributeKeys.developer_request_reaction_role: developer_role}
-                       if value is None]
+                if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
         if len(suggestion) > 4000:

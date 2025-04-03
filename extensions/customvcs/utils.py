@@ -24,10 +24,10 @@ def is_vc_custom(
     if voice_channel.category is None:
         return False
     return (
-            voice_channel.category == customvc_category and
-            voice_channel.id != customvc_hub.id and  # avoid deleting the hub channel
-            voice_channel not in customvc_channel_blacklist and
-            not voice_channel.name.startswith('〙')
+        voice_channel.category == customvc_category and
+        voice_channel.id != customvc_hub.id and  # avoid deleting the hub channel
+        voice_channel not in customvc_channel_blacklist and
+        not voice_channel.name.startswith('〙')
     )  # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
 
 

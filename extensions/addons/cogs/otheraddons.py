@@ -159,15 +159,13 @@ async def _unit_autocomplete(itx: discord.Interaction, current: str):
         return []  # user hasn't selected a mode yet.
     options = options[itx.namespace.mode]
     if itx.namespace.mode == "currency":
-        return [
-                   app_commands.Choice(name=option, value=option)
-                   for option in options if option.lower().startswith(current.lower())
-               ][:10]
+        return [app_commands.Choice(name=option, value=option)
+                for option in options if option.lower().startswith(current.lower())
+                ][:10]
     else:
-        return [
-                   app_commands.Choice(name=option, value=option)
-                   for option in options if current.lower() in option.lower()
-               ][:25]
+        return [app_commands.Choice(name=option, value=option)
+                for option in options if current.lower() in option.lower()
+                ][:25]
 
 
 class OtherAddons(commands.Cog):

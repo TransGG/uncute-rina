@@ -65,13 +65,6 @@ async def _get_vc_activity(
         #   fields[1].value: "```ini\nUser = 123456789\nNew = 234567\nOld = 123456```"
 
         for embed in message.embeds:
-            data: tuple[float, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None] = [
-                embed.timestamp.timestamp()  # unix timestamp of event
-            ]
-            # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second
-            # variable if this works too. (long live python?)
-            # todo, use dedicated variables to declare data as (a,b,c) instead.
-
             username = embed.description.split("**", 2)[1].split("#", 1)[0]
             # split **mysticmia#0** to mysticmia (taking discord usernames can't contain hashtags (cuz they can't))
             # print("Username = ", username)
@@ -145,13 +138,14 @@ async def _get_vc_activity(
                             f"First embed field '{embed.fields[0].value}' does not have hashtags for its ID!")
                     raise Exception(f"Embed field '{embed.fields[0].value}' has some other error or something D:")
 
-            id_data = embed.fields[-1].value.replace("```ini", "")[
-                      :-3].strip()  # remove the ```ini\n  ...   ``` from the embed field
-            # print("id data = ", id_data)
+            # remove the ```ini\n  ...   ``` from the embed field
+            id_data = (embed.fields[-1]
+                       .value
+                       .replace("```ini", "")[:-3]
+                       .strip())
+
             for line in id_data.splitlines():
                 key, value = line.split(" = ")
-                # Could use match/case, but it's not like as if it'll make much difference in speed or looks:
-                # extra indents- and discord API is bottleneck anyway
                 if key == "User":
                     user_data.append(value)
                 elif key == "New":
@@ -165,11 +159,20 @@ async def _get_vc_activity(
                         previous_channel_data.append(value)
                     else:
                         raise AssertionError(
-                            f"type '{event_type}' is not a valid type (should be 'joined' or 'left')")
+                            f"type '{event_type}' is not a valid type "
+                            f"(should be 'joined' or 'left')")
                 else:
                     raise AssertionError(
-                        f"key '{key}' is not a valid key (should be 'User', 'Old', 'New', or 'Channel')")
+                        f"key '{key}' is not a valid key (should be "
+                        f"'User', 'Old', 'New', or 'Channel')")
             user_data.append(username)
+
+            data: tuple[float, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None] = [
+                embed.timestamp.timestamp()  # unix timestamp of event
+            ]
+            # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second
+            # variable if this works too. (long live python?)
+            # todo, use dedicated variables to declare data as (a,b,c) instead.
 
             try:
                 data.append((int(user_data[0]), user_data[1]))

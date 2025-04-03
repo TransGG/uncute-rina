@@ -51,7 +51,8 @@ def test_embed_lengths():
     fake_client = CustomObject()
 
     def fake_get_command_mention(cmd: str):
-        return "</" + cmd + ":" + "0"*19 + ">"
+        fake_id = "0" * 19  # discord ids are roughly this length, I guess?
+        return f"</{cmd}:{fake_id}>"
 
     fake_client.get_command_mention = fake_get_command_mention
 

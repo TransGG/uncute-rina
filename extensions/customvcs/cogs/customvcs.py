@@ -183,10 +183,9 @@ async def _edit_guild_info_autocomplete(_: discord.Interaction, current: str) ->
 
             ["Vc Activity Logs channel", "51"],
         ]
-        return [
-                   app_commands.Choice(name=option[0], value=option[1])
-                   for option in options if option[1].startswith(current)
-               ][:15]
+        return [app_commands.Choice(name=option[0], value=option[1])
+                for option in options if option[1].startswith(current)
+                ][:15]
     else:
         options = [
             ["Main server settings", "01"],
@@ -195,10 +194,9 @@ async def _edit_guild_info_autocomplete(_: discord.Interaction, current: str) ->
             ["Bumping-related settings", "04"],
             ["Additional settings", "05"],
         ]
-        return [
-                   app_commands.Choice(name=option[0], value=option[1])
-                   for option in options if current.lower() in option[0]
-               ][:15]
+        return [app_commands.Choice(name=option[0], value=option[1])
+                for option in options if current.lower() in option[0]
+                ][:15]
 
 
 class CustomVcs(commands.Cog):

@@ -25,7 +25,7 @@ async def get_or_fetch_starboard_messages(
     global busy_updating_starboard_messages, local_starboard_message_list, \
         local_starboard_message_list_refresh_timestamp
     time_since_last_starboard_fetch = (
-            datetime.now().astimezone() - local_starboard_message_list_refresh_timestamp
+        datetime.now().astimezone() - local_starboard_message_list_refresh_timestamp
     ).total_seconds()
     if not busy_updating_starboard_messages and time_since_last_starboard_fetch > STARBOARD_REFRESH_DELAY:
         # refresh once every STARBOARD_REFRESH_DELAY seconds

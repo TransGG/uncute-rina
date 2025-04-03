@@ -98,7 +98,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: vc_hub,
                 AttributeKeys.custom_vc_category: vc_category}
-                       if value is None]
+                if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
         if itx.user.voice is None or itx.user.voice.channel is None:

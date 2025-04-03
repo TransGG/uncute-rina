@@ -193,12 +193,16 @@ class TermDictionary(commands.Cog):
                                   f"'{term}' on en.pronouns.page! \n")
                     for item in results:
                         result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-                    result_str += f"{len(search) - len(results)} other non-exact results found." * (
-                            (len(search) - len(results)) > 0)
+                    if (len(search) - len(results)) > 0:
+                        result_str += f"{len(search) - len(results)} other non-exact results found."
                     if len(result_str) > 1999:
-                        result_str = (f"Your search ('{term}') returned a too-long result! (discord has a "
-                                      f"2000-character message length D:). To still let you get better results, "
-                                      f"I've rewritten the terms so you might be able to look for a more specific one:")
+                        result_str = (
+                            f"Your search ('{term}') returned a too-long "
+                            f"result! (discord has a 2000-character message "
+                            f"length D:). To still let you get better results, "
+                            f"I've rewritten the terms so you might be able "
+                            f"to look for a more specific one:"
+                        )
                         for item in results:
                             result_str += f"> {', '.join(item['term'].split('|'))}\n"
                     await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
