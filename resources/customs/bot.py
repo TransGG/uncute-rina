@@ -45,56 +45,6 @@ class Bot(commands.Bot):
         self.server_settings: dict[int, ServerSettings] | None = None
         super().__init__(*args, **kwargs)
 
-    @property
-    def custom_ids(self):
-        # todo: remove entirely
-        production_ids = {
-            "staff_server_id": 981730502987898960,
-            "staff_qotw_channel": 1019706498609319969,
-            "staff_dev_request": 982351285959413811,
-            "staff_watch_channel": 989638606433968159,
-            "badeline_bot": 981710253311811614,
-            "staff_logs_category": 1025456987049312297,
-            "staff_reports_channel": 981730694202023946,
-            "active_staff_role": 996802301283020890,
-            "staff_developer_role": 982274122920902656,
-            "transplace_server_id": 959551566388547676,
-            "enbyplace_server_id": 1087014898199969873,
-            "transonance_server_id": 638480381552754730,
-            "transplace_ticket_channel_id": 995343855069175858,
-            "enbyplace_ticket_channel_id": 1186054373986537522,
-            "transonance_ticket_channel_id": 1108789589558177812,
-            "ban_appeal_webhook_ids": [1120832140758745199],
-            "vctable_prefix": "[T] ",
-            "aegis_ping_role_id": 1331313288000307371,
-        }
-        development_ids = {
-            "staff_server_id": 985931648094834798,
-            "staff_qotw_channel": 1260504768611352637,
-            "staff_dev_request": 1260504504743362574,
-            "staff_watch_channel": 1143642388670202086,
-            "badeline_bot": 979057304752254976,  # Rina herself
-            "staff_logs_category": 1143642220231131156,
-            "staff_reports_channel": 1260505477364711547,
-            "active_staff_role": 986022587756871711,  # @Developers
-            "staff_developer_role": 986022587756871711,
-            "transplace_server_id": 985931648094834798,  # - private dev server
-            "enbyplace_server_id": 981615050664075404,  # + public dev server
-            "transonance_server_id": 981615050664075404,  # + public dev server
-            "transplace_ticket_channel_id": 1175669542412877824,  # - private dev server channel
-            "enbyplace_ticket_channel_id": 1125108250426228826,  # + public dev server channel
-            "transonance_ticket_channel_id": 1125108250426228826,  # + public dev server channel
-            "ban_appeal_webhook_ids": [979057304752254976],
-            "vctable_prefix": "[T] ",
-            "aegis_ping_role_id": 1350538597366894662
-        }
-        assert [i for i in production_ids] == [i for i in development_ids]  # all keys match
-
-        if self.running_on_production:
-            return production_ids
-        else:
-            return development_ids
-
     def get_command_mention(self, command_string: str) -> str:
         """
         Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
@@ -126,55 +76,6 @@ class Bot(commands.Bot):
                                 return subcmdgroup.mention
                                 # return f"</{command.name} {subgroup.name} {subcmdgroup.name}:{command.id}>"
         return "/" + command_string
-
-    async def get_guild_info(
-            self,
-            guild_id: discord.Guild | int,
-            *args: str,
-            log: tuple[discord.Interaction, str] | None = None
-    ):
-        # todo: remove entirely
-        """
-        Get a guild's server settings (from /editguildinfo, in cmd_customvcs).
-
-        :param guild_id: The guild or id from which you want to get the guild info / settings.
-        :param args: The setting(s) that you want to fetch.
-        :param log: A tuple of an interaction and error_message. The command will reply this error message to the
-         given interaction if any of the arguments could not be found.
-
-        :return: (whichever is given in the database)
-
-        :raise KeyError: If guild is None, does not have data, or not the requested data.
-        """
-        if guild_id is None:
-            raise KeyError(f"'{guild_id}' is not a valid guild or id!")
-        if isinstance(guild_id, discord.Guild):
-            guild_id = guild_id.id
-        try:
-            collection = self.rina_db["guildInfo"]
-            query = {"guild_id": guild_id}
-            guild_data = collection.find_one(query)
-            if guild_data is None:
-                raise KeyError(str(guild_id) + " does not have data in the guildInfo database!")
-            if len(args) == 0:
-                return guild_data
-            output = []
-            unavailable = []
-            for key in args:
-                try:
-                    output.append(guild_data[key])
-                except KeyError:
-                    unavailable.append(key)
-            if unavailable:
-                raise KeyError("Guild " + str(guild_id) + " does not have data for: " + ', '.join(unavailable))
-            if len(output) == 1:  # prevent outputting [1] (one item as list)
-                return output[0]
-            return output
-        except KeyError:
-            if log is None:
-                raise
-            await log[0].response.send_message(log[1], ephemeral=True)
-            raise
 
     def get_guild_attribute(
             self,
