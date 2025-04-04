@@ -38,6 +38,8 @@ class ServerAttributeIds(TypedDict, total=False):
     aegis_ping_role: RoleId
 
     vctable_prefix: str
+    custom_vc_blacklist_prefix: str
+    custom_vc_blacklisted_channels: list[VoiceChannelId]
     custom_vc_create_channel: VoiceChannelId
     custom_vc_category: CategoryChannelId
 

@@ -28,6 +28,8 @@ class AttributeKeys:
     aegis_ping_role = "aegis_ping_role"
 
     vctable_prefix = "vctable_prefix"
+    custom_vc_blacklist_prefix = "custom_vc_blacklist_prefix"
+    custom_vc_blacklisted_channels = "custom_vc_blacklisted_channels"
     custom_vc_create_channel = "custom_vc_create_channel"
     custom_vc_category = "custom_vc_category"
 

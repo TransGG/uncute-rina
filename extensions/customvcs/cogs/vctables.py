@@ -12,7 +12,7 @@ from resources.utils.utils import log_to_guild  # to log custom vc changes
 from resources.customs import Bot
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
-from extensions.customvcs.utils import is_vc_custom, BLACKLISTED_CHANNELS, edit_permissionoverwrite
+from extensions.customvcs.utils import is_vc_custom, edit_permissionoverwrite
 
 
 # Owner       = Connection perms (and speaking perms)
@@ -72,7 +72,7 @@ def _get_vctable_members_with_predicate(
 
 class VcTables(commands.GroupCog, name="vctable", description="Make your voice channels advanced!"):
     def __init__(self):
-        self.blacklisted_channels = BLACKLISTED_CHANNELS
+        pass
 
     # region VcTable utilities
     async def get_current_voice_channel(self, itx: discord.Interaction[Bot], action: str, from_event: bool = None):
@@ -90,13 +90,18 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         """
         vc_hub: discord.VoiceChannel
         vc_category: discord.CategoryChannel
-        vc_hub, vc_category = itx.client.get_guild_attribute(itx.guild,
-                                                             AttributeKeys.custom_vc_create_channel,
-                                                             AttributeKeys.custom_vc_category)
-        if vc_hub is None or vc_category is None:
+        blacklisted_channels: list[discord.VoiceChannel]
+        vc_hub, vc_category, blacklisted_channels, vc_blacklist_prefix = itx.client.get_guild_attribute(
+            itx.guild,
+            AttributeKeys.custom_vc_create_channel,
+            AttributeKeys.custom_vc_category,
+            AttributeKeys.custom_vc_blacklisted_channels,
+            AttributeKeys.custom_vc_blacklist_prefix)
+        if None in [vc_hub, vc_category, vc_blacklist_prefix]:
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: vc_hub,
-                AttributeKeys.custom_vc_category: vc_category}
+                AttributeKeys.custom_vc_category: vc_category,
+                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
@@ -107,7 +112,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             return
         channel = itx.user.voice.channel
 
-        if not is_vc_custom(channel, vc_category, vc_hub, self.blacklisted_channels):
+        if not is_vc_custom(channel, vc_category, vc_hub,
+                            blacklisted_channels, vc_blacklist_prefix):
             if not from_event:
                 await itx.response.send_message(f"Couldn't {action}: This voice channel is not compatible "
                                                 f"with VcTables!",
@@ -253,17 +259,18 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             # elif owner in user_vc.category.overwrites:
             #     perms = user_vc.category.overwrites[owner]
             new_overwrites[owner] = edit_permissionoverwrite(perms, {
-                "connect": True, "speak": True, "view_channel": True, "read_message_history": True
+                "connect": True,
+                "speak": True,
+                "view_channel": True,
+                "read_message_history": True,
             })
+        # make sure the bot can still see the channel for vc events, even if /vctable lock
+        bot_overwrites = user_vc.overwrites.get(
+            itx.guild.me, discord.PermissionOverwrite())
+        new_overwrites[itx.guild.me] = edit_permissionoverwrite(
+            bot_overwrites, {"view_channel": True})
         await user_vc.edit(overwrites=new_overwrites)
 
-        # todo: can i merge this one with the user_vc.edit too?
-        await user_vc.set_permissions(
-            # make sure the bot can still see the channel for vc events, even if /vctable lock
-            itx.guild.me,
-            view_channel=True,
-            reason="VcTable created: auto-set as participant"
-        )
         # endregion Apply permission overwrites for vctable owners
 
         owner_taglist = ', '.join([f'<@{user_id}>' for user_id in added_owners])

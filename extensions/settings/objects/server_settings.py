@@ -274,7 +274,6 @@ class ServerSettings:
         # result.did_upsert -> if yes, make new ServerSettings?
         # result.raw_result
         return result.modified_count > 0, result.did_upsert
-        # todo: add new id to ServerSettings as correct Channel etc object
 
     @staticmethod
     async def remove_attribute(
@@ -290,7 +289,6 @@ class ServerSettings:
 
         result = await collection.update_one(query, update, upsert=True)
         return result.modified_count > 0, result.did_upsert
-        # todo: add new id to ServerSettings as correct Channel etc object
 
     @staticmethod
     async def set_module_state(
@@ -324,7 +322,6 @@ class ServerSettings:
         # result.did_upsert -> if yes, make new ServerSettings?
         # result.raw_result
         return result.modified_count > 0, result.did_upsert
-        # todo: update ServerSettings object to use new module state.
 
     @staticmethod
     async def fetch_all(client: Bot) -> dict[int, ServerSettings]:

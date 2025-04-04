@@ -30,6 +30,8 @@ class ServerAttributes(TypedDict):
     aegis_ping_role: discord.Role | None
 
     vctable_prefix: str | None
+    custom_vc_blacklist_prefix: str | None
+    custom_vc_blacklisted_channels: list[discord.VoiceChannel]
     custom_vc_create_channel: discord.VoiceChannel | None
     custom_vc_category: discord.CategoryChannel | None
 

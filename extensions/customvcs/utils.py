@@ -1,15 +1,12 @@
 import discord
 
 
-BLACKLISTED_CHANNELS = [959626329689583616, 960984256425893958, 960984642717102122, 961794293704581130]
-# todo attribute: this list shouldn't be hardcoded
-
-
 def is_vc_custom(
         voice_channel: discord.VoiceChannel,
         customvc_category: discord.CategoryChannel,
         customvc_hub: discord.VoiceChannel,
-        customvc_channel_blacklist: list[int]
+        customvc_channel_blacklist: list[discord.VoiceChannel],
+        customvc_blacklist_prefix: str,
 ) -> bool:
     """Check if a voice channel is custom-made by Rina through the customvc Hub.
 
@@ -18,6 +15,7 @@ def is_vc_custom(
     :param customvc_hub: The voice channel that members should join to create a custom voice channel.
     :param customvc_channel_blacklist: A list of voice channel that may definitely not be removed when
      the last person leaves.
+    :param customvc_blacklist_prefix: A prefix to ignore channels in this category.
 
     :return: Whether the channel is a custom voice channel or not.
     """
@@ -25,10 +23,10 @@ def is_vc_custom(
         return False
     return (
         voice_channel.category == customvc_category and
-        voice_channel.id != customvc_hub.id and  # avoid deleting the hub channel
+        voice_channel != customvc_hub and  # avoid deleting the hub channel
         voice_channel not in customvc_channel_blacklist and
-        not voice_channel.name.startswith('〙')
-    )  # new blacklisted channels: "#General" "#Quiet", "#Private" and "#Minecraft"
+        not voice_channel.name.startswith(customvc_blacklist_prefix)
+    )
 
 
 def edit_permissionoverwrite(

@@ -10,7 +10,7 @@ from resources.utils.utils import log_to_guild  # to log custom vc changes
 
 from extensions.customvcs.channel_rename_tracker import clear_vc_rename_log, try_store_vc_rename
 from extensions.customvcs.modals import CustomVcStaffEditorModal
-from extensions.customvcs.utils import is_vc_custom, BLACKLISTED_CHANNELS
+from extensions.customvcs.utils import is_vc_custom
 
 
 async def _reset_voice_channel_permissions_if_vctable(vctable_prefix: str, voice_channel: discord.VoiceChannel):
@@ -159,8 +159,9 @@ async def _handle_custom_voice_channel_leave_events(
 class CustomVcs(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
-        self.blacklisted_channels = BLACKLISTED_CHANNELS
-        #  # General, #Private, #Quiet, and #Minecraft. Later, it also excludes channels starting with "〙"
+        #  # General, #Private, #Quiet, and #Minecraft.
+        #   Later, it also excludes channels starting with the guild's
+        #   AttributeKeys.customvc_blacklist_prefix
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -172,20 +173,25 @@ class CustomVcs(commands.Cog):
         customvc_hub: discord.VoiceChannel | None
         customvc_category: discord.CategoryChannel | None
         vctable_prefix: str | None
-        customvc_hub, customvc_category, vctable_prefix = self.client.get_guild_attribute(
+        blacklisted_channels: list[discord.VoiceChannel]
+        customvc_hub, customvc_category, vctable_prefix, blacklisted_channels, vc_blacklist_prefix = self.client.get_guild_attribute(
             member.guild, AttributeKeys.custom_vc_create_channel,
             AttributeKeys.custom_vc_category,
-            AttributeKeys.vctable_prefix)
-        if None in [customvc_hub, customvc_category, vctable_prefix]:
+            AttributeKeys.vctable_prefix,
+            AttributeKeys.custom_vc_blacklisted_channels,
+            AttributeKeys.custom_vc_blacklist_prefix)
+        if None in [customvc_hub, customvc_category, vctable_prefix, vc_blacklist_prefix]:
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: customvc_hub,
                 AttributeKeys.custom_vc_category: customvc_category,
-                AttributeKeys.vctable_prefix: vctable_prefix}
+                AttributeKeys.vctable_prefix: vctable_prefix,
+                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
         if before.channel is not None and before.channel in before.channel.guild.voice_channels:
-            if is_vc_custom(before.channel, customvc_category, customvc_hub, self.blacklisted_channels):
+            if is_vc_custom(before.channel, customvc_category, customvc_hub,
+                            blacklisted_channels, vc_blacklist_prefix):
                 # only run if this voice state regards a custom voice channel
                 await _handle_custom_voice_channel_leave_events(
                     self.client, member, before.channel, vctable_prefix)
@@ -203,20 +209,22 @@ class CustomVcs(commands.Cog):
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ):
-        vc_hub, vc_log, vc_category, vctable_prefix = itx.client.get_guild_attribute(
+        vc_hub, vc_log, vc_category, vctable_prefix, vc_blacklist_prefix = itx.client.get_guild_attribute(
             itx.guild,
             AttributeKeys.custom_vc_create_channel,
             AttributeKeys.log_channel,
             AttributeKeys.custom_vc_category,
-            AttributeKeys.vctable_prefix
+            AttributeKeys.vctable_prefix,
+            AttributeKeys.custom_vc_blacklist_prefix
         )
 
-        if None in (vc_hub, vc_log, vc_category, vctable_prefix):
+        if None in (vc_hub, vc_log, vc_category, vctable_prefix, vc_blacklist_prefix):
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: vc_hub,
                 AttributeKeys.log_channel: vc_log,
                 AttributeKeys.custom_vc_category: vc_category,
-                AttributeKeys.vctable_prefix: vctable_prefix}
+                AttributeKeys.vctable_prefix: vctable_prefix,
+                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
@@ -235,11 +243,11 @@ class CustomVcs(commands.Cog):
         if (channel.category.id not in [vc_category] or
                 channel.id == vc_hub or
                 channel.id in self.blacklisted_channels or
-                channel.name.startswith("〙")):
+                channel.name.startswith(vc_blacklist_prefix)):
             await itx.response.send_message("You can't change that voice channel's name!", ephemeral=True)
             return
         if name is not None:
-            if name.startswith("〙"):  # todo attribute: make this character a ServerAttribute too.
+            if name.startswith(vc_blacklist_prefix):
                 await itx.response.send_message("Due to the current layout, you can't change your channel to "
                                                 "something starting with '〙'. Sorry for the inconvenience",
                                                 ephemeral=True)
