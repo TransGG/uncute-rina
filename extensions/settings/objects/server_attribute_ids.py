@@ -55,6 +55,8 @@ class ServerAttributeIds(TypedDict, total=False):
 
     poll_reaction_blacklisted_channels: list[MessageableChannelId]
 
+    selfies_channel: MessageableChannelId
+
     voice_channel_activity_logs_channel: MessageableChannelId
 
     headpat_emoji: EmojiId

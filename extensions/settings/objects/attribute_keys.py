@@ -45,6 +45,8 @@ class AttributeKeys:
 
     poll_reaction_blacklisted_channels = "poll_reaction_blacklisted_channels"
 
+    selfies_channel = "selfies_channel"
+
     voice_channel_activity_logs_channel = "voice_channel_activity_logs_channel"
 
     headpat_emoji = "headpat_emoji"

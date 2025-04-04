@@ -47,6 +47,8 @@ class ServerAttributes(TypedDict):
 
     poll_reaction_blacklisted_channels: list[discord.abc.Messageable]
 
+    selfies_channel: discord.abc.Messageable | None
+
     voice_channel_activity_logs_channel: discord.abc.Messageable | None
 
     headpat_emoji: discord.Emoji | None

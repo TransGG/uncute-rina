@@ -6,9 +6,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys
+from extensions.settings.objects import ModuleKeys, AttributeKeys
+from resources.customs import Bot
 from resources.checks.permissions import is_staff  # to check if messages in the selfies channel were sent by staff
-from resources.checks import is_staff_check, module_enabled_check
+from resources.checks import is_staff_check, module_enabled_check, MissingAttributesCheckFailure
 from resources.utils.utils import log_to_guild  # logging when a staff command is used
 
 
@@ -48,14 +49,16 @@ class StaffAddons(commands.Cog):
     @app_commands.check(is_staff_check)
     @module_enabled_check(ModuleKeys.selfies_channel_deletion)
     @app_commands.command(name="delete_week_selfies", description="Remove selfies and messages older than 7 days")
-    async def delete_week_selfies(self, itx: discord.Interaction):
+    async def delete_week_selfies(self, itx: discord.Interaction[Bot]):
         # This function largely copies the built-in channel.purge() function with a check, but is more fancy by
         # offering a sort of progress update every 50-100 messages :D
         # todo attribute: add selfies channel(s)
+        selfies_channel = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.selfies_channel)
+        if selfies_channel is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.selfies_channel)
+
         time_now = int(datetime.now().timestamp())  # get time in unix
-        if 'selfies' != itx.channel.name or not isinstance(itx.channel, discord.channel.TextChannel):
-            await itx.response.send_message("You need to send this in a text channel named \"selfies\"", ephemeral=True)
-            return
 
         output = "Attempting deletion...\n"
 
