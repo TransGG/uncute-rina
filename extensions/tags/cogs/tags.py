@@ -4,8 +4,11 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import AttributeKeys, ModuleKeys
-from resources.checks import module_enabled_check, not_in_dms_check
+from extensions.tags.local_tag_list import create_tag, remove_tag, get_tags
+from extensions.tags.tag_manage_modes import TagMode
+from resources.checks import module_enabled_check, not_in_dms_check, is_admin_check
 from resources.customs import Bot
 # ^ to specify which tags can be used in which servers (e.g. Mature role not in EnbyPlace)
 from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
@@ -44,6 +47,17 @@ async def _role_autocomplete(itx: discord.Interaction, current: str):
                 ][:15]
     else:
         return [app_commands.Choice(name="You don't have any roles to remove!", value="none")]
+
+
+async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
+    if itx.namespace.mode == TagMode.value:
+        tag_objects = get_tags(itx.guild)
+        return [
+            app_commands.Choice(name=key, value=key)
+            for key in tag_objects.keys()
+            if current in key
+        ]
+    return []
 
 
 class TagFunctions(commands.Cog):
@@ -99,6 +113,72 @@ class TagFunctions(commands.Cog):
                                             '\n'.join(["- " + i for i in tag_info_dict]), ephemeral=True)
         else:
             await itx.response.send_message("No tag found with this name!", ephemeral=True)
+
+    @app_commands.command(name="tag-manage", description="Add and remove custom tags")
+    @app_commands.describe(mode="Do you want to add or remove the tag?")
+    @app_commands.describe(tag_name="The identifier of the tag.")
+    @app_commands.describe(tag_title="The title of the new tag")
+    @app_commands.describe(description="The description of the new tag")
+    @app_commands.choices(mode=[
+        discord.app_commands.Choice(name=TagMode.help.value, value=TagMode.help.value),
+        discord.app_commands.Choice(name=TagMode.create.value, value=TagMode.create.value),
+        discord.app_commands.Choice(name=TagMode.delete.value, value=TagMode.delete.value),
+    ])
+    @app_commands.check(is_admin_check)
+    @app_commands.autocomplete(tag_name=_tag_name_autocomplete)
+    @module_enabled_check(ModuleKeys.tags)
+    async def tag_manage(
+            self,
+            itx: discord.Interaction[Bot],
+            mode: str,
+            tag_name: str,
+            tag_title: app_commands.Range[str, 1, 256] = None,
+            description: app_commands.Range[str, 1, 4096] = None,
+            color: str = None,
+    ):
+        itx.response: discord.InteractionResponse[Bot]  # noqa
+        if mode == TagMode.help.value:
+            await send_help_menu(itx, 0)  # todo: add
+        elif mode == TagMode.create.value:
+            # validate embed color
+            color_value_strings = color.split(",")
+            color_value_strings = [i.strip() for i in color_value_strings]
+            invalid = False
+            if len(color_value_strings) != 3:
+                invalid = True
+            if not all(i.isdecimal() for i in color_value_strings):
+                invalid = True
+                color_values = []
+            else:
+                color_values = [int(i) for i in color_value_strings]
+            if not all(0 <= i <= 255 for i in color_values):
+                invalid = True
+            if invalid:
+                await itx.response.send_message(
+                    "Invalid color: Format the color as an RGB value from "
+                    "0 to 255, separated by digits. Example: \"255, 0, 127\"",
+                    ephemeral=True)
+                return
+
+            assert len(color_values) == 3
+            color_tuple = (color_values[0], color_values[1], color_values[2])
+
+            await create_tag(itx.client.async_rina_db, itx.guild, tag_name,
+                             tag_title, description, color_tuple)
+        elif mode == TagMode.delete.value:
+            changed = await remove_tag(itx.client.async_rina_db,
+                                       itx.guild, tag_name)
+            if changed:
+                await itx.response.send_message(
+                    f"Successfully removed tag '{tag_name}'.",
+                    ephemeral=True)
+            else:
+                await itx.response.send_message(
+                    f"There was no tag named '{tag_name}'.",
+                    ephemeral=True)
+        else:
+            await itx.response.send_message(f"'{mode}' is not a valid mode.",
+                                            ephemeral=True)
 
     @app_commands.command(name="remove-role", description="Remove one of your agreement roles")
     @app_commands.describe(role_name="The name of the role to remove")

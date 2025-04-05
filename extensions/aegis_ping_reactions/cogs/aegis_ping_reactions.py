@@ -19,7 +19,9 @@ class AEGISPingReactionsAddon(commands.Cog):
         aegis_ping_role: discord.Role | None = self.client.get_guild_attribute(
             message.guild, AttributeKeys.aegis_ping_role)
         if aegis_ping_role is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.aegis_ping_role)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.aegis_ping_reactions,
+                AttributeKeys.aegis_ping_role)
 
         if aegis_ping_role in message.role_mentions:
             await message.add_reaction("👍")

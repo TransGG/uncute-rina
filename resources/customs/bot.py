@@ -164,6 +164,8 @@ class Bot(commands.Bot):
             else:
                 output.append(False)
 
+        if len(output) == 1:
+            return output[0]
         return output
 
     def is_me(self, user_id: discord.Member | discord.User | int) -> bool:

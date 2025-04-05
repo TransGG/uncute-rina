@@ -18,6 +18,7 @@ class EnabledModules(TypedDict, total=False):
     watchlist: bool
     aegis_ping_reactions: bool
     ban_appeal_reactions: bool
+    vc_log_reader: bool
 
 
 class ModuleKeys:
@@ -42,3 +43,4 @@ class ModuleKeys:
     watchlist = "watchlist"
     aegis_ping_reactions = "aegis_ping_reactions"
     ban_appeal_reactions = "ban_appeal_reactions"
+    vc_log_reader = "vc_log_reader"

@@ -9,8 +9,9 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import AttributeKeys
-from resources.checks import is_staff_check, MissingAttributesCheckFailure  # cuz it's a staff command
+from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
+    module_enabled_check  # cuz it's a staff command
 from resources.customs import Bot
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
@@ -316,6 +317,7 @@ class VCLogReader(commands.Cog):
                            msg_log_limit="How many logs should I use to make the graph (default: 5000)",
                            user_ids="Specific user ids to filter the graph for (separate with comma)")
     @app_commands.check(is_staff_check)
+    @module_enabled_check(ModuleKeys.vc_log_reader)
     async def get_voice_channel_data(
             self, itx: discord.Interaction[Bot], requested_channel: str, lower_bound: str, upper_bound: str = None,
             msg_log_limit: int = 5000, user_ids: str | None = None
@@ -345,7 +347,9 @@ class VCLogReader(commands.Cog):
             itx.guild_id, AttributeKeys.voice_channel_activity_logs_channel)
 
         if vc_activity_logs_channel is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.voice_channel_activity_logs_channel)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.vc_log_reader,
+                AttributeKeys.voice_channel_activity_logs_channel)
 
         if upper_bound is None:
             upper_bound = 0  # 0 minutes from now

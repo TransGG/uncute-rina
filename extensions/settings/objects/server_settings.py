@@ -144,7 +144,6 @@ def parse_attribute(
     """
     if invalid_arguments is None:
         invalid_arguments = {}
-
     attribute_type, _ = get_attribute_type(attribute_key)
     func = None
     if attribute_type is discord.Guild:
@@ -168,6 +167,9 @@ def parse_attribute(
     if attribute_type is str:
         return str(attribute_value)
 
+    if attribute_value is None:
+        # to prevent TypeError from int(None) later.
+        return None
     try:
         # all of these require a <object>.id (or the attribute itself is an int)
         attribute_value_id = int(attribute_value)
@@ -261,8 +263,8 @@ class ServerSettings:
             parameter: str,
             value: Any
     ) -> tuple[bool, bool]:
-        if "." in parameter or "$" in parameter:
-            raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{parameter}')")
+        if "." in parameter or parameter.startswith("$"):
+            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{parameter}')")
         if parameter not in ServerAttributeIds.__annotations__:
             raise KeyError(f"'{parameter}' is not a valid Server Attribute.")
 
@@ -281,8 +283,8 @@ class ServerSettings:
             guild_id: int,
             parameter: str
     ) -> tuple[bool, bool]:
-        if "." in parameter or "$" in parameter:
-            raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{parameter}')")
+        if "." in parameter or parameter.startswith("$"):
+            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{parameter}')")
         collection = async_rina_db[ServerSettings.DATABASE_KEY]
         query = {"guild_id": guild_id}
         update = {"$unset": {f"attribute_ids.{parameter}": ""}}  # value "" is not used by MongoDB when unsetting.
@@ -305,10 +307,10 @@ class ServerSettings:
         :param module: The name of the module to set.
         :param value: The (new) value of the module.
 
-        :returns: A tuple of booleans: whether any documents were changed, and whether any new documents were created.
+        :return: A tuple of booleans: whether any documents were changed, and whether any new documents were created.
         """
-        if "." in module or "$" in module:
-            raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{module}')")
+        if "." in module or module.startswith("$"):
+            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{module}')")
         if module not in EnabledModules.__annotations__:
             raise KeyError(f"'{module}' is not a valid Module.")
         if type(value) is not bool:
@@ -352,7 +354,7 @@ class ServerSettings:
         :param client: The bot to use to retrieve matching attributes from ids, and for async_rina_db
         :param guild_id: The guild_id to look up.
 
-        :returns: A ServerSettings object, corresponding to the given guild_id.
+        :return: A ServerSettings object, corresponding to the given guild_id.
 
         :raise KeyError: If the given guild_id has no data yet.
         :raise ParseError: If values from the database could not be parsed.
@@ -406,7 +408,6 @@ class ServerSettings:
          ServerAttributes object.
         """
         invalid_arguments: dict[str, str | list[str]] = {}
-
         guild = client.get_guild(guild_id)
         if guild is None:
             invalid_arguments["guild_id"] = str(guild_id)

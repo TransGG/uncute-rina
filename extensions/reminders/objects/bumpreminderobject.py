@@ -27,9 +27,10 @@ class BumpReminderObject:
         if bump_channel is None or bump_role is None:
             missing = [key for key, value in {
                 AttributeKeys.bump_reminder_channel: bump_channel,
-                AttributeKeys.bump_reminder_role: bump_role}
+                AttributeKeys.bump_reminder_role: bump_role}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.bump_reminder, *missing)
 
         await bump_channel.send(f"{bump_role.mention} The next bump is ready!",
                                 allowed_mentions=discord.AllowedMentions(roles=[bump_role]))

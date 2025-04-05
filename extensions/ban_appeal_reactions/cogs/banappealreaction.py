@@ -18,7 +18,9 @@ class BanAppealReactionsAddon(commands.Cog):
         ban_appeal_webhook: discord.User | None = self.client.get_guild_attribute(
             message.guild, AttributeKeys.ban_appeal_webhook)
         if ban_appeal_webhook is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.ban_appeal_webhook)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.ban_appeal_reactions,
+                AttributeKeys.ban_appeal_webhook)
 
         if message.author.id != ban_appeal_webhook.id:
             return

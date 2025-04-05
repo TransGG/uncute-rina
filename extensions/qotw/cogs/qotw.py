@@ -35,7 +35,8 @@ class QOTW(commands.Cog):
         qotw_channel = itx.client.get_guild_attribute(itx.guild,
                                                       AttributeKeys.qotw_suggestions_channel)
         if qotw_channel is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.qotw_suggestions_channel)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.qotw, AttributeKeys.qotw_suggestions_channel)
 
         await itx.response.defer(ephemeral=True)
 

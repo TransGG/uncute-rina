@@ -105,13 +105,15 @@ def test_no_bad_attribute_names():
 
     # Act
     for attribute_key in ServerAttributes.__annotations__:
-        if "." in attribute_key or "$" in attribute_key:
+        if "." in attribute_key or attribute_key.startswith("$"):
             invalid_names.append(attribute_key)
 
     # Assert
     if invalid_names:
-        pytest.fail("Attributes should not contain a '.' or '$', because MongoDB won't let you have "
-                    "keys with those characters. The names in question:\n- " + "\n- ".join(invalid_names))
+        pytest.fail("Attributes should not contain a '.' or start with '$', "
+                    "because MongoDB won't let you have keys with those "
+                    "characters. The names in question:\n- "
+                    + "\n- ".join(invalid_names))
 
 
 def test_no_bad_attribute_id_names():
@@ -120,13 +122,15 @@ def test_no_bad_attribute_id_names():
 
     # Act
     for attribute_id_key in ServerAttributeIds.__annotations__:
-        if "." in attribute_id_key or "$" in attribute_id_key:
+        if "." in attribute_id_key or attribute_id_key.startswith("$"):
             invalid_names.append(attribute_id_key)
 
     # Assert
     if invalid_names:
-        pytest.fail("Attribute Ids should not contain a '.' or '$', because MongoDB won't let you have "
-                    "keys with those characters. The names in question:\n- " + "\n- ".join(invalid_names))
+        pytest.fail("Attribute Ids should not contain a '.' or start with "
+                    "'$', because MongoDB won't let you have keys with those "
+                    "characters. The names in question:\n- "
+                    + "\n- ".join(invalid_names))
 
 
 def test_no_bad_module_names():
@@ -135,13 +139,15 @@ def test_no_bad_module_names():
 
     # Act
     for enabled_module_key in EnabledModules.__annotations__:
-        if "." in enabled_module_key or "$" in enabled_module_key:
+        if "." in enabled_module_key or enabled_module_key.starts_with("$"):
             invalid_names.append(enabled_module_key)
 
     # Assert
     if invalid_names:
-        pytest.fail("Module keys should not contain a '.' or '$', because MongoDB won't let you have "
-                    "keys with those characters. The names in question:\n- " + "\n- ".join(invalid_names))
+        pytest.fail("Module keys should not contain a '.' or start with '$', "
+                    "because MongoDB won't let you have keys with those "
+                    "characters. The names in question:\n- "
+                    + "\n- ".join(invalid_names))
 
 
 def test_all_modules_bools():
