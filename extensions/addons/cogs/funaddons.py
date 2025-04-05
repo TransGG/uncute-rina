@@ -212,7 +212,9 @@ class FunAddons(commands.Cog):
             headpat_emoji: discord.Emoji | None = self.client.get_guild_attribute(
                 message.guild, AttributeKeys.headpat_emoji)
             if headpat_emoji is None:
-                raise MissingAttributesCheckFailure(AttributeKeys.headpat_emoji)
+                raise MissingAttributesCheckFailure(
+                    ModuleKeys.headpat_reactions,
+                    AttributeKeys.headpat_emoji)
             self.handle_random_pat_reaction(message, headpat_emoji)
             return
 
@@ -220,7 +222,9 @@ class FunAddons(commands.Cog):
             awawawa_emoji: discord.Emoji | None = self.client.get_guild_attribute(
                 message.guild, AttributeKeys.awawawa_emoji)
             if awawawa_emoji is None:
-                raise MissingAttributesCheckFailure(AttributeKeys.awawawa_emoji)
+                raise MissingAttributesCheckFailure(
+                    ModuleKeys.awawawa_reactions,
+                    AttributeKeys.awawawa_emoji)
             await _handle_awawa_reaction(message, awawawa_emoji)
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")

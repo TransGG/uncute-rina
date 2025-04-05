@@ -36,7 +36,7 @@ class DevRequest(commands.Cog):
                 AttributeKeys.developer_request_channel: developer_request_channel,
                 AttributeKeys.developer_request_reaction_role: developer_role}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.dev_requests, *missing)
 
         if len(suggestion) > 4000:
             await itx.response.send_message("Your suggestion won't fit! Please make your suggestion shorter. "
@@ -105,11 +105,15 @@ class DevRequest(commands.Cog):
     @app_commands.check(is_staff_check)
     @module_enabled_check(ModuleKeys.dev_requests)
     async def ping_open_developer_requests(self, itx: discord.Interaction[Bot]):
-        await itx.response.send_message("`[+  ]`: Fetching cached threads.", ephemeral=True)
-        watchlist_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
+        await itx.response.send_message("`[+  ]`: Fetching cached threads.",
+                                        ephemeral=True)
+        watchlist_channel: discord.TextChannel | None
+        watchlist_channel = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.developer_request_channel)
         if watchlist_channel is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.developer_request_channel)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.dev_requests,
+                AttributeKeys.developer_request_channel)
 
         threads: list[discord.Thread] = []
         pinged_thread_count = 0
@@ -168,7 +172,9 @@ class DevRequest(commands.Cog):
         dev_request_channel: discord.TextChannel = self.client.get_guild_attribute(
             payload.guild_id, AttributeKeys.developer_request_channel)
         if dev_request_channel is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.developer_request_channel)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.dev_requests,
+                AttributeKeys.developer_request_channel)
 
         if dev_request_channel.id != payload.channel_id:
             return

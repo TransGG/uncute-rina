@@ -2,7 +2,7 @@ from typing import Callable
 
 import discord
 
-from extensions.settings.objects import AttributeKeys
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot, EnabledServers
 from resources.utils.utils import get_mod_ticket_channel  # for ticket channel id in Report tag
@@ -54,7 +54,8 @@ class Tags:
                     itx.guild, AttributeKeys.staff_reports_channel)
                 if staff_message_reports_channel is None:
                     # todo: make sending these messages to a special channel a module?
-                    raise MissingAttributesCheckFailure(AttributeKeys.staff_reports_channel)
+                    raise MissingAttributesCheckFailure(
+                        ModuleKeys.tags, AttributeKeys.staff_reports_channel)
 
                 await staff_message_reports_channel.send(log_msg)
             else:

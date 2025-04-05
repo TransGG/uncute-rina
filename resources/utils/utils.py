@@ -174,15 +174,20 @@ async def log_to_guild(
         if ignore_dms and is_in_dms(guild):
             return False
         if crash_if_not_found:
-            raise MissingAttributesCheckFailure(AttributeKeys.log_channel)
+            raise MissingAttributesCheckFailure(
+                "log_to_guild", AttributeKeys.log_channel)
 
         # get current value for log_channel in the guild.
-        entry = await ServerSettings.get_entry(client.async_rina_db, guild.id)
-        if entry is None:
-            attribute_raw = "<no server data>"
+        if guild is None:
+            attribute_raw = "<server was None>"
         else:
-            attribute_raw = str(entry["attribute_ids"].get(
-                AttributeKeys.log_channel, "<no attribute data>"))  # noqa
+            entry = await ServerSettings.get_entry(client.async_rina_db,
+                                                   guild.id)
+            if entry is None:
+                attribute_raw = "<no server data>"
+            else:
+                attribute_raw = str(entry["attribute_ids"].get(
+                    AttributeKeys.log_channel, "<no attribute data>"))  # noqa
 
         debug("Exception in log_channel (log_channel could not be loaded):\n"
               "    guild: " + repr(guild) +

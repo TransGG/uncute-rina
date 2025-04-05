@@ -165,29 +165,41 @@ class CrashHandling(commands.Cog):
 
         exception_and_message = traceback.format_exc(limit=0)
         exception_name = exception_and_message.split(":", 2)[0]
+        exception_name = exception_name.split(".")[-1]  # a.b.Error -> Error
         if exception_name == MissingAttributesCheckFailure.__name__:
+            if self.client.server_settings is None:
+                # Don't send crash message. It's obvious attributes are missing
+                #  because no attributes have been loaded yet.
+                return
+
             commanderror_cooldown = datetime.now().astimezone()
             exception_message = exception_and_message.split(": ", 2)[1]
             # format_exc ends with a newline.
             exception_message = exception_message.strip()
-            # MissingAttributesCheckFailure.attributes is a list: remove '[]'
-            exception_message = exception_message[1:-1]
-            # missing_attributes = exception_message.split(", ")
+            # exception is formatted using Exception.str(), which I overwrote:
+            #  ExceptionName: module_name; attribute1, attribute2, attribute3
+            module_source, missing_attributes = exception_message.split("; ", 2)
+            missing_attributes = missing_attributes.split(", ")
             cmd_mention = self.client.get_command_mention("settings")
             await log_to_guild(
                 self.client,
                 potential_guild,
-                f"A module ran into an error! This is likely because "
-                f"the module was enabled, but did not have the required "
-                f"attributes configured to execute its features.\n"
+                f"Module `{module_source}` ran into an error! This is likely "
+                f"because the module was enabled, but did not have the "
+                f"required attributes configured to execute its features.\n"
                 f"Use {cmd_mention} `type:Attribute` `setting: ` to set "
-                f"these missing attributes:"
-                f"> {exception_message}"  # + ", ".join(missing_attributes)
+                f"these missing attributes:\n"
+                f"> " + ", ".join(missing_attributes)
             )
             return
 
         msg = traceback.format_exc()
         commanderror_cooldown = datetime.now().astimezone()
+        if potential_guild is None:
+            event = "unknown guild: " + event
+        else:
+            event = f"guild: {potential_guild.id}, " + event
+
         await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
 
     @staticmethod

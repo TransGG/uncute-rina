@@ -23,7 +23,8 @@ class BumpReminder(commands.Cog):
         bump_bot: discord.User | None = self.client.get_guild_attribute(
             message.guild, AttributeKeys.bump_reminder_bot)
         if bump_bot is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.bump_reminder_bot)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.bump_reminder, AttributeKeys.bump_reminder_bot)
 
         if len(message.embeds) > 0:
             if message.embeds[0].description is not None:

@@ -123,7 +123,8 @@ async def _add_to_watchlist(
     watch_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
         itx.guild, AttributeKeys.staff_watch_channel)
     if watch_channel is None:
-        raise MissingAttributesCheckFailure(AttributeKeys.watchlist_channel)
+        raise MissingAttributesCheckFailure(
+            ModuleKeys.watchlist, AttributeKeys.watchlist_channel)
 
     # await itx.response.defer(ephemeral=True)
     await itx.response.send_message(
@@ -278,7 +279,9 @@ class WatchList(commands.Cog):
         watchlist_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.watchlist_channel)
         if watchlist_channel is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.watchlist_channel)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.watchlist,
+                AttributeKeys.watchlist_channel)
         watchlist_index = await get_or_fetch_watchlist_index(watchlist_channel)
         on_watchlist: bool = user.id in watchlist_index
 
@@ -291,7 +294,8 @@ class WatchList(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not module_enabled_check(ModuleKeys.watchlist):
+        if not self.client.is_module_enabled(
+                message.guild, ModuleKeys.watchlist):
             return
         staff_logs_category: discord.CategoryChannel | None
         badeline_bot: discord.User | None
@@ -308,7 +312,8 @@ class WatchList(commands.Cog):
                 AttributeKeys.badeline_bot: badeline_bot,
                 AttributeKeys.watchlist_channel: watchlist_channel}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.watchlist, *missing)
 
         if message.author.id != badeline_bot.id:
             # Don't compare author == badeline_bot, because author can be

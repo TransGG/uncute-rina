@@ -1,7 +1,7 @@
 import discord
 import discord.ext.commands as commands
 
-from extensions.settings.objects import AttributeKeys
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
@@ -298,7 +298,8 @@ class Starboard(commands.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id is None:
             return
-        if not self.client.is_module_enabled(guild_id=payload.guild_id):
+        if not self.client.is_module_enabled(payload.guild_id,
+                                             ModuleKeys.starboard):
             return
 
         star_channel: discord.abc.Messageable | None
@@ -326,7 +327,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
                     downvote_init_value}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
 
         if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji and
@@ -386,7 +387,8 @@ class Starboard(commands.Cog):
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id is None:
             return
-        if not self.client.is_module_enabled(guild_id=payload.guild_id):
+        if not self.client.is_module_enabled(payload.guild_id,
+                                             ModuleKeys.starboard):
             return
 
         star_channel: discord.abc.Messageable | None
@@ -407,7 +409,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
                     downvote_init_value}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
 
         if payload.emoji != starboard_emoji and payload.emoji.name != "❌":
             # only run starboard code if the reactions tracked are actually
@@ -438,7 +440,8 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
-        if not self.client.is_module_enabled(guild_id=message_payload.guild_id):
+        if not self.client.is_module_enabled(message_payload.guild_id,
+                                             ModuleKeys.starboard):
             return
 
         star_channel: discord.abc.Messageable | None
@@ -454,7 +457,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
 
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
             # this prevents having two 'message deleted' logs for manual deletion of starboard message

@@ -56,7 +56,9 @@ class StaffAddons(commands.Cog):
         selfies_channel = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.selfies_channel)
         if selfies_channel is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.selfies_channel)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.selfies_channel_deletion,
+                AttributeKeys.selfies_channel)
 
         time_now = int(datetime.now().timestamp())  # get time in unix
 

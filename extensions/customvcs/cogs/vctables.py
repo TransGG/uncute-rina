@@ -103,7 +103,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                 AttributeKeys.custom_vc_category: vc_category,
                 AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.vc_tables, *missing)
 
         if itx.user.voice is None or itx.user.voice.channel is None:
             if not from_event:
@@ -166,7 +166,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         vctable_prefix: str | None = itx.client.get_guild_attribute(itx.guild,
                                                                     AttributeKeys.vctable_prefix)
         if vctable_prefix is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.vctable_prefix)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.vc_tables, AttributeKeys.vctable_prefix)
 
         warning = ""
 
@@ -296,7 +297,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
     async def vctable_disband(self, itx: discord.Interaction):
         vctable_prefix: str | None = itx.client.get_guild_attribute(itx.guild, AttributeKeys.vctable_prefix)
         if vctable_prefix is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.vctable_prefix)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.vc_tables, AttributeKeys.vctable_prefix)
 
         channel = await self.get_channel_if_owner(itx, "disband VcTable")
         if channel is None:

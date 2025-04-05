@@ -187,7 +187,8 @@ class CustomVcs(commands.Cog):
                 AttributeKeys.vctable_prefix: vctable_prefix,
                 AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.custom_vcs, *missing)
 
         if before.channel is not None and before.channel in before.channel.guild.voice_channels:
             if is_vc_custom(before.channel, customvc_category, customvc_hub,
@@ -226,7 +227,8 @@ class CustomVcs(commands.Cog):
                 AttributeKeys.vctable_prefix: vctable_prefix,
                 AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(*missing)
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.custom_vcs, *missing)
 
         warning = ""
 

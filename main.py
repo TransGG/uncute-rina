@@ -11,6 +11,7 @@ from pymongo import MongoClient
 
 import discord  # for main discord bot functionality
 
+from extensions.tags.local_tag_list import fetch_all_tags
 from resources.customs import Bot, ProgressBar
 from resources.customs import ApiTokenDict
 
@@ -190,10 +191,13 @@ def start_app():
                             f"(in {datetime.now().astimezone() - program_start})")
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
-        post_startup_progress = ProgressBar(2)
+        post_startup_progress = ProgressBar(3)
         post_startup_progress.progress("Loading all server settings...")
         client.server_settings = await ServerSettings.fetch_all(client)
         post_startup_progress.step("Loaded server settings.")
+        post_startup_progress.progress("Loading all server tags...")
+        _ = await fetch_all_tags(client.async_rina_db)  # stored in global var
+        post_startup_progress.step("Loaded server tags.")
 
         post_startup_progress.progress("Pre-loading all watchlist threads")
         # todo: add support for multiple watchlist channels...
