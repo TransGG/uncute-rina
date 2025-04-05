@@ -305,7 +305,7 @@ class ServerSettings:
         :param module: The name of the module to set.
         :param value: The (new) value of the module.
 
-        :returns: A tuple of booleans: whether any documents were changed, and whether any new documents were created.
+        :return: A tuple of booleans: whether any documents were changed, and whether any new documents were created.
         """
         if "." in module or "$" in module:
             raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{module}')")
@@ -352,7 +352,7 @@ class ServerSettings:
         :param client: The bot to use to retrieve matching attributes from ids, and for async_rina_db
         :param guild_id: The guild_id to look up.
 
-        :returns: A ServerSettings object, corresponding to the given guild_id.
+        :return: A ServerSettings object, corresponding to the given guild_id.
 
         :raise KeyError: If the given guild_id has no data yet.
         :raise ParseError: If values from the database could not be parsed.

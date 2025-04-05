@@ -83,7 +83,7 @@ class TimeParser:
 
         :param time_units: An output from parse_time_string() containing a list of (4, "days") tuples.
 
-        :returns: A list of tuples with shrunk time strings: (4, "d").
+        :return: A list of tuples with shrunk time strings: (4, "d").
 
         :raise ValueError: Input contains unrecognised datetime unit(s).
         """
@@ -109,7 +109,7 @@ class TimeParser:
          probably doesn't matter).
         :param start_date: The date to offset from.
 
-        :returns: A datetime with an offset in the future (relative to the given datetime input) matching the
+        :return: A datetime with an offset in the future (relative to the given datetime input) matching the
          input string.
 
         :raise ValueError: If the input is invalid; if the input contains unrecognised datetime units; or
