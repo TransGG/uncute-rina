@@ -21,7 +21,22 @@ V = TypeVar('V')
 # - Each guild_id is unique.
 # - Every entry that has a 'guild_id' key must also contain a 'data' key.
 
-# todo: Add value error if Key contains $ or .
+
+def encode_field(field_name: str):
+    field_name = (field_name
+                  .replace("%", "%0")
+                  .replace(".", "%1")
+                  .replace("$", "%2"))
+    return field_name
+
+
+def decode_field(field_name: str):
+    field_name = (field_name
+                  .replace("%1", ".")
+                  .replace("%2", "$")
+                  .replace("%0", "%"))
+    return field_name
+
 
 async def add_data(
         async_rina_db: AgnosticDatabase,
@@ -46,7 +61,7 @@ async def add_data(
     query = {"guild_id": guild_id}
     result = await collection.update_one(
         query,
-        {"$set": {f"data.{key}": value}},
+        {"$set": {f"data.{encode_field(key)}": value}},
         upsert=True
     )
     return result.modified_count > 0, result.did_upsert
@@ -73,7 +88,7 @@ async def remove_data(
     query = {"guild_id": guild_id}
     result = await collection.update_one(
         query,
-        {"$unset": {f"data.{key}": ""}},
+        {"$unset": {f"data.{encode_field(key)}": ""}},
         # value "" is not used by MongoDB when unsetting.
         upsert=True
     )
@@ -99,6 +114,7 @@ async def update_data(
     """
     collection = async_rina_db[database_name]
     query = {"guild_id": guild_id}
+    encoded_data = {encode_field(k): v for k, v in data.items()}
     result = await collection.update_one(
         query,
         {"$set": {"data": data}},
@@ -111,7 +127,7 @@ async def get_data(
         async_rina_db: AgnosticDatabase,
         guild_id: int,
         database_name: str,
-) -> dict[T, V]:
+) -> dict[T, V] | None:
     """
     Fetch data for the given guild.
 
@@ -128,8 +144,8 @@ async def get_data(
 
     if result is None:
         return None
-
-    return result["data"]
+    decoded_data = {decode_field(k): v for k, v in result["data"].items()}
+    return decoded_data
 
 
 async def get_all_data(
@@ -146,11 +162,12 @@ async def get_all_data(
      ``None`` if not found.
     """
     collection = async_rina_db[database_name]
-    result = collection.find(query)
+    results = collection.find(query)
 
     data = {}
     async for result in results:
         guild_id = result["guild_id"]
-        data[guild_id] = result["data"]
+        decoded_data = {decode_field(k): v for k, v in result["data"].items()}
+        data[guild_id] = decoded_data
 
     return data

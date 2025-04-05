@@ -261,8 +261,8 @@ class ServerSettings:
             parameter: str,
             value: Any
     ) -> tuple[bool, bool]:
-        if "." in parameter or "$" in parameter:
-            raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{parameter}')")
+        if "." in parameter or parameter.startswith("$"):
+            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{parameter}')")
         if parameter not in ServerAttributeIds.__annotations__:
             raise KeyError(f"'{parameter}' is not a valid Server Attribute.")
 
@@ -281,8 +281,8 @@ class ServerSettings:
             guild_id: int,
             parameter: str
     ) -> tuple[bool, bool]:
-        if "." in parameter or "$" in parameter:
-            raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{parameter}')")
+        if "." in parameter or parameter.startswith("$"):
+            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{parameter}')")
         collection = async_rina_db[ServerSettings.DATABASE_KEY]
         query = {"guild_id": guild_id}
         update = {"$unset": {f"attribute_ids.{parameter}": ""}}  # value "" is not used by MongoDB when unsetting.
@@ -307,8 +307,8 @@ class ServerSettings:
 
         :return: A tuple of booleans: whether any documents were changed, and whether any new documents were created.
         """
-        if "." in module or "$" in module:
-            raise ValueError(f"Parameters are not allowed to contain '.' or '$'! (parameter: '{module}')")
+        if "." in module or module.startswith("$"):
+            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{module}')")
         if module not in EnabledModules.__annotations__:
             raise KeyError(f"'{module}' is not a valid Module.")
         if type(value) is not bool:

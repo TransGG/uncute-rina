@@ -126,11 +126,14 @@ async def fetch_tags(
     :return: A dictionary of tag names and the matching tag object in the
      given guild.
     """
-    data: dict[str, dict] = await get_data(
+    data: dict[str, dict] | None = await get_data(
         async_rina_db,
         guild.id,
         DatabaseKeys.watchlist,
     )
+
+    if data is None:
+        return {}
 
     data = {name: DatabaseTagObject(**tag_data) for name, tag_data in data}
     local_tag_list[guild.id] = data
