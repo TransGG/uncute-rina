@@ -2,9 +2,10 @@ import discord
 from motor.core import AgnosticDatabase
 
 from extensions.tags.database_tag_object import DatabaseTagObject
-from resources.customs import Bot
-from resources.database_keys import DatabaseKeys
-from resources.guild_customs_manager import add_data, remove_data, get_data
+from resources.pymongo.database_keys import DatabaseKeys
+from resources.pymongo.guild_customs_manager import (
+    add_data, remove_data, get_data, get_all_data
+)
 
 local_tag_list: dict[int, dict[str, DatabaseTagObject]] = {}
 

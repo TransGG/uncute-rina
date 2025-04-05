@@ -323,7 +323,8 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_upvote_count: star_minimum,
                 AttributeKeys.starboard_blacklisted_channels: channel_blacklist,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji,
-                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete: downvote_init_value}
+                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
+                    downvote_init_value}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
@@ -403,7 +404,8 @@ class Starboard(commands.Cog):
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji,
-                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete: downvote_init_value}
+                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
+                    downvote_init_value}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
@@ -450,7 +452,7 @@ class Starboard(commands.Cog):
         if None in [star_channel, starboard_emoji]:
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel: star_channel,
-                AttributeKeys.starboard_upvote_emoji: starboard_emoji}
+                AttributeKeys.starboard_upvote_emoji: starboard_emoji}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 

@@ -34,7 +34,7 @@ class DevRequest(commands.Cog):
         if developer_request_channel is None or developer_role is None:
             missing = [key for key, value in {
                 AttributeKeys.developer_request_channel: developer_request_channel,
-                AttributeKeys.developer_request_reaction_role: developer_role}
+                AttributeKeys.developer_request_reaction_role: developer_role}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 

@@ -144,7 +144,6 @@ def parse_attribute(
     """
     if invalid_arguments is None:
         invalid_arguments = {}
-
     attribute_type, _ = get_attribute_type(attribute_key)
     func = None
     if attribute_type is discord.Guild:
@@ -168,6 +167,9 @@ def parse_attribute(
     if attribute_type is str:
         return str(attribute_value)
 
+    if attribute_value is None:
+        # to prevent TypeError from int(None) later.
+        return None
     try:
         # all of these require a <object>.id (or the attribute itself is an int)
         attribute_value_id = int(attribute_value)
@@ -406,7 +408,6 @@ class ServerSettings:
          ServerAttributes object.
         """
         invalid_arguments: dict[str, str | list[str]] = {}
-
         guild = client.get_guild(guild_id)
         if guild is None:
             invalid_arguments["guild_id"] = str(guild_id)

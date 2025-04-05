@@ -39,14 +39,14 @@ async def _send_crash_message(
     """
     log_channel = None
     if hasattr(itx, "guild"):
-        log_channel = await client.get_guild_attribute(
+        log_channel = client.get_guild_attribute(
             itx.guild, AttributeKeys.log_channel)
     if log_channel is None:
         # no guild settings, or itx -> 'NoneType' has no attribute '.guild'
         backup_guild_ids = [959551566388547676, 985931648094834798,
                             981615050664075404]
         possible_log_channels = [
-            client.get_guild_attribute(guild_id)
+            client.get_guild_attribute(guild_id, AttributeKeys.log_channel)
             for guild_id in backup_guild_ids
         ]
         # grab the first non-None logging channel
@@ -166,6 +166,7 @@ class CrashHandling(commands.Cog):
         exception_and_message = traceback.format_exc(limit=0)
         exception_name = exception_and_message.split(":", 2)[0]
         if exception_name == MissingAttributesCheckFailure.__name__:
+            commanderror_cooldown = datetime.now().astimezone()
             exception_message = exception_and_message.split(": ", 2)[1]
             # format_exc ends with a newline.
             exception_message = exception_message.strip()
@@ -183,12 +184,11 @@ class CrashHandling(commands.Cog):
                 f"these missing attributes:"
                 f"> {exception_message}"  # + ", ".join(missing_attributes)
             )
-            commanderror_cooldown = datetime.now().astimezone()
             return
 
         msg = traceback.format_exc()
-        await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
         commanderror_cooldown = datetime.now().astimezone()
+        await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
 
     @staticmethod
     async def on_app_command_error(itx: discord.Interaction[Bot], error: discord.app_commands.AppCommandError):

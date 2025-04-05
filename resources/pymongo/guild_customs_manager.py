@@ -1,11 +1,7 @@
-from pickletools import read_uint1
-
-import discord
 from motor.core import AgnosticDatabase
 from typing import TypeVar
 
-from resources.customs import Bot
-
+from .utils import encode_field, decode_field
 
 T = TypeVar('T', str, int)  # name / id
 V = TypeVar('V')
@@ -20,22 +16,6 @@ V = TypeVar('V')
 # Database properties:
 # - Each guild_id is unique.
 # - Every entry that has a 'guild_id' key must also contain a 'data' key.
-
-
-def encode_field(field_name: str):
-    field_name = (field_name
-                  .replace("%", "%0")
-                  .replace(".", "%1")
-                  .replace("$", "%2"))
-    return field_name
-
-
-def decode_field(field_name: str):
-    field_name = (field_name
-                  .replace("%1", ".")
-                  .replace("%2", "$")
-                  .replace("%0", "%"))
-    return field_name
 
 
 async def add_data(
@@ -117,7 +97,7 @@ async def update_data(
     encoded_data = {encode_field(k): v for k, v in data.items()}
     result = await collection.update_one(
         query,
-        {"$set": {"data": data}},
+        {"$set": {"data": encoded_data}},
         upsert=True
     )
     return result.modified_count > 0, result.did_upsert
@@ -162,7 +142,7 @@ async def get_all_data(
      ``None`` if not found.
     """
     collection = async_rina_db[database_name]
-    results = collection.find(query)
+    results = collection.find()
 
     data = {}
     async for result in results:

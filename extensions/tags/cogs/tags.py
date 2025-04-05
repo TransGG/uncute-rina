@@ -59,6 +59,7 @@ async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
         ]
     return []
 
+
 class TagFunctions(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client

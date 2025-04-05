@@ -185,7 +185,7 @@ class CustomVcs(commands.Cog):
                 AttributeKeys.custom_vc_create_channel: customvc_hub,
                 AttributeKeys.custom_vc_category: customvc_category,
                 AttributeKeys.vctable_prefix: vctable_prefix,
-                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}
+                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
@@ -224,7 +224,7 @@ class CustomVcs(commands.Cog):
                 AttributeKeys.log_channel: vc_log,
                 AttributeKeys.custom_vc_category: vc_category,
                 AttributeKeys.vctable_prefix: vctable_prefix,
-                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}
+                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(*missing)
 
