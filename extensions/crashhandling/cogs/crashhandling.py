@@ -41,6 +41,12 @@ async def _send_crash_message(
     if hasattr(itx, "guild"):
         log_channel = client.get_guild_attribute(
             itx.guild, AttributeKeys.log_channel)
+
+    if client.server_settings is None and log_channel is None:
+        debug(f"Error during startup\n\n\n[{error_type}]: {error_source}\n\n"
+              f"{traceback_text}\n\n")
+        return
+
     if log_channel is None:
         # no guild settings, or itx -> 'NoneType' has no attribute '.guild'
         backup_guild_ids = [959551566388547676, 985931648094834798,
@@ -242,6 +248,17 @@ class CrashHandling(commands.Cog):
         if datetime.now().astimezone() - appcommanderror_cooldown < timedelta(seconds=60):
             # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if
             # within 1 minute
+            await _reply(
+                itx,
+                ("Your command ran into an error, but another crash "
+                 "was caused within 60 seconds ago, so the error has not been "
+                 "forwarded to the bot developer. If you didn't trigger a "
+                 "crash in the past 60 seconds, you may want to re-run the "
+                 "command in a little bit and see if you get a different "
+                 "error message. Feel free to message @mysticmia with more "
+                 "details.\n"
+                 "Error: " + repr(error))[:2000]
+            )
             return
 
         cmd_mention = itx.client.get_command_mention("update")
@@ -262,9 +279,15 @@ class CrashHandling(commands.Cog):
                     #                       f"ping {client.bot_owner}} :)")
                 if hasattr(error.original, 'code'):
                     error_reply += " (" + str(error.original.code) + ")"
-                await _reply(itx,
-                             error_reply + f". Please report the error and details to {itx.client.bot_owner} "
-                                           f"({itx.client.bot_owner.mention}) by pinging her or sending her a DM")
+                await _reply(
+                    itx,
+                    error_reply
+                    + f". Please report the error and details to "
+                      f"{itx.client.bot_owner} ({itx.client.bot_owner.mention}) "
+                      f"by pinging her or sending her a DM. (Though she "
+                      f"should have received a message with error details "
+                      f"herself as well."
+                )
             else:
                 await _reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
 

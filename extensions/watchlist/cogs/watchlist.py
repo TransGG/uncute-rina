@@ -10,7 +10,7 @@ from resources.checks.permissions import is_staff  # to check role in _add_to_wa
 from resources.checks import is_staff_check, module_enabled_check, \
     MissingAttributesCheckFailure  # the cog is pretty much only intended for staff use
 
-from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index, add_to_watchlist_cache
+from extensions.watchlist.local_watchlist import import_watchlist_threads, create_watchlist, get_watchlist
 from extensions.watchlist.modals import WatchlistReasonModal
 
 
@@ -55,7 +55,8 @@ async def _create_uncool_watchlist_thread(client: Bot, user: discord.Member, wat
     thread = await msg.create_thread(name=f"Watch-{(str(user)[:70] + '-' + str(user.id))}",
                                      auto_archive_duration=10080)  # max thread name = 100 chars
     # thread.id will be the same as msg.id, because of discord structure
-    add_to_watchlist_cache(user.id, thread.id)
+    await create_watchlist(client.async_rina_db, user.guild,
+                           user.id, watch_channel.id)
     await thread.join()
     # await thread.send("<@&986022587756871711>", silent=True)  # silent messages don't work for this
     joiner_msg = await thread.send("user-mention placeholder")
@@ -171,14 +172,14 @@ async def _add_to_watchlist(
         if reported_message.attachments:
             reported_message_info += f"(:newspaper: Contains {len(reported_message.attachments)} attachments)\n"
 
-    watchlist_index = await get_or_fetch_watchlist_index(watch_channel)
-    already_on_watchlist = user.id in watchlist_index
+    watchlist_thread_id = get_watchlist(watch_channel.guild, user.id)
+    already_on_watchlist = watchlist_thread_id is not None
 
     if already_on_watchlist:
         # fetch thread, in case the thread was archived (not in cache)
-        thread = await watch_channel.guild.fetch_channel(watchlist_index[user.id])
+        thread = await watch_channel.guild.fetch_channel(watchlist_thread_id)
         # fetch message the thread is attached to (fetch, in case msg is not in cache)
-        msg = await watch_channel.fetch_message(watchlist_index[user.id])
+        msg = await watch_channel.fetch_message(watchlist_thread_id)
         # todo: capture on_thread_delete to remove from watchlist_index if a user's thread is removed.
         #  Perhaps even re-fetch all threads, cause if a thread is somehow sent twice, the second case would overwrite
         #  the channel id of the first, and removing the second one from the database would mean the user has no
@@ -189,7 +190,10 @@ async def _add_to_watchlist(
                                 f"May this serve as a warning for this user.",
                         allowed_mentions=discord.AllowedMentions.none())
     else:
-        msg, thread = await _create_uncool_watchlist_thread(itx.client, user, watch_channel)
+        msg, thread = await _create_uncool_watchlist_thread(
+            itx.client, user, watch_channel)
+        await create_watchlist(itx.client.async_rina_db, itx.guild,
+                               user.id, thread.id)
 
     # Send a plaintext version of the reason, and copy a link to it
     different_author_warning = " (mentioned message author below)" if allow_different_report_author else ""
@@ -276,14 +280,8 @@ class WatchList(commands.Cog):
             return
 
         await itx.response.defer(ephemeral=True)
-        watchlist_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.watchlist_channel)
-        if watchlist_channel is None:
-            raise MissingAttributesCheckFailure(
-                ModuleKeys.watchlist,
-                AttributeKeys.watchlist_channel)
-        watchlist_index = await get_or_fetch_watchlist_index(watchlist_channel)
-        on_watchlist: bool = user.id in watchlist_index
+        watchlist_thread_id = await get_watchlist(itx.guild, user.id)
+        on_watchlist: bool = watchlist_thread_id is not None
 
         if on_watchlist:
             await itx.followup.send(f"🔵 This user ({user.mention} `{user.id}`) is already on the watchlist.",
@@ -345,10 +343,10 @@ class WatchList(commands.Cog):
                         else:
                             raise Exception("User id was not an id!")
 
-        watchlist_index = await get_or_fetch_watchlist_index(watchlist_channel)
-        on_watchlist: bool = reported_user_id in watchlist_index
+        watchlist_thread_id = get_watchlist(message.guild, reported_user_id)
+        on_watchlist: bool = watchlist_thread_id is not None
 
         if on_watchlist:
             thread: discord.Thread = await watchlist_channel.guild.fetch_channel(
-                watchlist_index[reported_user_id])
+                watchlist_thread_id)  # fetch, to retrieve (archived) thread.
             await message.forward(thread)

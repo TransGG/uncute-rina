@@ -7,7 +7,6 @@ class ServerAttributes(TypedDict):
     # When adding a new key to this class, make sure to add the same key to the ServerAttributes class
     # If you're giving it a new type, make sure it gets parsed in ServerSettings.get_attributes()
     parent_server: discord.Guild | None
-    child_servers: list[discord.Guild]
 
     admin_roles: list[discord.Role]
     staff_roles: list[discord.Role]

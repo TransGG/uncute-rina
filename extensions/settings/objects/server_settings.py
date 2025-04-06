@@ -141,6 +141,7 @@ def parse_attribute(
     :param attribute_value: The attribute value to parse.
     :param invalid_arguments: An optional dictionary tracking previously unparseable arguments.
     :return: The parsed value, or None if not found.
+    :raise NotImplementedError: If the attribute type is not supported.
     """
     if invalid_arguments is None:
         invalid_arguments = {}
@@ -148,24 +149,28 @@ def parse_attribute(
     func = None
     if attribute_type is discord.Guild:
         func = client.get_guild
-    if attribute_type is discord.abc.Messageable:
+    elif attribute_type is discord.abc.Messageable:
         func = client.get_channel
-    if attribute_type is discord.User:
+    elif attribute_type is discord.TextChannel:
+        func = client.get_channel
+    elif attribute_type is discord.User:
         func = client.get_user
-    if attribute_type is discord.Role:
+    elif attribute_type is discord.Role:
         func = guild.get_role
-    if attribute_type is discord.CategoryChannel:
+    elif attribute_type is discord.CategoryChannel:
         # I think it's safe to assume the stored value was an object of the correct type in the first place.
         #  As in, it's a CategoryChannel id, not a VoiceChannel id.
         func = client.get_channel
-    if attribute_type is discord.VoiceChannel:
+    elif attribute_type is discord.VoiceChannel:
         func = client.get_channel
-    if attribute_type is discord.Emoji:
+    elif attribute_type is discord.Emoji:
         func = guild.get_emoji
-    if attribute_type is int:
+    elif attribute_type is int:
         func = None
-    if attribute_type is str:
+    elif attribute_type is str:
         return str(attribute_value)
+    else:
+        raise NotImplementedError(attribute_type)
 
     if attribute_value is None:
         # to prevent TypeError from int(None) later.
@@ -173,14 +178,12 @@ def parse_attribute(
     try:
         # all of these require a <object>.id (or the attribute itself is an int)
         attribute_value_id = int(attribute_value)
-        parsed_attribute = attribute_value_id
     except ValueError:
         return None
 
-    if func is not None:
-        parsed_attribute = parse_id_generic(
-            invalid_arguments, attribute_key, func, attribute_value_id
-        )
+    parsed_attribute = parse_id_generic(
+        invalid_arguments, attribute_key, func, attribute_value_id
+    )
     return parsed_attribute
 
 

@@ -6,12 +6,13 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
-from resources.checks import is_admin_check, not_in_dms_check
+from extensions.watchlist.local_watchlist import import_watchlist_threads
+from resources.checks import is_admin_check, not_in_dms_check, module_enabled_check, MissingAttributesCheckFailure
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import (
     ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules, TypeAutocomplete, ModeAutocomplete,
-    parse_attribute, get_attribute_type
+    parse_attribute, get_attribute_type, ModuleKeys, AttributeKeys
 )
 
 if typing.TYPE_CHECKING:
@@ -457,6 +458,22 @@ class SettingsCog(commands.Cog):
         await itx.response.send_message("Successfully migrated databases.", ephemeral=True)
         itx.client.server_settings = await ServerSettings.fetch_all(itx.client)
         await itx.edit_original_response(content="Migrated databases and re-fetched all server settings.")
+
+    @app_commands.check(is_admin_check)
+    @module_enabled_check(ModuleKeys.watchlist)
+    @app_commands.command(name="migrate-watchlist",
+                          description="Fetch all watchlist threads for this server.")
+    async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
+        watchlist_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.watchlist_channel)
+        if watchlist_channel is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.watchlist_channel)
+        print(watchlist_channel, type(watchlist_channel))
+        await itx.response.defer(ephemeral=True)
+        await import_watchlist_threads(itx.client.async_rina_db,
+                                       watchlist_channel)
+        await itx.followup.send("Successfully imported watchlist threads.",
+                                ephemeral=True)
 
     @app_commands.command(name="settings", description="Edit bot settings for this server.")
     @app_commands.describe(setting_type="What do you want to modify?",

@@ -5,7 +5,6 @@ class AttributeKeys:
     rather than using magic strings.
     """
     parent_server = "parent_server"
-    child_servers = "child_servers"
 
     admin_roles = "admin_roles"
     staff_roles = "staff_roles"

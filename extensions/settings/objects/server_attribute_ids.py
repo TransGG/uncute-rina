@@ -15,7 +15,6 @@ class ServerAttributeIds(TypedDict, total=False):
     # When adding a new key to this class, make sure to add the same key to the ServerAttributes class
 
     parent_server: GuildId
-    child_servers: list[GuildId]
 
     admin_roles: list[RoleId]
     staff_roles: list[RoleId]

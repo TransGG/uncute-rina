@@ -16,7 +16,7 @@ from resources.customs import Bot, ProgressBar
 from resources.customs import ApiTokenDict
 
 from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
-from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
+from extensions.watchlist.local_watchlist import fetch_all_watchlists
 # ^ for fetching all watchlists on startup
 from extensions.settings.objects import ServerSettings
 
@@ -192,27 +192,18 @@ def start_app():
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
         post_startup_progress = ProgressBar(3)
+
         post_startup_progress.progress("Loading all server settings...")
         client.server_settings = await ServerSettings.fetch_all(client)
         post_startup_progress.step("Loaded server settings.")
+
         post_startup_progress.progress("Loading all server tags...")
         _ = await fetch_all_tags(client.async_rina_db)  # stored in global var
         post_startup_progress.step("Loaded server tags.")
 
-        post_startup_progress.progress("Pre-loading all watchlist threads")
-        # todo: add support for multiple watchlist channels...
-        watchlist_channel: discord.TextChannel | None = client.get_guild_attribute(
-            )
-        if:
-            if:
-                if:
-        # todo: this needs to be fixed asap
-
-        # watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
-        # if watchlist_channel is not None:  # if running on prod
-        #     await get_or_fetch_watchlist_index(watchlist_channel)
-        #
-        # post_startup_progress.step("Loaded watchlist threads.")
+        post_startup_progress.progress("Loading all watchlist threads...")
+        _ = await fetch_all_watchlists(client.async_rina_db)
+        post_startup_progress.step("Loaded watchlist threads.")
 
     @client.event
     async def setup_hook():

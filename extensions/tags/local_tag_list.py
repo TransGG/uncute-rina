@@ -32,7 +32,7 @@ def get_tags(
         guild: discord.Guild,
 ) -> dict[str, DatabaseTagObject]:
     """
-    Get a tag from the cache.
+    Get a server's tags from the cache.
 
     :param guild: The guild to get tags from.
 
@@ -61,6 +61,7 @@ async def create_tag(
     :param embed_description: The description of the tag embed.
     :param embed_color: The color of the tag embed.
     """
+    global local_tag_list
     if len(embed_title) > 256:
         raise ValueError("Embed title too long.")
     if len(embed_description) > 4096:
@@ -76,7 +77,7 @@ async def create_tag(
     await add_data(
         async_rina_db,
         guild.id,
-        DatabaseKeys.watchlist,
+        DatabaseKeys.tag_list,
         tag_name,
         embed_object,
     )
@@ -100,10 +101,11 @@ async def remove_tag(
     :param tag_name: The name of the tag to remove.
     :return: Whether there was a tag with this name.
     """
+    global local_tag_list
     changed, _ = await remove_data(
         async_rina_db,
         guild.id,
-        DatabaseKeys.watchlist,
+        DatabaseKeys.tag_list,
         tag_name,
     )
 
@@ -127,10 +129,11 @@ async def fetch_tags(
     :return: A dictionary of tag names and the matching tag object in the
      given guild.
     """
+    global local_tag_list
     data: dict[str, dict] | None = await get_data(
         async_rina_db,
         guild.id,
-        DatabaseKeys.watchlist,
+        DatabaseKeys.tag_list,
     )
 
     if data is None:
@@ -151,15 +154,16 @@ async def fetch_all_tags(
     :return: A dictionary of guild_ids, with a dictionary of tag names and
      their corresponding tag objects.
     """
+    global local_tag_list
     data: dict[int, dict[str, dict]] = await get_all_data(
         async_rina_db,
-        DatabaseKeys.watchlist,
+        DatabaseKeys.tag_list,
     )
 
     for guild_id, tag_objects in data.items():
         tags = {}
         for tag_name, tag_data in tag_objects.items():
-            tag_object = DatabaseTagObject(**data)
+            tag_object = DatabaseTagObject(**tag_data)
             tags[tag_name] = tag_object
         local_tag_list[guild_id] = tags
 
