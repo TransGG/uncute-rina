@@ -251,11 +251,11 @@ async def _create_reminder(
     await view.wait()
     if view.value == 1:
         msg = f"{itx.user.mention} shared a reminder on <t:{_distance}:F> for \"{reminder}\""
-        copy_view = CopyReminder(itx.client, _create_reminder, reminder_object, timeout=300)
+        copy_view = CopyReminder(_create_reminder, reminder_object, timeout=300)
         try:
             await itx.channel.send(content=msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.Forbidden:
-            await view.return_interaction.response(msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
+            await view.return_interaction.response.send_message(msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
     await itx.edit_original_response(view=None)
 
 

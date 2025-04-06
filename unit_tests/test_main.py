@@ -40,7 +40,6 @@ def test_all_modules_exist():
     misnamed_extensions = []
     for extension in EXTENSIONS:
         extension_path = os.path.join(directory, extension)
-        print(extension_path)
         # Check if the item is a directory
         if os.path.isdir(extension_path):
             # Check if module.py exists in the extension directory

@@ -447,8 +447,11 @@ class SettingsCog(commands.Cog):
     def __init__(self):
         pass
 
+    migrate_group = app_commands.Group(name="migrate",
+                                       description="A grouping of migrate commands.")
+
     @app_commands.check(is_admin_check)
-    @app_commands.command(name="migrate", description="Migrate bot settings to new database.")
+    @migrate_group.command(name="migrate", description="Migrate bot settings to new database.")
     async def migrate(
             self,
             itx: discord.Interaction
@@ -461,14 +464,14 @@ class SettingsCog(commands.Cog):
 
     @app_commands.check(is_admin_check)
     @module_enabled_check(ModuleKeys.watchlist)
-    @app_commands.command(name="migrate-watchlist",
-                          description="Fetch all watchlist threads for this server.")
+    @migrate_group.command(name="migrate-watchlist",
+                           description="Fetch all watchlist threads for this server.")
     async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
         watchlist_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.watchlist_channel)
         if watchlist_channel is None:
             raise MissingAttributesCheckFailure(AttributeKeys.watchlist_channel)
-        print(watchlist_channel, type(watchlist_channel))
+
         await itx.response.defer(ephemeral=True)
         await import_watchlist_threads(itx.client.async_rina_db,
                                        watchlist_channel)

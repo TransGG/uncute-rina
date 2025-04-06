@@ -10,7 +10,7 @@ from resources.checks.permissions import is_staff  # to check role in _add_to_wa
 from resources.checks import is_staff_check, module_enabled_check, \
     MissingAttributesCheckFailure  # the cog is pretty much only intended for staff use
 
-from extensions.watchlist.local_watchlist import import_watchlist_threads, create_watchlist, get_watchlist
+from extensions.watchlist.local_watchlist import create_watchlist, get_watchlist
 from extensions.watchlist.modals import WatchlistReasonModal
 
 

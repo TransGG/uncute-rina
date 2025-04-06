@@ -139,7 +139,7 @@ def test_no_bad_module_names():
 
     # Act
     for enabled_module_key in EnabledModules.__annotations__:
-        if "." in enabled_module_key or enabled_module_key.starts_with("$"):
+        if "." in enabled_module_key or enabled_module_key.startswith("$"):
             invalid_names.append(enabled_module_key)
 
     # Assert

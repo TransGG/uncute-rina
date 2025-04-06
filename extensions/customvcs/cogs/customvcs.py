@@ -95,7 +95,6 @@ async def _create_new_custom_vc(
                 continue
             await custom_vc.edit(position=custom_vc.position + 1)
     except discord.HTTPException as ex:
-        warning = str(ex) + ": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
         try:
             await member.move_to(None,
                                  reason="Couldn't create a new Custom voice channel so kicked them from their "
@@ -104,7 +103,8 @@ async def _create_new_custom_vc(
             # notice that they left the channel.
         except discord.HTTPException:
             await vc.delete()
-        await client.log_channel.send(content=warning, allowed_mentions=discord.AllowedMentions.none())
+        warning = str(ex) + ": User clicked the vcHub too fast, and it couldn't move them to their new channel\n"
+        await log_to_guild(client, member.guild, msg=warning)
         raise
 
     await log_to_guild(client, member.guild,

@@ -187,14 +187,15 @@ class ToneIndicator(commands.Cog):
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, private_channels=True, dms=True)
     async def toneindicator(self, itx: discord.Interaction, mode: int, string: str, public: bool = False):
-        # todo: clarify error messages when stuff is not found, typically because people search for the
-        #  definition for "p", when they should be looking for "exact acronym" or "rough acronym" instead.
+        # todo: rewrite function to be slightly neater, using enums to denote
+        #  the mode.
         result = False
         results = []
         result_str = ""
         if mode == 1:
             for key in tone_indicators:
-                if string.replace("-", " ") in key.replace("-", " ") or string.replace("-", "") in key.replace("-", ""):
+                if (string.replace("-", " ") in key.replace("-", " ")
+                        or string.replace("-", "") in key.replace("-", "")):
                     overlaps = []
                     overlapper = ""
                     for key1 in tone_indicators:
@@ -255,11 +256,17 @@ class ToneIndicator(commands.Cog):
             for x in results:
                 result_str += f"> '{x[0]}',{' ' * (max_length - len(x[0]))} meaning {x[1]}\n"
         if not result:
-            result_str += (f"No information found for '{string}'...\n"
-                           f"If you believe this to be a mistake or want to add a new tone indicator, message a "
-                           f"staff member (ask for Mia)")
+            result_str += (
+                f"No information found for '{string}'...\n"
+                f"Make sure you're looking for the right thing. If you are "
+                f"looking for the acronym for \"platonic\", you should set "
+                f"`mode: ` to \"definition\". If you are looking for the "
+                f"definition of a \"/j\", you should set `mode: ` to"
+                f"\"exact acronym\" or \"rough acronym\".\n"
+                f"If you believe this tone tag should be added to the "
+                f"dictionary, message @mysticmia on discord (bot developer)")
 
-        if len(result_str.split("\n")) > 6 and public:
+        elif len(result_str.split("\n")) > 6 and public:
             public = False
             result_str += "\nDidn't send your message as public cause it would be spammy, having this many results."
         if len(result_str) > 1999:

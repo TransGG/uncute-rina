@@ -8,6 +8,7 @@ from typing import TypedDict, Any, TypeVar, Callable
 
 import discord
 
+from .attribute_keys import AttributeKeys
 from .server_attributes import ServerAttributes
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
@@ -77,19 +78,24 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> tup
 
     # Format attributes in the new ServerAttributeIds format
     converted_settings = {
-        "custom_vc_create_channel": custom_vc_create_channel_id,
-        "log_channel": log_channel_id,
-        "custom_vc_category": custom_vc_category_id,
-        "starboard_channel": starboard_channel_id,
-        "starboard_minimum_upvote_count": starboard_minimum_upvote_count,
-        "bump_reminder_channel": bump_reminder_channel_id,
-        "bump_reminder_role": bump_reminder_role_id,
-        "poll_reaction_blacklisted_channels": poll_reaction_blacklisted_channel_ids,
-        "bump_reminder_bot": bump_reminder_bot_id,
-        "starboard_blacklisted_channels": starboard_blacklisted_channel_ids,
-        "starboard_upvote_emoji": starboard_upvote_emoji_id,
-        "starboard_minimum_vote_count_for_downvote_delete": starboard_minimum_vote_count_for_downvote_delete,
-        "voice_channel_logs_channel": voice_channel_logs_channel_id,
+        AttributeKeys.custom_vc_create_channel: custom_vc_create_channel_id,
+        AttributeKeys.log_channel: log_channel_id,
+        AttributeKeys.custom_vc_category: custom_vc_category_id,
+        AttributeKeys.starboard_channel: starboard_channel_id,
+        AttributeKeys.starboard_minimum_upvote_count:
+            starboard_minimum_upvote_count,
+        AttributeKeys.bump_reminder_channel: bump_reminder_channel_id,
+        AttributeKeys.bump_reminder_role: bump_reminder_role_id,
+        AttributeKeys.poll_reaction_blacklisted_channels:
+            poll_reaction_blacklisted_channel_ids,
+        AttributeKeys.bump_reminder_bot: bump_reminder_bot_id,
+        AttributeKeys.starboard_blacklisted_channels:
+            starboard_blacklisted_channel_ids,
+        AttributeKeys.starboard_upvote_emoji: starboard_upvote_emoji_id,
+        AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
+            starboard_minimum_vote_count_for_downvote_delete,
+        AttributeKeys.voice_channel_activity_logs_channel:
+            voice_channel_logs_channel_id,
     }
 
     # remove all Nones
@@ -141,7 +147,7 @@ def parse_attribute(
     :param attribute_value: The attribute value to parse.
     :param invalid_arguments: An optional dictionary tracking previously unparseable arguments.
     :return: The parsed value, or None if not found.
-    :raise NotImplementedError: If the attribute type is not supported.
+    :raise ParseError: If the attribute could not be parsed or is of the wrong type.
     """
     if invalid_arguments is None:
         invalid_arguments = {}
@@ -166,11 +172,14 @@ def parse_attribute(
     elif attribute_type is discord.Emoji:
         func = guild.get_emoji
     elif attribute_type is int:
-        func = None
+        # the value should already be an int anyway
+        return attribute_value
     elif attribute_type is str:
         return str(attribute_value)
     else:
-        raise NotImplementedError(attribute_type)
+        raise ParseError(f"Type '{attribute_type}' of attribute "
+                         f"{attribute_key} could not be parsed. "
+                         f"(Attribute value: '{attribute_value}')")
 
     if attribute_value is None:
         # to prevent TypeError from int(None) later.

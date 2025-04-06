@@ -290,7 +290,8 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
             await itx.followup.send("Successfully converted channel to VcTable and set you as owner.\n" + warning,
                                     ephemeral=True)
         except discord.errors.NotFound:
-            await itx.followup.send("I was unable to name your VcTable, but I managed to set the permissions for it.")
+            await itx.followup.send("I was unable to name your VcTable, but I managed to set the permissions for it.",
+                                    ephemeral=True)
 
     @module_enabled_check(ModuleKeys.vc_tables)
     @app_commands.command(name="disband", description="reset permissions and convert vctable back to customvc")

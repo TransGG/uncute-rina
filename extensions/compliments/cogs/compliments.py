@@ -349,7 +349,6 @@ class Compliments(commands.Cog):
         else:
             raise NotImplementedError("This shouldn't happen.")
 
-        print(db_location)
         if mode == 1:  # add an item to the blacklist
             if string is None:
                 await itx.response.send_message(

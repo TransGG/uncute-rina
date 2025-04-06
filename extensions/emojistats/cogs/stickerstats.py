@@ -153,7 +153,7 @@ class StickerStats(commands.Cog):
         if len(output) > 1850:
             warning = "\nShortened to be able to be sent."
             output = output[:(2000 - len(header) - len(warning) - 5)] + warning
-        await itx.followup.send(content=header + output)
+        await itx.followup.send(content=header + output, ephemeral=not public)
 
     @stickerstats.command(name="getstickertop10", description="Get top 10 most used stickers")
     @app_commands.check(not_in_dms_check)

@@ -229,9 +229,8 @@ def start_app():
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
         except discord.errors.Forbidden:
-            client.running_on_production = False
-            client.log_channel = await client.fetch_channel(986304081234624554)
-            # client.log_channel = await client.fetch_channel(1062396920187863111)
+            # client.log_channel = await client.fetch_channel(986304081234624554)
+            client.log_channel = await client.fetch_channel(1062396920187863111)
         client.bot_owner = await client.fetch_user(262913789375021056)
         # client.bot_owner = (await client.application_info()).owner  # or client.owner / client.owner_id :P
         # can't use the commented out code because Rina is owned by someone else in the main server than
