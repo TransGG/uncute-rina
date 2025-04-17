@@ -207,6 +207,8 @@ async def _handle_settings_attribute(
     :param modify_mode: The mode to use when modifying the attribute.
     :param value: The value to give the attribute or remove from the attribute (depending on the *modify_mode*.
     """
+    itx.response: discord.InteractionResponse[Bot]  # noqa
+    itx.followup: discord.Webhook  # noqa
     attribute_keys = ServerAttributes.__annotations__
 
     if setting is None:
@@ -258,7 +260,7 @@ async def _handle_settings_attribute(
         invalid_arguments = {}
         attribute = parse_attribute(
             itx.client, itx.guild, setting, value, invalid_arguments=invalid_arguments
-        )
+        )  # todo: check if ParseError handled
         if invalid_arguments and modify_mode not in [ModeAutocomplete.remove, ModeAutocomplete.remove]:
             # allow removal of malformed data
             attribute_type, _ = get_attribute_type(setting)
@@ -274,6 +276,22 @@ async def _handle_settings_attribute(
         else:
             # int, str
             database_value = attribute
+
+        if setting == AttributeKeys.parent_server:
+            # Check if the given server or one of its parents has this server
+            #  marked as a parent already.
+            assert type(database_value) is int
+            has_current_server, parent_server_id = await _has_guild_as_parent(
+                itx.client, itx.guild, database_value)
+            if has_current_server:
+                # parent_server should not be None if has_current_server is True
+                await itx.followup.send(
+                    f"You can't set this server as parent, since it or "
+                    f"one of its parents (guild id `{parent_server_id}`) "
+                    f"already has this server as its parent!",
+                    ephemeral=True
+                )
+                return
 
         if modify_mode == ModeAutocomplete.set:
             await ServerSettings.set_attribute(
@@ -343,6 +361,31 @@ async def _handle_settings_attribute(
         return
 
     await itx.followup.send(f"Successfully modified the value for '{setting}'!", ephemeral=True)
+
+
+async def _has_guild_as_parent(
+        client: Bot, guild: discord.Guild, parent_server_id: int
+) -> tuple[bool, int | None]:
+    """
+    Whether the given parent server has this guild as its parent (recursively).
+
+    Check if any of the parent server id's parent servers is equal to the
+    given guild.
+
+    :param client: The client to fetch the parent
+    :param guild: The guild to check for recursive parenting.
+    :param parent_server_id: The parent guild to link to the given guild.
+    :return: A tuple of whether any parent servers has this server as its
+     parent already; and the parent server id in question
+    """
+    has_current_server = False
+    while parent_server_id is not None:
+        if parent_server_id == guild.id:
+            has_current_server = True
+            break
+        parent_server_id = client.get_guild_attribute(
+            parent_server_id, AttributeKeys.parent_server)
+    return has_current_server, parent_server_id
 
 
 async def _handle_settings_module(

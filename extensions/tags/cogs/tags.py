@@ -50,7 +50,7 @@ async def _role_autocomplete(itx: discord.Interaction, current: str):
 
 
 async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
-    if itx.namespace.mode == TagMode.value:
+    if itx.namespace.mode == TagMode.delete.value:
         tag_objects = get_tags(itx.guild)
         return [
             app_commands.Choice(name=key, value=key)
@@ -165,6 +165,8 @@ class TagFunctions(commands.Cog):
 
             await create_tag(itx.client.async_rina_db, itx.guild, tag_name,
                              tag_title, description, color_tuple)
+            await itx.response.send_message(
+                f"Created tag '{tag_name}'.", ephemeral=True)
         elif mode == TagMode.delete.value:
             changed = await remove_tag(itx.client.async_rina_db,
                                        itx.guild, tag_name)
