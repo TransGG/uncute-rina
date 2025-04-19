@@ -21,8 +21,8 @@ class ChangeChannel(commands.Cog):
             await itx.response.send_message("I cannot send messages in the destination channel.", ephemeral=True)
             return
 
-        response = await itx.response.send_message(destination.mention, ephemeral=False)
+        response = await itx.response.defer(ephemeral=False)
 
         source = response.resource
-        target = await destination.send(f"[{source.jump_url} =>]")
-        await source.edit(content=f"[=> {target.jump_url}]")
+        target = await destination.send(f"Conversation was moved from {source.jump_url} by {itx.user.mention}.")
+        await source.edit(content=f"{itx.user.mention} has requested to move the conversation to {target.jump_url}.")
