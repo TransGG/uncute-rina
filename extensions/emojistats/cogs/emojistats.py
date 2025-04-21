@@ -9,6 +9,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.emojistats.database_dicts import EmojiStatsData
 from resources.customs import Bot
 
 from extensions.emojistats.emojisendsource import EmojiSendSource
@@ -24,7 +25,6 @@ from resources.checks import not_in_dms_check
 #          lastUsed = 1666720691                    #  int  of unix timestamp of when this emoji was last used
 #          animated = false                         #  bool of emoji.animated
 # reactionUsedCount = 8                             #  int  of how often messages have been replied to with this emoji
-
 
 async def _add_to_emoji_data(
         emoji: tuple[bool, str, str],
@@ -215,14 +215,15 @@ class EmojiStats(commands.Cog):
             # only limit query with 'animated' if its value actually matters (not 3 / "Both")
             query["animated"] = animated == 1
 
-        emoji_stats: list[dict[
-            typing.Literal["id", "messageUsedCount", "reactionUsedCount", "animated"],
-            str | int | bool]] = [x async for x in collection.find(query)]
-        emoji_stat_ids: list[str] = await collection.distinct("id")
+        emoji_stats: list[EmojiStatsData] = \
+            [x async for x in collection.find(query)]
+        emoji_stat_ids: list[str] = [s["id"] for s in emoji_stats]
 
         for emoji in itx.guild.emojis:
             if str(emoji.id) not in emoji_stat_ids:
-                unused_emojis.append(f"<{'a' * emoji.animated}:{emoji.name}:{emoji.id}> (0,0)")
+                unused_emojis.append(
+                    f"<{'a' * emoji.animated}:{emoji.name}:{emoji.id}> (0,0)"
+                )
                 continue
 
             for emoji_stat in emoji_stats:
@@ -232,16 +233,22 @@ class EmojiStats(commands.Cog):
             else:
                 continue  # emoji doesn't exist anymore?
 
-            if emoji_stat["messageUsedCount"] + emoji_stat["reactionUsedCount"] > used_max:
+            if (emoji_stat.get("messageUsedCount", 0)
+                    + emoji_stat.get("reactionUsedCount", 0)
+                    > used_max):
                 continue
 
-            unused_emojis.append(f"<{'a' * emoji.animated}:{emoji.name}:{emoji.id}>" +
-                                 f"({emoji_stat.get('messageUsedCount', 0)},{emoji_stat.get('reactionUsedCount', 0)})")
+            unused_emojis.append(
+                f"<{'a' * emoji.animated}:{emoji.name}:{emoji.id}>"
+                f"({emoji_stat.get('messageUsedCount', 0)},"
+                f"{emoji_stat.get('reactionUsedCount', 0)})"
+            )
 
             if len(unused_emojis) >= max_results:
                 break
 
-        header = "These emojis have been used very little (x used in msg, x used as reaction):\n"
+        header = ("These emojis have been used very little "
+                  "(x used in msg, x used as reaction):\n")
         output = ', '.join(unused_emojis)
         if len(output) > 1850:
             warning = "\nShortened to be able to be sent."

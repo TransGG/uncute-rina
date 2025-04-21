@@ -26,14 +26,11 @@ class BumpReminder(commands.Cog):
             raise MissingAttributesCheckFailure(
                 ModuleKeys.bump_reminder, AttributeKeys.bump_reminder_bot)
 
+        if message.author.id != bump_bot.id:
+            return
         if len(message.embeds) > 0:
-            if message.embeds[0].description is not None:
-                if message.embeds[0].description.startswith("Bump done!"):
-                    # collection = self.client.rina_db["guildInfo"]
-                    # query = {"guild_id": message.guild.id}
-                    # guild_data = collection.find_one(query)
-                    # bump_bot_id = guild_data["bumpBot"]
-
-                    if message.author.id == bump_bot.id:
-                        remindertime = datetime.now().astimezone() + timedelta(hours=2)
-                        BumpReminderObject(self.client, message.guild, remindertime)
+            if message.embeds[0].description is None:
+                return
+            if message.embeds[0].description.startswith("Bump done!"):
+                remindertime = datetime.now().astimezone() + timedelta(hours=2)
+                BumpReminderObject(self.client, message.guild, remindertime)

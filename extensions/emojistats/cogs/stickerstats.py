@@ -124,7 +124,8 @@ class StickerStats(commands.Cog):
             # Some entries don't have a value for it- Don't want to search for a "0" then.
             query["messageUsedCount"] = {"$lte": used_max}
 
-        sticker_stats: list[dict[str, str | int | bool]] = [x async for x in collection.find(query)]
+        sticker_stats: list[dict[str, str | int | bool]] = \
+            [x async for x in collection.find(query)]
         sticker_stat_ids: list[str] = await collection.distinct("id")
 
         for sticker in await itx.guild.fetch_stickers():
@@ -134,16 +135,20 @@ class StickerStats(commands.Cog):
 
             for sticker_stat in sticker_stats:
                 if sticker_stat["id"] == str(
-                        sticker.id):  # assumes the db ID column is unique (grabs first matching result)
+                        sticker.id):
+                    # assumes the db ID column is unique
+                    #  (grabs first matching result)
                     break
             else:
                 continue  # sticker doesn't exist anymore?
 
-            if sticker_stat["messageUsedCount"] + sticker_stat["reactionUsedCount"] > used_max:
+            if sticker_stat.get("messageUsedCount", 0) > used_max:
                 continue
 
-            unused_stickers.append(f"<{sticker.name}\\:{sticker.id}>" +
-                                   f"({sticker_stat.get('messageUsedCount', 0)})")
+            unused_stickers.append(
+                f"<{sticker.name}\\:{sticker.id}>" +
+                f"({sticker_stat.get('messageUsedCount', 0)})"
+            )
 
             if len(unused_stickers) > max_results:
                 break
