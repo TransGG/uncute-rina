@@ -2,13 +2,21 @@ class EqualDexRegion:
     """
     A class containing an EqualDex API response.
 
-    Attributes:
-        id: A short `ISO Code <https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements>`_
-         of a country. Some examples: America: US, Germany: DE, United Kingdom: GB.
-        name: The English name of the country.
-        continent: The English continent name of the country.
-        url: A url to the equaldex.com page with more information about the laws.
-        issues: A list or dictionary of issues related to the laws of the country.
+    Attributes
+    ----------
+    id
+        A short `ISO Code <https://en.wikipedia.org/wiki/
+        ISO_3166-1_alpha-2#Officially_assigned_code_elements>`_
+        of a country. Some examples: America: US, Germany: DE,
+        United Kingdom: GB.
+    name
+        The English name of the country.
+    continent
+        The English continent name of the country.
+    url
+        A url to the equaldex.com page with more information about the laws.
+    issues
+        A list or dictionary of issues related to the laws of the country.
     """
     def __init__(self, data: dict):
         """

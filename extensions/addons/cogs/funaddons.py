@@ -37,7 +37,7 @@ def _generate_roll(query: str) -> list[int]:
 
     :param query: The string representing the dice roll.
     :return: A list of outcomes following from the dice roll. 2d6 will return
-    a list with 2 integers, ranging from 1-6.
+     a list with 2 integers, ranging from 1-6.
     """
     # print(query)
     temp: list[str | int] = query.split("d")
