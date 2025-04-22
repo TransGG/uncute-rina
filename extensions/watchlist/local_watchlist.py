@@ -7,10 +7,6 @@ from resources.pymongo.guild_customs_manager import (
 )
 
 
-local_watchlist_index: dict[int, int] = {}  # user_id, thread_id
-busy_updating_watchlist_index: bool = False
-
-
 local_watchlist: dict[int, dict[int, int]] = {}
 watchlist_loaded = False
 
@@ -179,11 +175,7 @@ async def fetch_all_watchlists(
         DatabaseKeys.watchlist,
     )
 
-    for guild_id, watchlist_objects in data.items():
-        watchlists = {}
-        for user_id, thread_id in watchlist_objects.items():
-            watchlists[user_id] = thread_id
-        local_watchlist[guild_id] = watchlists
+    local_watchlist = data
     watchlist_loaded = True
     return local_watchlist
 

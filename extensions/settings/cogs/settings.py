@@ -6,6 +6,7 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
+from extensions.starboard.localstarboard import import_starboard_messages
 from extensions.watchlist.local_watchlist import import_watchlist_threads
 from resources.checks import is_admin_check, not_in_dms_check, module_enabled_check, MissingAttributesCheckFailure
 
@@ -518,6 +519,22 @@ class SettingsCog(commands.Cog):
         await itx.response.defer(ephemeral=True)
         await import_watchlist_threads(itx.client.async_rina_db,
                                        watchlist_channel)
+        await itx.followup.send("Successfully imported watchlist threads.",
+                                ephemeral=True)
+
+    @app_commands.check(is_admin_check)
+    @module_enabled_check(ModuleKeys.starboard)
+    @migrate_group.command(name="migrate-starboard",
+                           description="Fetch all starboard messages for this server.")
+    async def migrate_starboard(self, itx: discord.Interaction[Bot]):
+        starboard_channel: discord.abc.Messageable | None = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.starboard_channel)
+        if starboard_channel is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.starboard_channel)
+
+        await itx.response.defer(ephemeral=True)
+        await import_starboard_messages(itx.client.async_rina_db,
+                                        starboard_channel)
         await itx.followup.send("Successfully imported watchlist threads.",
                                 ephemeral=True)
 

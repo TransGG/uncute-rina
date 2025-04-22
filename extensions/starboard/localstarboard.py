@@ -1,57 +1,168 @@
-import asyncio
-from datetime import datetime, timezone
-
 import discord
+from motor.core import AgnosticDatabase
+
+from resources.pymongo import (
+    remove_data, DatabaseKeys, add_data, get_data, get_all_data
+)
 
 
-local_starboard_message_list_refresh_timestamp = datetime.fromtimestamp(0, timezone.utc)
-STARBOARD_REFRESH_DELAY = 3000
-local_starboard_message_list: list[discord.Message] = []
-busy_updating_starboard_messages = False
+GuildId = int
+StarboardMessageId = int
+OriginalChannelId = int
+OriginalMessageId = int
+OriginalMessageData = tuple[OriginalChannelId, OriginalMessageId]
+
+local_starboard_index: dict[GuildId, dict[StarboardMessageId, OriginalMessageData]] = {}
+starboard_loaded = False
 
 
-async def get_or_fetch_starboard_messages(
+class StarboardNotLoadedException(Exception):
+    pass
+
+
+async def import_starboard_messages(
+        async_rina_db: AgnosticDatabase,
         starboard_channel: discord.abc.Messageable
-) -> list[discord.Message]:
-    """
-    Fetch list of all starboard messages, unless it is already fetching: then it waits until the
-    other instance of the fetching function is done and retrieves the cached list. The list is
-    stored for :py:const:`STARBOARD_REFRESH_DELAY` seconds.
-
-    :param starboard_channel: The starboard channel to fetch messages from.
-
-    :return: A list of starboard messages (sent by the bot) in the starboard channel.
-    """
-    global busy_updating_starboard_messages, local_starboard_message_list, \
-        local_starboard_message_list_refresh_timestamp
-    time_since_last_starboard_fetch = (
-        datetime.now().astimezone() - local_starboard_message_list_refresh_timestamp
-    ).total_seconds()
-    if not busy_updating_starboard_messages and time_since_last_starboard_fetch > STARBOARD_REFRESH_DELAY:
-        # refresh once every STARBOARD_REFRESH_DELAY seconds
-        busy_updating_starboard_messages = True
-        messages: list[discord.Message] = []
-        async for star_message in starboard_channel.history(limit=None):
-            messages.append(star_message)
-        local_starboard_message_list = messages
-        local_starboard_message_list_refresh_timestamp = datetime.now().astimezone()
-        busy_updating_starboard_messages = False
-    while busy_updating_starboard_messages:
-        # wait until not busy anymore
-        await asyncio.sleep(1)
-    return local_starboard_message_list
-
-
-def add_to_local_starboard(
-        msg
 ):
-    global local_starboard_message_list
-    local_starboard_message_list.append(msg)
+    """
+
+    :param async_rina_db:
+    :param starboard_channel:
+    :return:
+    """
+    global local_starboard_index
+    if not starboard_loaded:
+        raise StarboardNotLoadedException()
+
+    async for starboard_msg in starboard_channel.history(limit=None):
+        try:
+            guild_id, channel_id, message_id = parse_starboard_message(starboard_msg)
+        except ValueError:
+            continue
+
+        orig_data = (channel_id, message_id)
+        local_starboard_index[guild_id][starboard_msg.id] = orig_data
+
+        await add_data(
+            async_rina_db, starboard_msg.guild.id, DatabaseKeys.starboard,
+            starboard_msg.id, orig_data
+        )
+
+    return local_starboard_index
 
 
-def delete_from_local_starboard(starboard_message_id: int) -> None:
-    global local_starboard_message_list
-    for i in range(len(local_starboard_message_list)):
-        if local_starboard_message_list[i].id == starboard_message_id:
-            del local_starboard_message_list[i]
-            break
+async def fetch_starboard_messages(
+        async_rina_db: AgnosticDatabase,
+        guild_id: GuildId,
+) -> dict[StarboardMessageId, OriginalMessageData]:
+    data = await get_data(async_rina_db, guild_id, DatabaseKeys.starboard)
+    if data is None:
+        return {}
+
+    local_starboard_index[guild_id] = data
+    return local_starboard_index[guild_id]
+
+
+async def fetch_all_starboard_messages(
+    async_rina_db: AgnosticDatabase,
+) -> dict[GuildId, dict[StarboardMessageId, OriginalMessageData]]:
+    global local_starboard_index, starboard_loaded
+    data = await get_all_data(async_rina_db, DatabaseKeys.starboard)
+    if data is None:
+        return {}
+
+    local_starboard_index = data
+    starboard_loaded = True
+    return local_starboard_index
+
+
+def get_starboard_message_ids(
+        guild_id: GuildId
+) -> dict[StarboardMessageId, tuple[OriginalChannelId, OriginalMessageId]]:
+    """
+    Retrieve the list of all starboard data for a guild.
+
+    :param guild_id: The guild to get data for.
+    :return: A tuple of the starboard message id, the original message's
+     channel id, and the original message's id.
+    """
+    if not starboard_loaded:
+        raise StarboardNotLoadedException()
+    return local_starboard_index.get(guild_id, {})
+
+
+def get_starboard_message_id(
+        guild_id: GuildId,
+        message_id: OriginalMessageId
+) -> StarboardMessageId | None:
+    if not starboard_loaded:
+        raise StarboardNotLoadedException()
+    for star_id, msg_data in get_starboard_message_ids(guild_id).items():
+        orig_chan, orig_id = msg_data
+        if orig_id == message_id:
+            return star_id
+    return None
+
+
+def get_original_message_id(
+        guild_id: GuildId,
+        message_id: OriginalMessageId
+) -> tuple[OriginalChannelId, OriginalMessageId] | None:
+    if not starboard_loaded:
+        raise StarboardNotLoadedException()
+    for star_id, orig_chan, orig_id in get_starboard_message_ids(guild_id):
+        if star_id == message_id:
+            return orig_chan, orig_id
+    return None
+
+
+def parse_starboard_message(
+    starboard_msg: discord.Message,
+) -> tuple[GuildId, OriginalChannelId, OriginalMessageId]:
+    # find original message
+    if len(starboard_msg.embeds) == 0:
+        raise ValueError("Message has no embeds.")
+    if len(starboard_msg.embeds[0].fields) == 0:
+        raise ValueError("Message embed has no fields.")
+    text = starboard_msg.embeds[0].fields[0].value
+    # "[Jump!](https:/ /4/5/6/)" -> "https:/ /4/5/6/)"
+    link = text.split("(")[1]
+    # Initial attempt to use [:-1] to remove the final ")" character
+    #  doesn't work if there are unknown files in the original starboard
+    #  message because rina mentions them in the starboard msg after the
+    #  [Jump] link, adding "\n[...]" so ye.
+    # "https:/ /4/5/6/)" -> "https:/ /4/5/6/"
+    link = link.split(")", 1)[0]
+    #   0    1      2           3
+    # https:/ /discord.com / channels /
+    #   4: guild_id          5: channel_id         6: message_id      7+
+    # 985931648094834798 / 1006682505149169694 / 1014887159485968455 / ...
+    guild_id, channel_id, message_id = [int(i) for i in link.split("/")[4:]]
+    return guild_id, channel_id, message_id
+
+
+async def add_to_local_starboard(
+        async_rina_db: AgnosticDatabase,
+        starboard_msg: discord.Message,
+        original_msg: discord.Message
+):
+    global local_starboard_index
+    guild_id = starboard_msg.guild.id
+    if guild_id not in local_starboard_index:
+        local_starboard_index[guild_id] = {}
+
+    orig_data = (original_msg.channel.id, original_msg.id)
+    local_starboard_index[guild_id][starboard_msg.id] = orig_data
+
+    await add_data(async_rina_db, guild_id, DatabaseKeys.starboard,
+                   starboard_msg.id, orig_data)
+
+
+async def delete_from_local_starboard(
+        async_rina_db: AgnosticDatabase,
+        guild_id: int,
+        starboard_message_id: int
+) -> None:
+    local_starboard_index.get(guild_id, {}).pop(starboard_message_id, None)
+    await remove_data(async_rina_db, guild_id, DatabaseKeys.starboard,
+                      starboard_message_id)

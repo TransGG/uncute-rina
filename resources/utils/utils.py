@@ -181,8 +181,9 @@ async def log_to_guild(
         if guild is None:
             attribute_raw = "<server was None>"
         else:
+            guild_id = getattr(guild, "id", guild)
             entry = await ServerSettings.get_entry(client.async_rina_db,
-                                                   guild.id)
+                                                   guild_id)
             if entry is None:
                 attribute_raw = "<no server data>"
             else:
