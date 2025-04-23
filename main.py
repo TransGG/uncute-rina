@@ -45,6 +45,7 @@ EXTENSIONS = [
     "starboard",
     "nameusage",
     "reminders",
+    "staff_polls_channel",
     # "testing_commands",
 ]
 
