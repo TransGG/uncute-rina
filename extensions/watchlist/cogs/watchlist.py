@@ -210,9 +210,16 @@ async def _add_to_watchlist(
             )
             return
 
-        different_report_author_info = f" (message by {reported_message.author.mention})" if allow_different_report_author else ""
-        reported_message_info = (f"\n\n[Reported Message]({reported_message.jump_url}){different_report_author_info}"
-                                 f"\n>>> {reported_message.content}\n")
+        different_report_author_info = ""
+        if allow_different_report_author:
+            different_report_author_info = \
+                f" (message by {reported_message.author.mention})"
+
+        reported_message_info = (
+            f"\n\n[Reported Message]({reported_message.jump_url}"
+            f"{different_report_author_info}\n"
+            f">>> {reported_message.content}\n"
+        )
 
         if reported_message.attachments:
             reported_message_info += f"(:newspaper: Contains {len(reported_message.attachments)} attachments)\n"

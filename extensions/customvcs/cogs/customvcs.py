@@ -174,18 +174,26 @@ class CustomVcs(commands.Cog):
         customvc_category: discord.CategoryChannel | None
         vctable_prefix: str | None
         blacklisted_channels: list[discord.VoiceChannel]
-        customvc_hub, customvc_category, vctable_prefix, blacklisted_channels, vc_blacklist_prefix = self.client.get_guild_attribute(
-            member.guild, AttributeKeys.custom_vc_create_channel,
+        (
+            customvc_hub, customvc_category, vctable_prefix,
+            blacklisted_channels, vc_blacklist_prefix
+        ) = self.client.get_guild_attribute(
+            member.guild,
+            AttributeKeys.custom_vc_create_channel,
             AttributeKeys.custom_vc_category,
             AttributeKeys.vctable_prefix,
             AttributeKeys.custom_vc_blacklisted_channels,
-            AttributeKeys.custom_vc_blacklist_prefix)
-        if None in [customvc_hub, customvc_category, vctable_prefix, vc_blacklist_prefix]:
+            AttributeKeys.custom_vc_blacklist_prefix
+        )
+        if None in [customvc_hub, customvc_category,
+                    vctable_prefix, vc_blacklist_prefix]:
+            # `blacklisted_channels` can be left empty.
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: customvc_hub,
                 AttributeKeys.custom_vc_category: customvc_category,
                 AttributeKeys.vctable_prefix: vctable_prefix,
-                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix}.items()
+                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix
+            }.items()
                 if value is None]
             raise MissingAttributesCheckFailure(
                 ModuleKeys.custom_vcs, *missing)

@@ -108,11 +108,12 @@ def debug(
                     text = text.replace("&" + _detColor, "\033[" + detail_color[_detColor] + "m", 1)
         color = DebugColor.default
     else:
+        original_color = color
         if type(color) is str:
             color = color.replace(" ", "").replace("-", "").replace("_", "")
             color = getattr(DebugColor, color, None)
         if color is None:
-            warnings.warn("Invalid color given for debug function: " + color, SyntaxWarning)
+            warnings.warn("Invalid color given for debug function: " + original_color, SyntaxWarning)
             color = DebugColor.default
     if add_time:
         time = f"{color.value}[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}] [INFO]: "
@@ -126,7 +127,9 @@ def debug(
     logger.info(f"{time}{text}{DebugColor.default.value}" + end.replace('\r', '\033[F'))
 
 
-def get_mod_ticket_channel(client: Bot, guild_id: int | discord.Guild | discord.Interaction) -> discord.abc.Messageable | None:
+def get_mod_ticket_channel(
+        client: Bot, guild_id: int | discord.Guild | discord.Interaction
+) -> discord.abc.Messageable | None:
     """
     Fetch the #contact-staff ticket channel for a specific guild.
 
@@ -182,8 +185,8 @@ async def log_to_guild(
             attribute_raw = "<server was None>"
         else:
             guild_id = getattr(guild, "id", guild)
-            entry = await ServerSettings.get_entry(client.async_rina_db,
-                                                   guild_id)
+            entry = await ServerSettings.get_entry(
+                client.async_rina_db, guild_id)
             if entry is None:
                 attribute_raw = "<no server data>"
             else:
@@ -206,7 +209,8 @@ async def executed_in_dms(
         *,
         itx: discord.Interaction = None,
         message: discord.Message = None,
-        channel: discord.DMChannel | discord.GroupChannel | discord.TextChannel | discord.StageChannel |
+        channel: discord.DMChannel | discord.GroupChannel |
+        discord.TextChannel | discord.StageChannel |
         discord.VoiceChannel | discord.Thread = None
 ) -> bool:
     # make this a check

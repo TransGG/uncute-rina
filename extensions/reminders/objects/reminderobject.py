@@ -255,7 +255,10 @@ async def _create_reminder(
         try:
             await itx.channel.send(content=msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.Forbidden:
-            await view.return_interaction.response.send_message(msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
+            await view.return_interaction.response.send_message(
+                msg, view=copy_view,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
     await itx.edit_original_response(view=None)
 
 

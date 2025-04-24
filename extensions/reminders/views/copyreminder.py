@@ -40,9 +40,12 @@ class CopyReminder(discord.ui.View):
         if self.reminder.remindertime < itx.created_at.astimezone():
             cmd_mention = itx.client.get_command_mention("reminder remindme")
             cmd_mention1 = itx.client.get_command_mention("help")
-            await itx.response.send_message(f"This reminder has already passed! Use {cmd_mention} to create a new "
-                                            f"reminder, or use {cmd_mention1} `page:113` for more help about reminders.",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                f"This reminder has already passed! Use {cmd_mention} to "
+                f"create a new reminder, or use {cmd_mention1} `page:113` "
+                f"for more help about reminders.",
+                ephemeral=True
+            )
             return
         await self.create_reminder_callback(
             itx,

@@ -524,8 +524,10 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Enable the 'starboard' module.\n"
                 "- %%settings%% `type:Attribute` `setting:log_channel` `mode:Set` `value:123456789012345678`\n"
                 "  - Set the 'log_channel' attribute to '123456789012345678', the channel id.\n"
-                "- %%settings%% `type:Attribute` `setting:poll_reaction_blacklisted_channels` `mode:Add` `value:general`\n"
-                "  - poll_reaction_blacklisted_channels is a list of channels: [1,2,3]. Add the `general` channel to this list.\n"
+                "- %%settings%% `type:Attribute` `setting:poll_reaction_blacklisted_channels` "
+                "`mode:Add` `value:general`\n"
+                "  - poll_reaction_blacklisted_channels is a list of channels: [1,2,3]. "
+                "Add the `general` channel to this list.\n"
                 "  - When clicking autocomplete results, the value may be the name of the channel. You can use this "
                 "method, or fill in the ID manually and ignore the autocomplete result.\n"
             )
