@@ -333,8 +333,8 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
             )
 
-        if None in [star_channel, star_minimum, channel_blacklist,
-                    starboard_emoji, downvote_init_value]:
+        if None in (star_channel, star_minimum, channel_blacklist,
+                    starboard_emoji, downvote_init_value):
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_minimum_upvote_count: star_minimum,
@@ -431,7 +431,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
             )
 
-        if None in [star_channel, starboard_emoji, downvote_init_value]:
+        if None in (star_channel, starboard_emoji, downvote_init_value):
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji,
@@ -488,7 +488,7 @@ class Starboard(commands.Cog):
             AttributeKeys.starboard_upvote_emoji
         )
 
-        if None in [star_channel, starboard_emoji]:
+        if None in (star_channel, starboard_emoji):
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji}.items()

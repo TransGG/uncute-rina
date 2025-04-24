@@ -185,8 +185,8 @@ class CustomVcs(commands.Cog):
             AttributeKeys.custom_vc_blacklisted_channels,
             AttributeKeys.custom_vc_blacklist_prefix
         )
-        if None in [customvc_hub, customvc_category,
-                    vctable_prefix, vc_blacklist_prefix]:
+        if None in (customvc_hub, customvc_category,
+                    vctable_prefix, vc_blacklist_prefix):
             # `blacklisted_channels` can be left empty.
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: customvc_hub,
@@ -243,7 +243,7 @@ class CustomVcs(commands.Cog):
         if itx.user.voice is None:
             if is_staff(itx, itx.user):
                 staff_modal = CustomVcStaffEditorModal(
-                    itx.client, vc_hub, vc_log, vc_category, vctable_prefix)
+                    vc_hub, vc_log, vc_category, vctable_prefix)
                 await itx.response.send_modal(staff_modal)
                 return
             await itx.response.send_message("You must be connected to a voice channel to use this command",

@@ -11,6 +11,10 @@ from resources.checks.command_checks import is_in_dms
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
 
+
+MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
+
+
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
@@ -127,7 +131,7 @@ def _get_emoji_from_str(
 
     Returns:
         - ``None``: If no emoji found, or it can't be used by the bot (not in the server).
-        - ``discord.PartialEmoji``: If emoji is unicode.
+        - ``discord.PartialEmoji``: If emoji is Unicode.
         - ``discord.Emoji``: If emoji is valid and can be used but the bot.
 
     .. note::
@@ -274,7 +278,6 @@ class OtherAddons(commands.Cog):
         else:
             errors.append("- The message ID needs to be a number!")
 
-        MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
         upvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, upvote_emoji)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")

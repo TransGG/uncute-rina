@@ -66,6 +66,7 @@ class MemberData(commands.Cog):
             self, itx: discord.Interaction, lower_bound: str, upper_bound: str = None, doubles: bool = False,
             public: bool = False
     ):
+        # todo: split function into multiple subfunctions.
         if upper_bound is None:
             upper_bound = 0  # 0 days from now
         try:

@@ -152,7 +152,7 @@ def parse_attribute(
     if invalid_arguments is None:
         invalid_arguments = {}
     attribute_type, _ = get_attribute_type(attribute_key)
-    func = None
+
     if attribute_type is discord.Guild:
         func = client.get_guild
     elif attribute_type is discord.abc.Messageable:

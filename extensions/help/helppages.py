@@ -254,7 +254,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- (optional) An emoji or emoji ID.\n"
             ),
             (
-                "Examples",  # discord emojis don't work in code blocks :(, so gotta use unicode.
+                "Examples",  # discord emojis don't work in code blocks :(, so gotta use Unicode.
                 "- %%add_poll_reactions%% `message_id:1963131994116722778` `upvote_emoji:🐟` `downvote_emoji:🐢`\n"
                 "  - Adds a fish and then a turtle to a message with the id.\n"
                 "- %%add_poll_reactions%% `message_id:1134140122115838003` "

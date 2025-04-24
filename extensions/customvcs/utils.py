@@ -33,6 +33,7 @@ def edit_permissionoverwrite(
         perms: discord.PermissionOverwrite,
         overwrites: dict[str, bool]
 ) -> discord.PermissionOverwrite:
+    """A helper function to add overwrites to a PermissionOverwrite object."""
     perms_dict = dict(perms)
     perms_dict.update(overwrites)
     return discord.PermissionOverwrite(**perms_dict)

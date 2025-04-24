@@ -404,7 +404,7 @@ class WatchList(commands.Cog):
             AttributeKeys.badeline_bot,
             AttributeKeys.watchlist_channel
         )
-        if None in [staff_logs_category, badeline_bot, watchlist_channel]:
+        if None in (staff_logs_category, badeline_bot, watchlist_channel):
             missing = [key for key, value in {
                 AttributeKeys.staff_logs_category: staff_logs_category,
                 AttributeKeys.badeline_bot: badeline_bot,

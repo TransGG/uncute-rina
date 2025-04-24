@@ -5,6 +5,11 @@ recently_renamed_vcs: dict[int, list[datetime]] = {}  # make your own vcs!
 
 
 def clear_vc_rename_log(channel_id: int) -> None:
+    """
+    Helper function to clear the cached timestamps of renames of a custom vc.
+
+    :param channel_id: The channel to clear the rewrite timestamps for.
+    """
     global recently_renamed_vcs
     try:
         del recently_renamed_vcs[channel_id]

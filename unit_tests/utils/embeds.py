@@ -5,18 +5,19 @@ if TYPE_CHECKING:
     from discord.types import embed as d_embed
 
 
-def get_embed_issues(embed: discord.Embed) -> list[str]:
+def get_embed_issues(embed: discord.Embed) -> tuple[list[str], int]:
     """
     Validate an embed object and return a list of potential issues.
 
     :param embed: The embed you want to validate
 
-    :return: A list of issue descriptions for embed content size length limits.
+    :return: A tuple with a list of issue descriptions for embed content
+     size length limits; and the sum of characters in the embed fields.
 
     .. note::
 
-        This function is not perfect. Emojis like :newspaper: get converted to 📰, which would have a shorter
-        character length.
+        This function is not perfect. Emojis like :newspaper: get converted
+         to 📰, which would have a shorter character length.
     """
     issues = []
     total_characters = 0
@@ -73,4 +74,4 @@ def get_embed_issues(embed: discord.Embed) -> list[str]:
     if total_characters > 6000:
         issues.append(f"Total character count of embed exceeds 6000 characters (is '{total_characters}').")
 
-    return issues
+    return issues, total_characters

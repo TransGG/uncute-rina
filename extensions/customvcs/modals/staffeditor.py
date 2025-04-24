@@ -1,6 +1,5 @@
 import discord
 
-from resources.customs import Bot
 from resources.utils.utils import log_to_guild
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
@@ -8,7 +7,7 @@ from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 
 class CustomVcStaffEditorModal(discord.ui.Modal, title='Edit a custom vc\'s channel'):
     def __init__(
-            self, client: Bot, vc_hub: int, vc_log, vc_category, vctable_prefix
+            self, vc_hub: int, vc_log, vc_category, vctable_prefix
     ):
         super().__init__()
         self.vcHub = vc_hub

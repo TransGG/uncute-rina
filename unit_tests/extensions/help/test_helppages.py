@@ -59,7 +59,7 @@ def test_embed_lengths():
     for page_number, helppage in help_pages.items():
         page_embed = generate_help_page_embed(helppage, page_number, fake_client)
 
-        potential_issues = get_embed_issues(page_embed)
+        potential_issues, _ = get_embed_issues(page_embed)
 
         if potential_issues:
             issues = f"Page '{page_number}' embed issues:\n- " + "\n- ".join(potential_issues)

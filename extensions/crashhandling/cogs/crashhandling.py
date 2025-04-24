@@ -204,7 +204,8 @@ class CrashHandling(commands.Cog):
         if potential_guild is None:
             event = "unknown guild: " + event
         else:
-            event = f"guild: {potential_guild.id}, " + event
+            potential_guild = getattr(potential_guild, "id", potential_guild)
+            event = f"guild: {potential_guild}, " + event
 
         await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
 

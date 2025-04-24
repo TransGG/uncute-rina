@@ -419,7 +419,7 @@ async def _handle_settings_module(
             for module, val in server_setting.enabled_modules.items():
                 if val:
                     enabled_modules.add(module)
-        disabled_modules = disabled_modules - enabled_modules
+        disabled_modules -= enabled_modules
         enabled_modules_string = f"### Enabled:\n> {', '.join(enabled_modules)}\n" if enabled_modules else ""
         disabled_modules_string = f"### Disabled:\n> {', '.join(disabled_modules)}\n" if disabled_modules else ""
         await itx.response.send_message(
@@ -495,8 +495,8 @@ class SettingsCog(commands.Cog):
                                        description="A grouping of migrate commands.")
 
     @app_commands.check(is_admin_check)
-    @migrate_group.command(name="migrate", description="Migrate bot settings to new database.")
-    async def migrate(
+    @migrate_group.command(name="database", description="Migrate bot settings to new database.")
+    async def database(
             self,
             itx: discord.Interaction
     ):
@@ -535,7 +535,7 @@ class SettingsCog(commands.Cog):
         await itx.response.defer(ephemeral=True)
         await import_starboard_messages(itx.client.async_rina_db,
                                         starboard_channel)
-        await itx.followup.send("Successfully imported watchlist threads.",
+        await itx.followup.send("Successfully imported starboard messages.",
                                 ephemeral=True)
 
     @app_commands.command(name="settings", description="Edit bot settings for this server.")

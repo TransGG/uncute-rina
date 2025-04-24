@@ -343,6 +343,7 @@ class VCLogReader(commands.Cog):
                                                members=[])
             warning = "Warning: This channel is not a voice channel, or has been deleted!\n\n"
 
+        vc_activity_logs_channel: discord.abc.Messageable | None
         vc_activity_logs_channel = itx.client.get_guild_attribute(
             itx.guild_id, AttributeKeys.voice_channel_activity_logs_channel)
 
