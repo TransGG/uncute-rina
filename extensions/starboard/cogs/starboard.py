@@ -6,12 +6,12 @@ from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
-from extensions.starboard.localstarboard import (
+from extensions.starboard.local_starboard import (
     get_starboard_message_ids,
     add_to_local_starboard,
     delete_from_local_starboard,
     parse_starboard_message,
-    get_starboard_message_id
+    get_starboard_message_id,
 )
 
 starboard_message_ids_marked_for_deletion = []
@@ -474,6 +474,8 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
+        # can raise discord.NotFound and discord.Forbidden.
+
         if not self.client.is_module_enabled(message_payload.guild_id,
                                              ModuleKeys.starboard):
             return
@@ -506,31 +508,33 @@ class Starboard(commands.Cog):
             return
 
         # check if this message's is in the starboard. If so, delete it
-        starboard_messages = await get_starboard_message_ids(star_channel)
-        for star_message in starboard_messages:
-            for embed in star_message.embeds:
-                if embed.footer.text != str(message_payload.message_id):
-                    continue
+        starboard_msg_id = get_starboard_message_id(
+            message_payload.guild_id, message_payload.message_id)
+        if starboard_msg_id is None:
+            return
 
-                try:
-                    image = star_message.embeds[0].image.url
-                except AttributeError:
-                    image = ""
+        try:
+            starboard_msg = await star_channel.fetch_message(starboard_msg_id)
+        except discord.HTTPException:
+            return
+        # can raise discord.NotFound and discord.Forbidden.
 
-                try:
-                    channel = self.client.get_channel(message_payload.channel_id)
-                    msg = await channel.fetch_message(message_payload.message_id)
-                    msg_link = (str(message_payload.message_id)
-                                + "  |  "
-                                + msg.jump_url)
-                except discord.NotFound:
-                    msg_link = str(message_payload.message_id) + " (couldn't get jump link)"
+        try:
+            image = starboard_msg.embeds[0].image.url
+        except AttributeError:
+            image = ""
 
-                await _delete_starboard_message(
-                    self.client,
-                    star_message,
-                    f"{starboard_emoji} :x: Starboard message {star_message.id} was removed (from {msg_link}) "
-                    f"(original message was removed (this starboard message's linked id matched "
-                    f"the removed message's)). "
-                    f"Content: \"\"\"{star_message.embeds[0].description}\"\"\" and attachment: {image}")
-                return
+        partial_channel = discord.PartialMessage(
+            channel=star_channel, id=message_payload.message_id)
+        msg_link = partial_channel.jump_url
+
+        await _delete_starboard_message(
+            self.client,
+            starboard_msg,
+            f"{starboard_emoji} :x: Starboard message "
+            f"{starboard_msg.id} was removed (from {msg_link}) "
+            f"(original message was removed (this starboard message's "
+            f"linked id matched the removed message's)).\n"
+            f"Content: \"\"\"{starboard_msg.embeds[0].description}\"\"\" and "
+            f"attachment: {image}")
+        return

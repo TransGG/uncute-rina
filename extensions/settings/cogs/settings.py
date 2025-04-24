@@ -6,7 +6,7 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
-from extensions.starboard.localstarboard import import_starboard_messages
+from extensions.starboard.local_starboard import import_starboard_messages
 from extensions.watchlist.local_watchlist import import_watchlist_threads
 from resources.checks import is_admin_check, not_in_dms_check, module_enabled_check, MissingAttributesCheckFailure
 

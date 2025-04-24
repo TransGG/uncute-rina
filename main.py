@@ -11,6 +11,7 @@ from pymongo import MongoClient
 
 import discord  # for main discord bot functionality
 
+from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
 from resources.customs import Bot, ProgressBar
 from resources.customs import ApiTokenDict
@@ -19,7 +20,7 @@ from extensions.reminders.objects import ReminderObject  # Reminders (/reminders
 from extensions.watchlist.local_watchlist import fetch_all_watchlists
 # ^ for fetching all watchlists on startup
 from extensions.settings.objects import ServerSettings
-
+from resources.utils import debug
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 
@@ -187,23 +188,33 @@ def start_app():
     # region Client events
     @client.event
     async def on_ready():
-        start_progress.step(f"Logged in as {client.user}, in version {version} "
-                            f"(in {datetime.now().astimezone() - program_start})")
+        text = (f"Logged in as {client.user}, in version {version} "
+                f"(in {datetime.now().astimezone() - program_start})")
+        try:
+            start_progress.step(text)
+        except OverflowError:
+            debug(text, color="green")
+
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
-        post_startup_progress = ProgressBar(3)
+        post_startup_progress = ProgressBar(4)
 
         post_startup_progress.progress("Loading all server settings...")
         client.server_settings = await ServerSettings.fetch_all(client)
         post_startup_progress.step("Loaded server settings.")
 
         post_startup_progress.progress("Loading all server tags...")
-        _ = await fetch_all_tags(client.async_rina_db)  # stored in global var
+        _ = await fetch_all_tags(client.async_rina_db)
         post_startup_progress.step("Loaded server tags.")
 
         post_startup_progress.progress("Loading all watchlist threads...")
         _ = await fetch_all_watchlists(client.async_rina_db)
         post_startup_progress.step("Loaded watchlist threads.")
+
+        post_startup_progress.progress("Loading all starboard messages...")
+        a = await fetch_all_starboard_messages(client.async_rina_db)
+        print(a)
+        post_startup_progress.step("Loaded starboard messages.")
 
     @client.event
     async def setup_hook():
