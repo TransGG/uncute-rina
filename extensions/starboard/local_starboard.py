@@ -2,6 +2,7 @@
 
 import discord
 from motor.core import AgnosticDatabase
+from resources.customs import Bot
 
 from resources.pymongo import (
     remove_data, DatabaseKeys, add_data, get_data, get_all_data
@@ -24,23 +25,31 @@ class StarboardNotLoadedException(Exception):
 
 
 async def import_starboard_messages(
+        client: Bot,
         async_rina_db: AgnosticDatabase,
         starboard_channel: discord.abc.Messageable
-):
+) -> dict[GuildId, dict[StarboardMessageId, OriginalMessageData]]:
     """
+    A helper function to retrieve all starboard messages in a channel.
 
-    :param async_rina_db:
-    :param starboard_channel:
-    :return:
+    :param client: The client to test if starboard messages
+     were sent by this bot.
+    :param async_rina_db: The database in which to store the
+     starboard messages.
+    :param starboard_channel: The channel in which to look for
+     starboard messages.
+    :return: The local starboard index. {GuildId: {StarboardMessageId:
+     (OriginalChannelId, OriginalMessageId) }}
     """
-    global local_starboard_index
+    global local_starboard_index, starboard_loaded
 
     async for starboard_msg in starboard_channel.history(limit=None):
+        if not client.is_me(starboard_msg.author):
+            continue
         try:
             guild_id, channel_id, message_id = parse_starboard_message(starboard_msg)
-        except ValueError:
+        except (ValueError, IndexError):
             continue
-
         orig_data = (channel_id, message_id)
         if guild_id not in local_starboard_index:
             local_starboard_index[guild_id] = {}
@@ -53,7 +62,7 @@ async def import_starboard_messages(
         # into a string.
         await add_data(
             async_rina_db, starboard_msg.guild.id, DatabaseKeys.starboard,
-            starboard_msg.id, database_data
+            str(starboard_msg.id), database_data
         )
 
     return local_starboard_index
@@ -78,9 +87,9 @@ async def fetch_starboard_messages(
 
     guild_data = {}
     for database_data in data.values():
-        starboard_id = database_data[0]
+        starboard_msg_id = database_data[0]
         orig_data = (database_data[1], database_data[2])
-        guild_data[starboard_id] = orig_data
+        guild_data[starboard_msg_id] = orig_data
 
     local_starboard_index[guild_id] = guild_data
 
@@ -240,8 +249,12 @@ async def add_to_local_starboard(
     orig_data = (original_msg.channel.id, original_msg.id)
     local_starboard_index[guild_id][starboard_msg.id] = orig_data
 
+    database_data = (starboard_msg.id, original_msg.channel.id,
+                     original_msg.id)
+    # Json keys can't be integers, so starboard_msg.id will turn
+    # into a string.
     await add_data(async_rina_db, guild_id, DatabaseKeys.starboard,
-                   starboard_msg.id, orig_data)
+                   str(starboard_msg.id), database_data)
 
 
 async def delete_from_local_starboard(
@@ -259,4 +272,9 @@ async def delete_from_local_starboard(
     """
     local_starboard_index.get(guild_id, {}).pop(starboard_message_id, None)
     await remove_data(async_rina_db, guild_id, DatabaseKeys.starboard,
-                      starboard_message_id)
+                      str(starboard_message_id))
+
+
+def is_starboard_message(guild_id: int, starboard_message_id: int) -> bool:
+    """A helper function in O(1) to check if a message is in the starboard."""
+    return starboard_message_id in local_starboard_index.get(guild_id, {})

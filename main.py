@@ -21,6 +21,8 @@ from extensions.watchlist.local_watchlist import fetch_all_watchlists
 # ^ for fetching all watchlists on startup
 from extensions.settings.objects import ServerSettings
 from resources.utils import debug
+from resources.utils.database import codec_options
+
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 
@@ -112,7 +114,8 @@ def get_token_data() -> tuple[
     cluster: MongoClient = MongoClient(tokens['MongoDB'])
     rina_db: PyMongoDatabase = cluster["Rina"]
     cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(tokens['MongoDB'])
-    async_rina_db: motorcore.AgnosticDatabase = cluster["Rina"]
+    async_rina_db: motorcore.AgnosticDatabase  # = cluster["Rina"]
+    async_rina_db = cluster.get_database("Rina", codec_options=codec_options)
     load_progress.step("Loaded database clusters", newline=False)
     return bot_token, tokens, rina_db, async_rina_db
 
@@ -212,8 +215,7 @@ def start_app():
         post_startup_progress.step("Loaded watchlist threads.")
 
         post_startup_progress.progress("Loading all starboard messages...")
-        a = await fetch_all_starboard_messages(client.async_rina_db)
-        print(a)
+        _ = await fetch_all_starboard_messages(client.async_rina_db)
         post_startup_progress.step("Loaded starboard messages.")
 
     @client.event

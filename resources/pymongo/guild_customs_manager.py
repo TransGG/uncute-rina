@@ -3,7 +3,7 @@ from typing import TypeVar
 
 from .utils import encode_field, decode_field
 
-T = TypeVar('T', str, int)  # name / id
+T = TypeVar('T', str, str)  # name / id (as string) (it's cheat-y oof)
 V = TypeVar('V')
 
 

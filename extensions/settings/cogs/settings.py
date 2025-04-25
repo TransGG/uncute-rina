@@ -533,7 +533,7 @@ class SettingsCog(commands.Cog):
             raise MissingAttributesCheckFailure(AttributeKeys.starboard_channel)
 
         await itx.response.defer(ephemeral=True)
-        await import_starboard_messages(itx.client.async_rina_db,
+        await import_starboard_messages(itx.client, itx.client.async_rina_db,
                                         starboard_channel)
         await itx.followup.send("Successfully imported starboard messages.",
                                 ephemeral=True)
