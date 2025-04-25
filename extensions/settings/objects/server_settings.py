@@ -48,7 +48,9 @@ def parse_id_generic(
     return parsed_obj
 
 
-def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> tuple[int, ServerAttributeIds]:
+def convert_old_settings_to_new(
+        old_settings: dict[str, int | list[int]]
+) -> tuple[int, ServerAttributeIds]:
     """
     Migrate server settings from old settings to new ones.
 
@@ -62,19 +64,32 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> tup
         raise ValueError("guild_id in this object was not found!")
 
     # Retrieve all previously-saved values
-    custom_vc_create_channel_id: VoiceChannelId | None = old_settings.get("vcHub", None)
-    log_channel_id: MessageableChannelId | None = old_settings.get("vcLog", None)
-    custom_vc_category_id: CategoryChannelId | None = old_settings.get("vcCategory", None)
-    starboard_channel_id: TextChannelId | None = old_settings.get("starboardChannel", None)
-    starboard_minimum_upvote_count: int | None = old_settings.get("starboardCountMinimum", None)
-    bump_reminder_channel_id: MessageableChannelId | None = old_settings.get("bumpChannel", None)
-    bump_reminder_role_id: RoleId | None = old_settings.get("bumpRole", None)
-    poll_reaction_blacklisted_channel_ids: list[int] = old_settings.get("pollReactionsBlacklist", None)
-    bump_reminder_bot_id: UserId | None = old_settings.get("bumpBot", None)
-    starboard_blacklisted_channel_ids: list[int] = old_settings.get("starboardBlacklistedChannels", None)
-    starboard_upvote_emoji_id: EmojiId | None = old_settings.get("starboardEmoji", None)
-    starboard_minimum_vote_count_for_downvote_delete: int | None = old_settings.get("starboardDownvoteInitValue", None)
-    voice_channel_logs_channel_id: MessageableChannelId | None = old_settings.get("vcActivityLogChannel", None)
+    custom_vc_create_channel_id: VoiceChannelId | None = \
+        old_settings.get("vcHub", None)
+    log_channel_id: MessageableChannelId | None = \
+        old_settings.get("vcLog", None)
+    custom_vc_category_id: CategoryChannelId | None = \
+        old_settings.get("vcCategory", None)
+    starboard_channel_id: TextChannelId | None = \
+        old_settings.get("starboardChannel", None)
+    starboard_minimum_upvote_count: int | None = \
+        old_settings.get("starboardCountMinimum", None)
+    bump_reminder_channel_id: MessageableChannelId | None = \
+        old_settings.get("bumpChannel", None)
+    bump_reminder_role_id: RoleId | None = \
+        old_settings.get("bumpRole", None)
+    poll_reaction_blacklisted_channel_ids: list[int] = \
+        old_settings.get("pollReactionsBlacklist", None)
+    bump_reminder_bot_id: UserId | None = \
+        old_settings.get("bumpBot", None)
+    starboard_blacklisted_channel_ids: list[int] = \
+        old_settings.get("starboardBlacklistedChannels", None)
+    starboard_upvote_emoji_id: EmojiId | None = \
+        old_settings.get("starboardEmoji", None)
+    starboard_minimum_vote_count_for_downvote_delete: int | None = \
+        old_settings.get("starboardDownvoteInitValue", None)
+    voice_channel_logs_channel_id: MessageableChannelId | None = \
+        old_settings.get("vcActivityLogChannel", None)
 
     # Format attributes in the new ServerAttributeIds format
     converted_settings = {
@@ -99,7 +114,8 @@ def convert_old_settings_to_new(old_settings: dict[str, int | list[int]]) -> tup
     }
 
     # remove all Nones
-    new_settings = {k: v for k, v in converted_settings.items() if v is not None}
+    new_settings = {k: v for k, v in converted_settings.items()
+                    if v is not None}
 
     return guild_id, ServerAttributeIds(**new_settings)
 
@@ -110,15 +126,16 @@ def get_attribute_type(attribute_key: str) -> tuple[type | None, bool]:
 
     :param attribute_key: The attribute to get the type of.
 
-    :return A tuple of the type of the attribute (or None if the attribute wasn't found) and whether the attribute was
-     in a list.
+    :return A tuple of the type of the attribute (or None if the
+     attribute wasn't found) and whether the attribute was in a list.
     """
     attribute_types = typing.get_type_hints(ServerAttributes)
     attribute_type = None
     attribute_in_list = False
     if attribute_key in ServerAttributes.__annotations__:
         attribute_type = attribute_types[attribute_key]
-        if typing.get_origin(attribute_type) is typing.types.UnionType:  # typing.Union != typing.types.UnionType :/
+        if typing.get_origin(attribute_type) is typing.types.UnionType:
+            # typing.Union != typing.types.UnionType :/
             # original was: `list[T] | None` (`Union[list[T], None]`).
             #   get_origin returns `<class 'types.UnionType'>`
             #   get_args   returns `(list[T], <class 'NoneType'>)`.
@@ -139,15 +156,18 @@ def parse_attribute(
         invalid_arguments: dict[str, str | list[str]] | None = None
 ) -> object | None:
     """
-    Parse the attribute value as ServerAttribute based on the given attribute key.
+    Parse the attribute value as ServerAttribute based on the given
+    attribute key.
 
     :param client: The client to get the attribute from.
     :param guild: The guild to get a potential discord.Role from.
     :param attribute_key: The key of the attribute type to parse it to.
     :param attribute_value: The attribute value to parse.
-    :param invalid_arguments: An optional dictionary tracking previously unparseable arguments.
+    :param invalid_arguments: An optional dictionary tracking previously
+     unparseable arguments.
     :return: The parsed value, or None if not found.
-    :raise ParseError: If the attribute could not be parsed or is of the wrong type.
+    :raise ParseError: If the attribute could not be parsed or is of the
+     wrong type.
     """
     if invalid_arguments is None:
         invalid_arguments = {}
@@ -164,8 +184,9 @@ def parse_attribute(
     elif attribute_type is discord.Role:
         func = guild.get_role
     elif attribute_type is discord.CategoryChannel:
-        # I think it's safe to assume the stored value was an object of the correct type in the first place.
-        #  As in, it's a CategoryChannel id, not a VoiceChannel id.
+        # I think it's safe to assume the stored value was an object of
+        #  the correct type in the first place. As in, it's a
+        #  CategoryChannel id, not a VoiceChannel id.
         func = client.get_channel
     elif attribute_type is discord.VoiceChannel:
         func = client.get_channel
@@ -185,7 +206,8 @@ def parse_attribute(
         # to prevent TypeError from int(None) later.
         return None
     try:
-        # all of these require a <object>.id (or the attribute itself is an int)
+        # all of these require a <object>.id (or the attribute itself
+        #  is an int)
         attribute_value_id = int(attribute_value)
     except ValueError:
         return None
@@ -207,12 +229,23 @@ class ServerSettingData(TypedDict):
     attribute_ids: ServerAttributeIds
 
 
+NameAndIdData = tuple[str | None, int | None]
+
+
 class ServerSettings:
     DATABASE_KEY = "server_settings"
 
     @staticmethod
-    def get_original(attribute: T) -> T | tuple[str | None, int | None] | list[T | tuple[str | None, int | None]]:
-        def get_name_or_id_maybe(attribute1: T) -> T | tuple[str | None, int | None]:
+    def get_original(
+            attribute: T | list[T]
+    ) -> T | NameAndIdData | list[T | NameAndIdData]:
+        """Get the name and id of the attribute (or attributes)"""
+        def get_name_or_id_maybe(attribute1: T) -> T | NameAndIdData:
+            """Helper to get the name and id attribute of an object.
+
+            If both name and id are none, it will return the given
+            object.
+            """
             name = None
             a_id = None
             if hasattr(attribute1, "name"):

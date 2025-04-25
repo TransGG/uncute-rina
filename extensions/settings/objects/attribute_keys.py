@@ -1,8 +1,9 @@
 class AttributeKeys:
     """
-    A class to allow enum-like conversion from class attribute to string. This can be used in
-    :py:func:`~resources.customs.bot.Bot.get_guild_attribute` by simply referencing this class' attribute
-    rather than using magic strings.
+    A class to allow enum-like conversion from class attribute to
+     string. This can be used in
+     :py:func:`~resources.customs.bot.Bot.get_guild_attribute` by simply
+     referencing this class' attribute rather than using magic strings.
     """
     parent_server = "parent_server"
 
@@ -36,7 +37,8 @@ class AttributeKeys:
     starboard_upvote_emoji = "starboard_upvote_emoji"
     starboard_blacklisted_channels = "starboard_blacklisted_channels"
     starboard_minimum_upvote_count = "starboard_minimum_upvote_count"
-    starboard_minimum_vote_count_for_downvote_delete = "starboard_minimum_vote_count_for_downvote_delete"
+    starboard_minimum_vote_count_for_downvote_delete = \
+        "starboard_minimum_vote_count_for_downvote_delete"
 
     bump_reminder_channel = "bump_reminder_channel"
     bump_reminder_role = "bump_reminder_role"

@@ -12,7 +12,12 @@ MessageableChannelId = int
 
 
 class ServerAttributeIds(TypedDict, total=False):
-    # When adding a new key to this class, make sure to add the same key to the ServerAttributes class
+    """A dictionary of all customizable attribute ids for a guild.
+
+    This is stored in the database.
+    """
+    # When adding a new key to this class, make sure to add the same key
+    #  to the ServerAttributes class
 
     parent_server: GuildId
 

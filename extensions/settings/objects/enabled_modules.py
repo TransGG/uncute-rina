@@ -56,3 +56,19 @@ class ModuleKeys:
     vc_log_reader = "vc_log_reader"
     remove_role_command = "remove_role_command"
     report_tags_to_staff = "report_tags_to_staff"
+
+
+module_required_attributes = {
+    # todo: finish.
+    "starboard": (
+        AttributeKeys.starboard_channel,
+        AttributeKeys.starboard_upvote_emoji,
+        AttributeKeys.starboard_blacklisted_channels,
+        AttributeKeys.starboard_minimum_upvote_count,
+        AttributeKeys.starboard_minimum_vote_count_for_downvote_delete,
+    ),
+
+    "report_tags_to_staff": (
+        AttributeKeys.staff_reports_channel
+    )
+}

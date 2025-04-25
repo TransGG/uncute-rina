@@ -46,11 +46,13 @@ class Bot(commands.Bot):
 
     def get_command_mention(self, command_string: str) -> str:
         """
-        Turn a string (/reminders remindme) into a command mention (</reminders remindme:43783756372647832>)
+        Turn a string (/reminders remindme) into a command mention
+        (</reminders remindme:43783756372647832>)
 
-        :param command_string: Command you want to convert into a mention (without slash in front of it).
-
-        :return: The command mention, or the input (*command_string*) if no command with the name was found.
+        :param command_string: Command you want to convert into a
+         mention (without slash in front of it).
+        :return: The command mention, or the input (*command_string*)
+         if no command with the name was found.
         """
         args = command_string.split(" ") + [None, None]
         command_name, subcommand, subcommand_group = args[0:3]
@@ -67,13 +69,13 @@ class Bot(commands.Bot):
                     if subgroup.name == subcommand:
                         if subcommand_group is None:
                             return subgroup.mention
-                        # now it techinically searches subcommand in subcmdgroup.options
-                        # but to remove additional renaming of variables, it stays as is.
-                        # subcmdgroup = subgroup # hm
+                        # now it technically searches subcommand in
+                        #  subcmdgroup.options but to remove additional
+                        #  renaming of variables, it stays as is.
+                        # subcmdgroup = subgroup  # hm
                         for subcmdgroup in subgroup.options:
                             if subcmdgroup.name == subcommand_group:
                                 return subcmdgroup.mention
-                                # return f"</{command.name} {subgroup.name} {subcmdgroup.name}:{command.id}>"
         return "/" + command_string
 
     def get_guild_attribute(

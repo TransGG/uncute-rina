@@ -4,8 +4,14 @@ import discord
 
 
 class ServerAttributes(TypedDict):
-    # When adding a new key to this class, make sure to add the same key to the ServerAttributes class
-    # If you're giving it a new type, make sure it gets parsed in ServerSettings.get_attributes()
+    """A dictionary containing all customizable guild attributes.
+
+    This is stored in the client.
+    """
+    # When adding a new key to this class, make sure to add the same
+    #  key to the ServerAttributes class.
+    # If you're giving it a new type, make sure it gets parsed in
+    #  ServerSettings.get_attributes().
     parent_server: discord.Guild | None
 
     admin_roles: list[discord.Role]
@@ -14,10 +20,12 @@ class ServerAttributes(TypedDict):
     log_channel: discord.abc.Messageable | None
 
     qotw_suggestions_channel: discord.abc.Messageable | None
-    developer_request_channel: discord.TextChannel | None  # needs to be able to have threads
+    developer_request_channel: discord.TextChannel | None
+    # ^ needs to be able to have threads
     developer_request_reaction_role: discord.Role | None
 
-    watchlist_channel: discord.TextChannel | None  # needs to be able to have threads
+    watchlist_channel: discord.TextChannel | None
+    # ^ needs to be able to have threads
     watchlist_reaction_role: discord.Role | None
     staff_reports_channel: discord.abc.Messageable | None
     ticket_create_channel: discord.abc.Messageable | None
