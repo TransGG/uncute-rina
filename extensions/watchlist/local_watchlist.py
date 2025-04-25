@@ -10,6 +10,10 @@ from resources.pymongo.guild_customs_manager import (
 local_watchlist: dict[int, dict[int, int]] = {}
 watchlist_loaded = False
 
+UserId = int
+ThreadId = int
+DatabaseData = tuple[UserId, ThreadId]
+
 
 class WatchlistNotLoadedException(Exception):
     pass
@@ -90,12 +94,13 @@ async def create_watchlist(
     :param thread_id: The id of the watchlist thread.
     """
     global local_watchlist
+    database_data = (user_id, thread_id)
     await add_data(
         async_rina_db,
         guild_id,
         DatabaseKeys.watchlist,
-        user_id,
-        thread_id,
+        str(user_id),
+        database_data,
     )
 
     if guild_id not in local_watchlist:
@@ -122,7 +127,7 @@ async def remove_watchlist(
         async_rina_db,
         guild_id,
         DatabaseKeys.watchlist,
-        user_id,
+        str(user_id),
     )
 
     if guild_id not in local_watchlist:
@@ -146,7 +151,7 @@ async def fetch_watchlists(
      the given guild.
     """
     global local_watchlist
-    data: dict[int, int] | None = await get_data(
+    data: dict[str, DatabaseData] | None = await get_data(
         async_rina_db,
         guild_id,
         DatabaseKeys.watchlist,
@@ -155,8 +160,11 @@ async def fetch_watchlists(
     if data is None:
         return {}
 
-    local_watchlist[guild_id] = data
-    return data
+    # data.values() gives a list of (key, value) tuples, and can be
+    #  neatly converted into a dictionary.
+    local_watchlist[guild_id] = dict(data.values())
+
+    return local_watchlist[guild_id]
 
 
 async def fetch_all_watchlists(
@@ -170,12 +178,16 @@ async def fetch_all_watchlists(
      user_ids and their corresponding thread_id.
     """
     global watchlist_loaded, local_watchlist
-    data: dict[int, dict[int, int]] = await get_all_data(
+    data: dict[int, dict[str, DatabaseData]] = await get_all_data(
         async_rina_db,
         DatabaseKeys.watchlist,
     )
 
-    local_watchlist = data
+    for guild_id, guild_data in data.items():
+        # guild_data.values() gives a list of (key, value) tuples, and
+        #  can be neatly converted into a dictionary.
+        local_watchlist[guild_id] = dict(guild_data.values())
+
     watchlist_loaded = True
     return local_watchlist
 

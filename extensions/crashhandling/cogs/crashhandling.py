@@ -233,6 +233,7 @@ class CrashHandling(commands.Cog):
                     f"Make sure you also set the required attributes for this module. The required "
                     f"attributes for modules and commands are explained in {cmd_mention_help}.",
                     ephemeral=True)
+                return
             await itx.response.send_message("This module is not enabled! Ask an admin to enable this module, "
                                             "or have them hide this command from users in the server settings.",
                                             ephemeral=True)

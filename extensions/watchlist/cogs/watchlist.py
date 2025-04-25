@@ -44,13 +44,14 @@ async def _create_uncool_watchlist_thread(
         client: Bot,
         user: discord.Member,
         watch_channel: discord.TextChannel
-):
+) -> tuple[discord.Message, discord.Thread]:
     """
     A helper function to create a new watchlist thread if it
     wasn't created already.
 
     :param user: The user to create the watchlist thread for.
     :param watch_channel: The channel to create the thread in.
+    :return: A tuple of the created watchlist message and thread.
     """
     # make and send uncool embed for the loading period while it sends
     # the copyable version (we want the jump url)
@@ -70,9 +71,10 @@ async def _create_uncool_watchlist_thread(
     thread_username = "Watch-" + str(user)[:70] + '-' + str(user.id)
     thread = await msg.create_thread(name=thread_username,
                                      auto_archive_duration=10080)
-    # thread.id will be the same as msg.id, because of discord structure
+    # (thread.id would be the same as msg.id, because of
+    #  discord structure)
     await create_watchlist(client.async_rina_db, user.guild.id,
-                           user.id, watch_channel.id)
+                           user.id, thread.id)
     await thread.join()
     joiner_msg = await thread.send("user-mention placeholder")
     active_staff_role: discord.Guild | None = client.get_guild_attribute(
@@ -154,7 +156,7 @@ async def _add_to_watchlist(
 
     # get channel of where this message has to be sent
     watch_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
-        itx.guild, AttributeKeys.staff_watch_channel)
+        itx.guild, AttributeKeys.watchlist_channel)
     if watch_channel is None:
         raise MissingAttributesCheckFailure(
             ModuleKeys.watchlist, AttributeKeys.watchlist_channel)
@@ -216,7 +218,7 @@ async def _add_to_watchlist(
                 f" (message by {reported_message.author.mention})"
 
         reported_message_info = (
-            f"\n\n[Reported Message]({reported_message.jump_url}"
+            f"\n\n[Reported Message]({reported_message.jump_url})"
             f"{different_report_author_info}\n"
             f">>> {reported_message.content}\n"
         )
