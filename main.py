@@ -28,29 +28,29 @@ program_start = datetime.now().astimezone()  # startup time after local imports
 
 BOT_VERSION = "1.4.1.1"
 
+# noinspection SpellCheckingInspection
 EXTENSIONS = [
     "addons",
-    "aegis_ping_reactions",
-    "ban_appeal_reactions",
     "compliments",
     "crashhandling",
     "customvcs",
     "emojistats",
-    "help",
     "getmemberdata",
+    "help",
+    "message_reactions",
+    "nameusage",
     "qotw",
+    "reminders",
+    "settings",
     "staffaddons",
+    "starboard",
     "tags",
     "termdictionary",
+    # "testing_commands",
     "todolist",
     "toneindicator",
     "vclogreader",
     "watchlist",
-    "settings",
-    "starboard",
-    "nameusage",
-    "reminders",
-    # "testing_commands",
 ]
 
 load_progress = ProgressBar(5)
