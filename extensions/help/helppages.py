@@ -2,6 +2,8 @@ from extensions.help.helppage import HelpPage
 
 __all__ = ["help_pages", 'aliases', 'FIRST_PAGE']
 
+from extensions.settings.objects import AttributeKeys
+
 
 help_pages: dict[int, HelpPage] = {
     0: HelpPage(  # fallback default page
@@ -489,7 +491,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
     ),
     # endregion
-    900: HelpPage(  # equaldex
+    # region Bot setup
+    900: HelpPage(  # /settings
         title="Server settings",
         description="Rina has many commands and features. Some commands need setup beforehand, like "
                     "a logging channel or role ids. This command lets you personalize rina for *your* "
@@ -530,6 +533,50 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "Add the `general` channel to this list.\n"
                 "  - When clicking autocomplete results, the value may be the name of the channel. You can use this "
                 "method, or fill in the ID manually and ignore the autocomplete result.\n"
+            )
+        ],
+        staff_only=True
+    ),
+    901: HelpPage(  # /tag-manage
+        title="Manage Tags",
+        description="Informing others is a common occurrence. Some "
+                    "information is repeated very often, and being able to "
+                    "copy-paste that information would be very practical. "
+                    "This command lets you add these custom tags.\n"
+                    "For more info, look at page __**0**__.",  # todo: add /tag helppage
+        fields=[
+            (
+                "Parameters",
+                "`mode`: Whether to create or delete a tag (or get help).\n"
+                "- Help: Shows this help page.\n"
+                "- Create: Open a modal to create a new tag.\n"
+                "- Delete: Delete a tag with the given name.\n"
+                "`tag_name`: The name of the tag to create or delete.\n"
+                "- This is a unique name for the tag.\n"
+            ),
+            (
+                "Examples",
+                "- %%tag-manage%% `mode:Create` `tag_name:avoid politics`\n"
+                "  - Opens a modal to fill in details about this tag. See below "
+                "for information about the modal.\n"
+                "- %%tag-manage%% `mode:Delete` `tag_name:avoid politics`\n"
+                "  - Deletes the tag we just created. You can only delete custom "
+                "tags.\n"
+            ),
+            (
+                "Tag Creation Modal",
+                f"- Title: The title of the embed.\n"
+                f"- Description: The description of the embed.\n"
+                f"- Color: An RGB color, each value separated by a comma.\n"
+                f"  - Some examples: '255,0,0' (red), '255,255,255' (white),"
+                f"'0,0,1' (black).\n"
+                f"  - Note: discord's default embed color (no color) is "
+                f"'0,0,0', so if you use that, your embed will be default "
+                f"gray.\n"
+                f"- Report anonymous usage to staff: As it says. If this is "
+                f"true and a member sends the tag publicly anonymously, a "
+                f"message will be sent to the channel from the "
+                f"{AttributeKeys.staff_reports_channel} server attribute."
             )
         ],
         staff_only=True

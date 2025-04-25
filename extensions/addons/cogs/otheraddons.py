@@ -6,7 +6,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys
-from resources.checks import ModuleNotEnabledCheckFailure
+from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
 from resources.checks.command_checks import is_in_dms
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
@@ -170,6 +170,26 @@ async def _unit_autocomplete(itx: discord.Interaction, current: str):
         return [app_commands.Choice(name=option, value=option)
                 for option in options if current.lower() in option.lower()
                 ][:25]
+
+
+async def _role_autocomplete(itx: discord.Interaction, current: str):
+    """Autocomplete for /remove-role command."""
+    role_options = {
+        1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
+        1126160612620243044: ("Hide Venting channel role", "NVA")  # NVA
+    }
+    options = []
+    for role in itx.user.roles:
+        if role.id in role_options:
+            if (current.lower() in role_options[role.id][0].lower() or
+                    current.lower() in role_options[role.id][1].lower()):
+                options.append(role.id)
+    if options:
+        return [app_commands.Choice(name=role_options[role_id][0], value=role_options[role_id][1])
+                for role_id in options
+                ][:15]
+    else:
+        return [app_commands.Choice(name="You don't have any roles to remove!", value="none")]
 
 
 class OtherAddons(commands.Cog):
@@ -351,3 +371,41 @@ class OtherAddons(commands.Cog):
             "-# Did it not work? Try it with `help`",
             ephemeral=True
         )
+
+    @app_commands.command(name="remove-role",
+                          description="Remove one of your agreement roles")
+    @app_commands.describe(role_name="The name of the role to remove")
+    @app_commands.autocomplete(role_name=_role_autocomplete)
+    @module_enabled_check(ModuleKeys.remove_role_command)
+    async def remove_role(self, itx: discord.Interaction, role_name: str):
+        itx.user: discord.Member  # noqa
+        # It shouldn't be a discord.User cause the app_command check
+        #  prevents DMs.
+
+        role_options = {
+            "npa": ["NPA", 1126160553145020460],
+            "nva": ["NVA", 1126160612620243044],
+        }
+        if role_name.lower() not in role_options:
+            await itx.response.send_message(
+                "You can't remove that role!", ephemeral=True)
+            return
+
+        role_id = role_options[role_name.lower()][1]
+        try:
+            matching_roles = [r.id == role_id for r in itx.user.roles]
+            # it only selects the first one of them but oh well.
+            for role in matching_roles:
+                await itx.user.remove_roles(
+                    role,
+                    reason="Removed by user using /remove-role"
+                )
+                await itx.response.send_message(
+                    "Successfully removed role!", ephemeral=True)
+                return
+        except discord.Forbidden:
+            await itx.response.send_message(
+                "I couldn't remove this role! (Forbidden)",
+                ephemeral=True
+            )
+            return

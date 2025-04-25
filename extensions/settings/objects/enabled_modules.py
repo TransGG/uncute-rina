@@ -1,7 +1,14 @@
 from typing import TypedDict
 
+from .attribute_keys import AttributeKeys
+
 
 class EnabledModules(TypedDict, total=False):
+    """
+    A dictionary of all toggleable bot modules.
+
+    This is stored in the database and the client.
+    """
     starboard: bool
     headpat_reactions: bool
     awawawa_reactions: bool
@@ -19,13 +26,16 @@ class EnabledModules(TypedDict, total=False):
     aegis_ping_reactions: bool
     ban_appeal_reactions: bool
     vc_log_reader: bool
+    remove_role_command: bool
+    report_tags_to_staff: bool
 
 
 class ModuleKeys:
     """
-    A class to allow enum-like conversion from class attribute to string. This can be used in
-    :py:func:`~resources.customs.bot.Bot.is_module_enabled` by simply referencing this class' attribute
-    rather than using magic strings.
+    A class to allow enum-like conversion from class attribute to
+     string. This can be used in
+     :py:func:`~resources.customs.bot.Bot.is_module_enabled` by simply
+     referencing this class' attribute rather than using magic strings.
     """
     starboard = "starboard"
     headpat_reactions = "headpat_reactions"
@@ -44,3 +54,5 @@ class ModuleKeys:
     aegis_ping_reactions = "aegis_ping_reactions"
     ban_appeal_reactions = "ban_appeal_reactions"
     vc_log_reader = "vc_log_reader"
+    remove_role_command = "remove_role_command"
+    report_tags_to_staff = "report_tags_to_staff"

@@ -22,7 +22,7 @@ def get_tag(
 
     :return: A tag object or ``None`` if no tag with this name is found.
     """
-    if guild in local_tag_list:
+    if guild.id in local_tag_list:
         if tag_name in local_tag_list[guild.id]:
             return local_tag_list[guild.id][tag_name]
     return None
@@ -38,7 +38,7 @@ def get_tags(
 
     :return: A dictionary containing all tags registered in the guild.
     """
-    if guild in local_tag_list:
+    if guild.id in local_tag_list:
         return local_tag_list[guild.id]
     return {}
 
@@ -49,7 +49,8 @@ async def create_tag(
         tag_name: str,
         embed_title: str,
         embed_description: str,
-        embed_color: tuple[int, int, int]
+        embed_color: tuple[int, int, int],
+        report_to_staff: bool,
 ) -> None:
     """
     Create a new tag for the given guild.
@@ -60,6 +61,8 @@ async def create_tag(
     :param embed_title: The title of the tag embed.
     :param embed_description: The description of the tag embed.
     :param embed_color: The color of the tag embed.
+    :param report_to_staff: Whether sending this tag anonymously should
+     be reported to staff.
     """
     global local_tag_list
     if len(embed_title) > 256:
@@ -73,6 +76,7 @@ async def create_tag(
         title=embed_title,
         description=embed_description,
         color=embed_color,
+        report_to_staff=report_to_staff,
     )
     await add_data(
         async_rina_db,
