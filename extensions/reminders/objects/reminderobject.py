@@ -4,14 +4,51 @@ from datetime import datetime, timedelta, timezone
 import discord
 
 from resources.customs import Bot
-from resources.utils.timeparser import TimeParser, MissingQuantityException, MissingUnitException
+from resources.utils import (
+    TimeParser, MissingQuantityException, MissingUnitException
+)
 
 from extensions.reminders.exceptions import (
-    MalformedISODateTimeException, UnixTimestampInPastException, TimestampParseException
+    UnixTimestampInPastException, TimestampParseException,
+    MalformedISODateTimeException
 )
-from extensions.reminders.objects import ReminderDict, TimestampFormats
+from extensions.reminders.objects import (
+    ReminderDict, TimestampFormats, DatabaseData
+)
 from extensions.reminders.utils import get_user_reminders
-from extensions.reminders.views import CopyReminder, ShareReminder, TimeOfDaySelection
+from extensions.reminders.views import (
+    CopyReminder, ShareReminder, TimeOfDaySelection
+)
+
+
+async def relaunch_ongoing_reminders(
+        client: Bot,
+):
+    """
+    Helper to start stored reminders after the bot restarts.
+
+    :param client: The client to fetch existing reminders and
+     store new scheduler events.
+    """
+    collection = client.async_rina_db["reminders"]
+    query = {}
+    db_data = collection.find(query)
+    async for entry in db_data:
+        entry: DatabaseData
+        try:
+            for reminder in entry["reminders"]:
+                creation_time = datetime.fromtimestamp(
+                    reminder['creationtime'], timezone.utc)
+                reminder_time = datetime.fromtimestamp(
+                    reminder['remindertime'], timezone.utc)
+                ReminderObject(
+                    client, creation_time, reminder_time,
+                    entry['userID'],
+                    reminder['reminder'], entry["reminders"],
+                    continued=True
+                )
+        except KeyError:
+            pass
 
 
 class ReminderObject:
@@ -262,8 +299,17 @@ async def _create_reminder(
     await itx.edit_original_response(view=None)
 
 
-async def parse_and_create_reminder(itx: discord.Interaction, reminder_datetime: str, reminder: str):
-    # Check if user has too many reminders (max 50 allowed (internally chosen limit))
+async def parse_and_create_reminder(
+        itx: discord.Interaction,
+        reminder_datetime: str,
+        reminder: str
+):
+    # Can't put this function reminders.utils because it calls
+    #  _create_reminder, which creates a ReminderObject, so it would be
+    #  better-fitting in this same file.
+
+    # Check if user has too many reminders (max 50 allowed
+    #  (internally chosen limit))
     user_reminders = get_user_reminders(itx.client, itx.user)
     if len(user_reminders) > 50:
         cmd_mention = itx.client.get_command_mention("reminder reminders")

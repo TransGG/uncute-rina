@@ -206,7 +206,7 @@ class CustomVcs(commands.Cog):
                     self.client, member, before.channel, vctable_prefix)
 
         if after.channel is not None:
-            if after.channel.id == customvc_hub:
+            if after.channel.id == customvc_hub.id:
                 await _create_new_custom_vc(self.client, member, after.channel, customvc_category, customvc_hub)
 
     @app_commands.command(name="editvc", description="Edit your voice channel name or user limit")

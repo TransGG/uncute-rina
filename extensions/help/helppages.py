@@ -567,7 +567,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "Tag Creation Modal",
                 f"- Title: The title of the embed.\n"
                 f"- Description: The description of the embed.\n"
-                f"  - Use %%/command%% to reference a command!\n"
+                f"  - Use %\\%/command%\\% to reference a command!\n"
                 f"- Color: An RGB color, each value separated by a comma.\n"
                 f"  - Some examples: '255,0,0' (red), '255,255,255' (white),"
                 f"'0,0,1' (black).\n"

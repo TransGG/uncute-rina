@@ -459,6 +459,8 @@ class ServerSettings:
             raise ParseError("Some server settings could not be parsed: " + ', '.join(
                 [f"{k}:{v}" for k, v in invalid_arguments.items()]))
 
+        # Todo: list attributes can be None instead of [], if the givne
+        #  list of attributes does not contain its key.
         new_settings: dict[str, Any | None] = {k: None for k in ServerAttributes.__annotations__}
         for attribute, attribute_value in attributes.items():
             if type(attribute_value) is list:

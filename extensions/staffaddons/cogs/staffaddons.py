@@ -52,7 +52,6 @@ class StaffAddons(commands.Cog):
     async def delete_week_selfies(self, itx: discord.Interaction[Bot]):
         # This function largely copies the built-in channel.purge() function with a check, but is more fancy by
         # offering a sort of progress update every 50-100 messages :D
-        # todo attribute: add selfies channel(s)
         selfies_channel = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.selfies_channel)
         if selfies_channel is None:

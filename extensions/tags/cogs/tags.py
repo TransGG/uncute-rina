@@ -48,6 +48,7 @@ async def _tag_autocomplete(itx: discord.Interaction, current: str):
             ][:15]
 
 
+@module_enabled_check(ModuleKeys.tags)
 async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /tag-manage command."""
     if itx.namespace.mode == TagMode.delete.value:
@@ -57,8 +58,7 @@ async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
             for key in tag_objects.keys()
             if current.lower() in key.lower()
         ]
-    return [app_commands.Choice(name="Ignore this autocomplete.",
-                                value=current)]
+    return []
 
 
 async def _parse_embed_color_input(color: str) -> tuple[int, int, int]:

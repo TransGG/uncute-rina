@@ -163,14 +163,9 @@ async def _add_to_watchlist(
 
     # await itx.response.defer(ephemeral=True)
     await itx.response.send_message(
-        "Adding user to watchlist...\n\n"
-        "Please wait while rina checks if this user has been added to the "
-        "watchlist before. \n"
-        "This may take a minute. (feel free to not add them to the watch "
-        "list again, for that might make a duplicate thread for the user, :)",
+        "Adding user to watchlist...",
         ephemeral=True
     )
-    # todo: this won't take as long anymore, so change this message.
 
     # get message that supports the report / report reason
     reported_message = None  # to make IDE happy
@@ -234,10 +229,6 @@ async def _add_to_watchlist(
         thread = await watch_channel.guild.fetch_channel(watchlist_thread_id)
         # fetch message the thread is attached to (fetch, in case msg is not in cache)
         msg = await watch_channel.fetch_message(watchlist_thread_id)
-        # todo: capture on_thread_delete to remove from watchlist_index if a user's thread is removed.
-        #  Perhaps even re-fetch all threads, cause if a thread is somehow sent twice, the second case would overwrite
-        #  the channel id of the first, and removing the second one from the database would mean the user has no
-        #  more thread known to the bot. (and any subsequent watchlist threads could be made without problem)
         # link back to that original message with the existing thread.
         await msg.reply(
             content=f"Someone added {user.mention} (`{user.id}`) to the "

@@ -204,7 +204,7 @@ async def _update_starboard_message_score(
     except KeyError:
         # starboard message is invalid
         raise NotImplementedError()
-    except IndexError:
+    except IndexError:  # todo: Implement error handling
         # original message is invalid
         raise NotImplementedError()
 

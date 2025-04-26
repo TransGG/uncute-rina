@@ -1,27 +1,30 @@
 #!/usr/bin/env python3
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from datetime import datetime, timezone  # for startup and crash logging, and Reminders
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+# ^ for periodic timers
+from datetime import datetime  # for startup and crash logging
 import json  # for loading the API keys file
 import logging  # to set logging level to not DEBUG and hide unnecessary logs
-import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
+import motor.motor_asyncio as motorasync
+# ^ for making Mongo run asynchronously (during api calls)
 import motor.core as motorcore  # for typing
 import os  # for creating outputs/ directory
-from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+from pymongo.database import Database as PyMongoDatabase
+# ^ for MongoDB database typing
 from pymongo import MongoClient
 
 import discord  # for main discord bot functionality
 
+from extensions.reminders.objects import \
+    relaunch_ongoing_reminders
+from extensions.settings.objects import ServerSettings
 from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
-from resources.customs import Bot, ProgressBar
-from resources.customs import ApiTokenDict
-
-from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
 from extensions.watchlist.local_watchlist import fetch_all_watchlists
 # ^ for fetching all watchlists on startup
-from extensions.settings.objects import ServerSettings
-from resources.utils import debug
-from resources.utils.database import codec_options
+
+from resources.customs import Bot, ProgressBar
+from resources.customs import ApiTokenDict
+from resources.utils import debug, codec_options
 
 
 program_start = datetime.now().astimezone()  # startup time after local imports
@@ -175,7 +178,7 @@ def create_client(
         #  unnecessary, but needs to be set so... uh... yeah. Unnecessary terminal warnings avoided.
         case_insensitive=True,
         activity=discord.Game(name="with slash (/) commands!"),
-        allowed_mentions=discord.AllowedMentions(everyone=False)
+        allowed_mentions=discord.AllowedMentions(everyone=False),
     )
     start_progress.step("Created Bot")
     return bot
@@ -250,18 +253,7 @@ def start_app():
         # the dev server (=not me).
 
         start_progress.progress("Restarting ongoing reminders")
-        collection = rina_db["reminders"]
-        query = {}
-        db_data = collection.find(query)
-        for user in db_data:
-            try:
-                for reminder in user['reminders']:
-                    creation_time = datetime.fromtimestamp(reminder['creationtime'], timezone.utc)
-                    reminder_time = datetime.fromtimestamp(reminder['remindertime'], timezone.utc)
-                    ReminderObject(client, creation_time, reminder_time, user['userID'], reminder['reminder'], user,
-                                   continued=True)
-            except KeyError:
-                pass
+        await relaunch_ongoing_reminders(client)
         start_progress.step("Finished setting up reminders")
         start_progress.progress("Caching bot's command names and their ids")
         client.commandList = await client.tree.fetch_commands()

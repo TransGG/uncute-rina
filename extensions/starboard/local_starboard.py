@@ -1,5 +1,3 @@
-# todo: rename to local_starboard.py
-
 import discord
 from motor.core import AgnosticDatabase
 from resources.customs import Bot

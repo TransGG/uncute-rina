@@ -60,7 +60,7 @@ class ModuleKeys:
 
 module_required_attributes = {
     # todo: finish.
-    "starboard": (
+    ModuleKeys.starboard: (
         AttributeKeys.starboard_channel,
         AttributeKeys.starboard_upvote_emoji,
         AttributeKeys.starboard_blacklisted_channels,
@@ -68,7 +68,15 @@ module_required_attributes = {
         AttributeKeys.starboard_minimum_vote_count_for_downvote_delete,
     ),
 
-    "report_tags_to_staff": (
-        AttributeKeys.staff_reports_channel
+    ModuleKeys.report_tags_to_staff: (
+        AttributeKeys.staff_reports_channel,
+    ),
+
+    ModuleKeys.custom_vcs: (
+        AttributeKeys.custom_vc_blacklisted_channels,
+        AttributeKeys.custom_vc_blacklist_prefix,
+        AttributeKeys.custom_vc_category,
+        AttributeKeys.custom_vc_create_channel,
+        AttributeKeys.vctable_prefix,
     )
 }

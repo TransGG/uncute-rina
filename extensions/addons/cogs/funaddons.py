@@ -183,24 +183,25 @@ class FunAddons(commands.Cog):
                     # <#Open Tickets>, <#Closed Tickets>
                     message.guild.id in [981730502987898960]  # don't send in Mod server
             ):
-                pass
-            else:
-                self.headpat_wait = 0
-                # # TODO: re-enable code someday
-                # # people asked for no random headpats anymore; or make it opt-in. See GitHub #23
-                # try:
-                #     added_pat = True
-                #     await message.add_reaction(headpat_emoji)  #headpatWait
-                # except discord.errors.Forbidden:
-                #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
-                #                                                    f"reaction to {message.jump_url} (Forbidden): "
-                #                                                    f"They might have blocked Rina...')
-                # except discord.errors.HTTPException as ex:
-                #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
-                #                                                    f"reaction to {message.jump_url}. "
-                #                                                    f"(HTTP/{ex.code}) "
-                #                                                    f"They might have blocked Rina...')
-                # return True
+                return False
+
+            self.headpat_wait = 0
+            # # TODO: re-enable code someday
+            # # people asked for no random headpats anymore; or make it opt-in. See GitHub #23
+            # try:
+            #     added_pat = True
+            #     await message.add_reaction(headpat_emoji)  #headpatWait
+            # except discord.errors.Forbidden:
+            #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
+            #                                                    f"reaction to {message.jump_url} (Forbidden): "
+            #                                                    f"They might have blocked Rina...')
+            # except discord.errors.HTTPException as ex:
+            #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
+            #                                                    f"reaction to {message.jump_url}. "
+            #                                                    f"(HTTP/{ex.code}) "
+            #                                                    f"They might have blocked Rina...')
+            # return True
+
         return False
 
     @commands.Cog.listener()

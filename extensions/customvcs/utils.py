@@ -8,14 +8,20 @@ def is_vc_custom(
         customvc_channel_blacklist: list[discord.VoiceChannel],
         customvc_blacklist_prefix: str,
 ) -> bool:
-    """Check if a voice channel is custom-made by Rina through the customvc Hub.
+    """
+    Check if a voice channel is custom-made by Rina through the
+    customvc Hub.
 
-    :param voice_channel: The voice channel to test if it is a custom voice channel.
-    :param customvc_category: The category where custom voice channels are allowed to be created.
-    :param customvc_hub: The voice channel that members should join to create a custom voice channel.
-    :param customvc_channel_blacklist: A list of voice channel that may definitely not be removed when
-     the last person leaves.
-    :param customvc_blacklist_prefix: A prefix to ignore channels in this category.
+    :param voice_channel: The voice channel to test if it is a custom
+     voice channel.
+    :param customvc_category: The category where custom voice channels
+     are allowed to be created.
+    :param customvc_hub: The voice channel that members should join to
+     create a custom voice channel.
+    :param customvc_channel_blacklist: A list of voice channel that may
+     definitely not be removed when the last person leaves.
+    :param customvc_blacklist_prefix: A prefix to ignore channels in
+     this category.
 
     :return: Whether the channel is a custom voice channel or not.
     """

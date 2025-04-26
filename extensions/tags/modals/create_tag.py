@@ -11,7 +11,8 @@ class CreateTagModal(discord.ui.Modal):
     description = discord.ui.TextInput(
         label='Description',
         style=discord.TextStyle.long,
-        placeholder='Description of the tag embed...',
+        placeholder='Description of the tag embed...\n'
+                    'Use %%/command%% to reference a command!',
         max_length=4000,
         # technically max length would be 4096, but discord only accepts
         #  up to 4000 characters in modal text fields :I

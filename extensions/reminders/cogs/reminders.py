@@ -2,7 +2,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.reminders.objects import parse_and_create_reminder  # todo: put this in reminders.utils?
+from extensions.reminders.objects import parse_and_create_reminder
 
 
 class RemindersCog(commands.GroupCog, name="reminder"):

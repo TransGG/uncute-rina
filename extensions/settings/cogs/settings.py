@@ -24,14 +24,6 @@ if typing.TYPE_CHECKING:
     from resources.customs import Bot
 
 
-# todo: maybe a function to re-fetch settings for a specific server
-#  Like if a channel is deleted, or an emoji is removed. That you don't
-#  have to completely restart Rina to re-fetch every setting.
-
-# todo: ensure SystemAttributeIds.parent_server is not in a parent server's parent server
-#  The same for checking if one of the child_servers contains self, to prevent cyclic dependencies.
-
-
 attribute_type_single_value = [ModeAutocomplete.set, ModeAutocomplete.delete]
 attribute_type_list = [ModeAutocomplete.add, ModeAutocomplete.remove]
 
@@ -186,8 +178,7 @@ async def _value_autocomplete(
             for channel in itx.guild.channels:
                 if (isinstance(channel, attribute_type)
                         and (current in channel.name
-                             or str(channel.id).startswith(current))
-                ):
+                             or str(channel.id).startswith(current))):
                     results.append(app_commands.Choice(
                         name=channel.name, value=str(channel.id)))
         elif issubclass(attribute_type, discord.abc.Messageable):
@@ -334,7 +325,9 @@ async def _handle_settings_attribute(
         attribute = parse_attribute(
             itx.client, itx.guild, setting, value,
             invalid_arguments=invalid_arguments
-        )  # todo: check if ParseError handled
+        )
+        # raises ParseError if the ServerAttribute has a type that
+        #  has no parsing function yet.
         if invalid_arguments and modify_mode not in [
                 ModeAutocomplete.remove, ModeAutocomplete.remove
         ]:
@@ -724,7 +717,6 @@ class SettingsCog(commands.Cog):
             return
 
         if setting_type == TypeAutocomplete.help.value:
-            # Todo: Make more functions call HelpPage functions.
             await send_help_menu(itx, requested_page=900)
 
         elif setting_type == TypeAutocomplete.attribute.value:
