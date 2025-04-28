@@ -10,7 +10,6 @@ def clear_vc_rename_log(channel_id: int) -> None:
 
     :param channel_id: The channel to clear the rewrite timestamps for.
     """
-    global recently_renamed_vcs
     try:
         del recently_renamed_vcs[channel_id]
     except KeyError:
@@ -28,7 +27,6 @@ def try_store_vc_rename(channel_id: int, max_rename_limit: int = 2) -> None | in
     :return: ``None`` if the voice channel's rename timestamp was successfully stored; or the channel's first
      rename timestamp if it was edited more than *max_rename_limit* times in the past 10 minutes.
     """
-    global recently_renamed_vcs
     if channel_id in recently_renamed_vcs:
         # if there have been 2 or more renames for this channel
         if len(recently_renamed_vcs[channel_id]) >= max_rename_limit:
