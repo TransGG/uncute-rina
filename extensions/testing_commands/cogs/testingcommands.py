@@ -2,15 +2,17 @@ import random
 
 import discord
 from discord.ext import commands
-from discord import app_commands
+import discord.app_commands as app_commands
 
-from resources.customs.bot import Bot
+from extensions.settings.objects import AttributeKeys
+from resources.checks import MissingAttributesCheckFailure, is_staff_check
 from resources.views.generics import PageView, create_simple_button
 
 
 class TestingCog(commands.GroupCog, name="testing"):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        # todo: try to implement tests for commands instead of doing roundabout ways like these.
+        pass
 
     @app_commands.command(name="send_fake_watchlist_modlog", description="make a fake user modlog report")
     @app_commands.describe(
@@ -20,23 +22,30 @@ class TestingCog(commands.GroupCog, name="testing"):
         private_notes="private notes to include",
         role_changes="role changes ([[\\n]] converts to newline)"
     )
+    @app_commands.check(is_staff_check)
     async def send_fake_watchlist_mod_log(
             self, itx: discord.Interaction, target: discord.User, reason: str = "",
             rule: str = None, private_notes: str = "", role_changes: str = ""
     ):
+        staff_logs_category = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.staff_logs_category
+        )
+        if staff_logs_category is None:
+            raise MissingAttributesCheckFailure(AttributeKeys.staff_logs_category)
+
         embed = discord.Embed(title="did a log thing for x", color=16705372)
         embed.add_field(name="User", value=f"{target.mention} (`{target.id}`)", inline=True)
         embed.add_field(name="Moderator", value=f"{itx.user.mention}", inline=True)
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Rule", value=f">>> {rule}", inline=True)
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Reason", value=f">>> {reason}")
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Private Notes", value=f">>> {private_notes}")
-        embed.add_field(name="\u200b", value=f"\u200b", inline=False)
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
         embed.add_field(name="Role Changes", value=role_changes.replace("[[\\n]]", "\n"))
-        # any channel in self.client.custom_ids["staff_logs_category"] should work.
-        await self.client.get_channel(1143642283577725009).send(embed=embed)
+        # any channel in AttributeKeys.staff_logs_category should work.
+        await staff_logs_category.send(embed=embed)
 
     @app_commands.command(name="send_pageview_test", description="Send a test embed with page buttons")
     @app_commands.describe(page_count="The amount of pages to send/test")
@@ -82,11 +91,17 @@ class TestingCog(commands.GroupCog, name="testing"):
 
     @app_commands.command(name="send_srmod_appeal_test", description="Send a test embed of a ban appeal")
     @app_commands.describe(username="The username you want to fill in")
-    async def send_pageview_test_embed(self, itx: discord.Interaction, username: str):
+    @app_commands.check(is_staff_check)
+    async def send_srmod_appeal_test(self, itx: discord.Interaction, username: str):
         embed: discord.Embed = discord.Embed(title="New Ban Appeal")
-        embed.add_field(name="Which of the following are you appealing?", value="Discord Ban")
-        embed.add_field(name="What is your discord username?", value=username)
-        embed.add_field(name="Why were you banned?", value="I spammed this chanel D:")
-        embed.add_field(name="Why do you wish to be unbanned?", value="i was promisd cokies :cookie:")
-        embed.add_field(name="Do you have anything else to add?", value="me eepy")
+        embed.add_field(name="Which of the following are you appealing?",
+                        value="Discord Ban")
+        embed.add_field(name="What is your discord username?",
+                        value=username)
+        embed.add_field(name="Why were you banned?",
+                        value="I spammed this chanel D:")
+        embed.add_field(name="Why do you wish to be unbanned?",
+                        value="i was promisd cokies :cookie:")
+        embed.add_field(name="Do you have anything else to add?",
+                        value="me eepy")
         await itx.channel.send("Sending this cool embed...", embed=embed)

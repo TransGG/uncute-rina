@@ -30,13 +30,15 @@ Add an api_keys.json file in the same folder as the program, in which you add yo
 }
 ```
 
-Put the discord token, the MongoDB connection string from your databasem, and potential other API keys you might want to use into this file. API keys don't have to have a value (an empty string), but they do have to be added to the file. Missing keys will give descriptive errors upon program startup.
+Put the discord token, the MongoDB connection string from your database, and potential other API keys you might want to use into this file. API keys don't have to have a value (an empty string), but they do have to be added to the file. Missing keys will give descriptive errors upon program startup.
 
 Some IDs are still hardcoded. This should be reworked at some point in the future (2024-07-17). Some of the IDs can be found in the Bot class (resources/customs/bot.py). The key names may be descriptive enough. There are some in the EnabledServers class (resources/customs/utils.py) and FunAddons.on_message (extensions/addons.py). If you need help, reach out to me following the details in the Support section.
 
 Note: The bot automatically checks if it's in the main server in the setup_hook function (in main.py). If it isn't, it will set the variable running_in_production of the Bot client instance (resources/customs/bot.py) to False. You may need to change the IDs of all instances of "client.fetch_channel(...)" and "client.fetch_guild(...)" if you're running the bot in an entirely different environment.
 
 Direct yourself to the right directory/folder (in a terminal; or so I'd like to run it) (cd C:\Users\USER\x\) and run the main file using `python main.py`
+
+To (re)load all the commands, you will want to run the `/update` command. Since this command does not yet exist if you run the bot for the first time, you will have to put the contents of the function into `main.py`'s `on_ready()` function: `await itx.client.tree.sync()`. (I don't have it in there by default, to prevent it unnecessarily updating every time the bot starts up).
 
 ## Support
 

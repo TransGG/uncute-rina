@@ -1,13 +1,9 @@
 import json  # to read API json responses
-import random  # for dice rolls (/roll) and selecting a random staff interaction wait time
 import requests  # to read api calls
 
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
-
-from resources.customs.bot import Bot
-from resources.utils.utils import log_to_guild  # to log add_poll_reactions
 
 from extensions.addons.equaldexregion import EqualDexRegion
 from extensions.addons.views.equaldex_additionalinfo import EqualDexAdditionalInfo
@@ -19,8 +15,8 @@ STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 
 class SearchAddons(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
@@ -34,10 +30,10 @@ class SearchAddons(commands.Cog):
             await itx.response.send_message(
                 f"You can't use the following characters for country_id!\n> {illegal_characters}", ephemeral=True)
             return
-        equaldex_key = self.client.api_tokens["Equaldex"]
+        equaldex_key = itx.client.api_tokens["Equaldex"]
         querystring = {"regionid": country_id, "apiKey": equaldex_key}
         response = requests.get(
-            f"https://www.equaldex.com/api/region", params=querystring)  # &formatted=true
+            "https://www.equaldex.com/api/region", params=querystring)  # &formatted=true
         response_api = response.text
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to remove the <pre> and </pre> parts
         # it also has some <br \/>\r\n strings in there for some reason...? so uh
@@ -110,12 +106,13 @@ class SearchAddons(commands.Cog):
             embed.add_field(name=region.issues[issue]['label'],
                             value=value,
                             inline=False)
-        embed.set_footer(text=f"For more info, click the button below,")
+        embed.set_footer(text="For more info, click the button below,")
         view = EqualDexAdditionalInfo(region.url)
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @app_commands.command(name="math", description="Ask Wolfram Alpha a question")
     async def math(self, itx: discord.Interaction, query: str):
+        # todo: shorten function / split, and re-investigate the API docs to see if I can parse stuff better
         await itx.response.defer(ephemeral=True)
         if query.lower() in ["help", "what is this", "what is this?"]:
             await itx.followup.send(
@@ -136,7 +133,7 @@ class SearchAddons(commands.Cog):
         query = query.replace("+",
                               " plus ")
         # pluses are interpreted as a space (`%20`) in urls. In LaTeX, that can mean multiply
-        api_key = self.client.api_tokens['Wolfram Alpha']
+        api_key = itx.client.api_tokens['Wolfram Alpha']
         try:
             data = requests.get(
                 f"https://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
@@ -188,9 +185,9 @@ class SearchAddons(commands.Cog):
                 other_results = ""
             if len(other_primary_outputs) + bool(len(output)) <= error_or_nodata:
                 # if there are more or an equal amount of errors as there are text entries
-                await itx.followup.send(f"There was no data for your answer!\n"
-                                        f"It seems all your answers had an error or were 'nodata entries', meaning "
-                                        f"you might need to try a different query to get an answer to your question!",
+                await itx.followup.send("There was no data for your answer!\n"
+                                        "It seems all your answers had an error or were 'nodata entries', meaning "
+                                        "you might need to try a different query to get an answer to your question!",
                                         ephemeral=True)
                 return
             assumptions = []
@@ -206,11 +203,11 @@ class SearchAddons(commands.Cog):
                         # only 1 value, instead of a list. So just make a list of 1 value instead.
                         assumption["values"] = [assumption["values"]]
                     for value_index in range(len(assumption["values"])):
-                        assumption_data["${desc" + str(value_index + 1) + "}"] = assumption["values"][value_index][
-                            "desc"]
+                        assumption_data["${desc" + str(value_index + 1) + "}"] = \
+                            assumption["values"][value_index]["desc"]
                         try:
-                            assumption_data["${word" + str(value_index + 1) + "}"] = assumption["values"][value_index][
-                                "word"]
+                            assumption_data["${word" + str(value_index + 1) + "}"] = \
+                                assumption["values"][value_index]["word"]
                         except KeyError:
                             pass  # the "word" variable is only there sometimes. for some stupid reason.
 
@@ -245,7 +242,7 @@ class SearchAddons(commands.Cog):
                 warnings = "\nWarnings:\n> " + '\n> '.join(warnings)
             else:
                 warnings = ""
-            view = SendPublicButtonMath(self.client)
+            view = SendPublicButtonMath()
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
                 f"Result:\n> {output}" +

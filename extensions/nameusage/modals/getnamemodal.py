@@ -12,7 +12,7 @@ class GetNameModal(discord.ui.Modal, title="Search page with word"):
 
         self.word = None
         self.question_text = discord.ui.TextInput(label='What word to look up in the server name list?',
-                                                  placeholder=f"The word you want to look up",
+                                                  placeholder="The word you want to look up",
                                                   # style=discord.TextStyle.short,
                                                   # required=True
                                                   )

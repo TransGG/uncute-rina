@@ -1,53 +1,63 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from datetime import datetime, timezone  # for startup and crash logging, and Reminders
+#!/usr/bin/env python3
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+# ^ for periodic timers
+from datetime import datetime  # for startup and crash logging
 import json  # for loading the API keys file
 import logging  # to set logging level to not DEBUG and hide unnecessary logs
-import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
+import motor.motor_asyncio as motorasync
+# ^ for making Mongo run asynchronously (during api calls)
 import motor.core as motorcore  # for typing
 import os  # for creating outputs/ directory
-from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+from pymongo.database import Database as PyMongoDatabase
+# ^ for MongoDB database typing
 from pymongo import MongoClient
-from typing import Literal, TypedDict
 
 import discord  # for main discord bot functionality
 
-from resources.customs.bot import Bot, ApiTokenDict
-from resources.utils.utils import debug, TESTING_ENVIRONMENT  # for logging crash messages
-
-from extensions.reminders.objects import ReminderObject  # Reminders (/reminders remindme)
-from extensions.watchlist.localwatchlist import get_or_fetch_watchlist_index
+from extensions.reminders.objects import \
+    relaunch_ongoing_reminders
+from extensions.settings.objects import ServerSettings
+from extensions.starboard.local_starboard import fetch_all_starboard_messages
+from extensions.tags.local_tag_list import fetch_all_tags
+from extensions.watchlist.local_watchlist import fetch_all_watchlists
 # ^ for fetching all watchlists on startup
+
+from resources.customs import Bot, ProgressBar
+from resources.customs import ApiTokenDict
+from resources.utils import debug, codec_options
 
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 
 BOT_VERSION = "1.4.1.1"
 
+# noinspection SpellCheckingInspection
 EXTENSIONS = [
     "addons",
-    "aegis_ping_reactions",
-    "ban_appeal_reactions",
     "compliments",
     "crashhandling",
     "customvcs",
     "emojistats",
-    "help",
     "getmemberdata",
-    # "pronouns", # depreciated
+    "help",
+    "message_reactions",
+    "nameusage",
     "qotw",
+    "reminders",
+    "settings",
     "staffaddons",
+    "starboard",
     "tags",
     "termdictionary",
+    # "testing_commands",
     "todolist",
     "toneindicator",
     "vclogreader",
     "watchlist",
-    "starboard",
-    "nameusage",
-    "reminders",
-    "staff_polls_channel",
-    # "testing_commands",
 ]
+
+load_progress = ProgressBar(5)
+start_progress = ProgressBar(7)
 
 
 # Permission requirements:
@@ -65,6 +75,7 @@ EXTENSIONS = [
 #       use embeds (for starboard)
 #       use (external) emojis (for starboard, if you have external starboard reaction...?)
 
+
 def get_token_data() -> tuple[
     str,
     ApiTokenDict,
@@ -75,29 +86,20 @@ def get_token_data() -> tuple[
     Ensures the api_keys.json file contains all the bot's required keys, and
     uses these keys to start a link to the MongoDB.
 
-    Returns
-    --------
-    :class:`tuple[discord_token, other_api_keys, synchronous_db_connection, async_db_connection]`:
-        Tuple of discord bot token and database client cluster connections.
+    :return: Tuple of discord bot token, other api tokens, and a sync and async database client cluster connection.
 
-    Raises
-    -------
-    :class:`FileNotFoundError`:
-        if the api_keys.json file does not exist.
-    :class:`json.decoder.JSONDecodeError`:
-        if the api_keys.json file is not in correct JSON format.
-    :class:`KeyError`:
-        if the api_keys.json file is missing the api key for an api used in the program.
+    :raise FileNotFoundError: If the api_keys.json file does not exist.
+    :raise json.decoder.JSONDecodeError: If the api_keys.json file is not in correct JSON format.
+    :raise KeyError: If the api_keys.json file is missing the api key for an api used in the program.
     """
-    debug(f"[#+   ]: Loading api keys..." + " " * 30, color="light_blue", end='\r')
-    # debug(f"[+     ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Loading api keys...")
     try:
         with open("api_keys.json", "r") as f:
             api_keys = json.loads(f.read())
         tokens = {}
         bot_token: str = api_keys['Discord']
         missing_tokens: list[str] = []
-        for key in ApiTokenDict.__required_keys__:
+        for key in ApiTokenDict.__annotations__:
             # copy every other key to new dictionary to check if every key is in the file.
             if key not in api_keys:
                 missing_tokens.append(key)
@@ -111,12 +113,13 @@ def get_token_data() -> tuple[
     if missing_tokens:
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
 
-    debug(f"[##+  ]: Loading database clusters..." + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Loading database clusters...")
     cluster: MongoClient = MongoClient(tokens['MongoDB'])
     rina_db: PyMongoDatabase = cluster["Rina"]
     cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(tokens['MongoDB'])
-    async_rina_db: motorcore.AgnosticDatabase = cluster["Rina"]
-    debug(f"[###  ]: Loaded database clusters" + " " * 30, color="green", end='r')
+    async_rina_db: motorcore.AgnosticDatabase  # = cluster["Rina"]
+    async_rina_db = cluster.get_database("Rina", codec_options=codec_options)
+    load_progress.step("Loaded database clusters", newline=False)
     return bot_token, tokens, rina_db, async_rina_db
 
 
@@ -125,12 +128,9 @@ def get_version() -> str:
     Dumb code for cool version updates. Reads version file and matches with current version string. Updates file if
     string is newer, and adds another ".%d" for how often the bot has been started in this version.
 
-    Returns
-    --------
-    :class:`str`:
-        Current version/instance of the bot.
+    :return: Current version/instance of the bot.
     """
-    debug(f"[###+ ]: Loading version..." + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Loading version...")
     file_version = BOT_VERSION.split(".")
     try:
         os.makedirs("outputs", exist_ok=True)
@@ -149,7 +149,7 @@ def get_version() -> str:
     rina_version = '.'.join(rina_version)
     with open("outputs/version.txt", "w") as f:
         f.write(f"{rina_version}")
-    debug(f"[#### ]: Loaded version" + " " * 30, color="green", end='\r')
+    load_progress.step("Loaded version", newline=False)
     return rina_version
 
 
@@ -159,7 +159,7 @@ def create_client(
         async_rina_db: motorcore.AgnosticDatabase,
         version: str
 ) -> Bot:
-    debug(f"[####+]: Creating bot" + " " * 30, color="light_blue", end='\r')
+    load_progress.progress("Creating bot")
 
     intents = discord.Intents.default()
     intents.members = True  # apparently this needs to be defined because it's not included in Intents.default()?
@@ -178,9 +178,9 @@ def create_client(
         #  unnecessary, but needs to be set so... uh... yeah. Unnecessary terminal warnings avoided.
         case_insensitive=True,
         activity=discord.Game(name="with slash (/) commands!"),
-        allowed_mentions=discord.AllowedMentions(everyone=False)
+        allowed_mentions=discord.AllowedMentions(everyone=False),
     )
-    debug(f"[#      ]: Created Bot" + " " * 30, color="green")
+    start_progress.step("Created Bot")
     return bot
 
 
@@ -188,27 +188,43 @@ def start_app():
     (token, tokens, rina_db, async_rina_db) = get_token_data()
     version = get_version()
     client = create_client(tokens, rina_db, async_rina_db, version)
-    debug(f"[#+     ]: Starting Bot...", color="light_blue", end='\r')
+    start_progress.progress("Starting Bot...")
 
     # this can probably be done better
     # region Client events
     @client.event
     async def on_ready():
-        debug(f"[#######]: Logged in as {client.user}, in version {version} "
-              f"(in {datetime.now().astimezone() - program_start})",
-              color="green")
+        text = (f"Logged in as {client.user}, in version {version} "
+                f"(in {datetime.now().astimezone() - program_start})")
+        try:
+            start_progress.step(text)
+        except OverflowError:
+            debug(text, color="green")
+
         await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
 
-        debug(f"[+]: Pre-loading all watchlist threads", color="light_blue", end="\r")
-        watchlist_channel = client.get_channel(client.custom_ids["staff_watch_channel"])
-        if watchlist_channel is not None:  # if running on prod
-            await get_or_fetch_watchlist_index(watchlist_channel)
-        debug(f"[#]: Loaded watchlist threads." + " " * 15, color="green")
+        post_startup_progress = ProgressBar(4)
+
+        post_startup_progress.progress("Loading all server settings...")
+        client.server_settings = await ServerSettings.fetch_all(client)
+        post_startup_progress.step("Loaded server settings.")
+
+        post_startup_progress.progress("Loading all server tags...")
+        _ = await fetch_all_tags(client.async_rina_db)
+        post_startup_progress.step("Loaded server tags.")
+
+        post_startup_progress.progress("Loading all watchlist threads...")
+        _ = await fetch_all_watchlists(client.async_rina_db)
+        post_startup_progress.step("Loaded watchlist threads.")
+
+        post_startup_progress.progress("Loading all starboard messages...")
+        _ = await fetch_all_starboard_messages(client.async_rina_db)
+        post_startup_progress.step("Loaded starboard messages.")
 
     @client.event
     async def setup_hook():
-        debug(f"[##     ]: Started Bot" + " " * 30, color="green")
-        debug(f"[##+    ]: Load extensions and scheduler", color="light_blue", end="\r")
+        start_progress.step("Started Bot")
+        start_progress.progress("Load extensions and scheduler")
         logger = logging.getLogger("apscheduler")
         logger.setLevel(logging.WARNING)
         # remove annoying 'Scheduler started' message on sched.start()
@@ -219,57 +235,42 @@ def start_app():
         # Activate the extensions/programs/code for slash commands
 
         extension_loading_start_time = datetime.now().astimezone()
+        extension_load_progress = ProgressBar(len(EXTENSIONS))
         for extID in range(len(EXTENSIONS)):
-            debug(f"[{'#' * extID}+{' ' * (len(EXTENSIONS) - extID - 1)}]: Loading {EXTENSIONS[extID]}" + " " * 15,
-                  color="light_blue", end='\r')
+            extension_load_progress.progress(f"Loading {EXTENSIONS[extID]}")
             await client.load_extension("extensions." + EXTENSIONS[extID] + ".module")
-        debug(f"[###    ]: Loaded extensions successfully "
-              f"(in {datetime.now().astimezone() - extension_loading_start_time})",
-              color="green")
-
-        debug(f"[###+   ]: Loading server settings" + " " * 30, color="light_blue", end='\r')
+        start_progress.step(f"Loaded extensions successfully "
+                            f"(in {datetime.now().astimezone() - extension_loading_start_time})")
+        start_progress.progress("Loading server settings")
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
-        except (discord.errors.InvalidData, discord.errors.HTTPException, discord.errors.NotFound,
-                discord.errors.Forbidden):  # one of these
-            client.running_on_production = False
-            if TESTING_ENVIRONMENT == 1:
-                client.log_channel = await client.fetch_channel(986304081234624554)
-            else:
-                client.log_channel = await client.fetch_channel(1062396920187863111)
-        client.bot_owner = await client.fetch_user(262913789375021056)  # (await client.application_info()).owner
+        except discord.errors.Forbidden:
+            # client.log_channel = await client.fetch_channel(986304081234624554)
+            client.log_channel = await client.fetch_channel(1062396920187863111)
+        client.bot_owner = await client.fetch_user(262913789375021056)
+        # client.bot_owner = (await client.application_info()).owner  # or client.owner / client.owner_id :P
         # can't use the commented out code because Rina is owned by someone else in the main server than
         # the dev server (=not me).
 
-        debug(f"[####   ]: Loaded server settings" + " " * 30, color="green")
-        debug(f"[####+  ]: Restarting ongoing reminders" + " " * 30, color="light_blue", end="\r")
-        collection = rina_db["reminders"]
-        query = {}
-        db_data = collection.find(query)
-        for user in db_data:
-            try:
-                for reminder in user['reminders']:
-                    creation_time = datetime.fromtimestamp(reminder['creationtime'], timezone.utc)
-                    reminder_time = datetime.fromtimestamp(reminder['remindertime'], timezone.utc)
-                    ReminderObject(client, creation_time, reminder_time, user['userID'], reminder['reminder'], user,
-                                   continued=True)
-            except KeyError:
-                pass
-        debug(f"[#####  ]: Finished setting up reminders" + " " * 30, color="green")
-        debug(f"[#####+ ]: Caching bot's command names and their ids", color="light_blue", end='\r')
+        start_progress.progress("Restarting ongoing reminders")
+        await relaunch_ongoing_reminders(client)
+        start_progress.step("Finished setting up reminders")
+        start_progress.progress("Caching bot's command names and their ids")
         client.commandList = await client.tree.fetch_commands()
-        debug(f"[###### ]: Cached bot's command names and their ids" + " " * 30, color="green")
-        debug(f"[######+]: Starting..." + " " * 30, color="light_blue", end='\r')
+        start_progress.step("Cached bot's command names and their ids")
+        start_progress.progress("Starting...")
 
     # endregion
 
     client.run(token, log_level=logging.WARNING)
 
 
-try:
-    start_app()
-except SystemExit:
-    print("Exited the program forcefully using the kill switch")
+if __name__ == "__main__":
+    try:
+        start_app()
+    except SystemExit:
+        print("Exited the program forcefully using the kill switch")
+
 
 # region TODO:
 # - Translator

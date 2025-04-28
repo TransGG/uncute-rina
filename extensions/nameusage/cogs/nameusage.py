@@ -4,14 +4,13 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
-
 from extensions.nameusage.views.pageview import GetTopPageView
+from resources.checks import not_in_dms_check
 
 
 class NameUsage(commands.GroupCog, name="nameusage", description="Get data about which names are used in which server"):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @app_commands.command(name="gettop", description="See how often different names occur in this server")
     @app_commands.choices(mode=[
@@ -19,6 +18,7 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
         discord.app_commands.Choice(name='Search most-used nicknames', value=2),
         discord.app_commands.Choice(name='Search nicks and usernames', value=3),
     ])
+    @app_commands.check(not_in_dms_check)
     async def nameusage_gettop(self, itx: discord.Interaction, mode: int):
         await itx.response.defer(ephemeral=True)
         sections = {}
@@ -117,7 +117,7 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
         embed.add_field(name="Column 2", value=result_page2)
         embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages) / 2)))
         view = GetTopPageView(pages, embed_title, timeout=60)
-        await itx.followup.send(f"", embed=embed, view=view, ephemeral=True)
+        await itx.followup.send("", embed=embed, view=view, ephemeral=True)
         await view.wait()
         if view.value is None:
             await itx.edit_original_response(view=None)
@@ -129,6 +129,7 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
         discord.app_commands.Choice(name='nicknames', value=2),
         discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
     ])
+    @app_commands.check(not_in_dms_check)
     async def nameusage_name(self, itx: discord.Interaction, name: str, search_type: int, public: bool = False):
         await itx.response.defer(ephemeral=not public)
         count = 0

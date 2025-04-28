@@ -1,7 +1,10 @@
 from extensions.help.helppage import HelpPage
 
+__all__ = ["help_pages", 'aliases', 'FIRST_PAGE']
 
-# noinspection SqlNoDataSourceInspection
+from extensions.settings.objects import AttributeKeys
+
+
 help_pages: dict[int, HelpPage] = {
     0: HelpPage(  # fallback default page
         title="Rina's fallback help page",
@@ -14,7 +17,6 @@ help_pages: dict[int, HelpPage] = {
 %%equaldex%%: See LGBTQ safety and rights in a country (with API)
 %%math%%: Ask Wolfram|Alpha for math or science help
 %%nameusage gettop%%: See how many people are using the same name
-%%pronouns%%: See someone's pronouns or edit your own
 %%qotw%% and %%developer_request%%: Suggest a Question Of The Week or Bot Suggestion to staff
 %%reminder reminders%%: Make or see your reminders
 %%roll%%: Roll some dice with a random result
@@ -27,7 +29,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
 %%vctable about%%: Learn about making your voice chat more on-topic!
 """,
         fields=[],
-        staff_only=False,
     ),
     # region Default pages (home / index)
     1: HelpPage(
@@ -46,7 +47,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     "\n"
                     "Do you have a cool bot idea? Use %%developer_request%% to suggest them to staff!",
         fields=[],
-        staff_only=False,
     ),
     2: HelpPage(
         title="Index",
@@ -62,9 +62,9 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **7:** Server search commands\n"  # 140
                     ". . **8:** Chat actions\n"  # 150
                     ". . **9:** Server functions\n"  # 160
-                    ". . **10:** Voice channels",  # 170
+                    ". . **10:** Voice channels\n"  # 170
+                    ". . **90:** Bot setup",  # 900
         fields=[],
-        staff_only=False,
     ),
     # endregion
 
@@ -97,7 +97,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **103:** get_rina_command_mention\n"
                     ". . **105:** add_poll_reactions\n",
         fields=[],
-        staff_only=False,
     ),
     4: HelpPage(  # index: Utility
         title="Utility",
@@ -108,7 +107,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **114:** convert_unit\n"
                     ". . **115:** todo\n",
         fields=[],
-        staff_only=False,
     ),
     5: HelpPage(  # index: Suggestion commands
         title="Suggestion commands",
@@ -117,29 +115,43 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **121:** developer_request\n"
                     ". . **122:** qotw (question of the week)\n",
         fields=[],
-        staff_only=False,
     ),
     6: HelpPage(  # index: Internet search commands
         title="Internet search commands",
-        description="Googling is hard. That's why I made some searching commands!\b"
+        description="Googling is hard. That's why I made some searching commands!\n"
                     "\n"
                     ". . **131:** equaldex (LGBTQ laws in countries)\n"
                     ". . **132:** qotw (question of the week)\n",
         fields=[],
-        staff_only=False,
     ),
     7: HelpPage(
-        title="Work in progress...",
+        title="Server search commands",
         description="This section is still being worked on! (help, so much text to write D: )\n"
                     "Scroll a few pages ahead to see what the rest of the help pages look like!",
         fields=[],
-        staff_only=False,
     ),
     8: HelpPage(
-        title="placeholder (skip ahead)",
+        title="Chat actions",
         description="placeholder (skip ahead)",
         fields=[],
-        staff_only=False,
+    ),
+    9: HelpPage(
+        title="Server functions",
+        description="placeholder (skip ahead)",
+        fields=[],
+    ),
+    10: HelpPage(
+        title="Voice channels",
+        description="placeholder (skip ahead)",
+        fields=[],
+    ),
+    90: HelpPage(
+        title="Bot setup",
+        description="Rina isn't really meant for more than 1 server. But.. I tried my best :D\n"
+                    "There are some commands to help customize the features in your server.\n"
+                    "\n"
+                    ". . **901:** settings",
+        fields=[],
     ),
     # endregion
     # region Bot Functions
@@ -172,7 +184,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - An alias for this command. Brings you to the Bot Functions index page."
             )
         ],
-        staff_only=False,
     ),
     102: HelpPage(  # /version
         title="Bot version",
@@ -188,7 +199,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Gives Rina's current version, and if there is a newer version."
             )
         ],
-        staff_only=False,
     ),
     103: HelpPage(  # get_rina_command_mention
         title="Sharing Rina's commands the cooler way :sunglasses:",
@@ -219,7 +229,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Gives you the command mention information for /add_poll_reactions.\n"
             )
         ],
-        staff_only=False,
     ),
     104: HelpPage(  # /add_poll_reactions
         title="Adding voting emojis / Creating tiny polls",
@@ -247,7 +256,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- (optional) An emoji or emoji ID.\n"
             ),
             (
-                "Examples",  # discord emojis don't work in code blocks :(, so gotta use unicode.
+                "Examples",  # discord emojis don't work in code blocks :(, so gotta use Unicode.
                 "- %%add_poll_reactions%% `message_id:1963131994116722778` `upvote_emoji:🐟` `downvote_emoji:🐢`\n"
                 "  - Adds a fish and then a turtle to a message with the id.\n"
                 "- %%add_poll_reactions%% `message_id:1134140122115838003` "
@@ -255,7 +264,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Adds a thumbs up, then a person shrugging, then a thumbs down emoji."
             )
         ],
-        staff_only=False,
     ),
     # endregion
     # region Utility commands
@@ -291,7 +299,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - See next page (__**102**__) for more information about advanced dice rolls."
             )
         ],
-        staff_only=False,
     ),
     112: HelpPage(  # dice rolls advanced
         title="Advanced dice rolls",  # /roll advanced: ...
@@ -315,7 +322,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - Multiply the outcome of 5 dice with the outcome of 2 dice, and subtract the outcome of 3 dice."
             )
         ],
-        staff_only=False,
     ),
     113: HelpPage(  # reminders
         title="Reminders",  # /reminder
@@ -345,7 +351,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "Use that number to remove the reminder like so: `item:number`."
             )
         ],
-        staff_only=False,
     ),
     114: HelpPage(  # convert unit
         title="Converting units",
@@ -371,7 +376,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 ""
             )
         ],
-        staff_only=False,
     ),
     115: HelpPage(  # to-do list
         title="Todo lists",
@@ -405,7 +409,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "to make sure you're removing the right command when removing multiple to-do items at once!"
             )
         ],
-        staff_only=False,
     ),
     # endregion
     # region Suggestion commands
@@ -437,7 +440,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - yeah, it does the thingy"
             )
         ],
-        staff_only=False,
     ),
     122: HelpPage(  # qotw
         title="Questions of the week",
@@ -461,7 +463,6 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - yes"
             )
         ],
-        staff_only=False,
     ),
     # endregion
     # region Internet search commands
@@ -488,7 +489,121 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "  - DE for Germany, "
             )
         ],
-        staff_only=False,
-    )
+    ),
     # endregion
+    # region Bot setup
+    900: HelpPage(  # /settings
+        title="Server settings",
+        description="Rina has many commands and features. Some commands need setup beforehand, like "
+                    "a logging channel or role ids. This command lets you personalize rina for *your* "
+                    "server!",
+        fields=[
+            (
+                "Parameters",
+                "`type`: The type of setting you want to change.\n"
+                "- Attribute: IDs like staff role ids, starboard channel ids, blacklisted channels, vctable prefixes\n"
+                "- Module: Choose which modules are currently running.\n"
+                "`setting`: The attribute or module you want to change.\n"
+                "- This will be autocompleted based on what you selected for `type`.\n"
+                "`mode`: How do you want to change your selected setting?\n"
+                "- View: Don't change anything, just view the current value for the selected setting.\n"
+                "- [Module] Enable: Turn on a module.\n"
+                "- [Module] Disable: Turn off a module.\n"
+                "- [Attribute] Set: Set a value for the selected setting.\n"
+                "- [Attribute] Delete: Unset a value for the selected setting.\n"
+                "- [Attribute] Add: Used for lists. Add a value to the list for the selected setting.\n"
+                "- [Attribute] Remove: Used for lists. Remove a value from the list for the selected setting.\n"
+            ),
+            (
+                "Parameters (continued)",
+                "`value`: The value you want to give this setting.\n"
+                "- You don't have to set a value if you selected `mode:View`.\n"
+                "- With `mode:Remove` (for lists), you should fill in the value that is currently in the list"
+                "(not the index of the item in the list).\n"
+            ),
+            (
+                "Examples",
+                "- %%settings%% `type:Module` `setting:starboard` `mode:Enable`\n"
+                "  - Enable the 'starboard' module.\n"
+                "- %%settings%% `type:Attribute` `setting:log_channel` `mode:Set` `value:123456789012345678`\n"
+                "  - Set the 'log_channel' attribute to '123456789012345678', the channel id.\n"
+                "- %%settings%% `type:Attribute` `setting:poll_reaction_blacklisted_channels` "
+                "`mode:Add` `value:general`\n"
+                "  - poll_reaction_blacklisted_channels is a list of channels: [1,2,3]. "
+                "Add the `general` channel to this list.\n"
+                "  - When clicking autocomplete results, the value may be the name of the channel. You can use this "
+                "method, or fill in the ID manually and ignore the autocomplete result.\n"
+            )
+        ],
+        staff_only=True
+    ),
+    901: HelpPage(  # /tag-manage
+        title="Manage Tags",
+        description="Informing others is a common occurrence. Some "
+                    "information is repeated very often, and being able to "
+                    "copy-paste that information would be very practical. "
+                    "This command lets you add these custom tags.\n"
+                    "For more info, look at page __**0**__.",  # todo: add /tag helppage
+        fields=[
+            (
+                "Parameters",
+                "`mode`: Whether to create or delete a tag (or get help).\n"
+                "- Help: Shows this help page.\n"
+                "- Create: Open a modal to create a new tag.\n"
+                "- Delete: Delete a tag with the given name.\n"
+                "`tag_name`: The name of the tag to create or delete.\n"
+                "- This is a unique name for the tag.\n"
+            ),
+            (
+                "Examples",
+                "- %%tag-manage%% `mode:Create` `tag_name:avoid politics`\n"
+                "  - Opens a modal to fill in details about this tag. See below "
+                "for information about the modal.\n"
+                "- %%tag-manage%% `mode:Delete` `tag_name:avoid politics`\n"
+                "  - Deletes the tag we just created. You can only delete custom "
+                "tags.\n"
+            ),
+            (
+                "Tag Creation Modal",
+                f"- Title: The title of the embed.\n"
+                f"- Description: The description of the embed.\n"
+                f"  - Use %\\%/command%\\% to reference a command!\n"
+                f"- Color: An RGB color, each value separated by a comma.\n"
+                f"  - Some examples: '255,0,0' (red), '255,255,255' (white),"
+                f"'0,0,1' (black).\n"
+                f"  - Note: discord's default embed color (no color) is "
+                f"'0,0,0', so if you use that, your embed will be default "
+                f"gray.\n"
+                f"- Report anonymous usage to staff: As it says. If this is "
+                f"true and a member sends the tag publicly anonymously, a "
+                f"message will be sent to the channel from the "
+                f"{AttributeKeys.staff_reports_channel} server attribute."
+            )
+        ],
+        staff_only=True
+    )
 }
+
+
+FIRST_PAGE: int = list(help_pages)[0]
+
+
+aliases: dict[int, list[str]] = {
+    0: ["Fallback", "Rina's fallback help page"],
+    1: ["Introduction", "Welcome page", "Rina's commands"],
+    2: ["Index of indexes"],
+    3: ["Index: Bot functions"],
+    4: ["Index: Utility"],
+    5: ["Index: Suggestion commands"],
+    6: ["Index: Internet search commands"],
+    7: ["Index: Server search commands"],
+    8: ["Index: Chat actions"],
+    9: ["Index: Server functions"],
+    10: ["Index: Voice channels"],
+    90: ["Index: Bot setup"],
+}
+
+for page in help_pages:
+    if page in aliases:
+        continue
+    aliases[page] = [help_pages[page]["title"]]

@@ -9,7 +9,8 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
+from resources.checks import not_in_dms_check
+from resources.customs import Bot
 
 
 async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
@@ -60,10 +61,12 @@ class MemberData(commands.Cog):
                            upper_bound="Get data up to [period] days ago",
                            doubles="If someone joined twice, are they counted double? (y/n or 1/0)",
                            public="Send the output to everyone in the channel")
+    @app_commands.check(not_in_dms_check)
     async def get_member_data(
             self, itx: discord.Interaction, lower_bound: str, upper_bound: str = None, doubles: bool = False,
             public: bool = False
     ):
+        # todo: split function into multiple subfunctions.
         if upper_bound is None:
             upper_bound = 0  # 0 days from now
         try:
@@ -103,7 +106,7 @@ class MemberData(commands.Cog):
         min_time = int((current_time - lower_bound) / accuracy) * accuracy
         max_time = int((current_time - upper_bound) / accuracy) * accuracy
 
-        collection = self.client.async_rina_db["data"]
+        collection = itx.client.async_rina_db["data"]
         query = {"guild_id": itx.guild_id}
         data = await collection.find_one(query)
         if data is None:

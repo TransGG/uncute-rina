@@ -7,9 +7,8 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
+from resources.checks import is_staff_check  # for staff dictionary commands
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
-from resources.utils.permissions import is_staff  # for staff dictionary commands
 from resources.utils.utils import log_to_guild
 
 from extensions.termdictionary.views import DictionaryApi_PageView, UrbanDictionary_PageView
@@ -18,68 +17,69 @@ from extensions.termdictionary.views import DictionaryApi_PageView, UrbanDiction
 del_separators_table = str.maketrans({" ": "", "-": "", "_": ""})
 
 
-class TermDictionary(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+async def dictionary_autocomplete(itx: discord.Interaction, current: str):
+    def simplify(q):
+        if type(q) is str:
+            return q.lower().translate(del_separators_table)
+        if type(q) is list:
+            return [text.lower().translate(del_separators_table) for text in q]
 
-    async def dictionary_autocomplete(self, _: discord.Interaction, current: str):
-        def simplify(q):
-            if type(q) is str:
-                return q.lower().translate(del_separators_table)
-            if type(q) is list:
-                return [text.lower().translate(del_separators_table) for text in q]
+    terms = []
+    if current == '':
+        return []
 
-        terms = []
-        if current == '':
-            return []
+    # find results in custom dictionary
+    collection = itx.client.rina_db["termDictionary"]
+    query = {"synonyms": simplify(current)}
+    search = collection.find(query)
+    for item in search:
+        if simplify(current) in simplify(item["synonyms"]):
+            terms.append(item["term"])
 
-        # find results in custom dictionary
-        collection = self.client.rina_db["termDictionary"]
-        query = {"synonyms": simplify(current)}
-        search = collection.find(query)
-        for item in search:
-            if simplify(current) in simplify(item["synonyms"]):
-                terms.append(item["term"])
+    # get list of choices from online
+    response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
+    data = json.loads(response_api)
+    # find exact results online
+    if len(data) != 0:
+        for item in data:
+            if item['term'].split("|")[0] not in terms:
+                if simplify(current) in simplify(item['term'].split('|')):
+                    terms.append(item['term'].split('|')[0])
 
-        # get list of choices from online
-        response_api = requests.get(f'https://en.pronouns.page/api/terms/search/{current}').text
+        # then, find whichever other terms are there (append / last) online
+        for item in data:
+            if item['term'].split("|")[0] not in terms:
+                terms.append(item['term'].split("|")[0])
+
+    # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
+    # but only if there aren't already 7 responses; to prevent extra loading time
+    if len(terms) < 7:
+        response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{current}').text
         data = json.loads(response_api)
-        # find exact results online
-        if len(data) != 0:
-            for item in data:
-                if item['term'].split("|")[0] not in terms:
-                    if simplify(current) in simplify(item['term'].split('|')):
-                        terms.append(item['term'].split('|')[0])
-
-            # then, find whichever other terms are there (append / last) online
-            for item in data:
-                if item['term'].split("|")[0] not in terms:
-                    terms.append(item['term'].split("|")[0])
-
-        # Next to that, also add generic dictionary options if your query exactly matches that of the dictionary
-        # but only if there aren't already 7 responses; to prevent extra loading time
-        if len(terms) < 7:
-            response_api = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/en/{current}').text
-            data = json.loads(response_api)
-            if type(data) is not dict:
-                for result in data:
-                    if result["word"].capitalize() not in terms:
-                        terms.append(result["word"].capitalize())
-        # same for Urban Dictionary, searching only if there are no results for the others
-        if len(terms) < 1:
-            response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
-            data = json.loads(response_api)['list']
+        if type(data) is not dict:
             for result in data:
-                if result["word"].capitalize() + " ([from UD])" not in terms:
-                    terms.append(result["word"].capitalize() + " ([from UD])")
+                if result["word"].capitalize() not in terms:
+                    terms.append(result["word"].capitalize())
+    # same for Urban Dictionary, searching only if there are no results for the others
+    if len(terms) < 1:
+        response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
+        data = json.loads(response_api)['list']
+        for result in data:
+            if result["word"].capitalize() + " ([from UD])" not in terms:
+                terms.append(result["word"].capitalize() + " ([from UD])")
 
-        # limit choices to the first 7
-        terms = terms[:7]
+    # limit choices to the first 7
+    terms = terms[:7]
 
-        return [
-            app_commands.Choice(name=term, value=term.replace(" ([from UD])", ""))
-            for term in terms
-        ]
+    return [
+        app_commands.Choice(name=term, value=term.replace(" ([from UD])", ""))
+        for term in terms
+    ]
+
+
+class TermDictionary(commands.Cog):
+    def __init__(self):
+        pass
 
     @app_commands.command(name="dictionary", description="Look for the definition of a trans-related term!")
     @app_commands.describe(term="This is your search query. What do you want to look for?",
@@ -94,19 +94,26 @@ class TermDictionary(commands.Cog):
     ])
     @app_commands.autocomplete(term=dictionary_autocomplete)
     async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
+        # todo: rewrite this whole command.
+        #  - Make the sources an enum.
+        #  - Allow going to the next source if you're not satisfied with a dictionary's result.
+        #  - Perhaps make a view with multi-selectable options for which sources you would want to search through
+        #     though this sounds like a bad idea Xd.
+        #  - Should also have an integration without custom dictionary that users can install.
+        #  - Make all pageviews into actual PageView views.
+
         def simplify(q):
             if type(q) is str:
                 return q.lower().translate(del_separators_table)
             if type(q) is list:
                 return [text.lower().translate(del_separators_table) for text in q]
-
         # test if mode has been left unset or if mode has been selected: decides whether to move to the
         # online API search or not.
         result_str = ""
         # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
         results: list[any]
         if source == 1 or source == 2:
-            collection = self.client.rina_db["termDictionary"]
+            collection = itx.client.rina_db["termDictionary"]
             query = {"synonyms": term.lower()}
             search = collection.find(query)
 
@@ -129,7 +136,7 @@ class TermDictionary(commands.Cog):
                     source = 3
                 # public = False
                 else:
-                    cmd_mention = self.client.get_command_mention("dictionary_staff define")
+                    cmd_mention = itx.client.get_command_mention("dictionary_staff define")
                     result_str += (f"No information found for '{term}' in the custom dictionary.\n"
                                    f"If you would like to add a term, message a staff member (to use {cmd_mention})")
                     public = False
@@ -139,7 +146,7 @@ class TermDictionary(commands.Cog):
             if len(result_str) > 1999:
                 result_str = (f"Your search ({term}) returned too many results (discord has a 2000-character "
                               f"message length D:). (Please ask staff to fix this (synonyms and stuff).)")
-                await log_to_guild(self.client, itx.guild,
+                await log_to_guild(itx.client, itx.guild,
                                    f":warning: **!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary "
                                    f"search ('{term}') gave back a result that was larger than 2000 characters!'")
         if source == 3 or source == 4:
@@ -186,12 +193,16 @@ class TermDictionary(commands.Cog):
                                   f"'{term}' on en.pronouns.page! \n")
                     for item in results:
                         result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-                    result_str += f"{len(search) - len(results)} other non-exact results found." * (
-                            (len(search) - len(results)) > 0)
+                    if (len(search) - len(results)) > 0:
+                        result_str += f"{len(search) - len(results)} other non-exact results found."
                     if len(result_str) > 1999:
-                        result_str = (f"Your search ('{term}') returned a too-long result! (discord has a "
-                                      f"2000-character message length D:). To still let you get better results, "
-                                      f"I've rewritten the terms so you might be able to look for a more specific one:")
+                        result_str = (
+                            f"Your search ('{term}') returned a too-long "
+                            f"result! (discord has a 2000-character message "
+                            f"length D:). To still let you get better results, "
+                            f"I've rewritten the terms so you might be able "
+                            f"to look for a more specific one:"
+                        )
                         for item in results:
                             result_str += f"> {', '.join(item['term'].split('|'))}\n"
                     await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
@@ -352,9 +363,9 @@ class TermDictionary(commands.Cog):
             if len(data) == 0:
                 if source == 7:
                     result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
-                    cmd_mention_dict = self.client.get_command_mention("dictionary")
-                    cmd_mention_def = self.client.get_command_mention("dictionary_staff define")
-                    await log_to_guild(self.client, itx.guild,
+                    cmd_mention_dict = itx.client.get_command_mention("dictionary")
+                    cmd_mention_def = itx.client.get_command_mention("dictionary_staff define")
+                    await log_to_guild(itx.client, itx.guild,
                                        f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for "
                                        f"'{term}' in the terminology dictionary and online, but there were "
                                        f"no results. Maybe we should add this term to "
@@ -405,17 +416,13 @@ class TermDictionary(commands.Cog):
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="define", description="Add a dictionary entry for a word!")
     @app_commands.describe(
         term="This is the main word for the dictionary entry: Egg, Hormone Replacement Therapy (HRT), (case sens.)",
         definition="Give this term a definition",
         synonyms="Add synonyms (SEPARATE WITH \", \")")
     async def define(self, itx: discord.Interaction, term: str, definition: str, synonyms: str = ""):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't add words to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
-
         def simplify(q):
             if type(q) is str:
                 return q.lower().translate(del_separators_table)
@@ -423,11 +430,11 @@ class TermDictionary(commands.Cog):
                 return [text.lower().translate(del_separators_table) for text in q]
 
         # Test if this term is already defined in this dictionary.
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is not None:
-            cmd_mention = self.client.get_command_mention("dictionary")
+            cmd_mention = itx.client.get_command_mention("dictionary")
             await itx.response.send_message(
                 f"You have already previously defined this term (try to find it with {cmd_mention}).", ephemeral=True)
             return
@@ -451,7 +458,7 @@ class TermDictionary(commands.Cog):
         post = {"term": term, "definition": definition, "synonyms": synonyms}
         collection.insert_one(post)
 
-        await log_to_guild(self.client, itx.guild,
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.nick or itx.user.name} ({itx.user.id}) added the dictionary definition "
                            f"of '{term}' and set it to '{definition}', with synonyms: {synonyms}")
         await itx.followup.send(
@@ -459,54 +466,49 @@ class TermDictionary(commands.Cog):
                                f"(with synonyms: {synonyms}): {definition}",
             ephemeral=True)
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="redefine", description="Edit a dictionary entry for a word!")
     @app_commands.describe(
         term="This is the main word for the dictionary entry (case sens.) Example: Egg, Hormone "
              "Replacement Therapy (HRT), etc.",
         definition="Redefine this definition")
     async def redefine(self, itx: discord.Interaction, term: str, definition: str):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't add words to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = self.client.get_command_mention("dictionary_staff define")
+            cmd_mention = itx.client.get_command_mention("dictionary_staff define")
             await itx.response.send_message(
                 f"This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use {cmd_mention}.",
                 ephemeral=True)
             return
         collection.update_one(query, {"$set": {"definition": definition}})
 
-        await log_to_guild(self.client, itx.guild,
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.nick or itx.user.name} ({itx.user.id}) changed the dictionary definition "
                            f"of '{term}' to '{definition}'")
         await itx.response.send_message(f"Successfully redefined '{term}'", ephemeral=True)
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="undefine", description="Remove a dictionary entry for a word!")
     @app_commands.describe(
         term="What word do you need to undefine (case sensitive). Example: Egg, Hormone Replacement Therapy (HRT), etc")
     async def undefine(self, itx: discord.Interaction, term: str):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't remove words to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
             await itx.response.send_message(
                 "This term hasn't been added to the dictionary yet, and thus cannot be undefined!", ephemeral=True)
             return
-        await log_to_guild(self.client, itx.guild,
+        await log_to_guild(itx.client, itx.guild,
                            f"{itx.user.nick or itx.user.name} ({itx.user.id}) undefined the dictionary "
                            f"definition of '{term}' from '{search['definition']}' with synonyms: {search['synonyms']}")
         collection.delete_one(query)
 
         await itx.response.send_message(f"Successfully undefined '{term}'", ephemeral=True)
 
+    @app_commands.check(is_staff_check)
     @admin.command(name="editsynonym", description="Add a synonym to a previously defined word")
     @app_commands.describe(
         term="This is the main word for the dictionary entry (case sens.): Egg, Hormone Transfer Therapy, etc",
@@ -517,15 +519,11 @@ class TermDictionary(commands.Cog):
         discord.app_commands.Choice(name='Remove a synonym', value=2),
     ])
     async def edit_synonym(self, itx: discord.Interaction, term: str, mode: int, synonym: str):
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You can't add synonyms to the dictionary without staff roles!",
-                                            ephemeral=True)
-            return
-        collection = self.client.rina_db["termDictionary"]
+        collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = self.client.get_command_mention("dictionary_staff define")
+            cmd_mention = itx.client.get_command_mention("dictionary_staff define")
             await itx.response.send_message(
                 f"This term hasn't been added to the dictionary yet, and thus cannot get "
                 f"new synonyms! Use {cmd_mention}.",
@@ -539,7 +537,7 @@ class TermDictionary(commands.Cog):
                 return
             synonyms.append(synonym.lower())
             collection.update_one(query, {"$set": {"synonyms": synonyms}}, upsert=True)
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"{itx.user.nick or itx.user.name} ({itx.user.id}) added synonym '{synonym}' "
                                f"the dictionary definition of '{term}'")
             await itx.response.send_message("Successfully added synonym", ephemeral=True)
@@ -556,7 +554,7 @@ class TermDictionary(commands.Cog):
                     ephemeral=True)
                 return
             collection.update_one(query, {"$set": {"synonyms": synonyms}}, upsert=True)
-            await log_to_guild(self.client, itx.guild,
+            await log_to_guild(itx.client, itx.guild,
                                f"{itx.user.nick or itx.user.name} ({itx.user.id}) removed synonym '{synonym}' "
                                f"the dictionary definition of '{term}'")
             await itx.response.send_message("Successfully removed synonym", ephemeral=True)

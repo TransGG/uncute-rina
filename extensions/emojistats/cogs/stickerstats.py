@@ -7,21 +7,17 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
+from resources.checks import not_in_dms_check
+from resources.customs import Bot
 
 
 async def _add_to_sticker_data(sticker_name: str, async_rina_db: motorcore.AgnosticDatabase, sticker_id: str):
     """
     Helper function to add sticker data to the mongo database when a sticker is sent in chat.
 
-    Parameters
-    -----------
-    sticker_name: string
-        The sticker name.
-    async_rina_db: :class:`AgnosticDatabase`:
-        An async link to the MongoDB.
-    sticker_id: str
-        The sticker id, as string.
+    :param sticker_name: The sticker name.
+    :param async_rina_db: An async link to the MongoDB.
+    :param sticker_id: The sticker id, as string.
     """
     collection = async_rina_db["stickerstats"]
     query = {"id": sticker_id}
@@ -57,6 +53,7 @@ class StickerStats(commands.Cog):
     @stickerstats.command(name="getstickerdata", description="Get sticker usage data from an ID!")
     @app_commands.rename(sticker_name="sticker")
     @app_commands.describe(sticker_name="Sticker you want to get data of")
+    @app_commands.check(not_in_dms_check)
     async def get_sticker_data(self, itx: discord.Interaction, sticker_name: str):
         if ":" in sticker_name:
             # idk why people would, but idk the format for stickers so ill just assume <name:id> or something idk
@@ -68,12 +65,13 @@ class StickerStats(commands.Cog):
                 ephemeral=True)
             return
 
-        collection = self.client.async_rina_db["stickerstats"]
+        collection = itx.client.async_rina_db["stickerstats"]
         query = {"id": sticker_id}
         sticker_response = await collection.find_one(query)
         if sticker_response is None:
             await itx.response.send_message("That sticker doesn't have data yet. It hasn't been used since "
-                                            "we started tracking the data yet. (<t:1729311000:R>, <t:1729311000:F>)",
+                                            "we started tracking the data yet. (<t:1729311000:R>, <t:1729311000:F>,"
+                                            "or since Rina joined the server)",
                                             ephemeral=True)
             return
 
@@ -86,7 +84,7 @@ class StickerStats(commands.Cog):
             tz=timezone.utc
         ).strftime('%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S')
 
-        await itx.response.send_message(f"Data for {sticker}" + f"  ".replace(':', '\\:') +
+        await itx.response.send_message(f"Data for {sticker}" + "  ".replace(':', '\\:') +
                                         f"(`{sticker}`)\n"
                                         f"messageUsedCount: {msg_used}\n"
                                         f"Last used: {msg_last_use_time}",
@@ -96,6 +94,7 @@ class StickerStats(commands.Cog):
     @app_commands.describe(public="Do you want everyone in this channel to be able to see this result?",
                            max_results="How many stickers do you want to retrieve at most? (may return fewer)",
                            used_max="Up to how many times may the sticker have been used? (default: 10)")
+    @app_commands.check(not_in_dms_check)
     async def get_unused_stickers(
             self, itx: discord.Interaction, public: bool = False,
             max_results: int = 10, used_max: int = sys.maxsize
@@ -104,7 +103,7 @@ class StickerStats(commands.Cog):
 
         unused_stickers = []
 
-        collection = self.client.async_rina_db["stickerstats"]
+        collection = itx.client.async_rina_db["stickerstats"]
         query = {
             "$expr": {
                 "$lte": [
@@ -125,7 +124,8 @@ class StickerStats(commands.Cog):
             # Some entries don't have a value for it- Don't want to search for a "0" then.
             query["messageUsedCount"] = {"$lte": used_max}
 
-        sticker_stats: list[dict[str, str | int | bool]] = [x async for x in collection.find(query)]
+        sticker_stats: list[dict[str, str | int | bool]] = \
+            [x async for x in collection.find(query)]
         sticker_stat_ids: list[str] = await collection.distinct("id")
 
         for sticker in await itx.guild.fetch_stickers():
@@ -135,16 +135,20 @@ class StickerStats(commands.Cog):
 
             for sticker_stat in sticker_stats:
                 if sticker_stat["id"] == str(
-                        sticker.id):  # assumes the db ID column is unique (grabs first matching result)
+                        sticker.id):
+                    # assumes the db ID column is unique
+                    #  (grabs first matching result)
                     break
             else:
                 continue  # sticker doesn't exist anymore?
 
-            if sticker_stat["messageUsedCount"] + sticker_stat["reactionUsedCount"] > used_max:
+            if sticker_stat.get("messageUsedCount", 0) > used_max:
                 continue
 
-            unused_stickers.append(f"<{sticker.name}\\:{sticker.id}>" +
-                                   f"({sticker_stat.get('messageUsedCount', 0)})")
+            unused_stickers.append(
+                f"<{sticker.name}\\:{sticker.id}>" +
+                f"({sticker_stat.get('messageUsedCount', 0)})"
+            )
 
             if len(unused_stickers) > max_results:
                 break
@@ -154,11 +158,12 @@ class StickerStats(commands.Cog):
         if len(output) > 1850:
             warning = "\nShortened to be able to be sent."
             output = output[:(2000 - len(header) - len(warning) - 5)] + warning
-        await itx.followup.send(content=header + output)
+        await itx.followup.send(content=header + output, ephemeral=not public)
 
     @stickerstats.command(name="getstickertop10", description="Get top 10 most used stickers")
+    @app_commands.check(not_in_dms_check)
     async def get_sticker_top_10(self, itx: discord.Interaction):
-        collection = self.client.async_rina_db["stickerstats"]
+        collection = itx.client.async_rina_db["stickerstats"]
         output = ""
         for source_type in ["messageUsedCount"]:
             results = []

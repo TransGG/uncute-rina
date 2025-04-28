@@ -1,63 +1,70 @@
-from datetime import datetime, timedelta, timezone  # for logging, to show log time; and for parsetime
+from __future__ import annotations
+from datetime import datetime, timezone  # for logging, to show log time; and for parsetime
+from enum import Enum
 import logging  # for debug (logger.info)
 import warnings  # for debug (if given wrong color)
+from typing import TYPE_CHECKING
 
 import discord
 
-from resources.customs.bot import Bot
+from extensions.settings.objects import AttributeKeys, ServerSettings
+from resources.checks import MissingAttributesCheckFailure
+from resources.checks.command_checks import is_in_dms
+
+if TYPE_CHECKING:
+    from resources.customs import Bot
 
 
-TESTING_ENVIRONMENT = 2  # 1 = public test server (Supporter server) ; 2 = private test server (transplace staff only)
+class DebugColor(Enum):
+    # todo: move to own file
+    default = "\033[0m"
+    black = "\033[30m"
+    red = "\033[31m"
+    lime = "\033[32m"
+    green = "\033[32m"
+    yellow = "\033[33m"
+    orange = "\033[33m"  # kinda orange i guess?
+    blue = "\033[34m"
+    magenta = "\033[35m"
+    purple = "\033[35m"
+    cyan = "\033[36m"
+    gray = "\033[37m"
+    lightblack = "\033[90m"
+    darkgray = "\033[90m"
+    lightred = "\033[91m"
+    lightlime = "\033[92m"
+    lightgreen = "\033[92m"
+    lightyellow = "\033[93m"
+    lightblue = "\033[94m"
+    lightmagenta = "\033[95m"
+    lightpurple = "\033[95m"
+    lightcyan = "\033[96m"
+    aqua = "\033[96m"
+    lightgray = "\033[97m"
+    white = "\033[97m"
 
 
-def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> None:
+def debug(
+        text: str = "",
+        color: DebugColor | str = DebugColor.default,
+        add_time: bool = True,
+        end="\n",
+        advanced=False
+) -> None:
+    # todo make all debug calls use DebugColor instead of string for `color`
     """
-    Log a message to the console
+    Log a message to the console.
 
-    Parameters
-    -----------
-    text: :class:`str`, optional
-        The message you want to send to the console
-    color: :class:`str`, optional
-        The color you want to give your message ('red' for example)
-    add_time: :class:`bool`, optional
-        If you want to start the message with a '[23:59:59.000001] [INFO]:'
-    end: :class:`str`, optional
-        What to end the end of the message with (similar to print(end=''))
-    advanced: :class:`bool`, optional
-        Whether to interpret `text` as advanced text (like minecraft in-chat colors).
-        Replaces "&4" to red, "&l" to bold, etc. and "&&4" to a red background.
+    :param text: The message you want to send to the console.
+    :param color: The color you want to give your message ('red' for example).
+    :param add_time: If you want to start the message with a '[2025-03-31T23:59:59.000001Z] [INFO]:'.
+    :param end: What to end the end of the message with (similar to print(end='')).
+    :param advanced: Whether to interpret `text` as advanced text (like minecraft in-chat colors).
+     Replaces "&4" to red, "&l" to bold, etc. and "&&4" to a red background.
     """
     if type(text) is not str:
         text = repr(text)
 
-    colors = {
-        "default": "\033[0m",
-        "black": "\033[30m",
-        "red": "\033[31m",
-        "lime": "\033[32m",
-        "green": "\033[32m",
-        "yellow": "\033[33m",
-        "orange": "\033[33m",  # kinda orange i guess?
-        "blue": "\033[34m",
-        "magenta": "\033[35m",
-        "purple": "\033[35m",
-        "cyan": "\033[36m",
-        "gray": "\033[37m",
-        "lightblack": "\033[90m",
-        "darkgray": "\033[90m",
-        "lightred": "\033[91m",
-        "lightlime": "\033[92m",
-        "lightgreen": "\033[92m",
-        "lightyellow": "\033[93m",
-        "lightblue": "\033[94m",
-        "lightmagenta": "\033[95m",
-        "lightpurple": "\033[95m",
-        "lightcyan": "\033[96m",
-        "aqua": "\033[96m",
-        "lightgray": "\033[97m",
-        "white": "\033[97m",
-    }
     detail_color = {
         "&0": "40",
         "&8": "40",
@@ -92,7 +99,6 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
         "u": "4",
         "r": "0",
     }
-    color = color.replace(" ", "").replace("-", "").replace("_", "")
     if advanced:
         for _detColor in detail_color:
             while "&" + _detColor in text:
@@ -100,127 +106,124 @@ def debug(text="", color="default", add_time=True, end="\n", advanced=False) -> 
                 text = text.replace("m&" + _detColor, ";" + detail_color[_detColor] + "m", 1)
                 if _text == text:
                     text = text.replace("&" + _detColor, "\033[" + detail_color[_detColor] + "m", 1)
-        color = "default"
+        color = DebugColor.default
     else:
-        try:
-            # is given color a valid option?
-            colors[color]
-        except KeyError:
-            warnings.warn("Invalid color given for debug function: " + color, SyntaxWarning)
-            color = "default"
+        original_color = color
+        if type(color) is str:
+            color = color.replace(" ", "").replace("-", "").replace("_", "")
+            color = getattr(DebugColor, color, None)
+        if color is None:
+            warnings.warn("Invalid color given for debug function: " + original_color, SyntaxWarning)
+            color = DebugColor.default
     if add_time:
-        time = f"{colors[color]}[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}] [INFO]: "
+        time = f"{color.value}[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}] [INFO]: "
     else:
-        time = colors[color]
+        time = color.value
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger()
     # print = logger.info
     if end.endswith("\n"):
         end = end[:-2]
-    logger.info(f"{time}{text}{colors['default']}" + end.replace('\r', '\033[F'))
+    logger.info(f"{time}{text}{DebugColor.default.value}" + end.replace('\r', '\033[F'))
 
 
-def get_mod_ticket_channel_id(client: Bot, guild_id: int | discord.Guild | discord.Interaction) -> int:
+def get_mod_ticket_channel(
+        client: Bot, guild_id: int | discord.Guild | discord.Interaction
+) -> discord.abc.Messageable | None:
     """
     Fetch the #contact-staff ticket channel for a specific guild.
 
-    Parameters
-    -----------
-    client: :class:`Bot`
-        Rina's Bot class to fetch ticket channel IDs (hardcoded).
-    guild_id: :class:`int` | :class:`discord.Guild` | :class:`discord.Interaction`
-        A class with a guild_id or guild property.
+    :param client: Rina's Bot class to fetch ticket channel IDs (hardcoded).
+    :param guild_id: A class with a guild_id or guild property.
 
-    Returns
-    --------
-    :class:`int`
-        The matching guild's ticket channel id.
+    :return: The matching guild's ticket channel id.
+    :raise MissingAttributesCheckFailure: If the guild has no ticket channel defined in its settings.
     """
     if type(guild_id) is discord.Interaction:
         guild_id = guild_id.guild_id
-    if type(guild_id) is discord.Guild:  # can be merged technically but whatevs
-        guild_id = guild_id.guild_id
+    ticket_channel: discord.abc.Messageable | None = client.get_guild_attribute(
+        guild_id, AttributeKeys.ticket_create_channel)
 
-    if guild_id == client.custom_ids.get("enbyplace_server_id"):
-        return client.custom_ids.get("enbyplace_ticket_channel_id")
-    elif guild_id == client.custom_ids.get("transonance_server_id"):
-        return client.custom_ids.get("transonance_ticket_channel_id")
-    else:  # elif context.guild_id == client.custom_ids.get("transplace_server_id"):
-        return client.custom_ids.get("transplace_ticket_channel_id")
+    return ticket_channel
 
 
-async def log_to_guild(client: Bot, guild: discord.Guild, msg: str) -> None | discord.Message:
+async def log_to_guild(
+        client: Bot,
+        guild: discord.Guild | int | None,
+        msg: str,
+        *,
+        crash_if_not_found: bool = False,
+        ignore_dms: bool = False
+) -> bool:
     """
     Log a message to a guild's logging channel (vcLog)
 
-    Parameters
-    --------------
-    client: :class:`Uncute_Rina.Bot`
-        The bot class with `client.get_guild_info()` to find logging channel.
-    guild: :class:`discord.Guild`
-        Guild of the logging channel
-    msg: :class:`str`
-        Message you want to send to this logging channel
+    :param client: The bot class with :py:func:`Bot.get_guild_info` to find logging channel.
+    :param guild: Guild of the logging channel
+    :param msg: Message you want to send to this logging channel
+    :param crash_if_not_found: Whether to crash if the guild does not have a logging channel.
+     Useful if this originated from an application command.
+    :param ignore_dms: Whether to crash if the command was run in DMs.
 
-    Raises
-    ----------
-    :class:`KeyError`
-        if client.vcLog channel is undefined.
-        Note: It still outputs the given message to console and to the client's default log channel.
+    :return: ``True`` if a log was sent successfully, else ``False``.
 
-    Returns
-    -----------
-    :class:`discord.Message`
-        if client.vcLog channel is defined
+    :raise KeyError: If client.vcLog channel is undefined.
+     Note: It still outputs the given message to console and to the client's default log channel.
+    :raise MissingAttributesCheckFailure: If no logging channel is defined.
     """
-    try:
-        log_channel_id = await client.get_guild_info(guild, "vcLog")
-    except KeyError:
-        msg = "__**THIS MESSAGE CAUSES THE CRASH BELOW**__\n" + msg
-        await client.log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
-        raise
+    log_channel: discord.abc.Messageable = client.get_guild_attribute(
+        guild, AttributeKeys.log_channel)
+    if log_channel is None:
+        if ignore_dms and is_in_dms(guild):
+            return False
+        if crash_if_not_found:
+            raise MissingAttributesCheckFailure(
+                "log_to_guild", AttributeKeys.log_channel)
 
-    log_channel: discord.abc.GuildChannel | discord.Thread | None = guild.get_channel(log_channel_id)
-    if log_channel is None:
-        log_channel = guild.get_thread(log_channel_id)
-    if log_channel is None:
+        # get current value for log_channel in the guild.
+        if guild is None:
+            attribute_raw = "<server was None>"
+        else:
+            guild_id = getattr(guild, "id", guild)
+            entry = await ServerSettings.get_entry(
+                client.async_rina_db, guild_id)
+            if entry is None:
+                attribute_raw = "<no server data>"
+            else:
+                attribute_raw = str(entry["attribute_ids"].get(
+                    AttributeKeys.log_channel, "<no attribute data>"))  # noqa
+
         debug("Exception in log_channel (log_channel could not be loaded):\n"
               "    guild: " + repr(guild) +
               "\n"
-              "    log_channel_id: " + str(log_channel_id) +
+              "    log_channel_id: " + attribute_raw +
               "\n"
               "    log message: " + msg, color="orange")
-        return
-    return await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+        return False
+
+    await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+    return True
 
 
 async def executed_in_dms(
+        *,
         itx: discord.Interaction = None,
         message: discord.Message = None,
-        channel: discord.DMChannel | discord.GroupChannel | discord.TextChannel | discord.StageChannel |
-                 discord.VoiceChannel | discord.Thread = None
+        channel: discord.DMChannel | discord.GroupChannel |
+        discord.TextChannel | discord.StageChannel |
+        discord.VoiceChannel | discord.Thread = None
 ) -> bool:
+    # make this a check
     """
     Make a command guild-only by telling people in DMs that they can't use the command
 
-    Parameters
-    -----------
-    itx: :class:`discord.Interaction`
-        (used for interactions) The interaction to check if it was used in a server - and to reply to.
-    message: :class:`discord.Message`
-        (used for events) The message to check if it was used in a server.
-    channel: :class:`discord.DMChannel` | :class:`discord.GuildChannel`
-        The channel to check if it was used in a server.
+    :param itx: (used for interactions) The interaction to check if it was used in a server - and to reply to.
+    :param message: (used for events) The message to check if it was used in a server.
+    :param channel: The channel to check if it was used in a server.
 
-    Returns
-    --------
-    :class:`bool`
-        if command was executed in DMs (for 'if ... : continue')
+    :return: if command was executed in DMs (for 'if ... : continue')
 
-    Raises
-    -------
-    :class:`AssertionError`
-        if the user privided not **exactly one** of [itx, message, channel] parameters.
+    :raise AssertionError: if the user provided not **exactly one** of [itx, message, channel] parameters.
     """
     assert len([i for i in [itx, message, channel] if i is not None]) == 1, ValueError(
         "Give an itx, message, or channel, not multiple!"
