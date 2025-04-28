@@ -40,7 +40,44 @@ class StaffPollsChannelAddon(commands.Cog):
 
         if message.channel == polls_channel:
             if message.poll is None:
-                await message.delete()
+                if message.type != discord.MessageType.poll_result:
+                    await message.delete()
+                    return
+                # The message is a poll result.
+                # Get the thread under the message reference. Note:
+                #  thread IDs are the same as their parent message
+                original_message = message.reference.resolved
+                if original_message is None:
+                    # Don't delete the result message here, to allow
+                    #  inspection as to why there was no original
+                    #  message for the poll_result?
+                    raise Exception(
+                        "Poll result did not contain a reference to "
+                        "the original poll message! (Poll result id:"
+                        + str(original_message.id)
+                    )
+                if original_message.thread is None:
+                    raise Exception(
+                        "Expected poll result to reference a poll with "
+                        "a thread, but it had none! (Poll message id:"
+                        + str(original_message.id)
+                    )
+
+                poll = original_message.poll
+                poll_result_message = (
+                    f"**This poll closed with a total of "
+                    f"{poll.total_votes} votes!**\n"
+                    f"Answer {poll.victor_answer_id} won with "
+                    f"{poll.victor_count} votes:\n"
+                    f"> {poll.victor_answer.media.text}"
+                )
+                msg = await original_message.thread.send(
+                    poll_result_message,
+                    allowed_mentions=discord.AllowedMentions.none()
+                )
+                await msg.pin()
+                await original_message.delete()
+                # ^ remove poll result message from poll-only channel.
                 return
 
             # Note: Poll questions can have a length of 300 characters,
