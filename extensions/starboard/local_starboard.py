@@ -39,8 +39,6 @@ async def import_starboard_messages(
     :return: The local starboard index. {GuildId: {StarboardMessageId:
      (OriginalChannelId, OriginalMessageId) }}
     """
-    global local_starboard_index, starboard_loaded
-
     async for starboard_msg in starboard_channel.history(limit=None):
         if not client.is_me(starboard_msg.author):
             continue
@@ -239,7 +237,6 @@ async def add_to_local_starboard(
     :param starboard_msg: The starboard message to add data for.
     :param original_msg: The original message to add data for.
     """
-    global local_starboard_index
     guild_id = starboard_msg.guild.id
     if guild_id not in local_starboard_index:
         local_starboard_index[guild_id] = {}

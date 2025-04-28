@@ -93,7 +93,6 @@ async def create_watchlist(
     :param user_id: The id of the watchlist's user.
     :param thread_id: The id of the watchlist thread.
     """
-    global local_watchlist
     database_data = (user_id, thread_id)
     await add_data(
         async_rina_db,
@@ -122,7 +121,6 @@ async def remove_watchlist(
     :param user_id: The id of the watchlist's user.
     :return: Whether there was a watchlist for this user.
     """
-    global local_watchlist
     changed, _ = await remove_data(
         async_rina_db,
         guild_id,
@@ -150,7 +148,6 @@ async def fetch_watchlists(
     :return: A dictionary of watchlist user_ids and the matching thread_id for
      the given guild.
     """
-    global local_watchlist
     data: dict[str, DatabaseData] | None = await get_data(
         async_rina_db,
         guild_id,
@@ -177,7 +174,7 @@ async def fetch_all_watchlists(
     :return: A dictionary of guild_ids, with a dictionary of watchlist
      user_ids and their corresponding thread_id.
     """
-    global watchlist_loaded, local_watchlist
+    global watchlist_loaded
     data: dict[int, dict[str, DatabaseData]] = await get_all_data(
         async_rina_db,
         DatabaseKeys.watchlist,
@@ -204,7 +201,6 @@ async def import_watchlist_threads(
 
     :return: A list of threads whose starter message could not be fetched.
     """
-    global local_watchlist
     if watch_channel.guild.id not in local_watchlist:
         local_watchlist[watch_channel.guild.id] = {}
 
@@ -237,7 +233,6 @@ async def _import_thread_to_local_list(
     :param thread: The thread whose starter message to use to add the
      watchlist to the database.
     """
-    global local_watchlist
     try:
         starter_message = await thread.parent.fetch_message(thread.id)
     except (discord.HTTPException, discord.NotFound, discord.Forbidden):

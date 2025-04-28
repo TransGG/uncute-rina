@@ -64,7 +64,6 @@ async def create_tag(
     :param report_to_staff: Whether sending this tag anonymously should
      be reported to staff.
     """
-    global local_tag_list
     if len(embed_title) > 256:
         raise ValueError("Embed title too long.")
     if len(embed_description) > 4096:
@@ -105,7 +104,6 @@ async def remove_tag(
     :param tag_name: The name of the tag to remove.
     :return: Whether there was a tag with this name.
     """
-    global local_tag_list
     changed, _ = await remove_data(
         async_rina_db,
         guild.id,
@@ -133,7 +131,6 @@ async def fetch_tags(
     :return: A dictionary of tag names and the matching tag object in the
      given guild.
     """
-    global local_tag_list
     data: dict[str, dict] | None = await get_data(
         async_rina_db,
         guild.id,
@@ -143,9 +140,9 @@ async def fetch_tags(
     if data is None:
         return {}
 
-    data = {name: DatabaseTagObject(**tag_data) for name, tag_data in data}
-    local_tag_list[guild.id] = data
-    return data
+    local_tag_list[guild.id] = {name: DatabaseTagObject(**tag_data)
+                                for name, tag_data in data.items()}
+    return local_tag_list[guild.id]
 
 
 async def fetch_all_tags(
@@ -158,7 +155,6 @@ async def fetch_all_tags(
     :return: A dictionary of guild_ids, with a dictionary of tag names and
      their corresponding tag objects.
     """
-    global local_tag_list
     data: dict[int, dict[str, dict]] = await get_all_data(
         async_rina_db,
         DatabaseKeys.tag_list,
