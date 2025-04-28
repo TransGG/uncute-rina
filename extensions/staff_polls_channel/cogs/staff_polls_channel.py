@@ -7,6 +7,83 @@ from resources.checks import module_enabled_check, \
 from resources.customs.bot import Bot
 
 
+async def _handle_forward_poll_result(
+        poll_result_message: discord.Message,
+        poll_message: discord.Message
+):
+    """
+    Handle forwarding poll results to the original thread.
+
+    Sends and pins a formatted poll result message into the thread on
+    the original poll. It then deletes the original result message.
+
+    :param poll_result_message: A system message signifying the end
+     of the original poll. It should have a reference to the original
+     poll. It will be deleted after the poll message information
+     has been forwarded.
+    :param poll_message: A message containing the poll, and a thread
+     created by Rina.
+
+    :raise Exception: If the poll message has no thread.
+    """
+    if poll_message.thread is None:
+        raise Exception(
+            "Expected poll result to reference a poll with "
+            "a thread, but it had none! (Poll message id:"
+            + str(poll_message.id)
+        )
+    poll = poll_message.poll
+    result_info_message = (
+        f"**This poll closed with a total of "
+        f"{poll.total_votes} votes!**\n"
+    )
+    if poll.victor_answer_id is None:
+        result_info_message += (
+            "There was no winner."
+        )
+    else:
+        result_info_message += (
+            f"Answer {poll.victor_answer_id} won with "
+            f"{poll.victor_count} votes:\n"
+            f"> {poll.victor_answer.media.text}"
+        )
+    msg = await poll_message.thread.send(
+        result_info_message,
+        allowed_mentions=discord.AllowedMentions.none()
+    )
+    await msg.pin()
+    await poll_result_message.delete()
+    # ^ remove poll result message from poll-only channel.
+
+
+async def _get_original_poll_message(
+        message: discord.Message
+) -> discord.Message | None:
+    """
+    Retrieve the original poll message from cache or fetch it.
+
+    :param message: A 'poll result' system message with a reference
+     to the original poll message.
+    :return: The original message with a `poll` attribute, or None if
+     fetching the original message resulted in a
+     :py:class:~discord.NotFound error (likely because it was deleted).
+    """
+    # The message is a poll result.
+    # Get the thread under the message reference. Note:
+    #  thread IDs are the same as their parent message
+    original_message = message.reference.resolved
+    if original_message is None:
+        # message not in cache
+        try:
+            original_message = await message.channel.fetch_message(
+                message.reference.message_id)
+        except discord.NotFound:
+            # original poll was deleted.
+            return None
+
+    return original_message
+
+
 class StaffPollsChannelAddon(commands.Cog):
     def __init__(self, client: Bot):
         self.client = client
@@ -39,45 +116,17 @@ class StaffPollsChannelAddon(commands.Cog):
                 ModuleKeys.polls_only_channel, *missing)
 
         if message.channel == polls_channel:
+
             if message.poll is None:
                 if message.type != discord.MessageType.poll_result:
                     await message.delete()
                     return
-                # The message is a poll result.
-                # Get the thread under the message reference. Note:
-                #  thread IDs are the same as their parent message
-                original_message = message.reference.resolved
-                if original_message is None:
-                    # Don't delete the result message here, to allow
-                    #  inspection as to why there was no original
-                    #  message for the poll_result?
-                    raise Exception(
-                        "Poll result did not contain a reference to "
-                        "the original poll message! (Poll result id:"
-                        + str(original_message.id)
-                    )
-                if original_message.thread is None:
-                    raise Exception(
-                        "Expected poll result to reference a poll with "
-                        "a thread, but it had none! (Poll message id:"
-                        + str(original_message.id)
-                    )
 
-                poll = original_message.poll
-                poll_result_message = (
-                    f"**This poll closed with a total of "
-                    f"{poll.total_votes} votes!**\n"
-                    f"Answer {poll.victor_answer_id} won with "
-                    f"{poll.victor_count} votes:\n"
-                    f"> {poll.victor_answer.media.text}"
-                )
-                msg = await original_message.thread.send(
-                    poll_result_message,
-                    allowed_mentions=discord.AllowedMentions.none()
-                )
-                await msg.pin()
-                await original_message.delete()
-                # ^ remove poll result message from poll-only channel.
+                original_message = await _get_original_poll_message(message)
+                if original_message is None:
+                    return
+
+                await _handle_forward_poll_result(message, original_message)
                 return
 
             # Note: Poll questions can have a length of 300 characters,

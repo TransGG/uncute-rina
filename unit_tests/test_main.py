@@ -10,8 +10,8 @@ from main import EXTENSIONS
 def test_warn_all_modules_enabled():
     # Arrange
     extension_folders = []
-    directory = os.path.join(__file__, "..\\..\\extensions")
-
+    directory = os.path.join(__file__, os.pardir, os.pardir, "extensions")
+    directory = os.path.normpath(directory)
     for extension in os.listdir(directory):
         extension_path = os.path.join(directory, extension)
         # Check if the item is a directory
@@ -33,7 +33,8 @@ def test_warn_all_modules_enabled():
 
 def test_all_modules_exist():
     # Arrange
-    directory = os.path.join(__file__, "..\\..\\extensions")
+    directory = os.path.join(__file__, os.pardir, os.pardir, "extensions")
+    directory = os.path.normpath(directory)
 
     # Act
     missing_extensions = []
