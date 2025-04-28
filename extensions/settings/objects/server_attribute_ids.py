@@ -65,3 +65,6 @@ class ServerAttributeIds(TypedDict, total=False):
 
     headpat_emoji: EmojiId
     awawawa_emoji: EmojiId
+
+    polls_only_channel: TextChannelId
+    polls_channel_reaction_role: RoleId

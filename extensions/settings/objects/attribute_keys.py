@@ -52,3 +52,6 @@ class AttributeKeys:
 
     headpat_emoji = "headpat_emoji"
     awawawa_emoji = "awawawa_emoji"
+
+    polls_only_channel = "polls_only_channel"
+    polls_channel_reaction_role = "polls_channel_reaction_role"

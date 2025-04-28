@@ -60,3 +60,7 @@ class ServerAttributes(TypedDict):
 
     headpat_emoji: discord.Emoji | None
     awawawa_emoji: discord.Emoji | None
+
+    polls_only_channel: discord.TextChannel | None
+    # ^ needs to be able to have threads
+    polls_channel_reaction_role: discord.Role | None

@@ -45,6 +45,7 @@ EXTENSIONS = [
     "qotw",
     "reminders",
     "settings",
+    "staff_polls_channel",
     "staffaddons",
     "starboard",
     "tags",
