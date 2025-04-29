@@ -29,6 +29,7 @@ class EnabledModules(TypedDict, total=False):
     remove_role_command: bool
     report_tags_to_staff: bool
     polls_only_channel: bool
+    change_channel: bool
 
 
 class ModuleKeys:
@@ -58,6 +59,7 @@ class ModuleKeys:
     remove_role_command = "remove_role_command"
     report_tags_to_staff = "report_tags_to_staff"
     polls_only_channel = "polls_only_channel"
+    change_channel = "change_channel"
 
 
 module_required_attributes = {
@@ -85,5 +87,7 @@ module_required_attributes = {
     ModuleKeys.polls_only_channel: (
         AttributeKeys.polls_only_channel,
         AttributeKeys.polls_channel_reaction_role,
-    )
+    ),
+
+    ModuleKeys.change_channel: (),
 }

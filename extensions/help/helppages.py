@@ -69,7 +69,7 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     # endregion
 
     # ### Bot functions:
-    # #      add_poll_reactions, version, help, commands, get_rina_command_mention
+    # #      add_poll_reactions, version, help, commands, get_rina_command_mention, changechannel
     # ### Utility:
     # #      roll, convert_unit, reminders, todo
     # ### Suggestion commands:
@@ -95,7 +95,8 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                     ". . **101:** /help and /commands\n"
                     ". . **102:** version\n"
                     ". . **103:** get_rina_command_mention\n"
-                    ". . **105:** add_poll_reactions\n",
+                    ". . **104:** add_poll_reactions\n"
+                    ". . **105:** changechannel\n",
         fields=[],
     ),
     4: HelpPage(  # index: Utility
@@ -262,6 +263,26 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
                 "- %%add_poll_reactions%% `message_id:1134140122115838003` "
                 "`upvote_emoji:👍` `downvote_emoji:👎` `neutral_emoji:🤷`\n"
                 "  - Adds a thumbs up, then a person shrugging, then a thumbs down emoji."
+            )
+        ],
+    ),
+    105: HelpPage(  # /changechannel
+        title="Move conversation to a different channel",
+        description="Conversations are very flexible, and build upon each "
+                    "other. But sometimes that makes chats easy to drift "
+                    "off-topic. This command lets you guide other members "
+                    "to the correct channel.",
+        fields=[
+            (
+                "Parameters",
+                "`destination`: The channel to direct the conversation to.\n"
+                "- A channel mention.\n"
+            ),
+            (
+                "Examples",
+                "- %%changechannel%% `destination:Off-topic`\n"
+                "  - Sends a message to direct people to the off-topic "
+                "channel.\n"
             )
         ],
     ),
