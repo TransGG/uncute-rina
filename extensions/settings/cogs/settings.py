@@ -448,15 +448,16 @@ async def _handle_settings_attribute(
             return
 
     try:
-        await itx.client.server_settings[itx.guild.id].reload(itx.client)
+        await _reload_or_store_server_settings(itx.client, itx.guild)
     except ParseError as ex:
         await itx.followup.send(
-            "Successfully set the module state!\n"
-            "Just one tiny problem... Reloading the server settings "
-            "failed...\n"
-            "You should message Mia about this, or Cleo, to look into the "
-            "database and get more information about the problem:"
-            + ex.message,
+            ("Successfully set the module state!\n"
+             "Just one tiny problem... Reloading the server settings "
+             "failed...\n"
+             "You should message Mia about this, or Cleo, to look into the "
+             "database and get more information about the problem:"
+             + ex.message
+             )[:2000],
             ephemeral=True
         )
         return
@@ -465,6 +466,24 @@ async def _handle_settings_attribute(
         f"Successfully modified the value for '{setting}'!",
         ephemeral=True
     )
+
+
+async def _reload_or_store_server_settings(
+        client: Bot, guild: Guild
+) -> None:
+    """
+    Reload a guild's server settings object, or create a new one if
+    none exists yet.
+
+    :param client: The client with the server settings.
+    :param guild: The guild you want to refresh or add server
+     settings to.
+    """
+    if guild.id in client.server_settings:
+        await client.server_settings[guild.id].reload(client)
+    else:
+        client.server_settings[guild.id] = \
+            await ServerSettings.fetch(client, guild.id)
 
 
 async def _has_guild_as_parent(
@@ -600,15 +619,16 @@ async def _handle_settings_module(
     await itx.response.defer(ephemeral=True)  # defer before any database calls
 
     try:
-        await itx.client.server_settings[itx.guild.id].reload(itx.client)
+        await _reload_or_store_server_settings(itx.client, itx.guild)
     except ParseError as ex:
         await itx.followup.send(
-            "Successfully set the module state!\n"
-            "Just one tiny problem... Reloading the server settings "
-            "failed...\n"
-            "You should message Mia about this, or Cleo, to look into "
-            "the database and get more information about the problem:"
-            + ex.message,
+            ("Successfully set the module state!\n"
+             "Just one tiny problem... Reloading the server settings "
+             "failed...\n"
+             "You should message Mia about this, or Cleo, to look into "
+             "the database and get more information about the problem:"
+             + ex.message
+             )[:2000],
             ephemeral=True
         )
         return
