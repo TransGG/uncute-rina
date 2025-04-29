@@ -304,7 +304,11 @@ async def _handle_settings_attribute(
             )
             return
         attribute_raw = entry["attribute_ids"].get(
-            setting, "<no value yet>")  # type: ignore
+            setting, None)  # type: ignore
+        if attribute_raw:
+            attribute_raw = repr(attribute_raw)
+        else:
+            attribute_raw = "<no value yet>"
         attribute_parsed = itx.client.get_guild_attribute(itx.guild, setting)
         await itx.followup.send(
             (f"The current value for '{setting}' is:\n"
@@ -336,7 +340,7 @@ async def _handle_settings_attribute(
             await itx.followup.send(
                 (f"Could not parse `{value}` as value for "
                  f"'{setting}' (expected {attribute_type.__name__}.\n"
-                 f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]}"
+                 f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]})"
                  )[:1999]
                 + ")",
                 ephemeral=True

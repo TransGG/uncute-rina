@@ -107,6 +107,7 @@ def get_token_data() -> tuple[
                 missing_tokens.append(key)
                 continue
             tokens[key] = api_keys[key]
+        tokens = ApiTokenDict(**tokens)
     except FileNotFoundError:
         raise
     except json.decoder.JSONDecodeError as ex:

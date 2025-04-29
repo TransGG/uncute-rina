@@ -133,7 +133,13 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
     ),
     8: HelpPage(
         title="Chat actions",
-        description="placeholder (skip ahead)",
+        description="...\n"
+                    "\n"
+                    ". . **151:** abababa/awawawa\n"
+                    ". . **152:** not cute\n"
+                    ". . **153:** compliment\n"
+                    ". . **154:** complimentblacklist\n",
+                    # ". . **155:** headpats\n"
         fields=[],
     ),
     9: HelpPage(
@@ -512,6 +518,124 @@ Make a custom voice channel by joining "Join to create VC" (use %%tag%% `tag:cus
         ],
     ),
     # endregion
+
+    # region Chat actions
+    151: HelpPage(  # abababa / awawawa
+        title="abababa/awawawa",
+        description="Abwabw abawba wbabwb awbawbabbab bwawb awa :D.\n"
+                    "You read that right, this bot feature joins you "
+                    "in comfort and accompanies your message with a "
+                    "headpat.",
+        fields=[
+            (
+                "Examples",
+                "- awawawa\n"
+                "- abababa\n"
+                "  - In short messages, only strings of ababa or awawa work.\n"
+                "- awbabwawbabwbawba\n"
+                "  - In longer messages, it no longer matters what order "
+                "the letters are in."
+            )
+        ],
+    ),
+    152: HelpPage(  # not cute
+        title="Attempting to call Rina cute",
+        description="Some people go above and beyond to call others cute. "
+                    "One thing is certain. I'm not cute. As such, any time "
+                    "you ping me and try to call me cute, I will respond "
+                    "with a message to deny your claim.",
+        fields=[
+            (
+                "Examples",
+                "- \"__@ Uncute Rina__ is cute!\"\n"
+                "  - Will likely be responded with denial.\n"
+                "- \"__@ Uncute Rina is not cute!\""
+                "  - Will likely be responded with affirmation."
+            )
+        ],
+    ),
+    153: HelpPage(  # /compliment
+        title="Complimenting users",
+        description="Everyone loves compliments! When you do hard work, it's "
+                    "nice to hear when people appreciate your efforts. Or "
+                    "maybe someone is having a bad day, and you want to "
+                    "express your gratitude by telling them something nice "
+                    "about themselves :).",
+        fields=[
+            (
+                "Parameters",
+                "`user`: The user to compliment.\n"
+                "- Mention a user.\n"
+            ),
+            (
+                "Examples",
+                "- %%compliment%% `user:Uncute Rina`\n"
+                "  - Makes Rina select a compliment based on the pronoun "
+                "roles the user has. She/her will include feminine "
+                "compliments.\n"
+                "- %%compliment%% `user:New User 1234` \n"
+                "  - If New User 1234 does not have pronoun roles, you are "
+                "given a selection of buttons to pick what kind of pronouns "
+                "the user might go with (or unisex)."
+            ),
+            (
+                "See also",
+                "You can run %%complimentblacklist%% to remove compliments "
+                "you give to others, or to remove compliments you receive "
+                "from others\n"
+                "See page __**154**__ for more info."
+            )
+        ],
+    ),
+    154: HelpPage(  # /complimentblacklist
+        title="Hiding certain compliments",
+        description="Everyone loves compliments! But some of them may not "
+                    "quite be your style. For example, you may like "
+                    "feminine compliments, but dislike being called 'cute'. "
+                    "Or perhaps you don't like giving compliments calling "
+                    "others pretty.\n"
+                    "This blacklist command lets you hide such compliments.",
+        fields=[
+            (
+                "Parameters",
+                "`location`: Whether to hide compliments you give "
+                "others, or to hide compliments others give to you "
+                "if compliments contain a certain string of characters.\n"
+                "`mode`: Check, add or remove entries from your blacklist.\n"
+                "- `Check` gives a list of strings on your blacklist, "
+                "starting with it a unique index.\n"
+                "- `Remove` lets you remove strings from your blacklist.\n"
+                "  - Use the ID from `mode:Check` to see the ID of the word.\n"
+                "- `Add` lets you add strings to your blacklist.\n"
+                "`value`: The string to add to the blacklist, or the "
+                "index of the string you want to remove.\n"
+                "- If `mode` is `Add`, then it can be any string of "
+                "characters. Can be as short as 'e' or as long as an entire "
+                "compliment. More specificity prevents accidentally hiding "
+                "unrelated compliments.\n"
+                "- If `mode` is `Remove` it is the index of the string "
+                "you want to remove.\n"
+                "- If `mode` is `Check`, this value is not used."
+            ),
+            (
+                "Examples",
+                "- %%complimentblacklist%% `location:Someone else` "
+                "`mode:Check`\n"
+                "  - Get the blacklist for when you want to give a compliment "
+                "to someone else.\n"
+                "- %%complimentblacklist%% `location:Someone else` "
+                "`mode:Add` `value:pretty`\n"
+                "  - Remove all compliments containing 'pretty' from "
+                "compliments when you compliment someone else.\n"
+                "- %%complimentblacklist%% `location:Being complimented` "
+                "`mode:Remove` `value:3`\n"
+                "  - Removes the 4th item from your blacklist. (0-indexed)\n"
+            ),
+        ],
+    ),
+    # endregion
+
+
     # region Bot setup
     900: HelpPage(  # /settings
         title="Server settings",
