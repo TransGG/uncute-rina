@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import re
-from typing import TypeAlias
 
 
 DistanceComponents = list[tuple[float, str]]
@@ -14,30 +13,32 @@ class MissingQuantityException(ValueError):
     pass
 
 
+TIMETERMS = {
+    "y": ["y", "year", "years"],
+    "M": ["mo", "month", "months"],
+    "w": ["w", "week", "weeks"],
+    "d": ["d", "day", "days"],
+    "h": ["h", "hour", "hours"],
+    "m": ["m", "min", "mins", "minute", "minutes"],
+    "s": ["s", "sec", "secs", "second", "seconds"]
+}
+
+
 class TimeParser:
     @staticmethod
     def parse_time_string(input_string: str) -> DistanceComponents:
         """
         A helper function to turn a string of 2d4h to a list of tuples:
 
-        Parameters
-        -----------
-        input_string :class:`str`:
-            The string to split. Example: "4days6seconds"
+        :param input_string: The string to split. Example: "4days6seconds"
 
-        Returns
-        --------
-        :class:`list[tuple[int, str]]`:
-            A list of easily-comprehensible time components: [(4, "days"), (6, "seconds")]
+        :return: A list of easily-comprehensible time components: [(4, "days"), (6, "seconds")].
 
-        Raises
-        -------
-        :class:`ValueError`:
-            If the user fills in an invalid digit ("0..3" or "0.30.4" for example)
-        :class:`MissingQuantityException`:
-            If the user starts their input with a non-numeric character (should always start with a number :P)
-        :class:`MissingUnitException`:
-            If the user doesn't have a complete parse (typically because it ends with a numeric character).
+        :raise ValueError: If the user fills in an invalid digit ("0..3" or "0.30.4" for example)
+        :raise MissingQuantityException: If the user starts their input with a non-numeric character (should
+         always start with a number :P)
+        :raise MissingUnitException: If the user doesn't have a complete parse (typically because it ends with
+         a numeric character).
         """
         # This function was partially written by AI, to convert "2d4sec" to [(2, "d"), (4,"sec")]
 
@@ -80,34 +81,16 @@ class TimeParser:
         """
         Helper function to convert time strings from "year" to "y", etc.
 
-        Parameters
-        -----------
-        time_units :class:`list[tuple[int,str]]`:
-            An output from parse_time_string() containing a list of (4, "days") tuples.
+        :param time_units: An output from parse_time_string() containing a list of (4, "days") tuples.
 
-        Returns
-        --------
-        :class:`list[tuple[int,str]]`:
-            A list of tuples with shrunk time strings: (4, "d").
+        :return: A list of tuples with shrunk time strings: (4, "d").
 
-        Raises
-        -------
-        :class:`ValueError`:
-            Input contains unrecognised datetime unit(s).
+        :raise ValueError: Input contains unrecognised datetime unit(s).
         """
-        timeterms = {
-            "y": ["y", "year", "years"],
-            "M": ["mo", "month", "months"],
-            "w": ["w", "week", "weeks"],
-            "d": ["d", "day", "days"],
-            "h": ["h", "hour", "hours"],
-            "m": ["m", "min", "mins", "minute", "minutes"],
-            "s": ["s", "sec", "secs", "second", "seconds"]
-        }
         for unit_index in range(len(time_units)):
             # use index instead of iterating tuples in list because of the tuple component reassignment 3 lines down.
-            for timeterm in timeterms:
-                if time_units[unit_index][1] in timeterms[timeterm]:
+            for timeterm in TIMETERMS:
+                if time_units[unit_index][1] in TIMETERMS[timeterm]:
                     time_units[unit_index] = (time_units[unit_index][0], timeterm)
                     # tuple does not support item assignment like (1,2)[0]=2
                     # Also assigning to tuples doesn't save in list, so need list ref too.
@@ -121,24 +104,16 @@ class TimeParser:
         """
         Helper function to turn strings like "3d5h10min4seconds" to a datetime in the future.
 
-        Parameters
-        -----------
-        time_string :class:`str`:
-            A string of a date format like "3d10min". Should not contain spaces (but it probably doesn't matter).
-        start_date :class:`datetime`:
-            The date to offset from.
 
-        Returns
-        --------
-        :class:`datetime.datetime`:
-            A datetime with an offset in the future (relative to the given datetime input) matching the input string.
+        :param time_string: A string of a date format like "3d10min". Should not contain spaces (but it
+         probably doesn't matter).
+        :param start_date: The date to offset from.
 
-        Raises
-        -------
-        :class:`ValueError`:
-            If the input is invalid.  
-            If the input contains unrecognised datetime units.  
-            If the "year" unit exceeds 3999 or if the "day" offset exceeds 1500000.
+        :return: A datetime with an offset in the future (relative to the given datetime input) matching the
+         input string.
+
+        :raise ValueError: If the input is invalid; if the input contains unrecognised datetime units; or
+         if the "year" unit exceeds 3999 or if the "day" offset exceeds 1500000.
         """
         # - "next thursday at 3pm"
         # - "tomorrow"
@@ -155,14 +130,13 @@ class TimeParser:
         timedict = {
             "y": start_date.year,
             "M": start_date.month,
-            "d": start_date.day - 1,
+            "d": start_date.day,
             "h": start_date.hour,
             "m": start_date.minute,
             "s": start_date.second,
-            "f": 0,  # microseconds can only be set with "0.04s" eg.
-            # now.day-1 for _timedict["d"] because later, datetime(day=...) starts with 1, and adds this value with
-            # timedelta. This is required cause the datetime() doesn't let you set "0" for days. (cuz a month starts
-            # at day 1)
+            "f": start_date.microsecond,
+            # microseconds can only be set with "0.04s", but since start_date will typically be from discord snowflakes,
+            #  the microseconds will be 0 by default.
         }
 
         # add values to each timedict key
@@ -173,10 +147,22 @@ class TimeParser:
                 timedict[unit[1]] += unit[0]
 
         # check non-whole numbers, and shift "0.2m" to 0.2*60 = 12 seconds
-        def decimals(time):
+        def decimals(time: float) -> float:
+            """
+            Get the decimal values of a floating point number.
+
+            :param time: The floating point number to get the decimal values of.
+            :return: The floating point section of the given number. Examples: 13.42 -> 0.42, -34.9 -> -0.9.
+            """
             return time - int(time)
 
-        def is_whole(time):
+        def is_whole(time: float) -> bool:
+            """
+            Check if a number has no decimal places.
+
+            :param time: The floating point number to check.
+            :return: Whether the given floating point number is a whole number.
+            """
             return time - int(time) == 0
 
         if not is_whole(timedict["y"]):
@@ -200,16 +186,16 @@ class TimeParser:
 
         # check overflows
         if timedict["s"] >= 60:
-            timedict["m"] += timedict["s"] % 60
+            timedict["m"] += timedict["s"] // 60
             timedict["s"] %= 60
         if timedict["m"] >= 60:
-            timedict["h"] += timedict["m"] % 60
+            timedict["h"] += timedict["m"] // 60
             timedict["m"] %= 60
         if timedict["h"] >= 24:
-            timedict["d"] += timedict["h"] % 24
+            timedict["d"] += timedict["h"] // 24
             timedict["h"] %= 24
         if timedict["M"] > 12:
-            timedict["y"] += timedict["M"] % 12
+            timedict["y"] += timedict["M"] // 12
             timedict["M"] %= 12
         if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
             raise ValueError("I don't think I can remind you in that long!")
@@ -221,6 +207,6 @@ class TimeParser:
                             tzinfo=start_date.tzinfo)
         # cause you cant have >31 days in a month, but if overflow is given, then let
         # this timedelta calculate the new months/years
-        distance += timedelta(days=timedict["d"])
+        distance += timedelta(days=timedict["d"] - 1)  # -1 cuz datetime.day has to start at 1 (first day of the month)
 
         return distance

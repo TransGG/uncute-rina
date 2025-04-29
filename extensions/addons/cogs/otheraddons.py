@@ -1,17 +1,18 @@
 import json  # to read API json responses
-import random  # for dice rolls (/roll) and selecting a random staff interaction wait time
 import requests  # to read api calls
 
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
+from extensions.settings.objects import ModuleKeys
+from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
+from resources.checks.command_checks import is_in_dms
+from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
 
-from extensions.addons.equaldexregion import EqualDexRegion
-from extensions.addons.views.equaldex_additionalinfo import EqualDexAdditionalInfo
-from extensions.addons.views.math_sendpublicbutton import SendPublicButtonMath
+
+MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
 
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
@@ -125,21 +126,19 @@ def _get_emoji_from_str(
     """
     Get a matching (partial) emoji object from an emoji string or emoji ID.
 
-    Parameters
-    -----------
-    client: :class:`Bot`
-        The client/bot whose servers to check for the emoji.
-    emoji_str: :class:`str` | :class:`None`
-        The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
+    :param client: The client/bot whose servers to check for the emoji.
+    :param emoji_str: The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
 
-    Returns
-    --------
-    :class:`None`
-        if no emoji found, or it can't be used by the bot (not in the server).
-    :class:`discord.PartialEmoji`
-        if emoji is unicode.
-    :class:`discord.Emoji`
-        if emoji is valid and can be used but the bot.
+    Returns:
+        - ``None``: If no emoji found, or it can't be used by the bot (not in the server).
+        - ``discord.PartialEmoji``: If emoji is Unicode.
+        - ``discord.Emoji``: If emoji is valid and can be used but the bot.
+
+    .. note::
+
+        :py:func:`discord.PartialEmoji.from_str` turns "e" into ``<PartialEmoji name="e", id=None>``
+        this means :py:func:`discord.PartialEmoji.is_unicode_emoji` will return ``True`` because ``id == None``
+        (and ``name != None`` is implied?) so it might still raise a NotFound error.
     """
     if emoji_str is None:
         return None
@@ -148,9 +147,7 @@ def _get_emoji_from_str(
     else:
         emoji_partial = discord.PartialEmoji.from_str(emoji_str)
         if emoji_partial is None or emoji_partial.is_unicode_emoji():
-            # note: PartialEmoji.from_str turns "e" into <PartialEmoji name="e", id=None>
-            #   this means .is_unicode_emoji will return True because id == None (and name != None?)
-            #   so it might still raise a NotFound error
+            # see docstring note
             return emoji_partial
         emoji = client.get_emoji(emoji_partial.id)
         if emoji is None:
@@ -166,42 +163,41 @@ async def _unit_autocomplete(itx: discord.Interaction, current: str):
         return []  # user hasn't selected a mode yet.
     options = options[itx.namespace.mode]
     if itx.namespace.mode == "currency":
-        return [
-                   app_commands.Choice(name=option, value=option)
-                   for option in options if option.lower().startswith(current.lower())
-               ][:10]
+        return [app_commands.Choice(name=option, value=option)
+                for option in options if option.lower().startswith(current.lower())
+                ][:10]
     else:
-        return [
-                   app_commands.Choice(name=option, value=option)
-                   for option in options if current.lower() in option.lower()
-               ][:25]
+        return [app_commands.Choice(name=option, value=option)
+                for option in options if current.lower() in option.lower()
+                ][:25]
+
+
+async def _role_autocomplete(itx: discord.Interaction, current: str):
+    """Autocomplete for /remove-role command."""
+    role_options = {
+        1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
+        1126160612620243044: ("Hide Venting channel role", "NVA")  # NVA
+    }
+    options = []
+    for role in itx.user.roles:
+        if role.id in role_options:
+            if (current.lower() in role_options[role.id][0].lower() or
+                    current.lower() in role_options[role.id][1].lower()):
+                options.append(role.id)
+    if options:
+        return [app_commands.Choice(name=role_options[role_id][0], value=role_options[role_id][1])
+                for role_id in options
+                ][:15]
+    else:
+        return [app_commands.Choice(name="You don't have any roles to remove!", value="none")]
 
 
 class OtherAddons(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+    def __init__(self):
+        pass
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        try:  # mention targeted user if added to mod-ticket with /add target:@user
-            # message.channel.category.id
-            if message.channel.category.id in [995330645901455380, 995330667665707108, 1086349703182041089]:
-                print("embeds:", len(message.embeds), "| message.author.id:", message.author.id)
-                if message.author.id == 557628352828014614 and len(message.embeds) == 1:
-                    # if ticket tool adds a user to a ticket, reply by mentioning the newly added user
-                    components = message.embeds[0].description.split(" ")
-                    print("components:", repr(components))
-                    print("@" in components[0])
-                    print(f'{components[1]} {components[2]} {components[3]} == "added to ticket"',
-                          f"{components[1]} {components[2]} {components[3]}" == "added to ticket")
-                    if "@" in components[0] and f"{components[1]} {components[2]} {components[3]}" == "added to ticket":
-                        await message.channel.send("Obligatory ping to notify newly added user: " + components[0],
-                                                   allowed_mentions=discord.AllowedMentions.all())
-        except (AttributeError, discord.errors.ClientException):
-            # channel.category apparently discord raises ClientException: Parent channel not found,
-            # instead of attribute error
-            pass
-
         if message.author.bot:
             return
 
@@ -239,12 +235,13 @@ class OtherAddons(commands.Cog):
             return
         if mode == "currency":
             # more info: https://docs.openexchangerates.org/reference/latest-json
-            api_key = self.client.api_tokens['Open Exchange Rates']
+            api_key = itx.client.api_tokens['Open Exchange Rates']
             response_api = requests.get(
                 f"https://openexchangerates.org/api/latest.json?app_id={api_key}&show_alternative=true").text
             data = json.loads(response_api)
             if data.get("error", 0):
-                await itx.response.send_message(f"I'm sorry, something went wrong while trying to get the latest data",
+                await itx.response.send_message("I'm sorry, something went wrong while trying to get "
+                                                "the latest currency exchange rates",
                                                 ephemeral=True)
                 return
             options = {x: [0, data['rates'][x], x] for x in data['rates']}
@@ -279,9 +276,13 @@ class OtherAddons(commands.Cog):
                            downvote_emoji="What emoji do you want to react second?",
                            neutral_emoji="Neutral emoji option (placed between the up/downvote)")
     async def add_poll_reactions(
-            self, itx: discord.Interaction, message_id: str,
+            self, itx: discord.Interaction[Bot], message_id: str,
             upvote_emoji: str, downvote_emoji: str, neutral_emoji: str | None = None
     ):
+        if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(itx.guild, ModuleKeys.poll_reactions):
+            # Server specifically disabled this feature.
+            raise ModuleNotEnabledCheckFailure(ModuleKeys.poll_reactions)
+
         errors = []
         message: None | discord.Message = None  # happy IDE
         if message_id.isdecimal():
@@ -297,24 +298,25 @@ class OtherAddons(commands.Cog):
         else:
             errors.append("- The message ID needs to be a number!")
 
-        upvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client, upvote_emoji)
+        upvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, upvote_emoji)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
 
-        downvote_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client, downvote_emoji)
+        downvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, downvote_emoji)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
 
         if neutral_emoji is None:
-            neutral_emoji: (discord.Emoji | discord.PartialEmoji | None) = _get_emoji_from_str(self.client,
-                                                                                               neutral_emoji)
+            neutral_emoji: MaybeEmoji = _get_emoji_from_str(
+                itx.client, neutral_emoji)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
-        if itx.guild.id != self.client.custom_ids["staff_server_id"]:
-            blacklisted_channels = await self.client.get_guild_info(itx.guild, "pollReactionsBlacklist")
-            if itx.channel.id in blacklisted_channels:
-                errors.append("- :no_entry: You are not allowed to use this command in this channel!")
+        blacklisted_channels = itx.client.get_guild_attribute(itx.guild,
+                                                              "pollReactionsBlacklist")
+        if (blacklisted_channels is not None and
+                itx.channel.id in blacklisted_channels):
+            errors.append("- :no_entry: You are not allowed to use this command in this channel!")
 
         if errors or not message:
             await itx.response.send_message("Couldn't add poll reactions:\n" + '\n'.join(errors), ephemeral=True)
@@ -340,9 +342,11 @@ class OtherAddons(commands.Cog):
                                                          "(at least) one of the emojis was not a real emoji!")
             else:
                 await itx.edit_original_response(content=":warning: Adding emojis failed!")
-        cmd_mention = self.client.get_command_mention("add_poll_reactions")
-        await log_to_guild(self.client, itx.guild,
-                           f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
+        cmd_mention = itx.client.get_command_mention("add_poll_reactions")
+
+        if not is_in_dms(itx.guild):
+            await log_to_guild(itx.client, itx.guild,
+                               f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
 
     @app_commands.command(name="get_rina_command_mention",
                           description="Sends a hidden command mention for your command")
@@ -359,7 +363,7 @@ class OtherAddons(commands.Cog):
                 ephemeral=True)
             return
 
-        cmd_mention = self.client.get_command_mention(command)
+        cmd_mention = itx.client.get_command_mention(command)
         await itx.response.send_message(
             f"Your input: `{command}`.\n"
             f"Command mention: {cmd_mention}.\n"
@@ -367,3 +371,41 @@ class OtherAddons(commands.Cog):
             "-# Did it not work? Try it with `help`",
             ephemeral=True
         )
+
+    @app_commands.command(name="remove-role",
+                          description="Remove one of your agreement roles")
+    @app_commands.describe(role_name="The name of the role to remove")
+    @app_commands.autocomplete(role_name=_role_autocomplete)
+    @module_enabled_check(ModuleKeys.remove_role_command)
+    async def remove_role(self, itx: discord.Interaction, role_name: str):
+        itx.user: discord.Member  # noqa
+        # It shouldn't be a discord.User cause the app_command check
+        #  prevents DMs.
+
+        role_options = {
+            "npa": ["NPA", 1126160553145020460],
+            "nva": ["NVA", 1126160612620243044],
+        }
+        if role_name.lower() not in role_options:
+            await itx.response.send_message(
+                "You can't remove that role!", ephemeral=True)
+            return
+
+        role_id = role_options[role_name.lower()][1]
+        try:
+            matching_roles = [r.id == role_id for r in itx.user.roles]
+            # it only selects the first one of them but oh well.
+            for role in matching_roles:
+                await itx.user.remove_roles(
+                    role,
+                    reason="Removed by user using /remove-role"
+                )
+                await itx.response.send_message(
+                    "Successfully removed role!", ephemeral=True)
+                return
+        except discord.Forbidden:
+            await itx.response.send_message(
+                "I couldn't remove this role! (Forbidden)",
+                ephemeral=True
+            )
+            return

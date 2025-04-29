@@ -1,5 +1,6 @@
 import traceback  # to pass traceback into error return message
 from datetime import datetime, timezone  # to plot and sort voice chat logs
+
 import matplotlib.pyplot as plt
 import pandas as pd  # to plot voice channel timeline graph
 import typing
@@ -8,14 +9,41 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs.bot import Bot
-from resources.utils.permissions import is_staff  # to check staff roles
+from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
+    module_enabled_check  # cuz it's a staff command
+from resources.customs import Bot
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
 
 
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
+
+
+def extract_id_and_name(embed: discord.Embed, field_number: int) -> tuple[str, str]:
+    """
+    A helper function to extract id and name from Logger Bot or Anna's
+    voice channel logs.
+
+    :param embed: The embed to extract from.
+    :param field_number: The field number inside the id containing
+     the channel information.
+    :return: A tuple of the extracted id and name.
+    """
+    # split "<#234567> (Channel Name)" to "234567"
+    channel_id = (
+        embed.fields[field_number].value
+        .split("#", 1)[1]
+        .split(">", 1)[0]
+    )
+    # split "<#234567> (Channel Name)" to "Channel Name"
+    channel_name = (
+        embed.fields[field_number].value
+        .split(">", 1)[1]
+        .split("(", 1)[1][:-1]
+    )
+    return channel_id, channel_name
 
 
 async def _get_vc_activity(
@@ -27,26 +55,21 @@ async def _get_vc_activity(
     """
     Retrieve the most recent voice channel activity from the logger channel and convert into neat string.
 
-    Parameters
-    -----------
-    voice_log_channel: :class:`discord.abc.Messageable`
-        Channel from which you want to get the voice channel logs / information.
-    min_time: :class:`float`
-        A unix epoch timestamp for the earliest logs to fetch (up to how long ago).
-    max_time: :class:`float`
-        A unix epoch timestamp for the latest logs to fetch (up to how recent).
-    msg_limit: :class:`int`
-        How many log messages to look through.
+    :param voice_log_channel: Channel from which you want to get the voice channel logs / information.
+    :param min_time: A unix epoch timestamp for the earliest logs to fetch (up to how long ago).
+    :param max_time: A unix epoch timestamp for the latest logs to fetch (up to how recent).
+    :param msg_limit: How many log messages to look through.
 
-    Returns
-    --------
-    :class:`list[tuple[event_time_unix, (user_id, username), (previous_channel_id, name) |
-          None, (current_channel_id, name) | None ]]`
-        A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of
-                previous_channel or new_channel has a value.
+    :return: A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of
+     previous_channel or new_channel has a value.
     """
-    output: list[tuple[float, tuple[int, str], tuple[int, str] | None, tuple[
-        int, str] | None]] = []  # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
+    # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
+    output: list[tuple[
+        float,
+        tuple[int, str],
+        tuple[int, str] | None,
+        tuple[int, str] | None]
+    ] = []
 
     async for message in voice_log_channel.history(after=datetime.fromtimestamp(min_time, tz=timezone.utc),
                                                    before=datetime.fromtimestamp(max_time, tz=timezone.utc),
@@ -74,13 +97,6 @@ async def _get_vc_activity(
         #   fields[1].value: "```ini\nUser = 123456789\nNew = 234567\nOld = 123456```"
 
         for embed in message.embeds:
-            data: tuple[float, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None] = [
-                embed.timestamp.timestamp()  # unix timestamp of event
-            ]
-            # yes i know this is a list. It is converted into a tuple later. I'm too lazy to make a second
-            # variable if this works too. (long live python?)
-            # todo, use dedicated variables to declare data as (a,b,c) instead.
-
             username = embed.description.split("**", 2)[1].split("#", 1)[0]
             # split **mysticmia#0** to mysticmia (taking discord usernames can't contain hashtags (cuz they can't))
             # print("Username = ", username)
@@ -115,35 +131,33 @@ async def _get_vc_activity(
                     continue
                 # Could be done more efficiently but oh well. Not like this is suitable for any
                 # other bot either anyway. And I'm limited by discord API anyway.
+
                 if len(embed.fields) == 3:  # user moved channels (3 fields: previous/current channel, and IDs)
                     if event_type != "moved":
                         raise AssertionError(f"type '{event_type}' is not a valid type (should be 'moved')")
-                    current_channel_data.append(embed.fields[0].value.split("#", 1)[1].split(">", 1)[0])
-                    # split <#234567> (Channel Name) to 234567
-                    current_channel_data.append(embed.fields[0].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                    # split <#234567> (Channel Name) to Channel Name
-                    previous_channel_data.append(embed.fields[1].value.split("#", 1)[1].split(">", 1)[0])
-                    # split <#123456> (Channel Name) to 123456
-                    previous_channel_data.append(embed.fields[1].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                    # split <#123456> (Channel Name) to Channel Name
+                    current_id, current_name = extract_id_and_name(embed, 0)
+                    current_channel_data.append(current_id)
+                    current_channel_data.append(current_name)
+                    previous_id, previous_name = extract_id_and_name(embed, 1)
+                    previous_channel_data.append(previous_id)
+                    previous_channel_data.append(previous_name)
                 elif len(embed.fields) == 2:
                     if event_type == "joined":
-                        current_channel_data.append(embed.fields[0].value.split("#", 1)[1].split(">", 1)[0])
-                        # split <#123456> (Channel Name) to 123456
-                        current_channel_data.append(embed.fields[0].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                        # split <#123456> (Channel Name) to Channel Name
+                        current_id, current_name = extract_id_and_name(embed, 0)
+                        current_channel_data.append(current_id)
+                        current_channel_data.append(current_name)
                     elif event_type == "left":
-                        previous_channel_data.append(embed.fields[0].value.split("#", 1)[1].split(">", 1)[0])
-                        # split <#234567> (Channel Name) to 234567
-                        previous_channel_data.append(embed.fields[0].value.split(">", 1)[1].split("(", 1)[1][:-1])
-                        # split <#234567> (Channel Name) to Channel Name
+                        previous_id, previous_name = extract_id_and_name(embed, 0)
+                        previous_channel_data.append(previous_id)
+                        previous_channel_data.append(previous_name)
                     else:
                         raise AssertionError(
                             f"type '{event_type}' is not a valid type (should be 'joined' or 'left')")
                 else:
                     raise AssertionError(
                         f"Embed fields count was expected to be 3 or 2. Instead, it was '{len(embed.fields)}'")
-            except:  # TODO: try to figure out why it crashed that one time. Now with more details
+            except IndexError:
+                # TODO: try to figure out why it crashed that one time. Now with more details
                 # edit: Some actions, such as server-deafening another user, give a different log message.
                 if len(embed.fields) == 0:
                     raise Exception("Embed has no fields!")
@@ -153,13 +167,14 @@ async def _get_vc_activity(
                             f"First embed field '{embed.fields[0].value}' does not have hashtags for its ID!")
                     raise Exception(f"Embed field '{embed.fields[0].value}' has some other error or something D:")
 
-            id_data = embed.fields[-1].value.replace("```ini", "")[
-                      :-3].strip()  # remove the ```ini\n  ...   ``` from the embed field
-            # print("id data = ", id_data)
+            # remove the ```ini\n  ...   ``` from the embed field
+            id_data = (embed.fields[-1]
+                       .value
+                       .replace("```ini", "")[:-3]
+                       .strip())
+
             for line in id_data.splitlines():
                 key, value = line.split(" = ")
-                # Could use match/case, but it's not like as if it'll make much difference in speed or looks:
-                # extra indents- and discord API is bottleneck anyway
                 if key == "User":
                     user_data.append(value)
                 elif key == "New":
@@ -173,52 +188,145 @@ async def _get_vc_activity(
                         previous_channel_data.append(value)
                     else:
                         raise AssertionError(
-                            f"type '{event_type}' is not a valid type (should be 'joined' or 'left')")
+                            f"type '{event_type}' is not a valid type "
+                            f"(should be 'joined' or 'left')")
                 else:
                     raise AssertionError(
-                        f"key '{key}' is not a valid key (should be 'User', 'Old', 'New', or 'Channel')")
+                        f"key '{key}' is not a valid key (should be "
+                        f"'User', 'Old', 'New', or 'Channel')")
             user_data.append(username)
 
+            event_timestamp = embed.timestamp.timestamp()
+
             try:
-                data.append((int(user_data[0]), user_data[1]))
+                "A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of"
+                "previous_channel or new_channel has a value."
+                event_user = (int(user_data[0]), user_data[1])
 
                 if len(previous_channel_data) == 0:
-                    data.append(None)
+                    previous_channel = None
                 else:
-                    data.append((int(previous_channel_data[0]), previous_channel_data[1]))
+                    previous_channel = (int(previous_channel_data[0]),
+                                        previous_channel_data[1])
 
                 if len(current_channel_data) == 0:
-                    data.append(None)
+                    current_channel = None
                 else:
-                    data.append((int(current_channel_data[0]), current_channel_data[1]))
+                    current_channel = (int(current_channel_data[0]),
+                                       current_channel_data[1])
             except ValueError:
                 raise AssertionError(f"IDs were not numeric!\nFull error:\n{traceback.format_exc()}")
-            output.append(tuple(data))
+
+            data = (event_timestamp, event_user, previous_channel, current_channel)
+            output.append(data)
 
     return output
 
 
-class VCLogReader(commands.Cog):
-    def __init__(self, client: Bot):
-        self.client = client
+async def _make_bar_graph(
+        df, lower_bound, sorted_usernames, upper_bound, voice_channel
+):
+    df["Diff"] = df.Finish - df.Start
+    color = "crimson"
+    fig, ax = plt.subplots(figsize=(6, 3))
+    fig.suptitle(f"VC data in '{voice_channel.id}' from T-{lower_bound / 60} to T-{upper_bound / 60}")
+    labels = []
+    for i, task in enumerate(df.groupby("User")):
+        labels.append(task[0])
+        graph_data = task[1][["Start", "Diff"]]
+        ax.broken_barh(graph_data.values, (i - 0.4, 0.8), color=color)
+    ax.set_xticks(ax.get_xticks())
+    # workaround to remove upcoming warning (warning about changing labels without preventing potential overlaps)
+    tick_labels = [x.get_position()[0] for x in ax.xaxis.get_ticklabels()]
+    label_time_text_format = "%H:%M"
+    if tick_labels[-1] - tick_labels[0] < 5 * 60:
+        label_time_text_format = "%H:%M:%S"
+    elif tick_labels[-1] - tick_labels[0] > 86400:
+        label_time_text_format = "%Y-%m-%dT%H:%M"
+    ax.set_xticklabels(
+        [datetime.fromtimestamp(x, tz=timezone.utc).strftime(label_time_text_format) for x in tick_labels],
+        rotation=30)
+    # Default y-tick labels have a font size of rcParams['axes.titlesize'], which corresponds to 'large'.
+    #      https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html
+    #   'large' is relative to the default font size, which is rcParams['font.size'] (default 10.0)
+    #      https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
+    #    The text sizes are as follows: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large']
+    #    Their values are as follows:   [   5.79,      6.94,     8.33,    10.0,     12.0,     14.4,      17.2]
+    #      https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
+    #    Each text size is 1.2x bigger than the previous, with `medium` by default 10.0
+    # On the default scale (large), a graph can fit about 12 names. That would give 12*12=144 fontsize in a graph.
+    # When more users are shown (eg. 30), that would bring the font size to 144 / 30 = 4.8,
+    scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)  # clamp to 4 <= size <= 12 (default)
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels, scaling_label_size)
+    ax.set_xlabel("time (utc+0)")
+    plt.tight_layout()
+    plt.savefig('outputs/vcLogs.png', dpi=300)
 
-    @app_commands.command(name="getvcdata", description="Get recent voice channel usage data.")
+
+async def _format_data_for_graph(
+        events, max_time, min_time, select_user_ids, voice_channel
+):
+    intermediate_data: dict[int, dict[
+        typing.Literal["name", "time_temp", "timestamps"],
+        str | None | float | list[tuple[float, float]]
+    ]] = {}
+    for event in events:
+        unix, user, from_channel, to_channel = event
+        from_channel = from_channel[0] if from_channel else from_channel
+        # set as its ID if not None (prevent TypeError: 'NoneType' object is not subscriptable)
+        to_channel = to_channel[0] if to_channel else to_channel
+        user_id = user[0]
+        if len(select_user_ids) != 0 and user_id not in select_user_ids:
+            continue
+        if voice_channel.id not in [from_channel, to_channel]:
+            continue
+        if user[0] not in intermediate_data:
+            intermediate_data[user_id] = {"name": user[1], "time_temp": None, "timestamps": []}
+
+        if from_channel == voice_channel.id:
+            if intermediate_data[user_id]["time_temp"] is None:
+                intermediate_data[user_id]["timestamps"].append((min_time, unix))
+            else:
+                intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], unix))
+                intermediate_data[user_id]["time_temp"] = None
+        elif to_channel == voice_channel.id:
+            intermediate_data[user_id]["time_temp"] = unix
+    for user_id in intermediate_data:
+        if intermediate_data[user_id]["time_temp"]:
+            intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], max_time))
+        del intermediate_data[user_id]["time_temp"]
+    data: VcLogGraphData = {"User": [], "Start": [], "Finish": []}
+    sorted_usernames = sorted(intermediate_data)  # sort alphabetically so graph always uses the same order
+    for user in sorted_usernames:
+        for time_tuple in intermediate_data[user]["timestamps"]:
+            data["User"].append(intermediate_data[user]["name"])
+            data["Start"].append(time_tuple[0])
+            data["Finish"].append(time_tuple[1])
+    return data, sorted_usernames
+
+
+class VCLogReader(commands.Cog):
+    def __init__(self):
+        pass
+
+    @app_commands.command(name="getvcdata",
+                          description="Get recent voice channel usage data.")
     @app_commands.describe(lower_bound="Get data from [period] minutes ago",
                            upper_bound="Get data up to [period] minutes ago",
                            msg_log_limit="How many logs should I use to make the graph (default: 5000)",
                            user_ids="Specific user ids to filter the graph for (separate with comma)")
+    @app_commands.check(is_staff_check)
+    @module_enabled_check(ModuleKeys.vc_log_reader)
     async def get_voice_channel_data(
-            self, itx: discord.Interaction, requested_channel: str, lower_bound: str, upper_bound: str = None,
+            self, itx: discord.Interaction[Bot], requested_channel: str, lower_bound: str, upper_bound: str = None,
             msg_log_limit: int = 5000, user_ids: str | None = None
     ):
         if user_ids is None:
             user_ids = ""
-        select_user_ids: list[str] = user_ids.replace(" ","").split(",")
+        select_user_ids: list[str] = user_ids.replace(" ", "").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str = requested_channel
-        if not is_staff(itx.guild, itx.user):
-            await itx.response.send_message("You don't have permissions to use this command.", ephemeral=True)
-            return
         warning = ""
         if type(requested_channel) is discord.app_commands.AppCommandChannel:
             voice_channel = itx.client.get_channel(requested_channel.id)
@@ -235,19 +343,14 @@ class VCLogReader(commands.Cog):
                                                members=[])
             warning = "Warning: This channel is not a voice channel, or has been deleted!\n\n"
 
-        cmd_mention = self.client.get_command_mention("editguildinfo")
-        try:
-            log_channel_id = await self.client.get_guild_info(itx.guild_id, "vcActivityLogChannel")
-        except KeyError:
-            await itx.response.send_message(
-                f"Error: No log channel found! Set one with {cmd_mention} `mode:Edit` `option:51` `value:`.",
-                ephemeral=True)
-            return
-        log_channel = self.client.get_channel(log_channel_id)
-        if log_channel is None:
-            await itx.response.send_message(
-                f"Error: The given log channel id ({log_channel_id}) yielded no valid channels!", ephemeral=True)
-            return
+        vc_activity_logs_channel: discord.abc.Messageable | None
+        vc_activity_logs_channel = itx.client.get_guild_attribute(
+            itx.guild_id, AttributeKeys.voice_channel_activity_logs_channel)
+
+        if vc_activity_logs_channel is None:
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.vc_log_reader,
+                AttributeKeys.voice_channel_activity_logs_channel)
 
         if upper_bound is None:
             upper_bound = 0  # 0 minutes from now
@@ -277,97 +380,20 @@ class VCLogReader(commands.Cog):
         min_time: float = current_time - lower_bound
         max_time: float = current_time - upper_bound
 
-        events = await _get_vc_activity(log_channel, min_time, max_time, msg_log_limit)
+        events = await _get_vc_activity(vc_activity_logs_channel, min_time, max_time, msg_log_limit)
 
         if max_time == current_time:  # current_time - 0 == current_time
-            # if looking until the current time/date, add fake "leave" event for every person that is currently
-            # still in the voice channel. This ensures that even [those that haven't joined or left during the
-            # given time frame] will still be plotted on the graph.
+            # If looking until the current time/date, add fake "leave" event for every person that is currently
+            #  still in the voice channel. This ensures that even [those that haven't joined or left during the
+            #  given time frame] will still be plotted on the graph.
             for member in voice_channel.members:
                 events.append((current_time, (member.id, member.name), (voice_channel.id, voice_channel.name), None))
 
-        intermediate_data: dict[int, dict[
-            typing.Literal["name", "time_temp", "timestamps"],
-            str | None | float | list[tuple[float, float]]
-        ]] = {}
-
-        for event in events:
-            unix, user, from_channel, to_channel = event
-            from_channel = from_channel[0] if from_channel else from_channel
-            # set as its ID if not None (prevent TypeError: 'NoneType' object is not subscriptable)
-            to_channel = to_channel[0] if to_channel else to_channel
-            user_id = user[0]
-            if len(select_user_ids) != 0 and user_id not in select_user_ids:
-                continue
-            if voice_channel.id not in [from_channel, to_channel]:
-                continue
-            if user[0] not in intermediate_data:
-                intermediate_data[user_id] = {"name": user[1], "time_temp": None, "timestamps": []}
-
-            if from_channel == voice_channel.id:
-                if intermediate_data[user_id]["time_temp"] is None:
-                    intermediate_data[user_id]["timestamps"].append((min_time, unix))
-                else:
-                    intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], unix))
-                    intermediate_data[user_id]["time_temp"] = None
-            elif to_channel == voice_channel.id:
-                intermediate_data[user_id]["time_temp"] = unix
-        for user_id in intermediate_data:
-            if intermediate_data[user_id]["time_temp"]:
-                intermediate_data[user_id]["timestamps"].append((intermediate_data[user_id]["time_temp"], max_time))
-            del intermediate_data[user_id]["time_temp"]
-
-        data: VcLogGraphData = {"User": [], "Start": [], "Finish": []}
-        sorted_usernames = sorted(intermediate_data) # sort alphabetically so graph always uses the same order
-        for user in sorted_usernames:
-            for time_tuple in intermediate_data[user]["timestamps"]:
-                data["User"].append(intermediate_data[user]["name"])
-                data["Start"].append(time_tuple[0])
-                data["Finish"].append(time_tuple[1])
+        data, sorted_usernames = await _format_data_for_graph(
+            events, max_time, min_time, select_user_ids, voice_channel)
 
         df = pd.DataFrame(data=data)
-        df["Diff"] = df.Finish - df.Start
-
-        color = "crimson"
-        fig, ax = plt.subplots(figsize=(6, 3))
-        fig.suptitle(f"VC data in '{voice_channel.id}' from T-{lower_bound / 60} to T-{upper_bound / 60}")
-
-        labels = []
-        for i, task in enumerate(df.groupby("User")):
-            labels.append(task[0])
-            graph_data = task[1][["Start", "Diff"]]
-            ax.broken_barh(graph_data.values, (i - 0.4, 0.8), color=color)
-
-        ax.set_xticks(ax.get_xticks())
-        # workaround to remove upcoming warning (warning about changing labels without preventing potential overlaps)
-
-        tick_labels = [x.get_position()[0] for x in ax.xaxis.get_ticklabels()]
-        label_time_text_format = "%H:%M"
-        if tick_labels[-1] - tick_labels[0] < 5 * 60:
-            label_time_text_format = "%H:%M:%S"
-        elif tick_labels[-1] - tick_labels[0] > 86400:
-            label_time_text_format = "%Y-%m-%dT%H:%M"
-        ax.set_xticklabels(
-            [datetime.fromtimestamp(x, tz=timezone.utc).strftime(label_time_text_format) for x in tick_labels],
-            rotation=30)
-
-        # Default y-tick labels have a font size of rcParams['axes.titlesize'], which corresponds to 'large'.
-        #      https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html
-        #   'large' is relative to the default font size, which is rcParams['font.size'] (default 10.0)
-        #      https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
-        #    The text sizes are as follows: ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large']
-        #    Their values are as follows:   [   5.79,      6.94,     8.33,    10.0,     12.0,     14.4 ,     17.2]
-        #      https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
-        #    Each text size is 1.2x bigger than the previous, with `medium` by default 10.0
-        # On the default scale (large), a graph can fit about 12 names. That would give 12*12=144 fontsize in a graph.
-        # When more users are shown (eg. 30), that would bring the font size to 144 / 30 = 4.8,
-        scaling_label_size = min(max(144 / max(len(sorted_usernames),1) , 4), 12) # clamp to 4 <= size <= 12 (default)
-
-        ax.set_yticks(range(len(labels)))
-        ax.set_yticklabels(labels, scaling_label_size)
-        ax.set_xlabel("time (utc+0)")
-        plt.tight_layout()
-        plt.savefig('outputs/vcLogs.png', dpi=300)
+        await _make_bar_graph(df, lower_bound, sorted_usernames, upper_bound, voice_channel)
         await itx.followup.send(
             warning +
             f"VC activity from {voice_channel.mention} (`{voice_channel.id}`) from {lower_bound / 60} to "

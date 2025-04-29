@@ -1,10 +1,9 @@
 import discord
 import random  # for random help page jump page number placeholder
 
-from resources.customs.bot import Bot
 from resources.modals.generics import SingleLineModal
 from resources.utils.stringhelper import replace_string_command_mentions
-from resources.views.generics import PageView, create_simple_button
+from resources.views.generics import PageView
 
 from extensions.help.utils import generate_help_page_embed, get_nearest_help_pages_from_page
 from extensions.help.helppage import HelpPage
@@ -13,7 +12,7 @@ from extensions.help.helppage import HelpPage
 class HelpPageView(PageView):
     async def update_page(self, itx: discord.Interaction, view: PageView) -> None:
         page_key = list(self.pages)[self.page]
-        embed = generate_help_page_embed(self.pages[page_key], page_key, self.client)
+        embed = generate_help_page_embed(self.pages[page_key], page_key, itx.client)
         await itx.response.edit_message(
             embed=embed,
             view=view
@@ -40,7 +39,7 @@ class HelpPageView(PageView):
             return
 
         try:
-            if not jump_page_modal.question_text.value.isnumeric():
+            if not jump_page_modal.question_text.value.isdecimal():
                 raise ValueError
             page_guess = int(jump_page_modal.question_text.value)
         except ValueError:
@@ -66,18 +65,24 @@ class HelpPageView(PageView):
                      if page_guess != 404 else "`404`: Page not found!") +  # easter egg
                     f" {relative_page_location_details} Try %%help%% `page:1` or use the page keys "
                     f"to get to the right page number!",
-                    self.client),
+                    itx.client),
                 ephemeral=True)
             return
 
         self.page = list(self.pages).index(page_guess)
         self.update_button_colors()
         await self.update_page(jump_page_modal.itx, self)
+
     # endregion buttons
 
-    def __init__(self, client: Bot, first_page_key: int, page_dict: dict[int, HelpPage]) -> None:
-        self.client = client
+    def __init__(self, first_page_key: int, page_dict: dict[int, HelpPage], can_view_staff_pages: bool) -> None:
+        if not can_view_staff_pages:
+            page_numbers = list(page_dict)
+            for x in range(len(page_numbers)):
+                if page_dict[page_numbers[x]].get("staff_only", False):
+                    del page_dict[page_numbers[x]]
+
         self.pages = page_dict
         first_page_index = list(self.pages).index(first_page_key)
         super().__init__(first_page_index, len(self.pages) - 1, self.update_page)
-        self._children.append(self._children.pop(1))
+        self._children.append(self._children.pop(1))  # move jump_to_page button to the end of the view

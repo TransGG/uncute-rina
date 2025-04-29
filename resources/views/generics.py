@@ -15,23 +15,13 @@ def create_simple_button(
     """
     Create a button for a view with a label/emoji, style, and callback.
 
-    Parameters
-    -----------
-    label: :class:`str` | :class:`discord.Emoji` | :class:`discord.PartialEmoji`
-        The label (text) of the button.
-    style: :class:`discord.ButtonStyle`
-        The button color.
-    callback: :class:`Callable`
-        The function to call when the button is clicked.
-    disabled: :class:`bool`
-        Whether the button is clickable by the user.
-    label_is_emoji: :class:`bool`, optional
-        Whether the given label should be used as button icon instead. Default: False.
+    :param label: The label (text) of the button.
+    :param style: The button color.
+    :param callback: The function to call when the button is clicked.
+    :param disabled: Whether the button is clickable by the user.
+    :param label_is_emoji: Whether the given label should be used as button icon instead. Default: False.
 
-    Returns
-    --------
-    :class:`discord.ui.Button`
-        A button with the given properties.
+    :return: A button with the given properties.
     """
     if label_is_emoji:
         button = discord.ui.Button(emoji=label, style=style, disabled=disabled)
@@ -49,17 +39,12 @@ class GenericTwoButtonView(discord.ui.View):
             timeout: float | None = None
     ):
         """
-        Create a new view with two buttons. Clicking the first button will set self.value to True, and
+        Create a new view with two buttons. Clicking the first button will set :py:attr:`value` to True, and
         the second button sets it to False. Timing out will leave it at None.
 
-        Parameters
-        -----------
-        button_true: :class:`tuple[str, discord.ButtonStyle]`, optional
-            The first button's label (text) and color. Default: ("Confirm", discord.ButtonStyle.green).
-        button_false: :class:`tuple[str, discord.ButtonStyle]`, optional
-            The second button's label (text) and color. Default: ("Cancel", discord.ButtonStyle.red).
-        timeout: :class:`_type_`, optional
-            How long the user has before the buttons disable and the view.wait() finishes. Default: None.
+        :param button_true: The first button's label (text) and color.
+        :param button_false: The second button's label (text) and color.
+        :param timeout: How long the user has before the buttons disable and the view.wait() finishes.
         """
         super().__init__()
         self.value: bool | None = None
@@ -85,10 +70,7 @@ class PageView(discord.ui.View):
         make it out of bounds, make it gray; else blurple. If loop_around_pages is disabled, gray
         buttons will be disabled too.
 
-        Returns
-        --------
-        :class:`tuple[discord.ButtonStyle, bool]`
-            A tuple of the button color and whether the button should be disabled.
+        :return: A tuple of the button color and whether the button should be disabled.
         """
         # set color to gray if clicking the button would make the page out of bounds and thus loop around
         return (
@@ -103,10 +85,7 @@ class PageView(discord.ui.View):
         make it out of bounds, make it gray; else blurple. If loop_around_pages is disabled, gray
         buttons will be disabled too.
 
-        Returns
-        --------
-        :class:`tuple[discord.ButtonStyle, bool]`
-            A tuple of the button color and whether the button should be disabled.
+        :return: A tuple of the button color and whether the button should be disabled.
         """
         # set color to gray if clicking the button would make the page out of bounds and thus loop around
         return (
@@ -119,12 +98,8 @@ class PageView(discord.ui.View):
         Update the page message. This typically involves calculating the message content for the message and updating
         the original message.
 
-        Parameters
-        -----------
-        itx: :class:`discord.Interaction`
-            The interaction gained from the button or modal interaction by the user.
-        view: :class:`PageView`
-            The view class instance.
+        :param itx: The interaction gained from the button or modal interaction by the user.
+        :param view: The view class instance.
         """
         pass
 
@@ -189,8 +164,7 @@ class PageView(discord.ui.View):
         it's the first/last page, else blurple. Gray buttons will also be
         disabled if loop_around_pages is False.
 
-        Update the message with the now-updated view to change the buttons in
-        the message on discord.
+        To change the buttons in the discord message, run `update_page`.
         """
         self.page_down_button.style, self.page_down_button.disabled = self.page_down_style
         self.page_up_button.style, self.page_up_button.disabled = self.page_up_style

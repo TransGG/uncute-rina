@@ -4,4 +4,4 @@ from extensions.todolist.cogs import TodoList
 
 
 async def setup(client: Bot):
-    await client.add_cog(TodoList(client))
+    await client.add_cog(TodoList())
