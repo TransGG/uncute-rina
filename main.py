@@ -34,6 +34,7 @@ BOT_VERSION = "1.4.1.1"
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
     "addons",
+    "changechannel",
     "compliments",
     "crashhandling",
     "customvcs",
