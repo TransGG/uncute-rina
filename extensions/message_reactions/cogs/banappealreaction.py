@@ -15,14 +15,14 @@ class BanAppealReactionsAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.ban_appeal_reactions):
             return
-        ban_appeal_webhook: discord.User | None = self.client.get_guild_attribute(
-            message.guild, AttributeKeys.ban_appeal_webhook)
-        if ban_appeal_webhook is None:
+        ban_appeal_webhook_id: discord.User | None = self.client.get_guild_attribute(
+            message.guild, AttributeKeys.ban_appeal_webhook_id)
+        if ban_appeal_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.ban_appeal_reactions,
-                AttributeKeys.ban_appeal_webhook)
+                AttributeKeys.ban_appeal_webhook_id)
 
-        if message.author.id != ban_appeal_webhook.id:
+        if message.webhook_id != ban_appeal_webhook_id:
             return
 
         if len(message.embeds) == 0:

@@ -30,6 +30,7 @@ class EnabledModules(TypedDict, total=False):
     report_tags_to_staff: bool
     polls_only_channel: bool
     change_channel: bool
+    anonymous_report_reactions: bool
 
 
 class ModuleKeys:
@@ -60,6 +61,7 @@ class ModuleKeys:
     report_tags_to_staff = "report_tags_to_staff"
     polls_only_channel = "polls_only_channel"
     change_channel = "change_channel"
+    anonymous_report_reactions = "anonymous_report_reactions"
 
 
 module_required_attributes = {
@@ -90,4 +92,8 @@ module_required_attributes = {
     ),
 
     ModuleKeys.change_channel: (),
+
+    ModuleKeys.anonymous_report_reactions: (
+        AttributeKeys.anonymous_reports_webhook_id,
+    )
 }

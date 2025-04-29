@@ -23,7 +23,8 @@ class AttributeKeys:
     staff_logs_category = "staff_logs_category"
     badeline_bot = "badeline_bot"
 
-    ban_appeal_webhook = "ban_appeal_webhook"
+    anonymous_reports_webhook_id = "anonymous_reports_webhook_id"
+    ban_appeal_webhook_id = "ban_appeal_webhook_id"
     ban_appeal_reaction_role = "ban_appeal_reaction_role"
     aegis_ping_role = "aegis_ping_role"
 

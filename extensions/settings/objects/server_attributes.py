@@ -32,7 +32,10 @@ class ServerAttributes(TypedDict):
     staff_logs_category: discord.CategoryChannel | None
     badeline_bot: discord.User | None
 
-    ban_appeal_webhook: discord.User | None
+    # Webhooks require async fetching, so instead I opted for storing
+    #  only their ID, so they can be compared with Message.webhook_id.
+    anonymous_reports_webhook_id: int | None  # Webhook
+    ban_appeal_webhook_id: int | None  # Webhook
     ban_appeal_reaction_role: discord.Role | None
     aegis_ping_role: discord.Role | None
 

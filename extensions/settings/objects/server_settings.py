@@ -193,8 +193,13 @@ def parse_attribute(
     elif attribute_type is discord.Emoji:
         func = guild.get_emoji
     elif attribute_type is int:
+        def get_int(x: int) -> int:
+            """Helper to just return the already-parsed int object."""
+            # this function exists because apparently `lambda x: x` is
+            #  bad for tracebacks or something.
+            return x
         # the value should already be an int anyway
-        return attribute_value
+        func = get_int
     elif attribute_type is str:
         return str(attribute_value)
     else:

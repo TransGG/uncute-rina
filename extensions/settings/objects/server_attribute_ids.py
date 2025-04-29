@@ -3,6 +3,7 @@ from typing import TypedDict
 
 GuildId = int
 UserId = int
+WebhookId = int
 RoleId = int
 EmojiId = int
 TextChannelId = int
@@ -37,7 +38,8 @@ class ServerAttributeIds(TypedDict, total=False):
     staff_logs_category: CategoryChannelId
     badeline_bot: UserId
 
-    ban_appeal_webhook: UserId
+    anonymous_reports_webhook_id: WebhookId
+    ban_appeal_webhook_id: WebhookId
     ban_appeal_reaction_role: RoleId
     aegis_ping_role: RoleId
 
