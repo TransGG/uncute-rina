@@ -76,11 +76,19 @@ async def _send_crash_message(
     msg = debug_message.replace("``",
                                 "`` ")
     embeds = []
+    total_characters = 0
     while len(msg) > 0 and len(embeds) < 10:
         # 4090 = 4096 (max description length of embeds) - len(2 * "```")
+        total_characters += len(error_type + ' Log')
+        if len(total_characters) < 7:
+            # be able to place at least "```a```" in the embed.
+            break
+        remaining_characters = 6000 - total_characters
         embed = discord.Embed(
             title=error_type + ' Log',
-            description="```" + msg[:4090] + "```",
+            description="```"
+                        + msg[:4090][:remaining_characters]
+                        + "```",
             color=color,
         )
         embeds.append(embed)

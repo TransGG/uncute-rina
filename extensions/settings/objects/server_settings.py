@@ -296,11 +296,12 @@ class ServerSettings:
         new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
         new_settings = []
         async for old_setting in old_collection.find():
-            new_setting: ServerSettingData = {}
             guild_id, attributes = convert_old_settings_to_new(old_setting)
-            new_setting["guild_id"] = guild_id
-            new_setting["attribute_ids"] = attributes
-            new_setting["enabled_modules"] = EnabledModules()
+            new_setting = ServerSettingData(
+                guild_id=guild_id,
+                attribute_ids=attributes,
+                enabled_modules=EnabledModules(),
+            )
             new_settings.append(new_setting)
 
         if new_settings:

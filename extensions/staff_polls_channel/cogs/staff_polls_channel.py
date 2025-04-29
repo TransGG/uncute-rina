@@ -89,8 +89,11 @@ class StaffPollsChannelAddon(commands.Cog):
         self.client = client
 
     @commands.Cog.listener()
-    @module_enabled_check(ModuleKeys.polls_only_channel)
     async def on_message(self, message: discord.Message):
+        if not self.client.is_module_enabled(
+                message.guild, ModuleKeys.polls_only_channel):
+            return
+
         # Can raise discord.Forbidden if:
         # - Missing `Manage Messages` to delete non-poll messages.
         # - Missing `Create threads` for poll messages.
