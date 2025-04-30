@@ -376,7 +376,7 @@ async def _handle_settings_attribute(
             result = await ServerSettings.get_entry(
                 itx.client.async_rina_db, itx.guild.id)
             if result is not None:
-                items = getattr(result["attribute_ids"], setting, [])  # type: ignore
+                items = result["attribute_ids"].get(setting, [])
             else:
                 # if guild has no info yet
                 items = []

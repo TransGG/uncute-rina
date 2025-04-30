@@ -1,5 +1,3 @@
-from typing import Literal
-
 import discord
 import discord.ext.commands as commands
 
@@ -50,21 +48,25 @@ async def _handle_forward_poll_result(
             "There was no winner."
         )
     else:
-        if poll_data.get("victor_answer_emoji_id") is None:
-            victor_emoji = ""
+        if poll_data.get("victor_answer_emoji_name") is None:
+            victor_emoji_str = ""
         else:
-            victor_emoji = "<"
-            if poll_data.get("victor_answer_emoji_animated", False):
-                victor_emoji += "a:"
-            victor_emoji += poll_data.get("victor_answer_emoji_name")
-            victor_emoji += ":"
-            victor_emoji += poll_data.get("victor_answer_emoji_id")
-            victor_emoji += ">"
+            emoji_anim = poll_data.get("victor_answer_emoji_animated", False)
+            if emoji_anim is not False:
+                # todo: check if emoji_anim is `true` or `"True"` or something
+                print(emoji_anim)
+            emoji_name = poll_data.get("victor_answer_emoji_name")
+            # ^ required for PartialEmoji
+            emoji_id = poll_data.get("victor_answer_emoji_id")
+            victor_emoji = discord.PartialEmoji(
+                name=emoji_name, id=emoji_id, animated=emoji_anim
+            )
+            victor_emoji_str = f"{victor_emoji} "  # with space after it
 
         result_info_message += (
             f"Answer {poll_data.get('victor_answer_id')} won with "
             f"{poll_data.get('victor_answer_votes')} votes:\n"
-            f"> {victor_emoji}{poll_data.get('victor_answer_text')}"
+            f"> {victor_emoji_str}{poll_data.get('victor_answer_text')}"
         )
     msg = await poll_message.thread.send(
         result_info_message,

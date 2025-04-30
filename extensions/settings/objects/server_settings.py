@@ -8,7 +8,6 @@ from typing import TypedDict, Any, TypeVar, Callable
 
 import discord
 
-from .attribute_keys import AttributeKeys
 from .server_attributes import ServerAttributes
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
@@ -462,12 +461,16 @@ class ServerSettings:
         guild = client.get_guild(guild_id)
         if guild is None:
             invalid_arguments["guild_id"] = str(guild_id)
-            raise ParseError("Some server settings could not be parsed: " + ', '.join(
-                [f"{k}:{v}" for k, v in invalid_arguments.items()]))
+            raise ParseError(
+                "Some server settings could not be parsed: "
+                + ', '.join([f"{k}:{v}" for k, v in invalid_arguments.items()])
+            )
 
-        # Todo: list attributes can be None instead of [], if the givne
-        #  list of attributes does not contain its key.
-        new_settings: dict[str, Any | None] = {k: None for k in ServerAttributes.__annotations__}
+        new_settings: dict[str, Any | None] = {
+            k: None if type(v) is list
+            else []
+            for k, v in ServerAttributes.__annotations__.items()
+        }
         for attribute, attribute_value in attributes.items():
             if type(attribute_value) is list:
                 parsed_values = []
@@ -484,8 +487,12 @@ class ServerSettings:
                     invalid_arguments=invalid_arguments)
 
         if invalid_arguments:
-            raise ParseError("Some server settings could not be parsed: \n- " + '\n- '.join(
-                [f"{k}: {v}" for k, v in invalid_arguments.items()]))
+            raise ParseError(
+                "Some server settings could not be parsed: \n- "
+                + '\n- '.join(
+                    [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                )
+            )
 
         return guild, ServerAttributes(**new_settings)
 
@@ -501,11 +508,13 @@ class ServerSettings:
 
     async def reload(self, client: Bot) -> None:
         """
-        Reload the server settings object to fetch and parse the latest server attribute ids from the database.
+        Reload the server settings object to fetch and parse the latest
+        server attribute ids from the database.
 
-        :param client: The client with which to get roles and fetch from the database.
-
-        :raise ParseError: If attributes in the data object could not be parsed.
+        :param client: The client with which to get roles and fetch
+         from the database.
+        :raise ParseError: If attributes in the data object could
+         not be parsed.
         """
         state = await ServerSettings.fetch(client, self.guild.id)
         self.guild = state.guild  # just get the latest stuff, I guess.
