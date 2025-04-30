@@ -31,20 +31,42 @@ async def _handle_forward_poll_result(
             "a thread, but it had none! (Poll message id:"
             + str(poll_message.id)
         )
-    poll = poll_message.poll
+
+    poll_result_embed: discord.Embed = poll_result_message.embeds[0]
+    poll_data: dict[str, str | int | bool] = {
+        field.name: field.value
+        for field in poll_result_embed.fields
+    }
+
     result_info_message = (
         f"**This poll closed with a total of "
-        f"{poll.total_votes} votes!**\n"
+        f"{poll_data.get('total_votes', 'NaN')} votes!**\n"
     )
-    if poll.victor_answer_id is None:
+
+    if poll_data.get("victor_answer_id") is None:
         result_info_message += (
             "There was no winner."
         )
     else:
+        if poll_data.get("victor_answer_emoji_name") is None:
+            victor_emoji_str = ""
+        else:
+            emoji_anim = poll_data.get("victor_answer_emoji_animated", False)
+            if emoji_anim is not False:
+                # todo: check if emoji_anim is `true` or `"True"` or something
+                print(emoji_anim)
+            emoji_name = poll_data.get("victor_answer_emoji_name")
+            # ^ required for PartialEmoji
+            emoji_id = poll_data.get("victor_answer_emoji_id")
+            victor_emoji = discord.PartialEmoji(
+                name=emoji_name, id=emoji_id, animated=emoji_anim
+            )
+            victor_emoji_str = f"{victor_emoji} "  # with space after it
+
         result_info_message += (
-            f"Answer {poll.victor_answer_id} won with "
-            f"{poll.victor_count} votes:\n"
-            f"> {poll.victor_answer.media.text}"
+            f"Answer {poll_data.get('victor_answer_id')} won with "
+            f"{poll_data.get('victor_answer_votes')} votes:\n"
+            f"> {victor_emoji_str}{poll_data.get('victor_answer_text')}"
         )
     msg = await poll_message.thread.send(
         result_info_message,
@@ -146,7 +168,8 @@ class StaffPollsChannelAddon(commands.Cog):
             await top_msg.pin()
 
             joiner_msg = await thread.send("user-mention placeholder")
-            await joiner_msg.edit(content=polls_channel_reaction_role.mention,
-                                  allowed_mentions=discord.AllowedMentions(
-                                      roles=[polls_channel_reaction_role]))
+            await joiner_msg.edit(
+                content=f"<@&{polls_channel_reaction_role.id}>",
+                allowed_mentions=discord.AllowedMentions.none()
+            )
             await joiner_msg.delete()

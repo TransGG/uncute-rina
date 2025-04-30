@@ -153,6 +153,7 @@ async def _handle_custom_voice_channel_leave_events(
     if len(voice_channel.members) == 0:
         await _handle_delete_custom_vc(client, member, voice_channel)
 
+    # todo: move this to vctables cog
     await _reset_voice_channel_permissions_if_vctable(vctable_prefix, voice_channel)
 
 
@@ -258,9 +259,14 @@ class CustomVcs(commands.Cog):
             return
         if name is not None:
             if name.startswith(vc_blacklist_prefix):
-                await itx.response.send_message("Due to the current layout, you can't change your channel to "
-                                                "something starting with '〙'. Sorry for the inconvenience",
-                                                ephemeral=True)
+                await itx.response.send_message(
+                    "The name you provided starts with this server's custom "
+                    "voice channel blacklist prefix. Channels with this name "
+                    "don't get seen as a custom voice channel. Unfortunately, "
+                    "you will have to pick a different name (or at least have "
+                    "it start with different letters) to rename your custom "
+                    "voice channel.",
+                    ephemeral=True)
                 return
             if name == "Untitled voice chat":
                 warning += "Are you really going to change it to that..\n"

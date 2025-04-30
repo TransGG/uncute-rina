@@ -29,7 +29,7 @@ from resources.utils import debug, codec_options
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 
-BOT_VERSION = "2.0.3.1"
+BOT_VERSION = "2.0.3.2"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
@@ -244,7 +244,7 @@ def start_app():
             await client.load_extension("extensions." + EXTENSIONS[extID] + ".module")
         start_progress.step(f"Loaded extensions successfully "
                             f"(in {datetime.now().astimezone() - extension_loading_start_time})")
-        start_progress.progress("Loading server settings")
+        start_progress.progress("Loading server settings...")
         try:
             client.log_channel = await client.fetch_channel(988118678962860032)
         except discord.errors.Forbidden:
@@ -254,8 +254,8 @@ def start_app():
         # client.bot_owner = (await client.application_info()).owner  # or client.owner / client.owner_id :P
         # can't use the commented out code because Rina is owned by someone else in the main server than
         # the dev server (=not me).
-
-        start_progress.progress("Restarting ongoing reminders")
+        start_progress.step("Loaded server settings")
+        start_progress.progress("Restarting ongoing reminders...")
         await relaunch_ongoing_reminders(client)
         start_progress.step("Finished setting up reminders")
         start_progress.progress("Caching bot's command names and their ids")

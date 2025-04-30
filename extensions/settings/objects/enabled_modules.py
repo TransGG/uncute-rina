@@ -86,6 +86,14 @@ module_required_attributes = {
         AttributeKeys.vctable_prefix,
     ),
 
+    ModuleKeys.vc_tables: (
+        AttributeKeys.custom_vc_blacklisted_channels,
+        AttributeKeys.custom_vc_blacklist_prefix,
+        AttributeKeys.custom_vc_category,
+        AttributeKeys.custom_vc_create_channel,
+        AttributeKeys.vctable_prefix,
+    ),
+
     ModuleKeys.polls_only_channel: (
         AttributeKeys.polls_only_channel,
         AttributeKeys.polls_channel_reaction_role,
@@ -95,5 +103,31 @@ module_required_attributes = {
 
     ModuleKeys.anonymous_report_reactions: (
         AttributeKeys.anonymous_reports_webhook_id,
-    )
+    ),
+
+    ModuleKeys.vc_log_reader: (
+        AttributeKeys.voice_channel_activity_logs_channel,
+    ),
+
+    ModuleKeys.watchlist: (
+        AttributeKeys.watchlist_channel,
+        AttributeKeys.watchlist_reaction_role,
+        # AttributeKeys.staff_reports_channel,
+        AttributeKeys.staff_logs_category,
+        AttributeKeys.badeline_bot,
+    ),
+
+    ModuleKeys.poll_reactions: (
+        AttributeKeys.log_channel,
+        AttributeKeys.poll_reaction_blacklisted_channels,
+    ),
+
+    ModuleKeys.custom_dictionary: (
+        AttributeKeys.log_channel,
+    ),
+
+    ModuleKeys.selfies_channel_deletion: (
+        AttributeKeys.log_channel,
+        AttributeKeys.selfies_channel,
+    ),
 }

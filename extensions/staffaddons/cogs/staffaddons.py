@@ -113,11 +113,11 @@ class StaffAddons(commands.Cog):
             await itx.followup.send(f"Removed {message_delete_count} messages older than 7 days!", ephemeral=False)
 
     @app_commands.command(name="version", description="Get bot version")
-    async def get_bot_version(self, itx: discord.Interaction):
+    async def get_bot_version(self, itx: discord.Interaction[Bot]):
         # get most recently pushed bot version
         latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
         latest_version = latest_rina.split("BOT_VERSION = \"", 1)[1].split("\"", 1)[0]
-        unix = int(itx.client.startup_time.timetuple())
+        unix = int(itx.client.startup_time.timestamp())
         for i in range(len(latest_version.split("."))):
             if int(latest_version.split(".")[i]) > int(itx.client.version.split(".")[i]):
                 await itx.response.send_message(

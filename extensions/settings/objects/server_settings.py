@@ -8,7 +8,6 @@ from typing import TypedDict, Any, TypeVar, Callable
 
 import discord
 
-from .attribute_keys import AttributeKeys
 from .server_attributes import ServerAttributes
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
@@ -48,76 +47,76 @@ def parse_id_generic(
     return parsed_obj
 
 
-def convert_old_settings_to_new(
-        old_settings: dict[str, int | list[int]]
-) -> tuple[int, ServerAttributeIds]:
-    """
-    Migrate server settings from old settings to new ones.
-
-    :param old_settings: A dictionary of the old server settings.
-
-    :return A tuple of the guild_id and extracted server attribute ids.
-    """
-    guild_id: GuildId = old_settings.get("guild_id")
-    if guild_id is None:
-        # this one shouldn't ever be None
-        raise ValueError("guild_id in this object was not found!")
-
-    # Retrieve all previously-saved values
-    custom_vc_create_channel_id: VoiceChannelId | None = \
-        old_settings.get("vcHub", None)
-    log_channel_id: MessageableChannelId | None = \
-        old_settings.get("vcLog", None)
-    custom_vc_category_id: CategoryChannelId | None = \
-        old_settings.get("vcCategory", None)
-    starboard_channel_id: TextChannelId | None = \
-        old_settings.get("starboardChannel", None)
-    starboard_minimum_upvote_count: int | None = \
-        old_settings.get("starboardCountMinimum", None)
-    bump_reminder_channel_id: MessageableChannelId | None = \
-        old_settings.get("bumpChannel", None)
-    bump_reminder_role_id: RoleId | None = \
-        old_settings.get("bumpRole", None)
-    poll_reaction_blacklisted_channel_ids: list[int] = \
-        old_settings.get("pollReactionsBlacklist", None)
-    bump_reminder_bot_id: UserId | None = \
-        old_settings.get("bumpBot", None)
-    starboard_blacklisted_channel_ids: list[int] = \
-        old_settings.get("starboardBlacklistedChannels", None)
-    starboard_upvote_emoji_id: EmojiId | None = \
-        old_settings.get("starboardEmoji", None)
-    starboard_minimum_vote_count_for_downvote_delete: int | None = \
-        old_settings.get("starboardDownvoteInitValue", None)
-    voice_channel_logs_channel_id: MessageableChannelId | None = \
-        old_settings.get("vcActivityLogChannel", None)
-
-    # Format attributes in the new ServerAttributeIds format
-    converted_settings = {
-        AttributeKeys.custom_vc_create_channel: custom_vc_create_channel_id,
-        AttributeKeys.log_channel: log_channel_id,
-        AttributeKeys.custom_vc_category: custom_vc_category_id,
-        AttributeKeys.starboard_channel: starboard_channel_id,
-        AttributeKeys.starboard_minimum_upvote_count:
-            starboard_minimum_upvote_count,
-        AttributeKeys.bump_reminder_channel: bump_reminder_channel_id,
-        AttributeKeys.bump_reminder_role: bump_reminder_role_id,
-        AttributeKeys.poll_reaction_blacklisted_channels:
-            poll_reaction_blacklisted_channel_ids,
-        AttributeKeys.bump_reminder_bot: bump_reminder_bot_id,
-        AttributeKeys.starboard_blacklisted_channels:
-            starboard_blacklisted_channel_ids,
-        AttributeKeys.starboard_upvote_emoji: starboard_upvote_emoji_id,
-        AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
-            starboard_minimum_vote_count_for_downvote_delete,
-        AttributeKeys.voice_channel_activity_logs_channel:
-            voice_channel_logs_channel_id,
-    }
-
-    # remove all Nones
-    new_settings = {k: v for k, v in converted_settings.items()
-                    if v is not None}
-
-    return guild_id, ServerAttributeIds(**new_settings)
+# def convert_old_settings_to_new(
+#         old_settings: dict[str, int | list[int]]
+# ) -> tuple[int, ServerAttributeIds]:
+#     """
+#     Migrate server settings from old settings to new ones.
+#
+#     :param old_settings: A dictionary of the old server settings.
+#
+#     :return A tuple of the guild_id and extracted server attribute ids.
+#     """
+#     guild_id: GuildId = old_settings.get("guild_id")
+#     if guild_id is None:
+#         # this one shouldn't ever be None
+#         raise ValueError("guild_id in this object was not found!")
+#
+#     # Retrieve all previously-saved values
+#     custom_vc_create_channel_id: VoiceChannelId | None = \
+#         old_settings.get("vcHub", None)
+#     log_channel_id: MessageableChannelId | None = \
+#         old_settings.get("vcLog", None)
+#     custom_vc_category_id: CategoryChannelId | None = \
+#         old_settings.get("vcCategory", None)
+#     starboard_channel_id: TextChannelId | None = \
+#         old_settings.get("starboardChannel", None)
+#     starboard_minimum_upvote_count: int | None = \
+#         old_settings.get("starboardCountMinimum", None)
+#     bump_reminder_channel_id: MessageableChannelId | None = \
+#         old_settings.get("bumpChannel", None)
+#     bump_reminder_role_id: RoleId | None = \
+#         old_settings.get("bumpRole", None)
+#     poll_reaction_blacklisted_channel_ids: list[int] = \
+#         old_settings.get("pollReactionsBlacklist", None)
+#     bump_reminder_bot_id: UserId | None = \
+#         old_settings.get("bumpBot", None)
+#     starboard_blacklisted_channel_ids: list[int] = \
+#         old_settings.get("starboardBlacklistedChannels", None)
+#     starboard_upvote_emoji_id: EmojiId | None = \
+#         old_settings.get("starboardEmoji", None)
+#     starboard_minimum_vote_count_for_downvote_delete: int | None = \
+#         old_settings.get("starboardDownvoteInitValue", None)
+#     voice_channel_logs_channel_id: MessageableChannelId | None = \
+#         old_settings.get("vcActivityLogChannel", None)
+#
+#     # Format attributes in the new ServerAttributeIds format
+#     converted_settings = {
+#         AttributeKeys.custom_vc_create_channel: custom_vc_create_channel_id,
+#         AttributeKeys.log_channel: log_channel_id,
+#         AttributeKeys.custom_vc_category: custom_vc_category_id,
+#         AttributeKeys.starboard_channel: starboard_channel_id,
+#         AttributeKeys.starboard_minimum_upvote_count:
+#             starboard_minimum_upvote_count,
+#         AttributeKeys.bump_reminder_channel: bump_reminder_channel_id,
+#         AttributeKeys.bump_reminder_role: bump_reminder_role_id,
+#         AttributeKeys.poll_reaction_blacklisted_channels:
+#             poll_reaction_blacklisted_channel_ids,
+#         AttributeKeys.bump_reminder_bot: bump_reminder_bot_id,
+#         AttributeKeys.starboard_blacklisted_channels:
+#             starboard_blacklisted_channel_ids,
+#         AttributeKeys.starboard_upvote_emoji: starboard_upvote_emoji_id,
+#         AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
+#             starboard_minimum_vote_count_for_downvote_delete,
+#         AttributeKeys.voice_channel_activity_logs_channel:
+#             voice_channel_logs_channel_id,
+#     }
+#
+#     # remove all Nones
+#     new_settings = {k: v for k, v in converted_settings.items()
+#                     if v is not None}
+#
+#     return guild_id, ServerAttributeIds(**new_settings)
 
 
 def get_attribute_type(attribute_key: str) -> tuple[type | None, bool]:
@@ -284,28 +283,28 @@ class ServerSettings:
         result: ServerSettingData | None = await collection.find_one(query)
         return result
 
-    @staticmethod
-    async def migrate(async_rina_db: motor.core.AgnosticDatabase):
-        """
-        Migrate all data from the old guildInfo database to the new server_settings database.
-
-        :param async_rina_db: The database to reference to look up the old and store the new database.
-        :raise IndexError: No online database of the old version was found.
-        """
-        old_collection = async_rina_db["guildInfo"]
-        new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        new_settings = []
-        async for old_setting in old_collection.find():
-            guild_id, attributes = convert_old_settings_to_new(old_setting)
-            new_setting = ServerSettingData(
-                guild_id=guild_id,
-                attribute_ids=attributes,
-                enabled_modules=EnabledModules(),
-            )
-            new_settings.append(new_setting)
-
-        if new_settings:
-            await new_collection.insert_many(new_settings)
+    # @staticmethod
+    # async def migrate(async_rina_db: motor.core.AgnosticDatabase):
+    #     """
+    #     Migrate all data from the old guildInfo database to the new server_settings database.
+    #
+    #     :param async_rina_db: The database to reference to look up the old and store the new database.
+    #     :raise IndexError: No online database of the old version was found.
+    #     """
+    #     old_collection = async_rina_db["guildInfo"]
+    #     new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
+    #     new_settings = []
+    #     async for old_setting in old_collection.find():
+    #         guild_id, attributes = convert_old_settings_to_new(old_setting)
+    #         new_setting = ServerSettingData(
+    #             guild_id=guild_id,
+    #             attribute_ids=attributes,
+    #             enabled_modules=EnabledModules(),
+    #         )
+    #         new_settings.append(new_setting)
+    #
+    #     if new_settings:
+    #         await new_collection.insert_many(new_settings)
 
     @staticmethod
     async def set_attribute(
@@ -462,12 +461,16 @@ class ServerSettings:
         guild = client.get_guild(guild_id)
         if guild is None:
             invalid_arguments["guild_id"] = str(guild_id)
-            raise ParseError("Some server settings could not be parsed: " + ', '.join(
-                [f"{k}:{v}" for k, v in invalid_arguments.items()]))
+            raise ParseError(
+                "Some server settings could not be parsed: "
+                + ', '.join([f"{k}:{v}" for k, v in invalid_arguments.items()])
+            )
 
-        # Todo: list attributes can be None instead of [], if the givne
-        #  list of attributes does not contain its key.
-        new_settings: dict[str, Any | None] = {k: None for k in ServerAttributes.__annotations__}
+        new_settings: dict[str, Any | None] = {
+            k: None if type(v) is list
+            else []
+            for k, v in ServerAttributes.__annotations__.items()
+        }
         for attribute, attribute_value in attributes.items():
             if type(attribute_value) is list:
                 parsed_values = []
@@ -484,8 +487,12 @@ class ServerSettings:
                     invalid_arguments=invalid_arguments)
 
         if invalid_arguments:
-            raise ParseError("Some server settings could not be parsed: \n- " + '\n- '.join(
-                [f"{k}: {v}" for k, v in invalid_arguments.items()]))
+            raise ParseError(
+                "Some server settings could not be parsed: \n- "
+                + '\n- '.join(
+                    [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                )
+            )
 
         return guild, ServerAttributes(**new_settings)
 
@@ -501,11 +508,13 @@ class ServerSettings:
 
     async def reload(self, client: Bot) -> None:
         """
-        Reload the server settings object to fetch and parse the latest server attribute ids from the database.
+        Reload the server settings object to fetch and parse the latest
+        server attribute ids from the database.
 
-        :param client: The client with which to get roles and fetch from the database.
-
-        :raise ParseError: If attributes in the data object could not be parsed.
+        :param client: The client with which to get roles and fetch
+         from the database.
+        :raise ParseError: If attributes in the data object could
+         not be parsed.
         """
         state = await ServerSettings.fetch(client, self.guild.id)
         self.guild = state.guild  # just get the latest stuff, I guess.
