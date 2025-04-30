@@ -467,7 +467,7 @@ class ServerSettings:
             )
 
         new_settings: dict[str, Any | None] = {
-            k: None if type(v) is list
+            k: None if v is list
             else []
             for k, v in ServerAttributes.__annotations__.items()
         }
