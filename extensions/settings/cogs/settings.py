@@ -6,18 +6,15 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
-from extensions.starboard.local_starboard import import_starboard_messages
-from extensions.watchlist.local_watchlist import import_watchlist_threads
 from resources.checks import (
-    MissingAttributesCheckFailure,
-    is_admin_check, not_in_dms_check, module_enabled_check,
+    is_admin_check, not_in_dms_check,
 )
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import (
     ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules,
     TypeAutocomplete, ModeAutocomplete,
-    parse_attribute, get_attribute_type, ModuleKeys, AttributeKeys
+    parse_attribute, get_attribute_type, AttributeKeys
 )
 
 if typing.TYPE_CHECKING:
@@ -469,7 +466,7 @@ async def _handle_settings_attribute(
 
 
 async def _reload_or_store_server_settings(
-        client: Bot, guild: Guild
+        client: Bot, guild: discord.Guild
 ) -> None:
     """
     Reload a guild's server settings object, or create a new one if
@@ -641,65 +638,65 @@ class SettingsCog(commands.Cog):
     def __init__(self):
         pass
 
-    migrate_group = app_commands.Group(
-        name="migrate",
-        description="A grouping of migrate commands."
-    )
-
-    @app_commands.check(is_admin_check)
-    @migrate_group.command(name="database",
-                           description="Migrate bot settings to new database.")
-    async def database(
-            self,
-            itx: discord.Interaction
-    ):
-        itx.response: discord.InteractionResponse  # noqa
-        await ServerSettings.migrate(itx.client.async_rina_db)
-        await itx.response.send_message(
-            "Successfully migrated databases.", ephemeral=True)
-        itx.client.server_settings = await ServerSettings.fetch_all(itx.client)
-        await itx.edit_original_response(
-            content="Migrated databases and re-fetched all server settings.")
-
-    @app_commands.check(is_admin_check)
-    @module_enabled_check(ModuleKeys.watchlist)
-    @migrate_group.command(
-        name="migrate-watchlist",
-        description="Fetch all watchlist threads for this server."
-    )
-    async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
-        watchlist_channel: discord.TextChannel | None = \
-            itx.client.get_guild_attribute(
-                itx.guild, AttributeKeys.watchlist_channel)
-        if watchlist_channel is None:
-            raise MissingAttributesCheckFailure(
-                AttributeKeys.watchlist_channel)
-
-        await itx.response.defer(ephemeral=True)
-        await import_watchlist_threads(itx.client.async_rina_db,
-                                       watchlist_channel)
-        await itx.followup.send("Successfully imported watchlist threads.",
-                                ephemeral=True)
-
-    @app_commands.check(is_admin_check)
-    @module_enabled_check(ModuleKeys.starboard)
-    @migrate_group.command(
-        name="migrate-starboard",
-        description="Fetch all starboard messages for this server."
-    )
-    async def migrate_starboard(self, itx: discord.Interaction[Bot]):
-        starboard_channel: discord.abc.Messageable | None = \
-            itx.client.get_guild_attribute(
-                itx.guild, AttributeKeys.starboard_channel)
-        if starboard_channel is None:
-            raise MissingAttributesCheckFailure(
-                AttributeKeys.starboard_channel)
-
-        await itx.response.defer(ephemeral=True)
-        await import_starboard_messages(itx.client, itx.client.async_rina_db,
-                                        starboard_channel)
-        await itx.followup.send("Successfully imported starboard messages.",
-                                ephemeral=True)
+    # migrate_group = app_commands.Group(
+    #     name="migrate",
+    #     description="A grouping of migrate commands."
+    # )
+    #
+    # @app_commands.check(is_admin_check)
+    # @migrate_group.command(name="database",
+    #                        description="Migrate bot settings to new database.")
+    # async def database(
+    #         self,
+    #         itx: discord.Interaction
+    # ):
+    #     itx.response: discord.InteractionResponse  # noqa
+    #     await ServerSettings.migrate(itx.client.async_rina_db)
+    #     await itx.response.send_message(
+    #         "Successfully migrated databases.", ephemeral=True)
+    #     itx.client.server_settings = await ServerSettings.fetch_all(itx.client)
+    #     await itx.edit_original_response(
+    #         content="Migrated databases and re-fetched all server settings.")
+    #
+    # @app_commands.check(is_admin_check)
+    # @module_enabled_check(ModuleKeys.watchlist)
+    # @migrate_group.command(
+    #     name="migrate-watchlist",
+    #     description="Fetch all watchlist threads for this server."
+    # )
+    # async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
+    #     watchlist_channel: discord.TextChannel | None = \
+    #         itx.client.get_guild_attribute(
+    #             itx.guild, AttributeKeys.watchlist_channel)
+    #     if watchlist_channel is None:
+    #         raise MissingAttributesCheckFailure(
+    #             AttributeKeys.watchlist_channel)
+    #
+    #     await itx.response.defer(ephemeral=True)
+    #     await import_watchlist_threads(itx.client.async_rina_db,
+    #                                    watchlist_channel)
+    #     await itx.followup.send("Successfully imported watchlist threads.",
+    #                             ephemeral=True)
+    #
+    # @app_commands.check(is_admin_check)
+    # @module_enabled_check(ModuleKeys.starboard)
+    # @migrate_group.command(
+    #     name="migrate-starboard",
+    #     description="Fetch all starboard messages for this server."
+    # )
+    # async def migrate_starboard(self, itx: discord.Interaction[Bot]):
+    #     starboard_channel: discord.abc.Messageable | None = \
+    #         itx.client.get_guild_attribute(
+    #             itx.guild, AttributeKeys.starboard_channel)
+    #     if starboard_channel is None:
+    #         raise MissingAttributesCheckFailure(
+    #             AttributeKeys.starboard_channel)
+    #
+    #     await itx.response.defer(ephemeral=True)
+    #     await import_starboard_messages(itx.client, itx.client.async_rina_db,
+    #                                     starboard_channel)
+    #     await itx.followup.send("Successfully imported starboard messages.",
+    #                             ephemeral=True)
 
     @app_commands.command(name="settings",
                           description="Edit bot settings for this server.")

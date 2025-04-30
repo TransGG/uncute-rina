@@ -393,8 +393,9 @@ class OtherAddons(commands.Cog):
 
         role_id = role_options[role_name.lower()][1]
         try:
-            matching_roles = [r.id == role_id for r in itx.user.roles]
-            # it only selects the first one of them but oh well.
+            matching_roles = [r for r in itx.user.roles
+                              if r.id == role_id]
+            # it only selects the first one of them, but oh well.
             for role in matching_roles:
                 await itx.user.remove_roles(
                     role,

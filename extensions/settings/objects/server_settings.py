@@ -284,28 +284,28 @@ class ServerSettings:
         result: ServerSettingData | None = await collection.find_one(query)
         return result
 
-    @staticmethod
-    async def migrate(async_rina_db: motor.core.AgnosticDatabase):
-        """
-        Migrate all data from the old guildInfo database to the new server_settings database.
-
-        :param async_rina_db: The database to reference to look up the old and store the new database.
-        :raise IndexError: No online database of the old version was found.
-        """
-        old_collection = async_rina_db["guildInfo"]
-        new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        new_settings = []
-        async for old_setting in old_collection.find():
-            guild_id, attributes = convert_old_settings_to_new(old_setting)
-            new_setting = ServerSettingData(
-                guild_id=guild_id,
-                attribute_ids=attributes,
-                enabled_modules=EnabledModules(),
-            )
-            new_settings.append(new_setting)
-
-        if new_settings:
-            await new_collection.insert_many(new_settings)
+    # @staticmethod
+    # async def migrate(async_rina_db: motor.core.AgnosticDatabase):
+    #     """
+    #     Migrate all data from the old guildInfo database to the new server_settings database.
+    #
+    #     :param async_rina_db: The database to reference to look up the old and store the new database.
+    #     :raise IndexError: No online database of the old version was found.
+    #     """
+    #     old_collection = async_rina_db["guildInfo"]
+    #     new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
+    #     new_settings = []
+    #     async for old_setting in old_collection.find():
+    #         guild_id, attributes = convert_old_settings_to_new(old_setting)
+    #         new_setting = ServerSettingData(
+    #             guild_id=guild_id,
+    #             attribute_ids=attributes,
+    #             enabled_modules=EnabledModules(),
+    #         )
+    #         new_settings.append(new_setting)
+    #
+    #     if new_settings:
+    #         await new_collection.insert_many(new_settings)
 
     @staticmethod
     async def set_attribute(

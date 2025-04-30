@@ -296,7 +296,9 @@ class CrashHandling(commands.Cog):
                       f"{itx.client.bot_owner} ({itx.client.bot_owner.mention}) "
                       f"by pinging her or sending her a DM. (Though she "
                       f"should have received a message with error details "
-                      f"herself as well."
+                      f"herself as well.\n"
+                      f"> "
+                    + str(error)
                 )
             else:
                 await _reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
