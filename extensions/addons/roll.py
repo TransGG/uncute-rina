@@ -13,15 +13,19 @@ def _parse_dice_roll(query: str) -> tuple[int, int | None]:
     if len(parts) > 2:
         raise ValueError("Can't have more than 1 'd' in the "
                          "query of your die!")
-    if len(parts) == 1:
+    elif len(parts) == 2:
+        return (
+            _parse_number("dice", parts[0]),
+            _parse_number("faces", parts[1])
+        )
+    else:
+        assert len(parts) == 1
+        # length of `parts` can't be zero if .split() is provided with a
+        #  delimiter. "".split("d") will return a list with
+        #  1 string: [""]. Only .split() with a whitespace string and
+        #  without split parameters can return an empty list:
+        #  "abcdef".split() -> []
         return _parse_number("dice", parts[0]), None
-    if len(parts) < 1:
-        raise ValueError(f"I couldn't understand what you meant with "
-                         f"{query} ({str(parts)})")
-    return (
-        _parse_number("dice", parts[0]),
-        _parse_number("faces", parts[1])
-    )
 
 
 def _parse_number(source: str, value: str) -> int:
