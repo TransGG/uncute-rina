@@ -467,10 +467,12 @@ class ServerSettings:
             )
 
         new_settings: dict[str, Any | None] = {
-            k: [] if v is list
+            k: [] if (typing.get_origin(v) is list
+                      or type(v) is list)
             else None
             for k, v in ServerAttributes.__annotations__.items()
         }
+
         for attribute, attribute_value in attributes.items():
             if type(attribute_value) is list:
                 parsed_values = []

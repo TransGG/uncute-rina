@@ -219,16 +219,20 @@ class CustomVcs(commands.Cog):
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ):
-        vc_hub, vc_log, vc_category, vctable_prefix, vc_blacklist_prefix = itx.client.get_guild_attribute(
+        (vc_hub, vc_log, vc_category, vctable_prefix, vc_blacklist_prefix,
+         vc_blacklisted_channels) = itx.client.get_guild_attribute(
             itx.guild,
             AttributeKeys.custom_vc_create_channel,
             AttributeKeys.log_channel,
             AttributeKeys.custom_vc_category,
             AttributeKeys.vctable_prefix,
-            AttributeKeys.custom_vc_blacklist_prefix
+            AttributeKeys.custom_vc_blacklist_prefix,
+            AttributeKeys.custom_vc_blacklisted_channels,
         )
+        assert type(vc_blacklisted_channels) is list
 
-        if None in (vc_hub, vc_log, vc_category, vctable_prefix, vc_blacklist_prefix):
+        if None in (vc_hub, vc_log, vc_category, vctable_prefix,
+                    vc_blacklist_prefix):
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: vc_hub,
                 AttributeKeys.log_channel: vc_log,
@@ -251,10 +255,10 @@ class CustomVcs(commands.Cog):
                                             ephemeral=True)
             return
         channel = itx.user.voice.channel
-        if (channel.category.id not in [vc_category] or
-                channel.id == vc_hub or
-                channel.id in self.blacklisted_channels or
-                channel.name.startswith(vc_blacklist_prefix)):
+        if (channel.category != vc_category
+                or channel.id == vc_hub
+                or channel in vc_blacklisted_channels
+                or channel.name.startswith(vc_blacklist_prefix)):
             await itx.response.send_message("You can't change that voice channel's name!", ephemeral=True)
             return
         if name is not None:
