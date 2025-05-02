@@ -7,8 +7,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from resources.customs import Bot
+from extensions.termdictionary.dictionary_data import DictionaryData
+from extensions.termdictionary.dictionary_sources import DictionarySources
 from resources.checks import is_staff_check  # for staff dictionary commands
+from resources.customs import Bot
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
 from resources.utils.utils import log_to_guild
 
@@ -18,12 +20,16 @@ from extensions.termdictionary.views import DictionaryApi_PageView, UrbanDiction
 del_separators_table = str.maketrans({" ": "", "-": "", "_": ""})
 
 
+def simplify(q: str | list[str]) -> str | list[str]:
+    if type(q) is str:
+        return q.lower().translate(del_separators_table)
+    if type(q) is list:
+        return [text.lower().translate(del_separators_table)
+                for text in q]
+    raise NotImplementedError()
+
+
 async def dictionary_autocomplete(itx: discord.Interaction[Bot], current: str):
-    def simplify(q):
-        if type(q) is str:
-            return q.lower().translate(del_separators_table)
-        if type(q) is list:
-            return [text.lower().translate(del_separators_table) for text in q]
 
     terms = []
     if current == '':
@@ -78,178 +84,348 @@ async def dictionary_autocomplete(itx: discord.Interaction[Bot], current: str):
     ]
 
 
+async def _get_custom_dictionary_output(
+        client: Bot, term: str
+):
+    collection = client.async_rina_db["termDictionary"]
+    query = {"synonyms": term.lower()}
+    search = collection.find(query)
+    results: list[tuple[str, str]] = []
+    async for item in search:
+        item: DictionaryData
+        if simplify(term) in simplify(item["synonyms"]):
+            results.append((item["term"], item["definition"]))
+    if not results:
+        cmd_mention_define = client.get_command_mention(
+            "dictionary_staff define")
+        raise KeyError(
+            f"No information found for '{term}' in the custom dictionary.\n"
+            f"If you would like to add a term, message a staff member "
+            f"(to use {cmd_mention_define})"
+        )
+
+    result_str = (f"I found {len(results)} result{'s' * (len(results) > 1)} "
+                  f"for '{term}' in our dictionary:\n")
+    for result_term, result_definition in results:
+        result_str += f"> **{result_term}**: {result_definition}\n"
+
+    long_line = False
+    exceeding_line = False
+    if len(result_str.split("\n")) > 3:
+        long_line = True
+        result_str += "\nDidn't send your message as public cause it would be spammy, having this many results."
+    if len(result_str) > 1999:
+        exceeding_line = True
+        result_str = (
+            f"Your search ({term}) returned too many results (discord has a 2000-character "
+            f"message length D:). (Please ask staff to fix this (synonyms and stuff).)")
+    return result_str, long_line, exceeding_line
+
+
+async def _get_pronouns_page_output(public, result_str,
+                                    source, term):
+    http_safe_term = term.lower().replace("/", " ").replace("%", " ")
+    response_api = requests.get(
+        f'https://en.pronouns.page/api/terms/search/{http_safe_term}'
+    ).text
+    data = json.loads(response_api)
+    if len(data) == 0:
+        if source == 3:
+            source = 5
+        else:
+            result_str = f"I didn't find any results for '{term}' on en.pronouns.page"
+            public = False
+
+    # edit definitions to hide links to other pages:
+    else:
+        search = []
+        for item in data:
+            item_db = item['definition']
+            while item['definition'] == item_db:
+                replacement = re.search("(?<==).+?(?=})",
+                                        item['definition'])
+                if replacement is not None:
+                    item['definition'] = re.sub("{(#.+?=).+?}",
+                                                replacement.group(),
+                                                item['definition'], 1)
+                if item['definition'] == item_db:  # if nothing changed:
+                    break
+                item_db = item['definition']
+            while item['definition'] == item_db:
+                replacement = re.search("(?<={).+?(?=})",
+                                        item['definition'])
+                if replacement is not None:
+                    item['definition'] = re.sub("{.+?}",
+                                                replacement.group(),
+                                                item['definition'], 1)
+                if item['definition'] == item_db:  # if nothing changed:
+                    break
+                item_db = item['definition']
+            search.append(item)
+
+        # if one of the search results matches exactly with the search, give that definition
+        results: list[dict] = []
+        for item in search:
+            if simplify(term) in simplify(item['term'].split('|')):
+                results.append(item)
+        if len(results) > 0:
+            result_str = (
+                f"I found {len(results)} exact result{'s' * (len(results) != 1)} for "
+                f"'{term}' on en.pronouns.page! \n")
+            for item in results:
+                result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
+            if (len(search) - len(results)) > 0:
+                result_str += f"{len(search) - len(results)} other non-exact results found."
+            if len(result_str) > 1999:
+                result_str = (
+                    f"Your search ('{term}') returned a too-long "
+                    f"result! (discord has a 2000-character message "
+                    f"length D:). To still let you get better results, "
+                    f"I've rewritten the terms so you might be able "
+                    f"to look for a more specific one:"
+                )
+                for item in results:
+                    result_str += f"> {', '.join(item['term'].split('|'))}\n"
+            raise OverflowError(result_str)
+
+        # if search doesn't exactly match with a result / synonym
+        result_str = (
+            f"I found {len(search)} result{'s' * (len(results) != 1)} for "
+            f"'{term}' on en.pronouns.page! ")
+        if len(search) > 25:
+            result_str += "Here is a list to make your search more specific:\n"
+            results: list[str] = []
+            for item in search:
+                temp = item['term']
+                if "|" in temp:
+                    temp = temp.split("|")[0]
+                results.append(temp)
+            result_str += ', '.join(results)
+            public = False
+        elif len(search) > 2:
+            result_str += "Here is a list to make your search more specific:\n"
+            results: list[str] = []
+            for item in search:
+                if "|" in item['term']:
+                    temp = "- __" + item['term'].split("|")[0] + "__"
+                    temp += " (" + ', '.join(
+                        item['term'].split("|")[1:]) + ")"
+                else:
+                    temp = "- __" + item['term'] + "__"
+                results.append(temp)
+            result_str += '\n'.join(results)
+            public = False
+        elif len(search) > 0:
+            result_str += "\n"
+            for item in search:
+                result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
+        else:
+            result_str = f"I didn't find any results for '{term}' on en.pronouns.page!"
+            if source == 4:
+                source = 6
+        msg_length = len(result_str)
+        if msg_length > 1999:
+            public = False
+            result_str = (
+                f"Your search ('{term}') returned too many results ({len(search)} in total!) "
+                f"(discord has a 2000-character message length, and this message "
+                f"was {msg_length} characters D:). Please search more specifically.\n"
+                f"    Here is a link for expanded info on each term: "
+                f"<https://en.pronouns.page/dictionary/terminology#{term.lower()}>")
+    return public, result_str, source
+
+
+async def _get_urban_dictionary_pages(data):
+    pages = []
+    page = 0
+    for result in data:
+        embed = discord.Embed(color=8481900,
+                              title=f"__{result['word'].capitalize()}__",
+                              description=result['definition'],
+                              url=result['permalink'])
+        post_date = int(
+            datetime.strptime(
+                result['written_on'][:-1],
+                # "2009-03-04T01:16:08.000Z" ([:-1] to remove Z at end)
+                "%Y-%m-%dT%H:%M:%S.%f"
+            ).timestamp()
+        )
+        warning = ""
+        if len(result['example']) > 800:
+            warning = "... (shortened due to size)"
+        embed.add_field(name="Example",
+                        value=f"{result['example'][:800]}{warning}\n\n"
+                              f"{result['thumbs_up']}:thumbsup: :thumbsdown: {result['thumbs_down']}\n"
+                              f"Sent by {result['author']} on <t:{post_date}:d> at "
+                              f"<t:{post_date}:T> (<t:{post_date}:R>)",
+                        inline=False)
+        pages.append(embed)
+    return page, pages
+
+
+def _get_dictionary_api_pages(data, results):
+    for result in data:
+        meanings = []
+        synonyms = []
+        antonyms = []
+        for meaning in result["meanings"]:
+            meaning_list = [meaning['partOfSpeech']]
+            # **verb**:
+            # meaning one is very useful
+            # meaning two is not as useful
+            for definition in meaning["definitions"]:
+                meaning_list.append("- " + definition['definition'])
+                for synonym in definition['synonyms']:
+                    if synonym not in synonyms:
+                        synonyms.append(synonym)
+                for antonym in definition['antonyms']:
+                    if antonym not in antonyms:
+                        antonyms.append(antonym)
+            for synonym in meaning['synonyms']:
+                if synonym not in synonyms:
+                    synonyms.append(synonym)
+            for antonym in meaning['antonyms']:
+                if antonym not in antonyms:
+                    antonyms.append(antonym)
+            meanings.append(meaning_list)
+
+        results.append([
+            # train
+            result["word"],
+            # [  ["noun", "- Hello there this is 1", "- number two"], ["verb", ...], [...]  ]
+            meanings,
+            ', '.join(synonyms),
+            ', '.join(antonyms),
+            '\n'.join(result["sourceUrls"])
+        ])
+    pages = []
+    pages_detailed = []
+    page = 0
+    for result in results:
+        result_id = 0
+        page_detailed = []
+        embed = discord.Embed(color=8481900,
+                              title=f"__{result[0].capitalize()}__")
+        for meaning_index in range(len(result[1])):
+            _part = result[1][meaning_index][1:]
+            part = []
+            for definition in _part:
+                page_detailed.append(
+                    [result_id, f"__{result[0].capitalize()}__",
+                     result[1][meaning_index][0].capitalize(),
+                     definition])
+                part.append(f"`{result_id}`" + definition)
+                result_id += 1
+            value = '\n'.join(part)
+            if len(value) > 995:  # limit to 1024 chars in Value field
+                value = value[:995] + "... (shortened due to size)"
+            embed.add_field(name=result[1][meaning_index][0].capitalize(),
+                            value=value,
+                            inline=False)
+        if len(result[2]) > 0:
+            embed.add_field(name="Synonyms",
+                            value=f"`{result_id}`" + result[2],
+                            inline=False)
+            page_detailed.append(
+                [result_id, f"__{result[0].capitalize()}__", "Synonyms",
+                 result[2]])
+            result_id += 1
+        if len(result[3]) > 0:
+            embed.add_field(name="Antonyms",
+                            value=f"`{result_id}`" + result[3],
+                            inline=False)
+            page_detailed.append(
+                [result_id, f"__{result[0].capitalize()}__", "Antonyms",
+                 result[3]])
+            result_id += 1
+        if len(result[4]) > 0:
+            embed.add_field(name=f"`{result_id}`-" + "More info:",
+                            value=result[4],
+                            inline=False)
+            page_detailed.append(
+                [result_id, f"__{result[0].capitalize()}__", "More info:",
+                 result[4]])
+            result_id += 1
+        pages.append(embed)
+        pages_detailed.append(page_detailed)
+        # [meaning, [type, definition1, definition2], synonym, antonym, sources]
+    return page, pages, pages_detailed
+
+
 class TermDictionary(commands.Cog):
     def __init__(self):
         pass
 
-    @app_commands.command(name="dictionary", description="Look for the definition of a trans-related term!")
-    @app_commands.describe(term="This is your search query. What do you want to look for?",
-                           source="Where do you want to search? Online? Custom Dictionary? Or just leave it default..",
-                           public="Do you want to share the search results with the rest of the channel? (True=yes)")
+    @app_commands.command(name="dictionary",
+                          description="Look for terms in online dictionaries!")
+    @app_commands.describe(term="This is your search query. What do you want "
+                                "to look for?",
+                           source="Where do you want to search? Online? "
+                                  "Custom Dictionary? Or just leave it "
+                                  "default..",
+                           public="Do you want to share the search results "
+                                  "with the rest of the channel? (True=yes)")
     @app_commands.choices(source=[
-        discord.app_commands.Choice(name='Search from whichever has an answer', value=1),
-        discord.app_commands.Choice(name='Search from custom dictionary', value=2),
-        discord.app_commands.Choice(name='Search from en.pronouns.page', value=4),
-        discord.app_commands.Choice(name='Search from dictionaryapi.dev', value=6),
-        discord.app_commands.Choice(name='Search from urbandictionary.com', value=8),
+        discord.app_commands.Choice(
+            name='Search from whichever has an answer',
+            value=DictionarySources.All.value
+        ),
+        discord.app_commands.Choice(
+            name='Search from custom dictionary',
+            value=DictionarySources.CustomDictionary.value
+        ),
+        discord.app_commands.Choice(
+            name='Search from en.pronouns.page',
+            value=DictionarySources.PronounsPage.value
+        ),
+        discord.app_commands.Choice(
+            name='Search from dictionaryapi.dev',
+            value=DictionarySources.DictionaryApi.value
+        ),
+        discord.app_commands.Choice(
+            name='Search from urbandictionary.com',
+            value=DictionarySources.UrbanDictionary.value
+        ),
     ])
     @app_commands.autocomplete(term=dictionary_autocomplete)
-    async def dictionary(self, itx: discord.Interaction[Bot], term: str, public: bool = False, source: int = 1):
+    async def dictionary(
+            self,
+            itx: discord.Interaction[Bot],
+            term: str,
+            public: bool = False,
+            source: DictionarySources = DictionarySources.All,
+    ):
         # todo: rewrite this whole command.
         #  - Make the sources an enum.
-        #  - Allow going to the next source if you're not satisfied with a dictionary's result.
-        #  - Perhaps make a view with multi-selectable options for which sources you would want to search through
-        #     though this sounds like a bad idea Xd.
-        #  - Should also have an integration without custom dictionary that users can install.
+        #  - Allow going to the next source if you're not satisfied with
+        #    a dictionary's result.
+        #  - Perhaps make a view with multi-selectable options for which
+        #    sources you would want to search through
+        #    though this sounds like a bad idea Xd.
+        #  - Should also have an integration without custom dictionary
+        #    that users can install.
         #  - Make all pageviews into actual PageView views.
-
-        def simplify(q):
-            if type(q) is str:
-                return q.lower().translate(del_separators_table)
-            if type(q) is list:
-                return [text.lower().translate(del_separators_table) for text in q]
+        itx.response: discord.InteractionResponse  # noqa
         # test if mode has been left unset or if mode has been selected: decides whether to move to the
         # online API search or not.
         result_str = ""
         # to make my IDE happy. Will still crash on discord if it actually tries to send it tho: 'Empty message'
-        results: list[any]
-        if source == 1 or source == 2:
-            collection = itx.client.rina_db["termDictionary"]
-            query = {"synonyms": term.lower()}
-            search = collection.find(query)
-
-            result = False
-            results = []
-            result_str = ""
-            for item in search:
-                if simplify(term) in simplify(item["synonyms"]):
-                    results.append([item["term"], item["definition"]])
-                    result = True
-            if result:
-                result_str += (f"I found {len(results)} result{'s' * (len(results) > 1)} for '{term}' "
-                               f"in our dictionary:\n")
-                for x in results:
-                    result_str += f"> **{x[0]}**: {x[1]}\n"
-            else:
-                # if mode has been left unset, it will move to the online API dictionary to look for a definition there.
-                # Otherwise, it will return the 'not found' result of the term, and end the function.
-                if source == 1:
-                    source = 3
-                # public = False
-                else:
-                    cmd_mention = itx.client.get_command_mention("dictionary_staff define")
-                    result_str += (f"No information found for '{term}' in the custom dictionary.\n"
-                                   f"If you would like to add a term, message a staff member (to use {cmd_mention})")
-                    public = False
-            if len(result_str.split("\n")) > 3 and public:
-                public = False
-                result_str += "\nDidn't send your message as public cause it would be spammy, having this many results."
-            if len(result_str) > 1999:
-                result_str = (f"Your search ({term}) returned too many results (discord has a 2000-character "
-                              f"message length D:). (Please ask staff to fix this (synonyms and stuff).)")
-                await log_to_guild(itx.client, itx.guild,
-                                   f":warning: **!! Warning:** {itx.user.name} ({itx.user.id})'s dictionary "
-                                   f"search ('{term}') gave back a result that was larger than 2000 characters!'")
-        if source == 3 or source == 4:
-            http_safe_term = term.lower().replace("/", " ").replace("%", " ")
-            response_api = requests.get(
-                f'https://en.pronouns.page/api/terms/search/{http_safe_term}'
-            ).text
-            data = json.loads(response_api)
-            if len(data) == 0:
-                if source == 3:
-                    source = 5
-                else:
-                    result_str = f"I didn't find any results for '{term}' on en.pronouns.page"
-                    public = False
-
-            # edit definitions to hide links to other pages:
-            else:
-                search = []
-                for item in data:
-                    item_db = item['definition']
-                    while item['definition'] == item_db:
-                        replacement = re.search("(?<==).+?(?=})", item['definition'])
-                        if replacement is not None:
-                            item['definition'] = re.sub("{(#.+?=).+?}", replacement.group(), item['definition'], 1)
-                        if item['definition'] == item_db:  # if nothing changed:
-                            break
-                        item_db = item['definition']
-                    while item['definition'] == item_db:
-                        replacement = re.search("(?<={).+?(?=})", item['definition'])
-                        if replacement is not None:
-                            item['definition'] = re.sub("{.+?}", replacement.group(), item['definition'], 1)
-                        if item['definition'] == item_db:  # if nothing changed:
-                            break
-                        item_db = item['definition']
-                    search.append(item)
-
-                # if one of the search results matches exactly with the search, give that definition
-                results: list[dict] = []
-                for item in search:
-                    if simplify(term) in simplify(item['term'].split('|')):
-                        results.append(item)
-                if len(results) > 0:
-                    result_str = (f"I found {len(results)} exact result{'s' * (len(results) != 1)} for "
-                                  f"'{term}' on en.pronouns.page! \n")
-                    for item in results:
-                        result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-                    if (len(search) - len(results)) > 0:
-                        result_str += f"{len(search) - len(results)} other non-exact results found."
-                    if len(result_str) > 1999:
-                        result_str = (
-                            f"Your search ('{term}') returned a too-long "
-                            f"result! (discord has a 2000-character message "
-                            f"length D:). To still let you get better results, "
-                            f"I've rewritten the terms so you might be able "
-                            f"to look for a more specific one:"
-                        )
-                        for item in results:
-                            result_str += f"> {', '.join(item['term'].split('|'))}\n"
-                    await itx.response.send_message(result_str, ephemeral=not public, suppress_embeds=True)
-                    return
-
-                # if search doesn't exactly match with a result / synonym
-                result_str = (f"I found {len(search)} result{'s' * (len(results) != 1)} for "
-                              f"'{term}' on en.pronouns.page! ")
-                if len(search) > 25:
-                    result_str += "Here is a list to make your search more specific:\n"
-                    results: list[str] = []
-                    for item in search:
-                        temp = item['term']
-                        if "|" in temp:
-                            temp = temp.split("|")[0]
-                        results.append(temp)
-                    result_str += ', '.join(results)
-                    public = False
-                elif len(search) > 2:
-                    result_str += "Here is a list to make your search more specific:\n"
-                    results: list[str] = []
-                    for item in search:
-                        if "|" in item['term']:
-                            temp = "- __" + item['term'].split("|")[0] + "__"
-                            temp += " (" + ', '.join(item['term'].split("|")[1:]) + ")"
-                        else:
-                            temp = "- __" + item['term'] + "__"
-                        results.append(temp)
-                    result_str += '\n'.join(results)
-                    public = False
-                elif len(search) > 0:
-                    result_str += "\n"
-                    for item in search:
-                        result_str += f"> **{', '.join(item['term'].split('|'))}:** {item['definition']}\n"
-                else:
-                    result_str = f"I didn't find any results for '{term}' on en.pronouns.page!"
-                    if source == 4:
-                        source = 6
-                msg_length = len(result_str)
-                if msg_length > 1999:
-                    public = False
-                    result_str = (f"Your search ('{term}') returned too many results ({len(search)} in total!) "
-                                  f"(discord has a 2000-character message length, and this message "
-                                  f"was {msg_length} characters D:). Please search more specifically.\n"
-                                  f"    Here is a link for expanded info on each term: "
-                                  f"<https://en.pronouns.page/dictionary/terminology#{term.lower()}>")
+        results: list
+        if (source == DictionarySources.All
+                or source == DictionarySources.CustomDictionary):
+            public, result_str, source = await _get_custom_dictionary_output(
+                itx.client, term
+            )
+        if ((source == DictionarySources.All and not result_str)
+                or source == DictionarySources.PronounsPage):
+            try:
+                public, result_str, source = \
+                    await _get_pronouns_page_output(
+                        public, result_str, source, term
+                    )
+            except OverflowError as ex:
+                await itx.reponse.send_message(str(ex), ephemeral=True,
+                                               suppress_embeds=True)
         if source == 5 or source == 6:
             await itx.response.defer(ephemeral=True)
             response_api = requests.get(
@@ -267,84 +443,10 @@ class TermDictionary(commands.Cog):
                     result_str = f"I didn't find any results for '{term}' on dictionaryapi.dev!"
                     public = False
             else:
-                for result in data:
-                    meanings = []
-                    synonyms = []
-                    antonyms = []
-                    for meaning in result["meanings"]:
-                        meaning_list = [meaning['partOfSpeech']]
-                        # **verb**:
-                        # meaning one is very useful
-                        # meaning two is not as useful
-                        for definition in meaning["definitions"]:
-                            meaning_list.append("- " + definition['definition'])
-                            for synonym in definition['synonyms']:
-                                if synonym not in synonyms:
-                                    synonyms.append(synonym)
-                            for antonym in definition['antonyms']:
-                                if antonym not in antonyms:
-                                    antonyms.append(antonym)
-                        for synonym in meaning['synonyms']:
-                            if synonym not in synonyms:
-                                synonyms.append(synonym)
-                        for antonym in meaning['antonyms']:
-                            if antonym not in antonyms:
-                                antonyms.append(antonym)
-                        meanings.append(meaning_list)
-
-                    results.append([
-                        # train
-                        result["word"],
-                        # [  ["noun", "- Hello there this is 1", "- number two"], ["verb", ...], [...]  ]
-                        meanings,
-                        ', '.join(synonyms),
-                        ', '.join(antonyms),
-                        '\n'.join(result["sourceUrls"])
-                    ])
-
-                pages = []
-                pages_detailed = []
-                page = 0
-                for result in results:
-                    result_id = 0
-                    page_detailed = []
-                    embed = discord.Embed(color=8481900, title=f"__{result[0].capitalize()}__")
-                    for meaning_index in range(len(result[1])):
-                        _part = result[1][meaning_index][1:]
-                        part = []
-                        for definition in _part:
-                            page_detailed.append(
-                                [result_id, f"__{result[0].capitalize()}__", result[1][meaning_index][0].capitalize(),
-                                 definition])
-                            part.append(f"`{result_id}`" + definition)
-                            result_id += 1
-                        value = '\n'.join(part)
-                        if len(value) > 995:  # limit to 1024 chars in Value field
-                            value = value[:995] + "... (shortened due to size)"
-                        embed.add_field(name=result[1][meaning_index][0].capitalize(),
-                                        value=value,
-                                        inline=False)
-                    if len(result[2]) > 0:
-                        embed.add_field(name="Synonyms",
-                                        value=f"`{result_id}`" + result[2],
-                                        inline=False)
-                        page_detailed.append([result_id, f"__{result[0].capitalize()}__", "Synonyms", result[2]])
-                        result_id += 1
-                    if len(result[3]) > 0:
-                        embed.add_field(name="Antonyms",
-                                        value=f"`{result_id}`" + result[3],
-                                        inline=False)
-                        page_detailed.append([result_id, f"__{result[0].capitalize()}__", "Antonyms", result[3]])
-                        result_id += 1
-                    if len(result[4]) > 0:
-                        embed.add_field(name=f"`{result_id}`-" + "More info:",
-                                        value=result[4],
-                                        inline=False)
-                        page_detailed.append([result_id, f"__{result[0].capitalize()}__", "More info:", result[4]])
-                        result_id += 1
-                    pages.append(embed)
-                    pages_detailed.append(page_detailed)
-                    # [meaning, [type, definition1, definition2], synonym, antonym, sources]
+                page, pages, pages_detailed = \
+                    _get_dictionary_api_pages(
+                        data, results
+                    )
 
                 embed = pages[page]
                 embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
@@ -354,7 +456,6 @@ class TermDictionary(commands.Cog):
                 await view.wait()
                 if view.value in [None, 1, 2]:
                     await itx.edit_original_response(view=None)
-                return
         if source == 7 or source == 8:
             if not itx.response.is_done():
                 await itx.response.defer(ephemeral=True)
@@ -375,29 +476,7 @@ class TermDictionary(commands.Cog):
                     result_str = f"I didn't find any results for '{term}' on urban dictionary"
                 public = False
             else:
-                pages = []
-                page = 0
-                for result in data:
-                    embed = discord.Embed(color=8481900,
-                                          title=f"__{result['word'].capitalize()}__",
-                                          description=result['definition'],
-                                          url=result['permalink'])
-                    post_date = int(
-                        datetime.strptime(
-                            result['written_on'][:-1],  # "2009-03-04T01:16:08.000Z" ([:-1] to remove Z at end)
-                            "%Y-%m-%dT%H:%M:%S.%f"
-                        ).timestamp()
-                    )
-                    warning = ""
-                    if len(result['example']) > 800:
-                        warning = "... (shortened due to size)"
-                    embed.add_field(name="Example",
-                                    value=f"{result['example'][:800]}{warning}\n\n"
-                                          f"{result['thumbs_up']}:thumbsup: :thumbsdown: {result['thumbs_down']}\n"
-                                          f"Sent by {result['author']} on <t:{post_date}:d> at "
-                                          f"<t:{post_date}:T> (<t:{post_date}:R>)",
-                                    inline=False)
-                    pages.append(embed)
+                page, pages = await _get_urban_dictionary_pages(data)
 
                 embed = pages[page]
                 embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages))))
@@ -424,12 +503,6 @@ class TermDictionary(commands.Cog):
         definition="Give this term a definition",
         synonyms="Add synonyms (SEPARATE WITH \", \")")
     async def define(self, itx: discord.Interaction[Bot], term: str, definition: str, synonyms: str = ""):
-        def simplify(q):
-            if type(q) is str:
-                return q.lower().translate(del_separators_table)
-            if type(q) is list:
-                return [text.lower().translate(del_separators_table) for text in q]
-
         # Test if this term is already defined in this dictionary.
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
