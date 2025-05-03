@@ -1,3 +1,4 @@
+from datetime import datetime
 import random
 
 import discord
@@ -6,7 +7,75 @@ import discord.app_commands as app_commands
 
 from extensions.settings.objects import AttributeKeys
 from resources.checks import MissingAttributesCheckFailure, is_staff_check
+from resources.customs import Bot
 from resources.views.generics import PageView, create_simple_button
+
+
+async def _make_vclog_embed(
+        mode: str,
+        from_channel: discord.VoiceChannel | discord.StageChannel,
+        to_channel: discord.VoiceChannel | discord.StageChannel,
+        user: discord.Member
+):
+    if mode == "Move":
+        embed: discord.Embed = discord.Embed(
+            description=f"**{user.name}#{user.discriminator}** moved from "
+                        f"{from_channel.mention} ({from_channel.name}) to "
+                        f"{to_channel.mention} ({to_channel.name}).",
+        )
+        embed.add_field(
+            name="Current channel they are in",
+            value=f"{to_channel.mention} ({to_channel.name})",
+            inline=False
+        )
+        embed.add_field(
+            name="Previously occupied channel",
+            value=f"{from_channel.mention} ({from_channel.name})",
+            inline=False
+        )
+        embed.add_field(
+            name="ID",
+            value=f"```ini\n"
+                  f"User = {user.id}\n"
+                  f"New = {to_channel.id}\n"
+                  f"Old = {from_channel.id}```",
+            inline=False
+        )
+    else:
+        mode_str, channel = (("joined", to_channel) if mode == "Join"
+                             else ("left", from_channel))
+        channel_str = ("voice" if type(channel) is discord.VoiceChannel
+                       else "stage")
+        nick_maybe = f"({user.nick}) " if user.nick else ""
+        embed: discord.Embed = discord.Embed(
+            description=f"**{user.name}#{user.discriminator}** {nick_maybe}"
+                        f"{mode_str} {channel_str} channel: {channel.name}.",
+        )
+        embed.add_field(
+            name="Channel",
+            value=f"{channel.mention} ({channel.name})",
+            inline=False
+        )
+        embed.add_field(
+            name="ID",
+            value=f"```ini\n"
+                  f"User = {user.id}\n"
+                  f"Channel = {channel.id}```",
+            inline=False
+        )
+
+    embed.colour = 3553599
+    embed.timestamp = datetime.now().astimezone()
+    embed.set_author(
+        name=f"{user.name}#{user.discriminator}",
+        icon_url=user.avatar.url,
+    )
+    embed.set_footer(
+        text=f"{user.name}#{user.discriminator}",
+        icon_url=user.avatar.url
+    )
+
+    return embed
 
 
 class TestingCog(commands.GroupCog, name="testing"):
@@ -49,6 +118,7 @@ class TestingCog(commands.GroupCog, name="testing"):
 
     @app_commands.command(name="send_pageview_test", description="Send a test embed with page buttons")
     @app_commands.describe(page_count="The amount of pages to send/test")
+    @app_commands.check(is_staff_check)
     async def send_pageview_test_embed(
             self, itx: discord.Interaction, page_count: app_commands.Range[int, 1, 10000] = 40
     ):
@@ -105,3 +175,49 @@ class TestingCog(commands.GroupCog, name="testing"):
         embed.add_field(name="Do you have anything else to add?",
                         value="me eepy")
         await itx.channel.send("Sending this cool embed...", embed=embed)
+
+    @app_commands.command(name="send_vc_log_test",
+                          description="Send a test embed of a vc log")
+    @app_commands.describe(mode="Whether you joined, left, or moved channels",
+                           from_channel="The channel you left from",
+                           to_channel="The channel you joined")
+    @app_commands.choices(mode=[
+        app_commands.Choice(name="Join", value="Join"),
+        app_commands.Choice(name="Leave", value="Leave"),
+        app_commands.Choice(name="Move", value="Move"),
+    ])
+    @app_commands.check(is_staff_check)
+    async def send_vc_log_test(
+            self,
+            itx: discord.Interaction[Bot],
+            mode: str,
+            from_channel: discord.VoiceChannel | discord.StageChannel = None,
+            to_channel: discord.VoiceChannel | discord.StageChannel = None,
+    ):
+        itx.response: discord.InteractionResponse  # noqa
+        # jeez the log is inconsistent lol
+        user = itx.user
+
+        if mode == "Join" and to_channel is None:
+            await itx.response.send_message(
+                "Mode \"Join\" needs to_channel!",
+                ephemeral=True
+            )
+            return
+        elif mode == "Leave" and from_channel is None:
+            await itx.response.send_message(
+                "Mode \"Leave\" needs from_channel!",
+                ephemeral=True
+            )
+            return
+        elif to_channel is None and from_channel is None:
+            await itx.response.send_message(
+                "Mode \"Move\" needs from_channel and to_channel!",
+                ephemeral=True
+            )
+            return
+
+        embed = await _make_vclog_embed(mode, from_channel, to_channel, user)
+        await itx.channel.send(embed=embed)
+
+        await itx.response.send_message("Sent.", ephemeral=True)

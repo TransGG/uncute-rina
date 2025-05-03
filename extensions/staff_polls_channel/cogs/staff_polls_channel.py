@@ -169,7 +169,6 @@ class StaffPollsChannelAddon(commands.Cog):
 
             joiner_msg = await thread.send("user-mention placeholder")
             await joiner_msg.edit(
-                content=f"<@&{polls_channel_reaction_role.id}>",
-                allowed_mentions=discord.AllowedMentions.none()
+                content=f"<@&{polls_channel_reaction_role.id}>"
             )
             await joiner_msg.delete()
