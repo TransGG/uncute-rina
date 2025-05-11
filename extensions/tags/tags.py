@@ -34,7 +34,7 @@ class CustomTag:
 
         self.command_mention: str | None = None
         self.send_user: discord.User | discord.Member | None = None
-        self.send_message: discord.Message | None = None
+        self.public_message: discord.Message | None = None
         self.send_channel: discord.TextChannel | None = None
 
     @property
@@ -58,8 +58,8 @@ class CustomTag:
             + (f", in {self.send_channel.mention} (`{self.send_channel.id}`)\n"
                if self.send_channel is not None
                else "")
-            + (f"[Jump to the tag message]({self.send_message.jump_url})"
-               if self.send_message is not None
+            + (f"[Jump to the tag message]({self.public_message.jump_url})"
+               if self.public_message is not None
                else "")
         )
 
@@ -115,9 +115,9 @@ class CustomTag:
         try:
             # Try to send the tag without replying to the
             #  previous response / ephemeral.
-            self.send_message = await itx.channel.send(embed=self.embed)
+            self.public_message = await itx.channel.send(embed=self.embed)
         except discord.Forbidden:
-            self.send_message = await itx.followup.send(
+            self.public_message = await itx.followup.send(
                 embed=self.embed, ephemeral=False, wait=True)
 
         await log_to_guild(itx.client, itx.guild, self.log_message)
