@@ -15,3 +15,8 @@ class UnixTimestampInPastException(Exception):
     def __init__(self, distance: datetime, creation_time: datetime):
         self.distance = distance
         self.creation_time = creation_time
+
+
+class ReminderTimeSelectionMenuTimeOut(Exception):
+    def __init__(self):
+        pass
