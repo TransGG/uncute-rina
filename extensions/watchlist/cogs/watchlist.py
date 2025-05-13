@@ -8,8 +8,9 @@ from discord import RawThreadDeleteEvent
 from extensions.settings.objects import ModuleKeys, AttributeKeys
 from resources.customs import Bot
 from resources.checks.permissions import is_staff  # to check role in _add_to_watchlist, as backup
-from resources.checks import is_staff_check, module_enabled_check, \
-    MissingAttributesCheckFailure  # the cog is pretty much only intended for staff use
+from resources.checks import (
+    is_staff_check, module_enabled_check, MissingAttributesCheckFailure
+)  # the cog is pretty much only intended for staff use
 
 from extensions.watchlist.local_watchlist import create_watchlist, get_watchlist, remove_watchlist, \
     get_user_id_from_watchlist, WatchlistNotLoadedException
@@ -71,10 +72,6 @@ async def _create_uncool_watchlist_thread(
     thread_username = "Watch-" + str(user)[:70] + '-' + str(user.id)
     thread = await msg.create_thread(name=thread_username,
                                      auto_archive_duration=10080)
-    # (thread.id would be the same as msg.id, because of
-    #  discord structure)
-    await create_watchlist(client.async_rina_db, user.guild.id,
-                           user.id, thread.id)
     await thread.join()
     joiner_msg = await thread.send("user-mention placeholder")
     active_staff_role: discord.Guild | None = client.get_guild_attribute(
@@ -241,8 +238,14 @@ async def _add_to_watchlist(
     else:
         msg, thread = await _create_uncool_watchlist_thread(
             itx.client, user, watch_channel)
-        await create_watchlist(itx.client.async_rina_db, itx.guild.id,
-                               user.id, thread.id)
+        # (thread.id would be the same as msg.id, because of
+        #  discord structure)
+        await create_watchlist(
+            itx.client.async_rina_db,
+            watch_channel.guild.id,
+            user.id,
+            thread.id
+        )
 
     # Send a plaintext version of the reason, and copy a link to it
 
@@ -364,8 +367,14 @@ class WatchList(commands.Cog):
             )
             return
 
+        watch_channel = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.watchlist_channel)
+        if watch_channel is None:
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.watchlist, AttributeKeys.watchlist_channel)
+
         await itx.response.defer(ephemeral=True)
-        watchlist_thread_id = get_watchlist(itx.guild.id, user.id)
+        watchlist_thread_id = get_watchlist(watch_channel.guild.id, user.id)
         on_watchlist: bool = watchlist_thread_id is not None
 
         if on_watchlist:
@@ -391,12 +400,13 @@ class WatchList(commands.Cog):
         staff_logs_category: discord.CategoryChannel | None
         badeline_bot: discord.User | None
         watchlist_channel: discord.TextChannel | None
-        staff_logs_category, badeline_bot, watchlist_channel = self.client.get_guild_attribute(
-            message.guild,
-            AttributeKeys.staff_logs_category,
-            AttributeKeys.badeline_bot,
-            AttributeKeys.watchlist_channel
-        )
+        staff_logs_category, badeline_bot, watchlist_channel = \
+            self.client.get_guild_attribute(
+                message.guild,
+                AttributeKeys.staff_logs_category,
+                AttributeKeys.badeline_bot,
+                AttributeKeys.watchlist_channel
+            )
         if None in (staff_logs_category, badeline_bot, watchlist_channel):
             missing = [key for key, value in {
                 AttributeKeys.staff_logs_category: staff_logs_category,
@@ -443,7 +453,8 @@ class WatchList(commands.Cog):
                         else:
                             raise Exception("User id was not an id!")
 
-        watchlist_thread_id = get_watchlist(message.guild.id, reported_user_id)
+        watchlist_thread_id = get_watchlist(
+            watchlist_channel.guild.id, reported_user_id)
         on_watchlist: bool = watchlist_thread_id is not None
 
         if on_watchlist:

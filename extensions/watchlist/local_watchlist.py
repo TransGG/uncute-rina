@@ -3,7 +3,7 @@ import discord
 
 from resources.pymongo.database_keys import DatabaseKeys
 from resources.pymongo.guild_customs_manager import (
-    add_data, remove_data, get_data, get_all_data
+    add_data, remove_data, get_data, get_all_data, remove_guild_data
 )
 
 
@@ -189,20 +189,26 @@ async def fetch_all_watchlists(
     return local_watchlist
 
 
-async def import_watchlist_threads(
+async def refetch_watchlist_threads(
         async_rina_db: AgnosticDatabase,
+        guild: discord.Guild,
         watch_channel: discord.TextChannel
 ) -> list[discord.Thread]:
     """
-    Import watchlists into the database and cache.
+    Delete and re-import watchlists into the database and cache.
 
     :param async_rina_db: The database to store the watchlists into.
+    :param guild: the child guild to remove data for.
     :param watch_channel: The text channel containing this guild's watchlists.
 
     :return: A list of threads whose starter message could not be fetched.
     """
-    if watch_channel.guild.id not in local_watchlist:
-        local_watchlist[watch_channel.guild.id] = {}
+    # delete all watchlist data for this guild and its watchlist guild
+    await remove_guild_data(async_rina_db, guild.id,
+                            DatabaseKeys.watchlist)
+    await remove_guild_data(async_rina_db, watch_channel.guild.id,
+                            DatabaseKeys.watchlist)
+    local_watchlist[watch_channel.guild.id] = {}
 
     # store reference to dict into a shorter variable
 

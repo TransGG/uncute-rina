@@ -6,15 +6,17 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects.server_settings import ParseError
+from extensions.watchlist.local_watchlist import refetch_watchlist_threads
 from resources.checks import (
-    is_admin_check, not_in_dms_check,
+    is_admin_check, not_in_dms_check, module_enabled_check,
+    MissingAttributesCheckFailure,
 )
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import (
     ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules,
     TypeAutocomplete, ModeAutocomplete,
-    parse_attribute, get_attribute_type, AttributeKeys
+    parse_attribute, get_attribute_type, AttributeKeys, ModuleKeys
 )
 
 if typing.TYPE_CHECKING:
@@ -638,10 +640,10 @@ class SettingsCog(commands.Cog):
     def __init__(self):
         pass
 
-    # migrate_group = app_commands.Group(
-    #     name="migrate",
-    #     description="A grouping of migrate commands."
-    # )
+    migrate_group = app_commands.Group(
+        name="migrate",
+        description="A grouping of migrate commands."
+    )
     #
     # @app_commands.check(is_admin_check)
     # @migrate_group.command(name="database",
@@ -658,25 +660,29 @@ class SettingsCog(commands.Cog):
     #     await itx.edit_original_response(
     #         content="Migrated databases and re-fetched all server settings.")
     #
-    # @app_commands.check(is_admin_check)
-    # @module_enabled_check(ModuleKeys.watchlist)
-    # @migrate_group.command(
-    #     name="migrate-watchlist",
-    #     description="Fetch all watchlist threads for this server."
-    # )
-    # async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
-    #     watchlist_channel: discord.TextChannel | None = \
-    #         itx.client.get_guild_attribute(
-    #             itx.guild, AttributeKeys.watchlist_channel)
-    #     if watchlist_channel is None:
-    #         raise MissingAttributesCheckFailure(
-    #             AttributeKeys.watchlist_channel)
-    #
-    #     await itx.response.defer(ephemeral=True)
-    #     await import_watchlist_threads(itx.client.async_rina_db,
-    #                                    watchlist_channel)
-    #     await itx.followup.send("Successfully imported watchlist threads.",
-    #                             ephemeral=True)
+
+    @app_commands.check(is_admin_check)
+    @module_enabled_check(ModuleKeys.watchlist)
+    @migrate_group.command(
+        name="migrate-watchlist",
+        description="Fetch all watchlist threads for this server."
+    )
+    async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
+        watchlist_channel: discord.TextChannel | None = \
+            itx.client.get_guild_attribute(
+                itx.guild, AttributeKeys.watchlist_channel)
+        if watchlist_channel is None:
+            raise MissingAttributesCheckFailure(
+                ModuleKeys.watchlist,
+                AttributeKeys.watchlist_channel
+            )
+
+        await itx.response.defer(ephemeral=True)
+        await refetch_watchlist_threads(itx.client.async_rina_db,
+                                        itx.guild,
+                                        watchlist_channel)
+        await itx.followup.send("Successfully imported watchlist threads.",
+                                ephemeral=True)
     #
     # @app_commands.check(is_admin_check)
     # @module_enabled_check(ModuleKeys.starboard)
