@@ -444,13 +444,16 @@ async def _handle_starboard_create_or_update(
             # can't starboard Rina's message
             return
         # noinspection PyProtectedMember
-        blacklist_ids = [c._get_channel().id for c in channel_blacklist]
+        blacklist_ids: list[int] = [(await c._get_channel()).id
+                                    for c in channel_blacklist]
+        # ^ _get_channel is async, but most subclass implementations
+        #  are synchronous.
         if message.channel.id in blacklist_ids:
             return
 
         try:
-            # Try to add the initial starboard emoji to starboarded message
-            # to prevent duplicate entries in starboard.
+            # Try to add the initial starboard emoji to a starboarded
+            #  message to prevent duplicate entries in starboard.
             await message.add_reaction(starboard_emoji)
         except discord.errors.Forbidden:
             # If "Reaction blocked", then maybe message author blocked Rina.
