@@ -63,6 +63,10 @@ class CustomTag:
                else "")
         )
 
+    async def send_to_channel(self, channel: discord.abc.Messageable) -> None:
+        await channel.send(embed=self.embed)
+        return
+
     async def send(
             self,
             itx: discord.Interaction[Bot],

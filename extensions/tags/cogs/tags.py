@@ -21,7 +21,6 @@ from resources.utils.utils import get_mod_ticket_channel
 from extensions.tags.tags import (
     tag_info_dict, create_report_info_tag, CustomTag
 )
-from unit_tests.object import CustomObject
 
 
 # to prevent excessive spamming when multiple people mention staff. A sorta cooldown
@@ -121,17 +120,7 @@ class TagFunctions(commands.Cog):
             time_now = int(datetime.now().timestamp())  # get time in unix
             if time_now - report_message_reminder_unix > 900:  # 15 minutes
                 tag = create_report_info_tag(ticket_channel)
-                fake_interaction = CustomObject(
-                    user=message.author,
-                    # ignore whatever is thrown into `response`.
-                    response=CustomObject(send_message=CustomObject)
-                )
-                await tag.send(
-                    fake_interaction,
-                    True,
-                    False,
-                    report_to_staff=True
-                )
+                await tag.send_to_channel(message.channel)
                 report_message_reminder_unix = time_now
 
     @app_commands.command(name="tag",
