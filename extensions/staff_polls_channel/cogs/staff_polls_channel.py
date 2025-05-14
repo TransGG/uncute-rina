@@ -137,7 +137,7 @@ class StaffPollsChannelAddon(commands.Cog):
                     polls_channel_reaction_role}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(
-                ModuleKeys.polls_only_channel, *missing)
+                ModuleKeys.polls_only_channel, missing)
 
         if message.channel == polls_channel:
 

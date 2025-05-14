@@ -323,7 +323,7 @@ async def _fetch_starboard_and_original_messages(
             guild_id, AttributeKeys.starboard_channel)
         if starboard_channel is None:
             raise MissingAttributesCheckFailure(
-                AttributeKeys.starboard_channel)
+                ModuleKeys.starboard, [AttributeKeys.starboard_channel])
         star_msg = await starboard_channel.fetch_message(starboard_message)
     else:
         star_msg = starboard_message
@@ -510,7 +510,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
                     downvote_init_value}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji.id and
@@ -606,7 +606,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
                     downvote_init_value}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         if payload.emoji != starboard_emoji and payload.emoji.name != "❌":
             # only run starboard code if the reactions tracked are actually
@@ -658,7 +658,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
             # this prevents having two 'message deleted' logs for manual deletion of starboard message

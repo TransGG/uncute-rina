@@ -21,7 +21,7 @@ class AnonReportsReactionsAddon(commands.Cog):
         if anon_reports_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.anonymous_report_reactions,
-                AttributeKeys.anonymous_reports_webhook_id
+                [AttributeKeys.anonymous_reports_webhook_id]
             )
 
         if message.webhook_id == anon_reports_webhook_id:

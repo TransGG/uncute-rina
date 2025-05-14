@@ -57,7 +57,7 @@ class StaffAddons(commands.Cog):
         if selfies_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.selfies_channel_deletion,
-                AttributeKeys.selfies_channel)
+                [AttributeKeys.selfies_channel])
 
         time_now = int(datetime.now().timestamp())  # get time in unix
 

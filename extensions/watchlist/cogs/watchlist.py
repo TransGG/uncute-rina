@@ -156,7 +156,7 @@ async def _add_to_watchlist(
         itx.guild, AttributeKeys.watchlist_channel)
     if watch_channel is None:
         raise MissingAttributesCheckFailure(
-            ModuleKeys.watchlist, AttributeKeys.watchlist_channel)
+            ModuleKeys.watchlist, [AttributeKeys.watchlist_channel])
 
     # await itx.response.defer(ephemeral=True)
     await itx.response.send_message(
@@ -371,7 +371,7 @@ class WatchList(commands.Cog):
             itx.guild, AttributeKeys.watchlist_channel)
         if watch_channel is None:
             raise MissingAttributesCheckFailure(
-                ModuleKeys.watchlist, AttributeKeys.watchlist_channel)
+                ModuleKeys.watchlist, [AttributeKeys.watchlist_channel])
 
         await itx.response.defer(ephemeral=True)
         watchlist_thread_id = get_watchlist(watch_channel.guild.id, user.id)
@@ -413,8 +413,7 @@ class WatchList(commands.Cog):
                 AttributeKeys.badeline_bot: badeline_bot,
                 AttributeKeys.watchlist_channel: watchlist_channel}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(
-                ModuleKeys.watchlist, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.watchlist, missing)
 
         if message.author.id != badeline_bot.id:
             # Don't compare author == badeline_bot, because author can be

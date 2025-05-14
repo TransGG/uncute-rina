@@ -20,7 +20,7 @@ class BanAppealReactionsAddon(commands.Cog):
         if ban_appeal_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.ban_appeal_reactions,
-                AttributeKeys.ban_appeal_webhook_id)
+                [AttributeKeys.ban_appeal_webhook_id])
 
         if message.webhook_id != ban_appeal_webhook_id:
             return

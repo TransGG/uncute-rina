@@ -215,7 +215,7 @@ class FunAddons(commands.Cog):
             if headpat_emoji is None:
                 raise MissingAttributesCheckFailure(
                     ModuleKeys.headpat_reactions,
-                    AttributeKeys.headpat_emoji)
+                    [AttributeKeys.headpat_emoji])
             self.handle_random_pat_reaction(message, headpat_emoji)
             return
 
@@ -225,7 +225,7 @@ class FunAddons(commands.Cog):
             if awawawa_emoji is None:
                 raise MissingAttributesCheckFailure(
                     ModuleKeys.awawawa_reactions,
-                    AttributeKeys.awawawa_emoji)
+                    [AttributeKeys.awawawa_emoji])
             await _handle_awawa_reaction(message, awawawa_emoji)
 
     @app_commands.command(name="roll", description="Roll a die or dice with random chance!")

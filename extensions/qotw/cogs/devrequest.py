@@ -36,7 +36,7 @@ class DevRequest(commands.Cog):
                 AttributeKeys.developer_request_channel: developer_request_channel,
                 AttributeKeys.developer_request_reaction_role: developer_role}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(ModuleKeys.dev_requests, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.dev_requests, missing)
 
         if len(suggestion) > 4000:
             await itx.response.send_message("Your suggestion won't fit! Please make your suggestion shorter. "
@@ -113,7 +113,7 @@ class DevRequest(commands.Cog):
         if watchlist_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.dev_requests,
-                AttributeKeys.developer_request_channel)
+                [AttributeKeys.developer_request_channel])
 
         threads: list[discord.Thread] = []
         pinged_thread_count = 0
@@ -174,7 +174,7 @@ class DevRequest(commands.Cog):
         if dev_request_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.dev_requests,
-                AttributeKeys.developer_request_channel)
+                [AttributeKeys.developer_request_channel])
 
         if dev_request_channel.id != payload.channel_id:
             return

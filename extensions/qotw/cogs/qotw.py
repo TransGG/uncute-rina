@@ -36,7 +36,7 @@ class QOTW(commands.Cog):
                                                       AttributeKeys.qotw_suggestions_channel)
         if qotw_channel is None:
             raise MissingAttributesCheckFailure(
-                ModuleKeys.qotw, AttributeKeys.qotw_suggestions_channel)
+                ModuleKeys.qotw, [AttributeKeys.qotw_suggestions_channel])
 
         await itx.response.defer(ephemeral=True)
 

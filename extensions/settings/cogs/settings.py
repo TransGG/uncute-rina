@@ -674,7 +674,7 @@ class SettingsCog(commands.Cog):
         if watchlist_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.watchlist,
-                AttributeKeys.watchlist_channel
+                [AttributeKeys.watchlist_channel]
             )
 
         await itx.response.defer(ephemeral=True)

@@ -15,7 +15,7 @@ class CommandDoesNotSupportDMsCheckFailure(CheckFailure):
 
 
 class MissingAttributesCheckFailure(CheckFailure):
-    def __init__(self, module: str | None, *attributes: str):
+    def __init__(self, module: str | None, attributes: list[str]):
         self.module: str | None = module
         self.attributes: list[str] = list(attributes)
 

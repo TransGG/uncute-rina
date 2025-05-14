@@ -100,7 +100,8 @@ class TestingCog(commands.GroupCog, name="testing"):
             itx.guild, AttributeKeys.staff_logs_category
         )
         if staff_logs_category is None:
-            raise MissingAttributesCheckFailure(AttributeKeys.staff_logs_category)
+            raise MissingAttributesCheckFailure(
+                "testing", [AttributeKeys.staff_logs_category])
 
         embed = discord.Embed(title="did a log thing for x", color=16705372)
         embed.add_field(name="User", value=f"{target.mention} (`{target.id}`)", inline=True)

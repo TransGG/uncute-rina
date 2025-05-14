@@ -133,7 +133,7 @@ class CustomTag:
             if log_channel is None:
                 raise MissingAttributesCheckFailure(
                     ModuleKeys.tags,
-                    AttributeKeys.staff_reports_channel
+                    [AttributeKeys.staff_reports_channel],
                 )
             await log_channel.send(self.log_message)
 
