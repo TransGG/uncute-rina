@@ -10,7 +10,7 @@ from resources.utils import (
 
 from extensions.reminders.exceptions import (
     UnixTimestampInPastException, TimestampParseException,
-    MalformedISODateTimeException
+    MalformedISODateTimeException, ReminderTimeSelectionMenuTimeOut
 )
 from extensions.reminders.objects import (
     ReminderDict, TimestampFormats, DatabaseData
@@ -136,7 +136,8 @@ async def _handle_reminder_timestamp_parsing(
         reminder_datetime: str
 ) -> (datetime, discord.Interaction):
     # validate format
-    # note: "t" here is lowercase because the reminder_datetime string gets lowercased...
+    # note: "t" here is lowercase because the reminder_datetime string
+    #  gets lowercased...
     has_timezone = False
     if reminder_datetime.count("t") == 1:
         # check input character validity
@@ -195,19 +196,23 @@ async def _handle_reminder_timestamp_parsing(
             "6": (timestamp + timedelta(hours=18)),
             "7": (timestamp + timedelta(hours=24)),
         }
-        query = "Since a date format doesn't tell me what time you want the reminder, you can pick a time yourself:"
+        query = ("Since a date format doesn't tell me what time you want "
+                 "the reminder, you can pick a time yourself:")
         for option in options:
-            query += f"\n  `{option}.` <t:{int(options[option].timestamp())}:F>"
+            timestamp_str = f"<t:{int(options[option].timestamp())}:F>"
+            query += f"\n  `{option}.` {timestamp_str}"
         view = TimeOfDaySelection(list(options))
         await itx.response.send_message(query, view=view, ephemeral=True)
         await view.wait()
         if view.value is None:
-            await itx.edit_original_response(content="Reminder creation menu timed out.", view=None)
-            return
+            await itx.edit_original_response(
+                content="Reminder creation menu timed out.", view=None)
+            raise ReminderTimeSelectionMenuTimeOut()
         distance = options[view.value]
         itx = view.return_interaction
 
-    return distance, itx  # New itx is returned in case the response is used by the view
+    # New itx is returned in case the response is used by the view.
+    return distance, itx
 
 
 async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str) -> tuple[datetime, datetime]:
@@ -226,6 +231,7 @@ async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str)
     :raise TimestampParseException:
     :raise MissingQuantityException:
     :raise MissingUnitException:
+    :raise ReminderTimeSelectionMenuTimeOutException:
     """
     # Parse reminder input to get a datetime for the reminder scheduler
     creation_time = itx.created_at  # utc
@@ -246,7 +252,6 @@ async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str)
                                  .strip().lower())
             distance = TimeParser.parse_date(reminder_datetime, creation_time)
     except ValueError:
-
         try:
             distance, itx = await _handle_reminder_timestamp_parsing(itx, reminder_datetime)
             time_passed = distance - creation_time
@@ -385,6 +390,8 @@ async def parse_and_create_reminder(
             f"For more info, use {cmd_mention_help} `page:113`.",
             ephemeral=True
         )
+        return
+    except ReminderTimeSelectionMenuTimeOut:
         return
 
     await _create_reminder(itx, distance, creation_time, reminder, user_reminders, False)

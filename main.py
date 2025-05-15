@@ -29,7 +29,7 @@ from resources.utils import debug, codec_options
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 
-BOT_VERSION = "2.0.3.2"
+BOT_VERSION = "2.0.3.3"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [

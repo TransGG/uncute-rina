@@ -137,7 +137,7 @@ class StaffPollsChannelAddon(commands.Cog):
                     polls_channel_reaction_role}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(
-                ModuleKeys.polls_only_channel, *missing)
+                ModuleKeys.polls_only_channel, missing)
 
         if message.channel == polls_channel:
 
@@ -169,7 +169,6 @@ class StaffPollsChannelAddon(commands.Cog):
 
             joiner_msg = await thread.send("user-mention placeholder")
             await joiner_msg.edit(
-                content=f"<@&{polls_channel_reaction_role.id}>",
-                allowed_mentions=discord.AllowedMentions.none()
+                content=f"<@&{polls_channel_reaction_role.id}>"
             )
             await joiner_msg.delete()

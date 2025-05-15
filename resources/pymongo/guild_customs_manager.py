@@ -75,6 +75,26 @@ async def remove_data(
     return result.modified_count > 0, result.did_upsert
 
 
+async def remove_guild_data(
+        async_rina_db: AgnosticDatabase,
+        guild_id: int,
+        database_name: str,
+) -> bool:
+    """
+    Remove all database data for the given guild.
+
+    :param async_rina_db: The database connection.
+    :param guild_id: The id of the guild you want to remove data for.
+    :param database_name: The database to remove data from.
+
+    :return: Whether any documents were deleted.
+    """
+    collection = async_rina_db[database_name]
+    query = {"guild_id": guild_id}
+    result = await collection.delete_one(query)
+    return result.deleted_count > 0
+
+
 async def update_data(
         async_rina_db: AgnosticDatabase,
         guild_id: int,

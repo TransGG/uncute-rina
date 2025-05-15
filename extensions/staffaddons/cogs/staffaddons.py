@@ -57,7 +57,7 @@ class StaffAddons(commands.Cog):
         if selfies_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.selfies_channel_deletion,
-                AttributeKeys.selfies_channel)
+                [AttributeKeys.selfies_channel])
 
         time_now = int(datetime.now().timestamp())  # get time in unix
 
@@ -133,6 +133,9 @@ class StaffAddons(commands.Cog):
     @app_commands.check(is_staff_check)
     @app_commands.command(name="update", description="Update slash-commands")
     async def update_command_tree(self, itx: discord.Interaction):
+        itx.response: discord.InteractionResponse  # noqa
+        itx.followup: discord.Webhook  # noqa
+        await itx.response.defer(ephemeral=True)
         await itx.client.tree.sync()
         itx.client.commandList = await itx.client.tree.fetch_commands()
-        await itx.response.send_message("Updated commands")
+        await itx.followup.send("Updated commands")

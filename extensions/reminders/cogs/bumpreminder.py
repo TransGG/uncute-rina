@@ -24,7 +24,7 @@ class BumpReminder(commands.Cog):
             message.guild, AttributeKeys.bump_reminder_bot)
         if bump_bot is None:
             raise MissingAttributesCheckFailure(
-                ModuleKeys.bump_reminder, AttributeKeys.bump_reminder_bot)
+                ModuleKeys.bump_reminder, [AttributeKeys.bump_reminder_bot])
 
         if message.author.id != bump_bot.id:
             return

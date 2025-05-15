@@ -30,7 +30,7 @@ class BumpReminderObject:
                 AttributeKeys.bump_reminder_role: bump_role}.items()
                 if value is None]
             raise MissingAttributesCheckFailure(
-                ModuleKeys.bump_reminder, *missing)
+                ModuleKeys.bump_reminder, missing)
 
         await bump_channel.send(f"{bump_role.mention} The next bump is ready!",
                                 allowed_mentions=discord.AllowedMentions(roles=[bump_role]))

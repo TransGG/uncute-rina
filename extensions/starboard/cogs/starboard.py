@@ -323,7 +323,7 @@ async def _fetch_starboard_and_original_messages(
             guild_id, AttributeKeys.starboard_channel)
         if starboard_channel is None:
             raise MissingAttributesCheckFailure(
-                AttributeKeys.starboard_channel)
+                ModuleKeys.starboard, [AttributeKeys.starboard_channel])
         star_msg = await starboard_channel.fetch_message(starboard_message)
     else:
         star_msg = starboard_message
@@ -444,13 +444,16 @@ async def _handle_starboard_create_or_update(
             # can't starboard Rina's message
             return
         # noinspection PyProtectedMember
-        blacklist_ids = [c._get_channel().id for c in channel_blacklist]
+        blacklist_ids: list[int] = [(await c._get_channel()).id
+                                    for c in channel_blacklist]
+        # ^ _get_channel is async, but most subclass implementations
+        #  are synchronous.
         if message.channel.id in blacklist_ids:
             return
 
         try:
-            # Try to add the initial starboard emoji to starboarded message
-            # to prevent duplicate entries in starboard.
+            # Try to add the initial starboard emoji to a starboarded
+            #  message to prevent duplicate entries in starboard.
             await message.add_reaction(starboard_emoji)
         except discord.errors.Forbidden:
             # If "Reaction blocked", then maybe message author blocked Rina.
@@ -507,7 +510,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
                     downvote_init_value}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji.id and
@@ -603,7 +606,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
                     downvote_init_value}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         if payload.emoji != starboard_emoji and payload.emoji.name != "❌":
             # only run starboard code if the reactions tracked are actually
@@ -655,7 +658,7 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji}.items()
                 if value is None]
-            raise MissingAttributesCheckFailure(ModuleKeys.starboard, *missing)
+            raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
             # this prevents having two 'message deleted' logs for manual deletion of starboard message

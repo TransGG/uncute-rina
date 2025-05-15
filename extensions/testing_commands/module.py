@@ -3,4 +3,4 @@ from extensions.testing_commands.cogs import TestingCog
 
 
 async def setup(client: Bot):
-    await client.add_cog(TestingCog(client))
+    await client.add_cog(TestingCog())

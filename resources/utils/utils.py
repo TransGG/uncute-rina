@@ -178,7 +178,7 @@ async def log_to_guild(
             return False
         if crash_if_not_found:
             raise MissingAttributesCheckFailure(
-                "log_to_guild", AttributeKeys.log_channel)
+                "log_to_guild", [AttributeKeys.log_channel])
 
         # get current value for log_channel in the guild.
         if guild is None:

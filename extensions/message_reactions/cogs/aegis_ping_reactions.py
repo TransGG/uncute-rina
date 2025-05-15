@@ -21,7 +21,7 @@ class AEGISPingReactionsAddon(commands.Cog):
         if aegis_ping_role is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.aegis_ping_reactions,
-                AttributeKeys.aegis_ping_role)
+                [AttributeKeys.aegis_ping_role])
 
         if aegis_ping_role in message.role_mentions:
             await message.add_reaction("👍")

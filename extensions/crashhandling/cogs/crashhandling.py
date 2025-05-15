@@ -3,6 +3,7 @@ import traceback  # for crash logging
 import sys  # to stop the program (and automatically restart, thanks to pterodactyl)
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from extensions.settings.objects import AttributeKeys
@@ -218,26 +219,44 @@ class CrashHandling(commands.Cog):
         await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
 
     @staticmethod
-    async def on_app_command_error(itx: discord.Interaction[Bot], error: discord.app_commands.AppCommandError):
+    async def on_app_command_error(
+            itx: discord.Interaction[Bot],
+            error: app_commands.AppCommandError
+    ):
         global appcommanderror_cooldown
 
         error_type = type(error)
         if error_type is InsufficientPermissionsCheckFailure:
-            await itx.response.send_message("You do not have the permissions to run this command!",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                "You do not have the permissions to run this command!",
+                ephemeral=True
+            )
             return
         elif error_type is CommandDoesNotSupportDMsCheckFailure:
-            await itx.response.send_message("This command does not work in DMs. Please run this in a server instead.",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                "This command does not work in DMs. Please run this in"
+                " a server instead.",
+                ephemeral=True
+            )
             return
         elif error_type is ModuleNotEnabledCheckFailure:
             error: ModuleNotEnabledCheckFailure
+            cmd_mention_settings = itx.client.get_command_mention("settings")
+            if itx.client.server_settings is None:
+                await itx.response.send_message(
+                    "This module may or may not be enabled. Unfortunately, "
+                    "no server settings have been loaded. Perhaps "
+                    "the bot is still starting up? Admins can attempt to "
+                    "use the /settings command to add new data.",
+                    ephemeral=True
+                )
+                return
+
             if is_admin(itx, itx.user):
-                cmd_mention = itx.client.get_command_mention("settings")
                 cmd_mention_help = itx.client.get_command_mention("help")
                 await itx.response.send_message(
                     f"This module is not enabled! Enable it using the following command:\n"
-                    f"- {cmd_mention} `type:Module` `setting:{error.module_key}` `mode:Enable`\n"
+                    f"- {cmd_mention_settings} `type:Module` `setting:{error.module_key}` `mode:Enable`\n"
                     f"Make sure you also set the required attributes for this module. The required "
                     f"attributes for modules and commands are explained in {cmd_mention_help}.",
                     ephemeral=True)
@@ -248,10 +267,10 @@ class CrashHandling(commands.Cog):
             return
         elif error_type is MissingAttributesCheckFailure:
             error: MissingAttributesCheckFailure
-            cmd_mention = itx.client.get_command_mention("settings")
+            cmd_mention_settings = itx.client.get_command_mention("settings")
             await _reply(itx, f"Your command failed to completely execute because it relied on certain "
                               f"server attributes that were not defined! An admin will have to run "
-                              f"{cmd_mention} `type:Attribute` `setting: ` for the following attribute(s):\n"
+                              f"{cmd_mention_settings} `type:Attribute` `setting: ` for the following attribute(s):\n"
                               f"> " + ', '.join(error.attributes))
             return
 
@@ -271,13 +290,22 @@ class CrashHandling(commands.Cog):
             )
             return
 
-        cmd_mention = itx.client.get_command_mention("update")
-        if isinstance(error, discord.app_commands.errors.CommandNotFound):
-            await _reply(itx, f"This command doesn't exist! Perhaps the commands are unsynced. Ask "
-                              f"{itx.client.bot_owner} ({itx.client.bot_owner.mention}) if she typed {cmd_mention}!")
-        elif isinstance(error, discord.app_commands.errors.CommandSignatureMismatch):
-            await _reply(itx, f"Error: CommandSignatureMismatch. Either Mia used GroupCog instead of Cog, "
-                              f"or this command is out of date (try {cmd_mention})")
+        cmd_mention_settings = itx.client.get_command_mention("update")
+        if isinstance(error, app_commands.errors.CommandNotFound):
+            await _reply(
+                itx,
+                f"This command doesn't exist! Perhaps the commands are"
+                f" unsynced. Ask {itx.client.bot_owner} "
+                f"({itx.client.bot_owner.mention}) if she typed "
+                f"{cmd_mention_settings}!"
+            )
+        elif isinstance(error, app_commands.errors.CommandSignatureMismatch):
+            await _reply(
+                itx,
+                f"Error: CommandSignatureMismatch. Either Mia used GroupCog "
+                f"instead of Cog, or this command is out of date "
+                f"(try {cmd_mention_settings})"
+            )
         else:
             if hasattr(error, 'original'):
                 error_reply = "Error"
