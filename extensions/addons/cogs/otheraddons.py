@@ -5,7 +5,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys
+from extensions.settings.objects import ModuleKeys, AttributeKeys
 from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
 from resources.checks.command_checks import is_in_dms
 from resources.customs import Bot
@@ -279,7 +279,8 @@ class OtherAddons(commands.Cog):
             self, itx: discord.Interaction[Bot], message_id: str,
             upvote_emoji: str, downvote_emoji: str, neutral_emoji: str | None = None
     ):
-        if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(itx.guild, ModuleKeys.poll_reactions):
+        if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(
+                itx.guild, ModuleKeys.poll_reactions):
             # Server specifically disabled this feature.
             raise ModuleNotEnabledCheckFailure(ModuleKeys.poll_reactions)
 
@@ -312,8 +313,9 @@ class OtherAddons(commands.Cog):
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
 
-        blacklisted_channels = itx.client.get_guild_attribute(itx.guild,
-                                                              "pollReactionsBlacklist")
+        blacklisted_channels = itx.client.get_guild_attribute(
+            itx.guild, AttributeKeys.poll_reaction_blacklisted_channels)
+
         if (blacklisted_channels is not None and
                 itx.channel.id in blacklisted_channels):
             errors.append("- :no_entry: You are not allowed to use this command in this channel!")
