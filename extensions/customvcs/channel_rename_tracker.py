@@ -21,11 +21,21 @@ def try_store_vc_rename(channel_id: int, max_rename_limit: int = 2) -> None | in
     """
     Store a new voice channel rename in the storage dictionary.
 
-    :param channel_id: The voice channel that will be renamed.
-    :param max_rename_limit: (optional) The amount of times to allow the channel to be renamed in 10 minutes.
+    .. note::
 
-    :return: ``None`` if the voice channel's rename timestamp was successfully stored; or the channel's first
-     rename timestamp if it was edited more than *max_rename_limit* times in the past 10 minutes.
+        Returns a unix timestamp, so it can be used in discord
+        timestamps like <t:123456789:R>. This timestamp is for the
+        ratelimit, which typically resets 10 minutes after the first
+        channel edit.
+
+    :param channel_id: The voice channel that will be renamed.
+    :param max_rename_limit: (optional) The amount of times to allow the
+     channel to be renamed in 10 minutes.
+
+    :return: ``None`` if the voice channel's rename timestamp was
+     successfully stored; or the channel's first rename timestamp if
+     it was edited more than *max_rename_limit* times in the past
+     10 minutes.
     """
     if channel_id in recently_renamed_vcs:
         # if there have been 2 or more renames for this channel

@@ -134,7 +134,7 @@ class ReminderObject:
 async def _handle_reminder_timestamp_parsing(
         itx: discord.Interaction,
         reminder_datetime: str
-) -> (datetime, discord.Interaction):
+) -> tuple[datetime, discord.Interaction]:  # todo: docstring
     # validate format
     # note: "t" here is lowercase because the reminder_datetime string
     #  gets lowercased...
@@ -183,6 +183,8 @@ async def _handle_reminder_timestamp_parsing(
     except ValueError:
         raise ValueError(
             f"Incorrect format given! I could not convert {reminder_datetime} to format {timestamp_format}")
+
+    # todo: move the above code to a new function
 
     distance = timestamp
     # clarify datetime timezone if necessary
@@ -319,79 +321,21 @@ async def parse_and_create_reminder(
     if len(user_reminders) > 50:
         cmd_mention = itx.client.get_command_mention("reminder reminders")
         cmd_mention1 = itx.client.get_command_mention("reminder remove")
-        await itx.response.send_message(f"Please don't make more than 50 reminders. Use {cmd_mention} to see "
-                                        f"your reminders, and use {cmd_mention1} `item: ` to remove a reminder",
-                                        ephemeral=True)
-        return
+        message = (
+            f"Please don't make more than 50 reminders. Use {cmd_mention} to "
+            f"see your reminders, and use {cmd_mention1} `item: ` to remove "
+            f"a reminder."
+        )
+        raise OverflowError(message)
 
-    cmd_mention_help = itx.client.get_command_mention("help")
-    try:
-        distance, creation_time = await _parse_reminder_time(itx, reminder_datetime)
-    except UnixTimestampInPastException as ex:
-        timestamp_unix = int(ex.distance.timestamp())
-        await itx.response.send_message(
-            "Couldn't make new reminder: \n"
-            "> Your message was interpreted as a unix timestamp, but this timestamp would be before "
-            "the current time!\n"
-            f"Interpreted timestamp: {timestamp_unix} "
-            f"(<t:{timestamp_unix}:F>, <t:{timestamp_unix}:R>).\n"
-            f"Current time: {int(ex.creation_time.timestamp() + 0.5)} "  # round up to ensure t=0.99 > t=0.80
-            f"(<t:{int(ex.creation_time.timestamp() + 0.5)}:F>, <t:{int(ex.creation_time.timestamp() + 0.5)}:R>).\n"
-            f"For more info, use {cmd_mention_help} `page:113`.",
-            ephemeral=True
-        )
-        return
-    except MalformedISODateTimeException as ex:
-        await itx.response.send_message(
-            f"Couldn't make new reminder:\n> {str(ex.inner_exception)}\n"
-            "You can only use a format like [number][letter], or yyyy-mm-ddThh:mm:ss+0000. Some examples:\n"
-            '    "3mo 0.5d", "in 2 hours, 3.5 mins", "1 year and 3 seconds", "3day4hour", "4d1m", '
-            '"2023-12-31T23:59+0100", "<t:12345678>\n'
-            "Words like \"in\" and \"and\" are ignored, so you can use those for readability if you'd like.\n"
-            '    year = y, year, years\n'
-            '    month = mo, month, months\n'
-            '    week = w, week, weeks\n'
-            '    day = d, day, days\n'
-            '    hour = h, hour, hours\n'
-            '    minute = m, min, mins, minute, minutes\n'
-            '    second = s, sec, secs, second, seconds\n'
-            f'For more info, use {cmd_mention_help} `page:113`.',
-            ephemeral=True)
-        return
-    except TimestampParseException as ex:
-        await itx.response.send_message(
-            f"Couldn't make new reminder:\n> {str(ex.inner_exception)}\n\n"
-            "You can make a reminder for days in advance, like so: \"4d12h\", \"4day 12hours\" or "
-            "\"in 3 minutes and 2 seconds\"\n"
-            "You can also use ISO8601 format, like '2023-12-31T23:59+0100', or just '2023-12-31'\n"
-            "Or you can use Unix Epoch format: the amount of seconds since January 1970: '1735155750"
-            "\n"
-            "If you give a time but not a timezone, I don't want you to get reminded at the wrong time, "
-            "so I'll say something went wrong.\n"
-            f"For more info, use {cmd_mention_help} `page:113`.",
-            ephemeral=True
-        )
-        return
-    except MissingQuantityException as ex:
-        await itx.response.send_message(
-            f"Couldn't make new reminder:\n> {str(ex)}\n\n"
-            f"Be sure you start the reminder time with a number like \"4 days\".\n"
-            f"For more info, use {cmd_mention_help} `page:113`.",
-            ephemeral=True
-        )
-        return
-    except MissingUnitException as ex:
-        await itx.response.send_message(
-            f"Couldn't make new reminder:\n> {str(ex)}\n\n"
-            f"Be sure you end the reminder time with a unit like \"4 days\".\n"
-            f"If you intended to use a unix timestamp instead, make sure your timestamp is correct. Any number"
-            f"below 1000000 is parsed in the \"1 day 2 hours\" format, which means not providing a unit will"
-            f"give this error. Note: a unix timestamp of 1000000 is 20 Jan 1970 (<t\\:1000000:D> = <t:1000000:D>)\n"
-            f"For more info, use {cmd_mention_help} `page:113`.",
-            ephemeral=True
-        )
-        return
-    except ReminderTimeSelectionMenuTimeOut:
-        return
+    distance, creation_time = await _parse_reminder_time(
+        itx, reminder_datetime)
 
-    await _create_reminder(itx, distance, creation_time, reminder, user_reminders, False)
+    await _create_reminder(
+        itx,
+        distance,
+        creation_time,
+        reminder,
+        user_reminders,
+        False
+    )

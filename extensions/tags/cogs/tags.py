@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 # ^ to make report tag auto-trigger at most once every 15 minutes
 
 import discord
@@ -24,7 +24,7 @@ from extensions.tags.tags import (
 
 
 # to prevent excessive spamming when multiple people mention staff. A sorta cooldown
-report_message_reminder_unix = 0  # int(datetime.now().timestamp())
+report_message_reminder = datetime.min
 
 
 def _get_enabled_tag_ids(itx) -> set[str]:
@@ -99,8 +99,10 @@ class TagFunctions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        global report_message_reminder_unix
-        if message.guild is None or message.author.bot:
+        global report_message_reminder
+        if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
+            return
+        if message.author.bot:
             return
 
         staff_role_list: list[discord.Role]
@@ -117,11 +119,11 @@ class TagFunctions(commands.Cog):
 
         if any(staff_role_mentions in message.content
                for staff_role_mentions in staff_role_mentions):
-            time_now = int(datetime.now().timestamp())  # get time in unix
-            if time_now - report_message_reminder_unix > 900:  # 15 minutes
+            time_now = datetime.now()
+            if time_now - report_message_reminder > timedelta(minutes=15):
                 tag = create_report_info_tag(ticket_channel)
                 await tag.send_to_channel(message.channel)
-                report_message_reminder_unix = time_now
+                report_message_reminder = time_now
 
     @app_commands.command(name="tag",
                           description="Look up something through a tag")
