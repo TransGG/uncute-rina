@@ -157,7 +157,7 @@ def _get_emoji_from_str(
         return emoji
 
 
-async def _unit_autocomplete(itx: discord.Interaction, current: str):
+async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
@@ -172,7 +172,7 @@ async def _unit_autocomplete(itx: discord.Interaction, current: str):
                 ][:25]
 
 
-async def _role_autocomplete(itx: discord.Interaction, current: str):
+async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /remove-role command."""
     role_options = {
         1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
@@ -227,7 +227,7 @@ class OtherAddons(commands.Cog):
     @app_commands.rename(from_unit='to')
     @app_commands.autocomplete(to_unit=_unit_autocomplete)
     async def convert_unit(
-            self, itx: discord.Interaction, mode: str, from_unit: str, value: float, to_unit: str, public: bool = False
+            self, itx: discord.Interaction[Bot], mode: str, from_unit: str, value: float, to_unit: str, public: bool = False
     ):
         rates = conversion_rates.copy()
         if mode not in rates:
@@ -353,7 +353,7 @@ class OtherAddons(commands.Cog):
     @app_commands.command(name="get_rina_command_mention",
                           description="Sends a hidden command mention for your command")
     @app_commands.describe(command="Command to get a mention for (with/out slash)")
-    async def find_command_mention_itx(self, itx: discord.Interaction, command: str):
+    async def find_command_mention_itx(self, itx: discord.Interaction[Bot], command: str):
         command = command.removeprefix("/").lower()
         try:
             app_commands.commands.validate_name(command)
@@ -379,7 +379,7 @@ class OtherAddons(commands.Cog):
     @app_commands.describe(role_name="The name of the role to remove")
     @app_commands.autocomplete(role_name=_role_autocomplete)
     @module_enabled_check(ModuleKeys.remove_role_command)
-    async def remove_role(self, itx: discord.Interaction, role_name: str):
+    async def remove_role(self, itx: discord.Interaction[Bot], role_name: str):
         itx.user: discord.Member  # noqa
         # It shouldn't be a discord.User cause the app_command check
         #  prevents DMs.

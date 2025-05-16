@@ -1,6 +1,7 @@
 import discord
 
 from resources.views.generics import create_simple_button
+from resources.customs import Bot
 
 
 class TimeOfDaySelection(discord.ui.View):
@@ -16,7 +17,7 @@ class TimeOfDaySelection(discord.ui.View):
 
             self.add_item(create_simple_button(option, discord.ButtonStyle.green, callback))
 
-    async def callback(self, interaction: discord.Interaction, label: str):
+    async def callback(self, interaction: discord.Interaction[Bot], label: str):
         self.value = label
         self.return_interaction = interaction
         self.stop()

@@ -93,7 +93,7 @@ class TestingCog(commands.GroupCog, name="testing"):
     )
     @app_commands.check(is_staff_check)
     async def send_fake_watchlist_mod_log(
-            self, itx: discord.Interaction, target: discord.User, reason: str = "",
+            self, itx: discord.Interaction[Bot], target: discord.User, reason: str = "",
             rule: str = None, private_notes: str = "", role_changes: str = ""
     ):
         staff_logs_category = itx.client.get_guild_attribute(
@@ -121,13 +121,13 @@ class TestingCog(commands.GroupCog, name="testing"):
     @app_commands.describe(page_count="The amount of pages to send/test")
     @app_commands.check(is_staff_check)
     async def send_pageview_test_embed(
-            self, itx: discord.Interaction, page_count: app_commands.Range[int, 1, 10000] = 40
+            self, itx: discord.Interaction[Bot], page_count: app_commands.Range[int, 1, 10000] = 40
     ):
         def get_chars(length: int):
             letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/   "
             return (''.join(random.choice(letters) for _ in range(length))).strip()
 
-        async def update_test_page(itx1: discord.Interaction, view1: PageView):
+        async def update_test_page(itx1: discord.Interaction[Bot], view1: PageView):
             embed = view1.pages[view1.page]
             await itx1.response.edit_message(
                 content="updated a" + str(view1.page),
@@ -163,7 +163,7 @@ class TestingCog(commands.GroupCog, name="testing"):
     @app_commands.command(name="send_srmod_appeal_test", description="Send a test embed of a ban appeal")
     @app_commands.describe(username="The username you want to fill in")
     @app_commands.check(is_staff_check)
-    async def send_srmod_appeal_test(self, itx: discord.Interaction, username: str):
+    async def send_srmod_appeal_test(self, itx: discord.Interaction[Bot], username: str):
         embed: discord.Embed = discord.Embed(title="New Ban Appeal")
         embed.add_field(name="Which of the following are you appealing?",
                         value="Discord Ban")

@@ -5,6 +5,8 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.customs import Bot
+
 from extensions.addons.equaldexregion import EqualDexRegion
 from extensions.addons.views.equaldex_additionalinfo import EqualDexAdditionalInfo
 from extensions.addons.views.math_sendpublicbutton import SendPublicButtonMath
@@ -20,7 +22,7 @@ class SearchAddons(commands.Cog):
 
     @app_commands.command(name="equaldex", description="Find info about LGBTQ+ laws in different countries!")
     @app_commands.describe(country_id="What country do you want to know more about? (GB, US, AU, etc.)")
-    async def equaldex(self, itx: discord.Interaction, country_id: str):
+    async def equaldex(self, itx: discord.Interaction[Bot], country_id: str):
         illegal_characters = ""
         for char in country_id.lower():
             if char not in "abcdefghijklmnopqrstuvwxyz":
@@ -111,7 +113,7 @@ class SearchAddons(commands.Cog):
         await itx.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @app_commands.command(name="math", description="Ask Wolfram Alpha a question")
-    async def math(self, itx: discord.Interaction, query: str):
+    async def math(self, itx: discord.Interaction[Bot], query: str):
         # todo: shorten function / split, and re-investigate the API docs to see if I can parse stuff better
         await itx.response.defer(ephemeral=True)
         if query.lower() in ["help", "what is this", "what is this?"]:

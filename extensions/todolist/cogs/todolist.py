@@ -2,6 +2,8 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.customs import Bot
+
 
 class TodoList(commands.Cog):
     def __init__(self):
@@ -15,7 +17,7 @@ class TodoList(commands.Cog):
         discord.app_commands.Choice(name='Remove to-do', value=2),
         discord.app_commands.Choice(name='Check', value=3)
     ])
-    async def todo(self, itx: discord.Interaction, mode: int, todo: str = None):
+    async def todo(self, itx: discord.Interaction[Bot], mode: int, todo: str = None):
         if mode == 1:  # Add item to to-do list
             if todo is None:
                 cmd_mention = itx.client.get_command_mention("todo")

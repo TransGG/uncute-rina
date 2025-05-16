@@ -5,14 +5,14 @@ import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
-from extensions.settings.objects.server_settings import ParseError
-from extensions.watchlist.local_watchlist import refetch_watchlist_threads
 from resources.checks import (
     is_admin_check, not_in_dms_check, module_enabled_check,
     MissingAttributesCheckFailure,
 )
 
 from extensions.help.cogs import send_help_menu
+from extensions.settings.objects.server_settings import ParseError
+from extensions.watchlist.local_watchlist import refetch_watchlist_threads
 from extensions.settings.objects import (
     ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules,
     TypeAutocomplete, ModeAutocomplete,
@@ -45,7 +45,7 @@ def get_attribute_autocomplete_mode(
 
 @app_commands.check(is_admin_check)
 async def _setting_autocomplete(
-        itx: discord.Interaction, current: str
+        itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     itx.namespace.type = typing.cast(str | None, itx.namespace.type)
 
@@ -76,7 +76,7 @@ async def _setting_autocomplete(
 
 @app_commands.check(is_admin_check)
 async def _mode_autocomplete(
-        itx: discord.Interaction, current: str
+        itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     itx.namespace.type = typing.cast(str | None, itx.namespace.type)
     itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)
@@ -116,7 +116,7 @@ async def _mode_autocomplete(
 
 @app_commands.check(is_admin_check)
 async def _value_autocomplete(
-        itx: discord.Interaction, current: str
+        itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     itx.namespace.type = typing.cast(str | None, itx.namespace.type)
     itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)
@@ -723,7 +723,7 @@ class SettingsCog(commands.Cog):
     @app_commands.check(not_in_dms_check)
     async def settings(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             setting_type: str,
             setting: str | None = None,
             mode: str | None = None,

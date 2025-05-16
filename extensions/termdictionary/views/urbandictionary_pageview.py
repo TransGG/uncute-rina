@@ -1,5 +1,7 @@
 import discord
 
+from resources.customs import Bot
+
 
 class UrbanDictionary_PageView(discord.ui.View):
     def __init__(self, pages, timeout=None):
@@ -11,7 +13,7 @@ class UrbanDictionary_PageView(discord.ui.View):
         self.pages = pages
 
     @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def previous(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         self.page -= 1
         if self.page < 0:
             self.page = len(self.pages) - 1
@@ -20,7 +22,7 @@ class UrbanDictionary_PageView(discord.ui.View):
         await itx.response.edit_message(embed=embed)
 
     @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def next(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         self.page += 1
         if self.page >= (len(self.pages)):
             self.page = 0

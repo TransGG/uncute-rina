@@ -101,7 +101,7 @@ async def _send_crash_message(
     )
 
 
-async def _reply(itx: discord.Interaction, message: str) -> None:
+async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
     """
     A helper function to handle replying to an interaction by either using :py:func:`~discord.Webhook.send` or
     :py:func:`~discord.InteractionResponse.send_message`, depending on if a response has been responded to already.

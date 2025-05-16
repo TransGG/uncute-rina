@@ -145,7 +145,7 @@ async def _choose_and_send_compliment(
                                                                                  roles=False, replied_user=False))
 
 
-async def _send_confirm_gender_modal(client: Bot, itx: discord.Interaction, user: discord.User | discord.Member):
+async def _send_confirm_gender_modal(client: Bot, itx: discord.Interaction[Bot], user: discord.User | discord.Member):
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(

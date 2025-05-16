@@ -63,7 +63,7 @@ class MemberData(commands.Cog):
                            public="Send the output to everyone in the channel")
     @app_commands.check(not_in_dms_check)
     async def get_member_data(
-            self, itx: discord.Interaction, lower_bound: str, upper_bound: str = None, doubles: bool = False,
+            self, itx: discord.Interaction[Bot], lower_bound: str, upper_bound: str = None, doubles: bool = False,
             public: bool = False
     ):
         # todo: split function into multiple subfunctions.

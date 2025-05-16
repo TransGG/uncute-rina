@@ -21,7 +21,7 @@ class StaffAddons(commands.Cog):
     @app_commands.command(name="say", description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?",
                            reply_to_interaction="Show who sent the message?")
-    async def say(self, itx: discord.Interaction, text: str, reply_to_interaction: bool = False):
+    async def say(self, itx: discord.Interaction[Bot], text: str, reply_to_interaction: bool = False):
         if reply_to_interaction:
             await itx.response.send_message(text, ephemeral=False, allowed_mentions=discord.AllowedMentions.none())
             return

@@ -132,7 +132,7 @@ class ReminderObject:
 
 
 async def _handle_reminder_timestamp_parsing(
-        itx: discord.Interaction,
+        itx: discord.Interaction[Bot],
         reminder_datetime: str
 ) -> tuple[datetime, discord.Interaction]:  # todo: docstring
     # validate format
@@ -217,7 +217,7 @@ async def _handle_reminder_timestamp_parsing(
     return distance, itx
 
 
-async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str) -> tuple[datetime, datetime]:
+async def _parse_reminder_time(itx: discord.Interaction[Bot], reminder_datetime: str) -> tuple[datetime, datetime]:
     """
     Parse a datetime string: relative to today (2d 11h); a ISO8601 timestamp; or a unix timestamp. It outputs
     the reminder's datetime and interaction's creation time with timezone awareness. If the ISO timestamp gives
@@ -267,7 +267,7 @@ async def _parse_reminder_time(itx: discord.Interaction, reminder_datetime: str)
 
 
 async def _create_reminder(
-        itx: discord.Interaction,
+        itx: discord.Interaction[Bot],
         distance: datetime,
         creation_time: datetime, reminder: str,
         db_data: list[ReminderDict],
@@ -307,7 +307,7 @@ async def _create_reminder(
 
 
 async def parse_and_create_reminder(
-        itx: discord.Interaction,
+        itx: discord.Interaction[Bot],
         reminder_datetime: str,
         reminder: str
 ):

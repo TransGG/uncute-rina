@@ -1,6 +1,7 @@
 import discord
 import random  # for random help page jump page number placeholder
 
+from resources.customs import Bot
 from resources.modals.generics import SingleLineModal
 from resources.utils.stringhelper import replace_string_command_mentions
 from resources.views.generics import PageView
@@ -9,8 +10,10 @@ from extensions.help.utils import generate_help_page_embed, get_nearest_help_pag
 from extensions.help.helppage import HelpPage
 
 
-class HelpPageView(PageView):
-    async def update_page(self, itx: discord.Interaction, view: PageView) -> None:
+class HelpPageView(PageView):  # todo: add "override" to all overriding funcs
+    async def update_page(
+            self, itx: discord.Interaction[Bot], view: PageView
+    ) -> None:
         page_key = list(self.pages)[self.page]
         embed = generate_help_page_embed(self.pages[page_key], page_key, itx.client)
         await itx.response.edit_message(
@@ -20,13 +23,13 @@ class HelpPageView(PageView):
 
     # region buttons
     @discord.ui.button(emoji="📋", style=discord.ButtonStyle.gray)
-    async def go_to_index(self, itx: discord.Interaction, _: discord.ui.Button):
+    async def go_to_index(self, itx: discord.Interaction[Bot], _: discord.ui.Button):
         self.page = 2
         self.update_button_colors()
         await self.update_page(itx, self)
 
     @discord.ui.button(emoji="🔢", style=discord.ButtonStyle.gray)
-    async def jump_to_page(self, itx: discord.Interaction, _: discord.ui.Button):
+    async def jump_to_page(self, itx: discord.Interaction[Bot], _: discord.ui.Button):
         help_page_indexes = list(self.pages)
         jump_page_modal = SingleLineModal(
             "Jump to a help page",

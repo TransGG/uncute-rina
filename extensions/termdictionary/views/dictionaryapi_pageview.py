@@ -1,6 +1,7 @@
 import discord
 
 from extensions.termdictionary.modals import DictionaryAPISendPageModal
+from resources.customs import Bot
 
 
 class DictionaryApi_PageView(discord.ui.View):
@@ -13,7 +14,7 @@ class DictionaryApi_PageView(discord.ui.View):
         self.pages_detailed = pages_detailed
 
     @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def previous(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         self.page -= 1
         if self.page < 0:
             self.page = len(self.pages) - 1
@@ -22,7 +23,7 @@ class DictionaryApi_PageView(discord.ui.View):
         await itx.response.edit_message(embed=embed)
 
     @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def next(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         self.page += 1
         if self.page >= (len(self.pages)):
             self.page = 0
@@ -36,7 +37,7 @@ class DictionaryApi_PageView(discord.ui.View):
                                             ephemeral=True)
 
     @discord.ui.button(label='Send publicly', style=discord.ButtonStyle.gray)
-    async def send_publicly(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def send_publicly(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         self.value = 1
         embed = self.pages[self.page]
         await itx.response.edit_message(content="Sent successfully!", embed=None)
@@ -45,7 +46,7 @@ class DictionaryApi_PageView(discord.ui.View):
         self.stop()
 
     @discord.ui.button(label='Send one entry', style=discord.ButtonStyle.gray)
-    async def send_single_entry(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def send_single_entry(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         self.value = 2
 
         send_one = DictionaryAPISendPageModal(self.pages_detailed[self.page])

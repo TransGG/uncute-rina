@@ -235,7 +235,7 @@ class FunAddons(commands.Cog):
                            advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; "
                                     "'help' for more")
     async def roll(
-            self, itx: discord.Interaction,
+            self, itx: discord.Interaction[Bot],
             dice: app_commands.Range[int, 1, 999999],
             faces: app_commands.Range[int, 1, 999999],
             public: bool = False, mod: int | None = None, advanced: str | None = None

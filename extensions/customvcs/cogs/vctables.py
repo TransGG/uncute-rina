@@ -372,7 +372,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Check owners', value=3)
     ])
     @module_enabled_check(ModuleKeys.vc_tables)
-    async def edit_vctable_owners(self, itx: discord.Interaction, mode: int, user: discord.Member | None = None):
+    async def edit_vctable_owners(self, itx: discord.Interaction[Bot], mode: int, user: discord.Member | None = None):
         if itx.user == user and mode != 3:
             if mode == 1:
                 await itx.response.send_message("You can't set yourself as owner!", ephemeral=True)
@@ -449,7 +449,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Check speakers', value=3)
     ])
     @module_enabled_check(ModuleKeys.vc_tables)
-    async def edit_vctable_speakers(self, itx: discord.Interaction, mode: int, user: discord.Member | None = None):
+    async def edit_vctable_speakers(self, itx: discord.Interaction[Bot], mode: int, user: discord.Member | None = None):
         if itx.user == user and mode != 3:
             await itx.response.send_message("You can't edit your own speaking permissions!", ephemeral=True)
             return
@@ -533,7 +533,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Check participants', value=3)
     ])
     @module_enabled_check(ModuleKeys.vc_tables)
-    async def edit_vctable_participants(self, itx: discord.Interaction, mode: int, user: discord.Member | None = None):
+    async def edit_vctable_participants(self, itx: discord.Interaction[Bot], mode: int, user: discord.Member | None = None):
         if itx.user == user and mode != 3:
             await itx.response.send_message("You can't edit your own participation permissions!", ephemeral=True)
             return
@@ -627,7 +627,7 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
     ])
     @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_muted_participants(
-            self, itx: discord.Interaction, mode: int, user: discord.Member | None = None
+            self, itx: discord.Interaction[Bot], mode: int, user: discord.Member | None = None
     ):
         if itx.user == user and mode != 3:
             await itx.response.send_message("You can't " + "un" * (mode == 2) + "mute yourself!", ephemeral=True)

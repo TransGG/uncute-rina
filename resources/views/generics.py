@@ -2,6 +2,8 @@ from __future__ import annotations
 import discord
 import typing
 
+from resources.customs import Bot
+
 
 def create_simple_button(
         label: str,
@@ -93,7 +95,7 @@ class PageView(discord.ui.View):
             self.page == self.max_page_index and not self.loop_around_pages
         )
 
-    async def update_page(self, itx: discord.Interaction, view: PageView):
+    async def update_page(self, itx: discord.Interaction[Bot], view: PageView):
         """
         Update the page message. This typically involves calculating the message content for the message and updating
         the original message.

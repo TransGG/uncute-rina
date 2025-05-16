@@ -34,7 +34,7 @@ def _get_enabled_tag_ids(itx) -> set[str]:
     return set(default_tags + custom_tags)
 
 
-async def _tag_autocomplete(itx: discord.Interaction, current: str):
+async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /tag command."""
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
@@ -135,7 +135,7 @@ class TagFunctions(commands.Cog):
     @module_enabled_check(ModuleKeys.tags)
     async def tag(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             tag: str,
             public: bool = True,
             anonymous: bool = True

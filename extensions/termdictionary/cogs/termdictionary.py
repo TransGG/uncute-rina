@@ -7,6 +7,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.customs import Bot
 from resources.checks import is_staff_check  # for staff dictionary commands
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
 from resources.utils.utils import log_to_guild
@@ -17,7 +18,7 @@ from extensions.termdictionary.views import DictionaryApi_PageView, UrbanDiction
 del_separators_table = str.maketrans({" ": "", "-": "", "_": ""})
 
 
-async def dictionary_autocomplete(itx: discord.Interaction, current: str):
+async def dictionary_autocomplete(itx: discord.Interaction[Bot], current: str):
     def simplify(q):
         if type(q) is str:
             return q.lower().translate(del_separators_table)
@@ -93,7 +94,7 @@ class TermDictionary(commands.Cog):
         discord.app_commands.Choice(name='Search from urbandictionary.com', value=8),
     ])
     @app_commands.autocomplete(term=dictionary_autocomplete)
-    async def dictionary(self, itx: discord.Interaction, term: str, public: bool = False, source: int = 1):
+    async def dictionary(self, itx: discord.Interaction[Bot], term: str, public: bool = False, source: int = 1):
         # todo: rewrite this whole command.
         #  - Make the sources an enum.
         #  - Allow going to the next source if you're not satisfied with a dictionary's result.
@@ -422,7 +423,7 @@ class TermDictionary(commands.Cog):
         term="This is the main word for the dictionary entry: Egg, Hormone Replacement Therapy (HRT), (case sens.)",
         definition="Give this term a definition",
         synonyms="Add synonyms (SEPARATE WITH \", \")")
-    async def define(self, itx: discord.Interaction, term: str, definition: str, synonyms: str = ""):
+    async def define(self, itx: discord.Interaction[Bot], term: str, definition: str, synonyms: str = ""):
         def simplify(q):
             if type(q) is str:
                 return q.lower().translate(del_separators_table)
@@ -472,7 +473,7 @@ class TermDictionary(commands.Cog):
         term="This is the main word for the dictionary entry (case sens.) Example: Egg, Hormone "
              "Replacement Therapy (HRT), etc.",
         definition="Redefine this definition")
-    async def redefine(self, itx: discord.Interaction, term: str, definition: str):
+    async def redefine(self, itx: discord.Interaction[Bot], term: str, definition: str):
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -493,7 +494,7 @@ class TermDictionary(commands.Cog):
     @admin.command(name="undefine", description="Remove a dictionary entry for a word!")
     @app_commands.describe(
         term="What word do you need to undefine (case sensitive). Example: Egg, Hormone Replacement Therapy (HRT), etc")
-    async def undefine(self, itx: discord.Interaction, term: str):
+    async def undefine(self, itx: discord.Interaction[Bot], term: str):
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -518,7 +519,7 @@ class TermDictionary(commands.Cog):
         discord.app_commands.Choice(name='Add a synonym', value=1),
         discord.app_commands.Choice(name='Remove a synonym', value=2),
     ])
-    async def edit_synonym(self, itx: discord.Interaction, term: str, mode: int, synonym: str):
+    async def edit_synonym(self, itx: discord.Interaction[Bot], term: str, mode: int, synonym: str):
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)

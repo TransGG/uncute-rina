@@ -2,6 +2,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.customs import Bot
 from resources.utils import is_admin
 from resources.utils.stringhelper import replace_string_command_mentions
 
@@ -10,7 +11,7 @@ from extensions.help.utils import get_nearest_help_pages_from_page, generate_hel
 from extensions.help.views.helppage import HelpPageView
 
 
-async def send_help_menu(itx: discord.Interaction, requested_page: int = FIRST_PAGE):
+async def send_help_menu(itx: discord.Interaction[Bot], requested_page: int = FIRST_PAGE):
     if requested_page not in help_pages:
         min_index, max_index = get_nearest_help_pages_from_page(requested_page, list(help_pages))
         relative_page_location_details = f"(nearest pages are `{min_index}` and `{max_index}`)."
@@ -41,7 +42,7 @@ async def send_help_menu(itx: discord.Interaction, requested_page: int = FIRST_P
                                     ephemeral=True)
 
 
-async def _help_page_autocomplete(itx: discord.Interaction, current: str) -> list[app_commands.Choice[int]]:
+async def _help_page_autocomplete(itx: discord.Interaction[Bot], current: str) -> list[app_commands.Choice[int]]:
     results = []
     added_pages = []
 
@@ -98,11 +99,11 @@ class HelpCommand(commands.Cog):
     @app_commands.command(name="help", description="A help command to learn more about me!")
     @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")
     @app_commands.autocomplete(page=_help_page_autocomplete)
-    async def help(self, itx: discord.Interaction, page: int = FIRST_PAGE):
+    async def help(self, itx: discord.Interaction[Bot], page: int = FIRST_PAGE):
         await send_help_menu(itx, page)
 
     @app_commands.command(name="commands", description="A help command to learn more about me!")
     @app_commands.describe(page="What page do you want to jump to? (useful if sharing commands)")
     @app_commands.autocomplete(page=_help_page_autocomplete)
-    async def commands(self, itx: discord.Interaction, page: int = FIRST_PAGE):
+    async def commands(self, itx: discord.Interaction[Bot], page: int = FIRST_PAGE):
         await send_help_menu(itx, page)

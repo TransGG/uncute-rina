@@ -54,7 +54,7 @@ class StickerStats(commands.Cog):
     @app_commands.rename(sticker_name="sticker")
     @app_commands.describe(sticker_name="Sticker you want to get data of")
     @app_commands.check(not_in_dms_check)
-    async def get_sticker_data(self, itx: discord.Interaction, sticker_name: str):
+    async def get_sticker_data(self, itx: discord.Interaction[Bot], sticker_name: str):
         if ":" in sticker_name:
             # idk why people would, but idk the format for stickers so ill just assume <name:id> or something idk
             sticker_name = sticker_name.strip().split(":")[1][:-1]
@@ -96,7 +96,7 @@ class StickerStats(commands.Cog):
                            used_max="Up to how many times may the sticker have been used? (default: 10)")
     @app_commands.check(not_in_dms_check)
     async def get_unused_stickers(
-            self, itx: discord.Interaction, public: bool = False,
+            self, itx: discord.Interaction[Bot], public: bool = False,
             max_results: int = 10, used_max: int = sys.maxsize
     ):
         await itx.response.defer(ephemeral=not public)

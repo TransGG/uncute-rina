@@ -97,7 +97,7 @@ class CustomTag:
 
     async def _handle_send_publicly(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             anonymous: bool,
             report_to_staff: bool
     ) -> None:
@@ -139,7 +139,7 @@ class CustomTag:
 
     async def _handle_send_privately(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             anonymous: bool,
             report_to_staff: bool
     ) -> None:
@@ -188,7 +188,7 @@ def create_report_info_tag(
 
 
 async def send_report_info(
-        itx: discord.Interaction, public: bool, anonymous: bool,
+        itx: discord.Interaction[Bot], public: bool, anonymous: bool,
 ) -> None:
     """Helper to send report tag."""
     ticket_channel: discord.abc.Messageable | None = get_mod_ticket_channel(

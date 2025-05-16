@@ -5,6 +5,7 @@ import discord.ext.commands as commands
 from extensions.toneindicator.searchmode import SearchMode
 from resources.customs import Bot
 
+
 tone_indicators: dict[str, list[str]] = {
     "excited": ["/!", "/exc"],
     "alterous": ["/a", "/ars"],
@@ -324,7 +325,7 @@ class ToneIndicator(commands.Cog):
     @app_commands.allowed_contexts(guilds=True, private_channels=True, dms=True)
     async def toneindicator(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             mode: int,
             string: str,
             public: bool = False

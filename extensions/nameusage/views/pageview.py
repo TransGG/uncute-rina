@@ -1,6 +1,7 @@
 import discord
 
 from extensions.nameusage.modals.getnamemodal import GetNameModal
+from resources.customs import Bot
 
 
 # todo: use Generics.PageView
@@ -27,7 +28,7 @@ class GetTopPageView(discord.ui.View):
     # stop the View from listening to more input.
     # We also send the user an ephemeral message that we're confirming their choice.
     @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-    async def previous(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def previous(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         # self.value = "previous"
         self.page -= 1
         if self.page < 0:
@@ -36,7 +37,7 @@ class GetTopPageView(discord.ui.View):
         await itx.response.edit_message(embed=embed)
 
     @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-    async def next(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def next(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         self.page += 1
         if self.page >= int(len(self.pages) / 2):
             self.page = 0
@@ -44,7 +45,7 @@ class GetTopPageView(discord.ui.View):
         await itx.response.edit_message(embed=embed)
 
     @discord.ui.button(label='Find my name', style=discord.ButtonStyle.blurple)
-    async def find_name(self, itx: discord.Interaction, _button: discord.ui.Button):
+    async def find_name(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         send_one = GetNameModal(self.pages, self.embed_title)
         await itx.response.send_modal(send_one)
         await send_one.wait()

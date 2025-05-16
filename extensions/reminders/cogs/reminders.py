@@ -3,6 +3,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.reminders.objects import parse_and_create_reminder
+from resources.customs import Bot
 
 
 class RemindersCog(commands.GroupCog, name="reminder"):
@@ -13,7 +14,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
     @app_commands.describe(reminder_datetime="When would you like me to remind you? (1d2h, 5 weeks, 1mo10d)",
                            reminder="What would you like me to remind you of?")
     @app_commands.rename(reminder_datetime='time')
-    async def remindme(self, itx: discord.Interaction, reminder_datetime: str, reminder: str):
+    async def remindme(self, itx: discord.Interaction[Bot], reminder_datetime: str, reminder: str):
         # Supported formats:
         # - "next thursday at 3pm"
         # - "tomorrow"
@@ -104,7 +105,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
 
     @app_commands.command(name="reminders", description="Check your list of reminders!")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
-    async def reminders(self, itx: discord.Interaction, item: int = None):
+    async def reminders(self, itx: discord.Interaction[Bot], item: int = None):
         collection = itx.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
@@ -160,7 +161,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
 
     @app_commands.command(name="remove", description="Remove of your reminders")
     @app_commands.describe(item="Which reminder would you like to know more about? (use reminder-ID)")
-    async def remove(self, itx: discord.Interaction, item: int):
+    async def remove(self, itx: discord.Interaction[Bot], item: int):
         collection = itx.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)

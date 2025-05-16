@@ -6,6 +6,7 @@ import discord.ext.commands as commands
 
 from extensions.nameusage.views.pageview import GetTopPageView
 from resources.checks import not_in_dms_check
+from resources.customs import Bot
 
 
 class NameUsage(commands.GroupCog, name="nameusage", description="Get data about which names are used in which server"):
@@ -19,7 +20,7 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
         discord.app_commands.Choice(name='Search nicks and usernames', value=3),
     ])
     @app_commands.check(not_in_dms_check)
-    async def nameusage_gettop(self, itx: discord.Interaction, mode: int):
+    async def nameusage_gettop(self, itx: discord.Interaction[Bot], mode: int):
         await itx.response.defer(ephemeral=True)
         sections = {}
         for member in itx.guild.members:
@@ -130,7 +131,7 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
         discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
     ])
     @app_commands.check(not_in_dms_check)
-    async def nameusage_name(self, itx: discord.Interaction, name: str, search_type: int, public: bool = False):
+    async def nameusage_name(self, itx: discord.Interaction[Bot], name: str, search_type: int, public: bool = False):
         await itx.response.defer(ephemeral=not public)
         count = 0
         type_string = ""
