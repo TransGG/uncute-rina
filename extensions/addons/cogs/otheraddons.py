@@ -227,7 +227,13 @@ class OtherAddons(commands.Cog):
     @app_commands.rename(from_unit='to')
     @app_commands.autocomplete(to_unit=_unit_autocomplete)
     async def convert_unit(
-            self, itx: discord.Interaction[Bot], mode: str, from_unit: str, value: float, to_unit: str, public: bool = False
+            self,
+            itx: discord.Interaction[Bot],
+            mode: str,
+            from_unit: str,
+            value: float,
+            to_unit: str,
+            public: bool = False
     ):
         rates = conversion_rates.copy()
         if mode not in rates:

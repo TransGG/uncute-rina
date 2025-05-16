@@ -52,16 +52,18 @@ def _is_vctable_authorized(channel, guild: discord.Guild) -> bool:
 
 
 def _is_vctable_locked(channel, guild: discord.Guild) -> bool:
-    if guild.guild.default_role not in channel.overwrites:
+    if guild.default_role not in channel.overwrites:
         return False
-    return channel.overwrites[guild.guild.default_role].view_channel is False
+    return channel.overwrites[guild.default_role].view_channel is False
 
 # endregion Permission checks
 
 
 def _get_vctable_members_with_predicate(
         channel: discord.VoiceChannel,
-        predicate: Callable[[discord.VoiceChannel, discord.Member | discord.Role], bool]
+        predicate: Callable[
+            [discord.VoiceChannel, discord.Member | discord.Role
+             | discord.Object], bool]
 ):
     outputs = []
     for target in channel.overwrites:
@@ -83,8 +85,8 @@ async def _get_current_voice_channel(itx: discord.Interaction[Bot], action: str,
      ``None`` if the user is not in a custom voice channel.
     :raise MissingAttributesCheckFailure: If any guild attributes are missing.
     """
-    vc_hub: discord.VoiceChannel
-    vc_category: discord.CategoryChannel
+    vc_hub: discord.VoiceChannel | None
+    vc_category: discord.CategoryChannel | None
     blacklisted_channels: list[discord.VoiceChannel]
     vc_hub, vc_category, blacklisted_channels, vc_blacklist_prefix = itx.client.get_guild_attribute(
         itx.guild,
@@ -160,7 +162,10 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
                            name="Give the channel a different name (api efficiency)")
     @module_enabled_check(ModuleKeys.vc_tables)
     async def vctable_create(
-            self, itx: discord.Interaction[Bot], owners: str = "", name: app_commands.Range[str, 3, 35] | None = None
+            self,
+            itx: discord.Interaction[Bot],
+            owners: str = "",
+            name: app_commands.Range[str, 3, 35] | None = None
     ):
         vctable_prefix: str | None = itx.client.get_guild_attribute(itx.guild,
                                                                     AttributeKeys.vctable_prefix)
@@ -372,7 +377,12 @@ class VcTables(commands.GroupCog, name="vctable", description="Make your voice c
         discord.app_commands.Choice(name='Check owners', value=3)
     ])
     @module_enabled_check(ModuleKeys.vc_tables)
-    async def edit_vctable_owners(self, itx: discord.Interaction[Bot], mode: int, user: discord.Member | None = None):
+    async def edit_vctable_owners(
+            self,
+            itx: discord.Interaction[Bot],
+            mode: int,
+            user: discord.Member | None = None
+    ):
         if itx.user == user and mode != 3:
             if mode == 1:
                 await itx.response.send_message("You can't set yourself as owner!", ephemeral=True)
