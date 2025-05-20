@@ -274,11 +274,16 @@ class OtherAddons(commands.Cog):
             )
             return
         if mode == "currency":
-            # more info: https://docs.openexchangerates.org/reference/latest-json  # noqa
-            api_key = itx.client.api_tokens['Open Exchange Rates']
-            # todo: use requests `params`
+            # more info:
+            #  https://docs.openexchangerates.org/reference/latest-json
+            params = {
+                "appid": itx.client.api_tokens['Open Exchange Rates'],
+                "show_alternative": "true",
+            }
             response_api = requests.get(
-                f"https://openexchangerates.org/api/latest.json?app_id={api_key}&show_alternative=true").text
+                f"https://openexchangerates.org/api/latest.json",
+                params=params
+            ).text
             data = json.loads(response_api)
             if data.get("error", 0):
                 await itx.response.send_message(

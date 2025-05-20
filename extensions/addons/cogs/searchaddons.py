@@ -49,7 +49,7 @@ class SearchAddons(commands.Cog):
         querystring = {
             "regionid": country_id,
             "apiKey": equaldex_key,
-            # "formatted": True,
+            # "formatted": "true",
         }
         response = requests.get(
             "https://www.equaldex.com/api/region",
@@ -185,9 +185,14 @@ class SearchAddons(commands.Cog):
         # pluses are interpreted as a space (`%20`) in urls. In LaTeX,
         #  that can mean multiply.
         api_key = itx.client.api_tokens['Wolfram Alpha']
+        params = {
+            "appid": api_key,
+            "input": query,
+            "output": "json",
+        }
         try:
             data = requests.get(
-                f"https://api.wolframalpha.com/v2/query?appid={api_key}&input={query}&output=json").json()
+                f"https://api.wolframalpha.com/v2/query", params=params).json()
         except requests.exceptions.JSONDecodeError:
             await itx.followup.send(
                 "Your input gave a malformed result! Perhaps it took "

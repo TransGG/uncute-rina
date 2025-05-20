@@ -69,7 +69,8 @@ async def dictionary_autocomplete(itx: discord.Interaction[Bot], current: str):
                     terms.append(result["word"].capitalize())
     # same for Urban Dictionary, searching only if there are no results for the others
     if len(terms) < 1:
-        response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={current}').text
+        params = {"term": current}
+        response_api = requests.get(f'https://api.urbandictionary.com/v0/define', params=params).text
         data = json.loads(response_api)['list']
         for result in data:
             if result["word"].capitalize() + " ([from UD])" not in terms:
@@ -458,7 +459,8 @@ class TermDictionary(commands.Cog):
         if source == 7 or source == 8:
             if not itx.response.is_done():
                 await itx.response.defer(ephemeral=True)
-            response_api = requests.get(f'https://api.urbandictionary.com/v0/define?term={term.lower()}').text
+            params = {"term": term.lower()}
+            response_api = requests.get(f'https://api.urbandictionary.com/v0/define', params=params).text
             # who decided to put the output into a dictionary with a list named 'list'? {"list":[{},{},{}]}
             data = json.loads(response_api)['list']
             if len(data) == 0:
