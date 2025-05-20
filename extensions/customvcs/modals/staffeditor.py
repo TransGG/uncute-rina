@@ -1,5 +1,6 @@
 import discord
 
+from resources.customs import Bot
 from resources.utils.utils import log_to_guild
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
@@ -37,7 +38,7 @@ class CustomVcStaffEditorModal(
         self.add_item(self.name)
         self.add_item(self.limit)
 
-    async def on_submit(self, itx: discord.Interaction):
+    async def on_submit(self, itx: discord.Interaction[Bot]):
         name = str(self.name)
         if name == "":
             name = None

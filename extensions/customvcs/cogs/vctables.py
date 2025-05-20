@@ -396,7 +396,7 @@ class VcTables(
         name="disband",
         description="reset permissions and convert vctable back to customvc"
     )
-    async def vctable_disband(self, itx: discord.Interaction):
+    async def vctable_disband(self, itx: discord.Interaction[Bot]):
         vctable_prefix: str | None = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.vctable_prefix)
         if vctable_prefix is None:

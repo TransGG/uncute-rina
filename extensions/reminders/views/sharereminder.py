@@ -1,5 +1,6 @@
 import discord
 
+from resources.customs import Bot
 from resources.views.generics import create_simple_button
 
 
@@ -15,7 +16,7 @@ class ShareReminder(discord.ui.View):
             self.callback)
         )
 
-    async def callback(self, interaction: discord.Interaction):
+    async def callback(self, interaction: discord.Interaction[Bot]):
         self.value = 1
         self.return_interaction = interaction
         self.stop()

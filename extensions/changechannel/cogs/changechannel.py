@@ -19,8 +19,8 @@ class ChangeChannel(commands.Cog):
             itx: discord.Interaction[Bot],
             destination: discord.TextChannel
     ):
-        itx.response: discord.InteractionResponse  # noqa
-        itx.followup: discord.Webhook  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
+        itx.followup: discord.Webhook  # type: ignore
 
         if destination.id == itx.channel.id:
             await itx.response.send_message(

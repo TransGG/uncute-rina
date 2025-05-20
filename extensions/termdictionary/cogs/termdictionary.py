@@ -404,7 +404,7 @@ class TermDictionary(commands.Cog):
         #  - Should also have an integration without custom dictionary
         #    that users can install.
         #  - Make all pageviews into actual PageView views.
-        itx.response: discord.InteractionResponse  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         # test if mode has been left unset or if mode has been selected: decides whether to move to the
         # online API search or not.
         result_str = ""

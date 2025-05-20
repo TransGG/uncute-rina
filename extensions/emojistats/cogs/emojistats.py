@@ -324,7 +324,7 @@ class EmojiStats(commands.Cog):
     @emojistats.command(name="getemojitop10",
                         description="Get top 10 most used emojis")
     @app_commands.check(not_in_dms_check)
-    async def get_emoji_top_10(self, itx: discord.Interaction):
+    async def get_emoji_top_10(self, itx: discord.Interaction[Bot]):
         collection = itx.client.async_rina_db["emojistats"]
         output = ""
         for source_type in ["messageUsedCount", "reactionUsedCount"]:

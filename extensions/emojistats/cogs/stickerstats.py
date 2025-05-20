@@ -208,7 +208,7 @@ class StickerStats(commands.Cog):
     @stickerstats.command(name="getstickertop10",
                           description="Get top 10 most used stickers")
     @app_commands.check(not_in_dms_check)
-    async def get_sticker_top_10(self, itx: discord.Interaction):
+    async def get_sticker_top_10(self, itx: discord.Interaction[Bot]):
         collection = itx.client.async_rina_db["stickerstats"]
         output = ""
         for source_type in ["messageUsedCount"]:

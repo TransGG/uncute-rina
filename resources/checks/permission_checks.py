@@ -1,6 +1,7 @@
 import discord
 
 from resources.checks.permissions import is_staff, is_admin
+from resources.customs import Bot
 from .errors import (
     CommandDoesNotSupportDMsCheckFailure,
     InsufficientPermissionsCheckFailure
@@ -8,7 +9,7 @@ from .errors import (
 from .command_checks import is_in_dms
 
 
-def is_staff_check(itx: discord.Interaction):
+def is_staff_check(itx: discord.Interaction[Bot]):
     """
     A check to check if the command executor has a staff role.
     :param itx: The interaction to check.
@@ -24,7 +25,7 @@ def is_staff_check(itx: discord.Interaction):
     raise InsufficientPermissionsCheckFailure("User is not staff")
 
 
-def is_admin_check(itx: discord.Interaction):
+def is_admin_check(itx: discord.Interaction[Bot]):
     """
     A check to check if the command executor has an admin role.
     :param itx: The interaction to check.

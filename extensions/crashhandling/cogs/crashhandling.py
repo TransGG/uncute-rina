@@ -124,7 +124,7 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
         The function will always try to respond to the interaction
         ephemerally.
     """
-    itx.response: discord.InteractionResponse  # type: ignore
+    itx.response: discord.InteractionResponse[Bot]  # type: ignore
     itx.followup: discord.Webhook  # type: ignore
     try:
         if itx.response.is_done():

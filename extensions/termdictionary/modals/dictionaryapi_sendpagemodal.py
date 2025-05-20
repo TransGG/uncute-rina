@@ -1,5 +1,7 @@
 import discord
 
+from resources.customs import Bot
+
 
 class DictionaryAPISendPageModal(discord.ui.Modal, title="Share single dictionary entry?"):
     def __init__(self, entries, timeout=None):
@@ -15,7 +17,7 @@ class DictionaryAPISendPageModal(discord.ui.Modal, title="Share single dictionar
                                                   )
         self.add_item(self.question_text)
 
-    async def on_submit(self, itx: discord.Interaction):
+    async def on_submit(self, itx: discord.Interaction[Bot]):
         self.value = 9  # failed; placeholder
         try:
             self.id = int(self.question_text.value)

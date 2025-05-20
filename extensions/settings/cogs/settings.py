@@ -653,9 +653,9 @@ class SettingsCog(commands.Cog):
     # )
     # async def database(
     #         self,
-    #         itx: discord.Interaction
+    #         itx: discord.Interaction[Bot]
     # ):
-    #     itx.response: discord.InteractionResponse  # noqa
+    #     itx.response: discord.InteractionResponse[Bot]  # type: ignore
     #     await ServerSettings.migrate(itx.client.async_rina_db)
     #     await itx.response.send_message(
     #         "Successfully migrated databases.", ephemeral=True)
@@ -733,8 +733,8 @@ class SettingsCog(commands.Cog):
             mode: str | None = None,
             value: str | None = None
     ):
-        itx.response: discord.InteractionResponse  # noqa
-        itx.followup: discord.Webhook  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
+        itx.followup: discord.Webhook  # type: ignore
         cmd_help = itx.client.get_command_mention_with_args(
             "help", page="900")
         help_str = f"Use {cmd_help} for more info."
