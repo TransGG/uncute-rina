@@ -26,4 +26,5 @@ class EqualDexRegion:
         self.name: str = data['name']
         self.continent = data['continent']
         self.url: str = data['url']
-        self.issues: dict[str, list | dict[str, dict[str]]] = data['issues']
+        # noinspection LongLine
+        self.issues: dict[str, list[str] | dict[str, dict[str, str]]] = data['issues']

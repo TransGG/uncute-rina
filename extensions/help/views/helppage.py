@@ -119,8 +119,7 @@ class HelpPageView(PageView):  # todo: add "override" to all overriding funcs
         first_page_index = list(self.pages).index(first_page_key)
         super().__init__(
             first_page_index,
-            len(self.pages) - 1,
-            self.update_page  # todo: remove redundant self.update_page arg
+            len(self.pages) - 1
         )
         # move jump_to_page button to the end of the view
         self._children.append(self._children.pop(1))
