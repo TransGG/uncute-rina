@@ -99,7 +99,7 @@ def get_token_data() -> tuple[
     :raise KeyError: If the api_keys.json file is missing the api key
      for an api used in the program.
     """
-    load_progress.progress("Loading api keys...")
+    load_progress.begin("Loading api keys...")
     try:
         with open("api_keys.json", "r") as f:
             api_keys = json.loads(f.read())
@@ -125,14 +125,14 @@ def get_token_data() -> tuple[
     if missing_tokens:
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
 
-    load_progress.progress("Loading database clusters...")
+    load_progress.begin("Loading database clusters...")
     cluster: MongoClient = MongoClient(tokens['MongoDB'])
     rina_db: PyMongoDatabase = cluster["Rina"]
     cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(
         tokens['MongoDB'])
     async_rina_db: motorcore.AgnosticDatabase  # = cluster["Rina"]
     async_rina_db = cluster.get_database("Rina", codec_options=codec_options)
-    load_progress.step("Loaded database clusters", newline=False)
+    load_progress.complete("Loaded database clusters", newline=False)
     return bot_token, tokens, rina_db, async_rina_db
 
 
@@ -145,7 +145,7 @@ def get_version() -> str:
 
     :return: Current version/instance of the bot.
     """
-    load_progress.progress("Loading version...")
+    load_progress.begin("Loading version...")
     file_version = BOT_VERSION.split(".")
     try:
         os.makedirs("outputs", exist_ok=True)
@@ -164,7 +164,7 @@ def get_version() -> str:
     rina_version = '.'.join(rina_version)
     with open("outputs/version.txt", "w") as f:
         f.write(f"{rina_version}")
-    load_progress.step("Loaded version", newline=False)
+    load_progress.complete("Loaded version", newline=False)
     return rina_version
 
 
@@ -174,7 +174,7 @@ def create_client(
         async_rina_db: motorcore.AgnosticDatabase,
         version: str
 ) -> Bot:
-    load_progress.progress("Creating bot")
+    load_progress.begin("Creating bot")
 
     intents = discord.Intents.default()
     intents.members = True
@@ -200,7 +200,7 @@ def create_client(
         activity=discord.Game(name="with slash (/) commands!"),
         allowed_mentions=discord.AllowedMentions(everyone=False),
     )
-    start_progress.step("Created Bot")
+    start_progress.complete("Created Bot")
     return bot
 
 
@@ -208,7 +208,7 @@ def start_app():
     (token, tokens, rina_db, async_rina_db) = get_token_data()
     version = get_version()
     client = create_client(tokens, rina_db, async_rina_db, version)
-    start_progress.progress("Starting Bot...")
+    start_progress.begin("Starting Bot...")
 
     # this can probably be done better
     # region Client events
@@ -217,7 +217,7 @@ def start_app():
         text = (f"Logged in as {client.user}, in version {version} "
                 f"(in {datetime.now().astimezone() - program_start})")
         try:
-            start_progress.step(text)
+            start_progress.complete(text)
         except OverflowError:
             debug(text, color="green")
 
@@ -226,26 +226,26 @@ def start_app():
 
         post_startup_progress = ProgressBar(4)
 
-        post_startup_progress.progress("Loading all server settings...")
+        post_startup_progress.begin("Loading all server settings...")
         client.server_settings = await ServerSettings.fetch_all(client)
-        post_startup_progress.step("Loaded server settings.")
+        post_startup_progress.complete("Loaded server settings.")
 
-        post_startup_progress.progress("Loading all server tags...")
+        post_startup_progress.begin("Loading all server tags...")
         _ = await fetch_all_tags(client.async_rina_db)
-        post_startup_progress.step("Loaded server tags.")
+        post_startup_progress.complete("Loaded server tags.")
 
-        post_startup_progress.progress("Loading all watchlist threads...")
+        post_startup_progress.begin("Loading all watchlist threads...")
         _ = await fetch_all_watchlists(client.async_rina_db)
-        post_startup_progress.step("Loaded watchlist threads.")
+        post_startup_progress.complete("Loaded watchlist threads.")
 
-        post_startup_progress.progress("Loading all starboard messages...")
+        post_startup_progress.begin("Loading all starboard messages...")
         _ = await fetch_all_starboard_messages(client.async_rina_db)
-        post_startup_progress.step("Loaded starboard messages.")
+        post_startup_progress.complete("Loaded starboard messages.")
 
     @client.event
     async def setup_hook():
-        start_progress.step("Started Bot")
-        start_progress.progress("Load extensions and scheduler")
+        start_progress.complete("Started Bot")
+        start_progress.begin("Load extensions and scheduler")
         logger = logging.getLogger("apscheduler")
         logger.setLevel(logging.WARNING)
         # remove annoying 'Scheduler started' message on sched.start()
@@ -259,14 +259,14 @@ def start_app():
         extension_loading_start_time = datetime.now().astimezone()
         extension_load_progress = ProgressBar(len(EXTENSIONS))
         for extID in range(len(EXTENSIONS)):
-            extension_load_progress.progress(f"Loading {EXTENSIONS[extID]}")
+            extension_load_progress.begin(f"Loading {EXTENSIONS[extID]}")
             await client.load_extension(
                 "extensions." + EXTENSIONS[extID] + ".module")
-        start_progress.step(
+        start_progress.complete(
             f"Loaded extensions successfully (in "
             f"{datetime.now().astimezone() - extension_loading_start_time})"
         )
-        start_progress.progress("Loading server settings...")
+        start_progress.begin("Loading server settings...")
         try:
             client.log_channel = \
                 await client.fetch_channel(988118678962860032)
@@ -280,14 +280,14 @@ def start_app():
         # ^ or client.owner / client.owner_id :P
         # can't use the commented out code because Rina is owned by
         # someone else in the main server than the dev server (=not me).
-        start_progress.step("Loaded server settings")
-        start_progress.progress("Restarting ongoing reminders...")
+        start_progress.complete("Loaded server settings")
+        start_progress.begin("Restarting ongoing reminders...")
         await relaunch_ongoing_reminders(client)
-        start_progress.step("Finished setting up reminders")
-        start_progress.progress("Caching bot's command names and their ids")
+        start_progress.complete("Finished setting up reminders")
+        start_progress.begin("Caching bot's command names and their ids")
         client.commandList = await client.tree.fetch_commands()
-        start_progress.step("Cached bot's command names and their ids")
-        start_progress.progress("Starting...")
+        start_progress.complete("Cached bot's command names and their ids")
+        start_progress.begin("Starting...")
 
     # endregion
 

@@ -28,13 +28,13 @@ def get_original_message(message: str) -> str:
     return message
 
 
-def test_progress(caplog):
+def test_begin(caplog):
     # Arrange
     progressbar = ProgressBar(4)
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.progress("a b c")
+        progressbar.begin("a b c")
 
     message = caplog.messages[0]
 
@@ -52,13 +52,13 @@ def test_progress(caplog):
     assert "[+   ]: a b c" == message
 
 
-def test_step(caplog):
+def test_complete(caplog):
     # Arrange
     progressbar = ProgressBar(5)
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.step("b c d")
+        progressbar.complete("b c d")
 
     message = caplog.messages[0]
 
@@ -66,7 +66,7 @@ def test_step(caplog):
     assert starts_with_green(message), \
         f"Message '{message}' was not green."
     assert ends_with_color_reset(message), \
-        f"Message '{message}' did not end with a color reset."
+        f"Message '{message}' did not end with a color reset (and newline)."
 
     # Act
     message = get_original_message(message)
@@ -75,13 +75,13 @@ def test_step(caplog):
     assert "[#    ]: b c d" == message
 
 
-def test_progress_newline(caplog):
+def test_begin_newline(caplog):
     # Arrange
     progressbar = ProgressBar(4)
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.progress("a b c", newline=True)
+        progressbar.begin("a b c", newline=True)
 
     message = caplog.messages[0]
 
@@ -89,7 +89,7 @@ def test_progress_newline(caplog):
     assert starts_with_light_blue(message), \
         f"Message '{message}' was not light blue."
     assert ends_with_color_reset(message), \
-        f"Message '{message}' did not end with a color reset."
+        f"Message '{message}' did not end with a color reset (and newline)."
 
     # Act
     message = get_original_message(message)
@@ -98,13 +98,13 @@ def test_progress_newline(caplog):
     assert "[+   ]: a b c" == message
 
 
-def test_step_no_newline(caplog):
+def test_complete_no_newline(caplog):
     # Arrange
     progressbar = ProgressBar(5)
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.step("b c d", newline=False)
+        progressbar.complete("b c d", newline=False)
 
     message = caplog.messages[0]
 
@@ -122,14 +122,14 @@ def test_step_no_newline(caplog):
     assert "[#    ]: b c d" == message
 
 
-def test_step_step(caplog):
+def test_complete_complete(caplog):
     # Arrange
     progressbar = ProgressBar(5)
-    progressbar.step("")
+    progressbar.complete("")
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.step("")
+        progressbar.complete("")
 
     message = caplog.messages[0]
 
@@ -137,7 +137,7 @@ def test_step_step(caplog):
     assert starts_with_green(message), \
         f"Message '{message}' was not green."
     assert ends_with_color_reset(message), \
-        f"Message '{message}' did not end with a color reset."
+        f"Message '{message}' did not end with a color reset (and newline)."
 
     # Act
     message = get_original_message(message)
@@ -147,14 +147,14 @@ def test_step_step(caplog):
 
 
 # noinspection DuplicatedCode
-def test_step_progress(caplog):
+def test_complete_begin(caplog):
     # Arrange
     progressbar = ProgressBar(5)
-    progressbar.step("")
+    progressbar.complete("")
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.progress("")
+        progressbar.begin("")
 
     message = caplog.messages[0]
 
@@ -173,14 +173,14 @@ def test_step_progress(caplog):
 
 
 # noinspection DuplicatedCode
-def test_progress_progress(caplog):
+def test_begin_begin(caplog):
     # Arrange
     progressbar = ProgressBar(5)
-    progressbar.progress("")
+    progressbar.begin("")
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.progress("")
+        progressbar.begin("")
 
     message = caplog.messages[0]
 
@@ -198,24 +198,22 @@ def test_progress_progress(caplog):
     assert "[#+   ]: " == message
 
 
-def test_progress_step(caplog):
+def test_begin_complete(caplog):
     # Arrange
     progressbar = ProgressBar(5)
-    progressbar.progress("")
+    progressbar.begin("")
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.step("")
+        progressbar.complete("")
 
     message = caplog.messages[0]
 
     # Assert
-    # todo: make a function "assert progress" to test both two \/
     assert starts_with_green(message), \
         f"Message '{message}' was not green."
     assert ends_with_color_reset(message), \
-        (f"Message '{message}' did not end with a color reset and "
-         f"carriage return.")
+        f"Message '{message}' did not end with a color reset (and newline)."
 
     # Act
     message = get_original_message(message)
@@ -227,27 +225,27 @@ def test_progress_step(caplog):
 def test_padding_length(caplog):
     # Arrange
     progressbar = ProgressBar(9)
-    progressbar.progress("qwerty" * 3)
-    expected_progress = "[#+       ]: "
+    progressbar.begin("qwerty" * 3)
+    expected_progress_bar = "[#+       ]: "
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.progress("")
+        progressbar.begin("")
 
     message = get_original_message(caplog.messages[0])
-    expected_output = expected_progress + " " * len("qwerty") * 3
+    expected_output = expected_progress_bar + " " * len("qwerty") * 3
 
     # Assert
     assert expected_output == message
 
 
-def test_short_bar_step(caplog):
+def test_short_bar_complete(caplog):
     # Arrange
     progressbar = ProgressBar(1)
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.step("")
+        progressbar.complete("")
 
     message = get_original_message(caplog.messages[0])
 
@@ -255,13 +253,13 @@ def test_short_bar_step(caplog):
     assert "[#]: " == message
 
 
-def test_short_bar_progress(caplog):
+def test_short_bar_begin(caplog):
     # Arrange
     progressbar = ProgressBar(1)
 
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.progress("")
+        progressbar.begin("")
 
     message = get_original_message(caplog.messages[0])
 
@@ -269,13 +267,13 @@ def test_short_bar_progress(caplog):
     assert "[+]: " == message
 
 
-def test_short_bar_progress_step(caplog):
+def test_short_bar_begin_complete(caplog):
     # Arrange
     progressbar = ProgressBar(1)
-    progressbar.progress("")
+    progressbar.begin("")
     # Act
     with caplog.at_level(logging.INFO):
-        progressbar.step("")
+        progressbar.complete("")
 
     message = get_original_message(caplog.messages[0])
 
@@ -286,8 +284,8 @@ def test_short_bar_progress_step(caplog):
 def test_progress_overflow(caplog):
     # Arrange
     progressbar = ProgressBar(1)
-    progressbar.step("")
+    progressbar.complete("")
 
     # Assert
     with pytest.raises(OverflowError):
-        progressbar.step("")
+        progressbar.complete("")
