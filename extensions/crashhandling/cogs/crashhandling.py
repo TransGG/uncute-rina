@@ -216,15 +216,20 @@ class CrashHandling(commands.Cog):
             module_source, missing_attributes = \
                 exception_message.split("; ", 2)
             missing_attributes = missing_attributes.split(", ")
-            cmd_mention = self.client.get_command_mention("settings")
+            cmd_settings = self.client.get_command_mention_with_args(
+                "settings",
+                type="Attribute",
+                setting=" ",
+                mode="Set",
+                value=" "
+            )
             await log_to_guild(
                 self.client,
                 potential_guild,
                 f"Module `{module_source}` ran into an error! This is likely "
                 f"because the module was enabled, but did not have the "
                 f"required attributes configured to execute its features.\n"
-                f"Use {cmd_mention} `type:Attribute` `setting: ` to set "
-                f"these missing attributes:\n"
+                f"Use {cmd_settings} to set these missing attributes:\n"
                 f"> " + ", ".join(missing_attributes)
             )
             return
@@ -268,27 +273,31 @@ class CrashHandling(commands.Cog):
             return
         elif error_type is ModuleNotEnabledCheckFailure:
             error: ModuleNotEnabledCheckFailure
-            cmd_mention_settings = itx.client.get_command_mention("settings")
             if itx.client.server_settings is None:
+                cmd_settings = itx.client.get_command_mention("settings")
                 await itx.response.send_message(
-                    "This module may or may not be enabled. Unfortunately, "
-                    "no server settings have been loaded. Perhaps "
-                    "the bot is still starting up? Admins can attempt to "
-                    "use the /settings command to add new data.",
+                    f"This module may or may not be enabled. Unfortunately, "
+                    f"no server settings have been loaded. Perhaps "
+                    f"the bot is still starting up? Admins can attempt to "
+                    f"use {cmd_settings} to add new data.",
                     ephemeral=True
                 )
                 return
-
+            cmd_settings = itx.client.get_command_mention_with_args(
+                "settings",
+                type="Module",
+                setting=error.module_key,
+                mode="Enable",
+            )
             if is_admin(itx, itx.user):
-                cmd_mention_help = itx.client.get_command_mention("help")
+                cmd_help = itx.client.get_command_mention("help")
                 await itx.response.send_message(
                     f"This module is not enabled! Enable it using the "
                     f"following command:\n"
-                    f"- {cmd_mention_settings} `type:Module` "
-                    f"`setting:{error.module_key}` `mode:Enable`\n"
+                    f"- {cmd_settings}\n"
                     f"Make sure you also set the required attributes for this "
                     f"module. The required attributes for modules and "
-                    f"commands are explained in {cmd_mention_help}.",
+                    f"commands are explained in {cmd_help}.",
                     ephemeral=True)
                 return
             await itx.response.send_message(
@@ -300,12 +309,18 @@ class CrashHandling(commands.Cog):
             return
         elif error_type is MissingAttributesCheckFailure:
             error: MissingAttributesCheckFailure
-            cmd_mention_settings = itx.client.get_command_mention("settings")
+            cmd_settings = itx.client.get_command_mention_with_args(
+                "settings",
+                type="Attribute",
+                setting=" ",
+                mode="Set",
+                value=" "
+            )
             await _reply(
                 itx,
                 f"Your command failed to completely execute because it relied "
                 f"on certain server attributes that were not defined! An "
-                f"admin will have to run {cmd_mention_settings} "
+                f"admin will have to run {cmd_settings} "
                 f"`type:Attribute` `setting: ` for the following "
                 f"attribute(s):\n"
                 f"> " + ', '.join(error.attributes)
@@ -332,21 +347,21 @@ class CrashHandling(commands.Cog):
             )
             return
 
-        cmd_mention_settings = itx.client.get_command_mention("update")
+        cmd_settings = itx.client.get_command_mention("update")
         if isinstance(error, app_commands.errors.CommandNotFound):
             await _reply(
                 itx,
                 f"This command doesn't exist! Perhaps the commands are"
                 f" unsynced. Ask {itx.client.bot_owner} "
                 f"({itx.client.bot_owner.mention}) if she typed "
-                f"{cmd_mention_settings}!"
+                f"{cmd_settings}!"
             )
         elif isinstance(error, app_commands.errors.CommandSignatureMismatch):
             await _reply(
                 itx,
                 f"Error: CommandSignatureMismatch. Either Mia used GroupCog "
                 f"instead of Cog, or this command is out of date "
-                f"(try {cmd_mention_settings})"
+                f"(try {cmd_settings})"
             )
         else:
             if hasattr(error, 'original'):

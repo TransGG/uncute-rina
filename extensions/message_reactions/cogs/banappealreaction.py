@@ -86,10 +86,16 @@ class BanAppealReactionsAddon(commands.Cog):
         ban_appeal_role = self.client.get_guild_attribute(
             message.guild, AttributeKeys.ban_appeal_reaction_role)
         if ban_appeal_role is None:
-            cmd_mention_settings = self.client.get_command_mention("settings")
+            cmd_settings = self.client.get_command_mention_with_args(
+                "settings",
+                type="Attribute",
+                setting=AttributeKeys.ban_appeal_reaction_role,
+                mode="Set",
+                value=" "
+            )
             await joiner_msg.edit(
                 content=f"No role has been set up to be pinged after a "
-                        f"ban appeal is created. Use {cmd_mention_settings} "
+                        f"ban appeal is created. Use {cmd_settings} "
                         f"to add one.")
         else:
             await joiner_msg.edit(content=f"<@&{ban_appeal_role.id}>")

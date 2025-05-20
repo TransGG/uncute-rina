@@ -82,6 +82,17 @@ class Bot(commands.Bot):
                                 return subcmdgroup.mention
         return "/" + command_string
 
+    def get_command_mention_with_args(
+            self,
+            command_string: str,
+            **kwargs: str
+    ) -> str:
+        command_mention = self.get_command_mention(command_string)
+        for key, value in kwargs.items():
+            command_mention += f" `{key}:{value}`"
+
+        return command_mention
+
     def get_guild_attribute(
             self,
             guild_id: discord.Guild | int,

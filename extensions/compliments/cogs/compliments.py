@@ -139,15 +139,19 @@ async def _choose_and_send_compliment(
         )
 
     base = f"{itx.user.mention} complimented {user.mention}!\n"
-    # cmd_mention = client.get_command_mention("developer_request")
-    # cmd_mention1 = client.get_command_mention("complimentblacklist")
+    # cmd_dev_request = itx.client.get_command_mention("developer_request")
+    # cmd_blacklist = itx.client.get_command_mention_with_args(
+    #     "complimentblacklist",
+    #     location="being complimented",
+    #     mode="Add",
+    #     string=" "
+    # )
     suffix = ""  # (
     #     f"\n\nPlease give suggestions for compliments! DM "
-    #     f"<@262913789375021056>, make a staff ticket, or use {cmd_mention} "
-    #     f"to suggest one. Do you dislike this compliment? Use "
-    #     f"{cmd_mention1} `location:being complimented` `mode:Add` "
-    #     f"`string: ` and block specific words (or the letters \"e\" and "
-    #     f"\"o\" to block every compliment"
+    #     f"<@262913789375021056>, make a staff ticket, or use "
+    #     f"{cmd_dev_request} to suggest one. Do you dislike this compliment? "
+    #     f"Use {cmd_blacklist} and block specific words (or the letters "
+    #     f"\"e\" and \"o\" to block every compliment"
     # )
     if itx.response.is_done():  # todo: add "give compliment back" button
         # should happen if user used the modal to select a pronoun role
@@ -383,10 +387,10 @@ class Compliments(commands.Cog):
                     except discord.errors.Forbidden:
                         pass
             else:
-                cmd_mention = self.client.get_command_mention("help")
+                cmd_help = self.client.get_command_mention("help")
                 await message.channel.send(
                     f"I use slash commands! Use /`command`  and see what cool "
-                    f"things might pop up! or try {cmd_mention}\n"
+                    f"things might pop up! or try {cmd_help}\n"
                     f"PS: If you're trying to call me cute: no im not",
                     delete_after=8
                 )
@@ -485,11 +489,11 @@ class Compliments(commands.Cog):
 
         elif mode == 2:  # Remove item from black list
             if string is None:
-                cmd_mention = itx.client.get_command_mention(
-                    "complimentblacklist")
+                cmd_blacklist = itx.client.get_command_mention_with_args(
+                    "complimentblacklist", mode="Check")
                 await itx.response.send_message(
                     f"Type the id of the string you want to remove. To find "
-                    f"the id, type {cmd_mention} `mode:Check`.",
+                    f"the id, type {cmd_blacklist}.",
                     ephemeral=True)
                 return
             try:
@@ -518,11 +522,11 @@ class Compliments(commands.Cog):
             try:
                 del blacklist[string]
             except IndexError:
-                cmd_mention = itx.client.get_command_mention(
+                cmd_blacklist = itx.client.get_command_mention(
                     "complimentblacklist")
                 await itx.response.send_message(
                     f"Couldn't delete that ID, because there isn't any item "
-                    f"on your list with that ID. Use {cmd_mention} "
+                    f"on your list with that ID. Use {cmd_blacklist} "
                     f"`mode:Check` to see the IDs assigned to each item on "
                     f"your list",
                     ephemeral=True)

@@ -100,7 +100,6 @@ async def _create_new_custom_vc(
 
     default_name = "Untitled voice chat"
     warning = ""
-    cmd_mention = client.get_command_mention("editvc")
 
     try:
         vc = await customvc_category.create_voice_channel(
@@ -118,9 +117,10 @@ async def _create_new_custom_vc(
             vc,
             reason="Opened a new voice channel through the vc hub thing."
         )
+        cmd_editvc = client.get_command_mention("editvc")
         await vc.send(
             f"Voice channel <#{vc.id}> ({vc.id}) created by "
-            f"<@{member.id}> ({member.id}). Use {cmd_mention} to edit the "
+            f"<@{member.id}> ({member.id}). Use {cmd_editvc} to edit the "
             f"name/user limit.",
             allowed_mentions=discord.AllowedMentions.none()
         )

@@ -250,10 +250,13 @@ class FunAddons(commands.Cog):
             await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ", "")
             if advanced == "help":
-                cmd_mention = itx.client.get_command_mention("help")
+                cmd_help = itx.client.get_command_mention_with_args(
+                    "help", page="112")
                 await itx.response.send(
-                    f"I don't think I ever added a help command... Ping mysticmia for more information about "
-                    f"this command, or run {cmd_mention} `page:112` for more information.")
+                    f"I don't think I ever added a help command... Ping "
+                    f"mysticmia for more information about this command, or "
+                    f"run {cmd_help} for more information."
+                )
 
             for char in advanced:
                 if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥

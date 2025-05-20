@@ -735,8 +735,9 @@ class SettingsCog(commands.Cog):
     ):
         itx.response: discord.InteractionResponse  # noqa
         itx.followup: discord.Webhook  # noqa
-        help_cmd_mention = itx.client.get_command_mention("help")
-        help_str = f"Use {help_cmd_mention} `page:900` for more info."
+        cmd_help = itx.client.get_command_mention_with_args(
+            "help", page="900")
+        help_str = f"Use {cmd_help} for more info."
 
         try:
             modify_mode: ModeAutocomplete | None = None

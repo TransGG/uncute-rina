@@ -425,13 +425,13 @@ class OtherAddons(commands.Cog):
                 await itx.edit_original_response(
                     content=":warning: Adding emojis failed!"
                 )
-        cmd_mention = itx.client.get_command_mention("add_poll_reactions")
+        cmd_poll = itx.client.get_command_mention("add_poll_reactions")
 
         if not is_in_dms(itx.guild):
             await log_to_guild(
                 itx.client,
                 itx.guild,
-                f"{itx.user.name} ({itx.user.id}) used {cmd_mention} "
+                f"{itx.user.name} ({itx.user.id}) used {cmd_poll} "
                 f"on message {message.jump_url}"
             )
 

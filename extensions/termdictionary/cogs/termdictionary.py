@@ -96,12 +96,11 @@ async def _get_custom_dictionary_output(
         if simplify(term) in simplify(item["synonyms"]):
             results.append((item["term"], item["definition"]))
     if not results:
-        cmd_mention_define = client.get_command_mention(
-            "dictionary_staff define")
+        cmd_define = client.get_command_mention("dictionary_staff define")
         raise KeyError(
             f"No information found for '{term}' in the custom dictionary.\n"
             f"If you would like to add a term, message a staff member "
-            f"(to use {cmd_mention_define})"
+            f"(to use {cmd_define})"
         )
 
     result_str = (f"I found {len(results)} result{'s' * (len(results) > 1)} "
@@ -465,13 +464,18 @@ class TermDictionary(commands.Cog):
             if len(data) == 0:
                 if source == 7:
                     result_str = f"I didn't find any results for '{term}' online or in our fancy dictionaries"
-                    cmd_mention_dict = itx.client.get_command_mention("dictionary")
-                    cmd_mention_def = itx.client.get_command_mention("dictionary_staff define")
-                    await log_to_guild(itx.client, itx.guild,
-                                       f":warning: **!! Alert:** {itx.user.name} ({itx.user.id}) searched for "
-                                       f"'{term}' in the terminology dictionary and online, but there were "
-                                       f"no results. Maybe we should add this term to "
-                                       f"the {cmd_mention_dict} command ({cmd_mention_def})")
+                    cmd_dictionary = itx.client.get_command_mention(
+                        "dictionary")
+                    cmd_define = itx.client.get_command_mention_with_args(
+                        "dictionary_staff define", term=" ", definition=" ")
+                    await log_to_guild(
+                        itx.client,
+                        itx.guild,
+                        f":warning: **!! Alert:** {itx.user.name} "
+                        f"({itx.user.id}) searched for '{term}' in the "
+                        f"terminology dictionary and online, but there were "
+                        f"no results. Maybe we should add this term to "
+                        f"the {cmd_dictionary} command ({cmd_define})")
                 else:
                     result_str = f"I didn't find any results for '{term}' on urban dictionary"
                 public = False
@@ -508,9 +512,13 @@ class TermDictionary(commands.Cog):
         query = {"term": term}
         search = collection.find_one(query)
         if search is not None:
-            cmd_mention = itx.client.get_command_mention("dictionary")
+            cmd_dictionary = itx.client.get_command_mention_with_args(
+                "dictionary", term=term)
             await itx.response.send_message(
-                f"You have already previously defined this term (try to find it with {cmd_mention}).", ephemeral=True)
+                f"You have already previously defined this term (try to find "
+                f"it with {cmd_dictionary}).",
+                ephemeral=True,
+            )
             return
         await itx.response.defer(ephemeral=True)
         # Test if a synonym is already used before
@@ -551,9 +559,11 @@ class TermDictionary(commands.Cog):
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = itx.client.get_command_mention("dictionary_staff define")
+            cmd_define = itx.client.get_command_mention_with_args(
+                "dictionary_staff define", term=" ", definition=" ")
             await itx.response.send_message(
-                f"This term hasn't been added to the dictionary yet, and thus cannot be redefined! Use {cmd_mention}.",
+                f"This term hasn't been added to the dictionary yet, and "
+                f"thus cannot be redefined! Use {cmd_define}.",
                 ephemeral=True)
             return
         collection.update_one(query, {"$set": {"definition": definition}})
@@ -597,10 +607,11 @@ class TermDictionary(commands.Cog):
         query = {"term": term}
         search = collection.find_one(query)
         if search is None:
-            cmd_mention = itx.client.get_command_mention("dictionary_staff define")
+            cmd_define = itx.client.get_command_mention_with_args(
+                "dictionary_staff define", term=" ", definition=" ")
             await itx.response.send_message(
                 f"This term hasn't been added to the dictionary yet, and thus cannot get "
-                f"new synonyms! Use {cmd_mention}.",
+                f"new synonyms! Use {cmd_define}.",
                 ephemeral=True)
             return
 
