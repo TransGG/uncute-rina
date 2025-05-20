@@ -1,4 +1,5 @@
-from datetime import datetime  # to get embed send time for embed because cool (serves no real purpose)
+from datetime import datetime
+# ^ to get embed send time for embed because cool (serves no real purpose)
 
 import discord
 import discord.app_commands as app_commands
@@ -7,30 +8,41 @@ from discord import RawThreadDeleteEvent
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
 from resources.customs import Bot
-from resources.checks.permissions import is_staff  # to check role in _add_to_watchlist, as backup
+from resources.checks.permissions import is_staff
+# ^ to check role in _add_to_watchlist, as backup
 from resources.checks import (
     is_staff_check, module_enabled_check, MissingAttributesCheckFailure
 )  # the cog is pretty much only intended for staff use
 
-from extensions.watchlist.local_watchlist import create_watchlist, get_watchlist, remove_watchlist, \
-    get_user_id_from_watchlist, WatchlistNotLoadedException
+from extensions.watchlist.local_watchlist import (
+    create_watchlist,
+    get_watchlist,
+    remove_watchlist,
+    get_user_id_from_watchlist,
+    WatchlistNotLoadedException,
+)
 from extensions.watchlist.modals import WatchlistReasonModal
 
 
-def _parse_watchlist_string_message_id(message_id: str | None) -> tuple[int | None, bool]:
+def _parse_watchlist_string_message_id(
+        message_id: str | None
+) -> tuple[int | None, bool]:
     """
     Parse a given message_id from a /watchlist command
 
     :param message_id: The message id to parse to an int (or ``None``)
-    :return: A tuple of the parsed message id (or ``None`` if ``None`` given), and whether the message_id ended with
-     " | overwrite", to allow the user to link someone else's message with the watchlist report.
+    :return: A tuple of the parsed message id (or ``None`` if ``None``
+     given), and whether the message_id ended with " | overwrite", to
+     allow the user to link someone else's message with the watchlist
+     report.
     """
     allow_different_report_author = False
     if message_id is None:
         return message_id, allow_different_report_author
 
     if message_id.isdecimal():
-        # required cuz discord client doesn't let you fill in message IDs as ints; too large
+        # required cuz discord client doesn't let you fill in message
+        # IDs as ints; too large
         message_id = int(message_id)
     else:
         if message_id.endswith(" | overwrite"):
@@ -80,7 +92,8 @@ async def _create_uncool_watchlist_thread(
         cmd_mention_settings = client.get_command_mention("settings")
         await joiner_msg.edit(
             content=f"No role has been set up to be pinged when a watchlist "
-                    f"is created. Use {cmd_mention_settings} to add one.")
+                    f"is created. Use {cmd_mention_settings} to add one."
+        )
     else:
         await joiner_msg.edit(content=f"<@&{active_staff_role.id}>")
         await joiner_msg.delete()
@@ -118,20 +131,23 @@ async def _add_to_watchlist(
 ):
     if not is_staff(itx, itx.user):
         await itx.response.send_message(
-            "You don't have the right permissions to do this.", ephemeral=True)
+            "You don't have the right permissions to do this.",
+            ephemeral=True,
+        )
         return
     if itx.client.is_me(user):
         await itx.response.send_message(
             "You just tried to add a watchlist to Uncute Rina. Are you "
             "sure about that.......?\n"
             "If so, please send a message to Mia so she can remove this "
-            "extra if-statement.", ephemeral=True
+            "extra if-statement.",
+            ephemeral=True,
         )
         return
 
-    # different report author = different message author than the reported user,
-    #   used in case you want to report someone but want to use someone else's
-    #   message as evidence or context.
+    # different report author = different message author than the
+    #  reported user, used in case you want to report someone but want
+    #  to use someone else's message as evidence or context.
     message_id, allow_different_report_author = \
         _parse_watchlist_string_message_id(message_id)
 
@@ -142,12 +158,13 @@ async def _add_to_watchlist(
             "Your watchlist reason won't fit! Please make your reason "
             "shorter. You can also expand your reason / add details in "
             "the thread.",
-            ephemeral=True)
+            ephemeral=True,
+        )
         # because I'm nice
         await itx.followup.send(
             "Given reason (you can also copy paste the command):\n"  # 52 chars
             + reason[:2000 - 52 - 3] + "...",
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -172,21 +189,25 @@ async def _add_to_watchlist(
         try:
             reported_message = await itx.channel.fetch_message(message_id)
         except discord.Forbidden:
-            await itx.followup.send("Forbidden: I do not have permission to "
-                                    "see that message.", ephemeral=True)
+            await itx.followup.send(
+                "Forbidden: I do not have permission to see that message.",
+                ephemeral=True,
+            )
             return
         except discord.NotFound:
             await itx.followup.send(
                 "NotFound: I could not find that message. Make sure you ran "
                 "this command in the same channel as the one where the "
                 "message id came from.",
-                ephemeral=True
+                ephemeral=True,
             )
             return
         except discord.HTTPException:
-            await itx.followup.send("HTTPException: Something went wrong "
-                                    "while trying to fetch the message.",
-                                    ephemeral=True)
+            await itx.followup.send(
+                "HTTPException: Something went wrong while trying to fetch "
+                "the message.",
+                ephemeral=True,
+            )
             raise
 
         if (reported_message.author.id != user.id
@@ -216,7 +237,10 @@ async def _add_to_watchlist(
         )
 
         if reported_message.attachments:
-            reported_message_info += f"(:newspaper: Contains {len(reported_message.attachments)} attachments)\n"
+            reported_message_info += (
+                f"(:newspaper: Contains "
+                f"{len(reported_message.attachments)} attachments)\n"
+            )
 
     watchlist_thread_id = get_watchlist(watch_channel.guild.id, user.id)
     already_on_watchlist = watchlist_thread_id is not None
@@ -224,7 +248,8 @@ async def _add_to_watchlist(
     if already_on_watchlist:
         # fetch thread, in case the thread was archived (not in cache)
         thread = await watch_channel.guild.fetch_channel(watchlist_thread_id)
-        # fetch message the thread is attached to (fetch, in case msg is not in cache)
+        # fetch message the thread is attached to (fetch, in case msg
+        #  is not in cache)
         msg = await watch_channel.fetch_message(watchlist_thread_id)
         # link back to that original message with the existing thread.
         await msg.reply(
@@ -233,7 +258,7 @@ async def _add_to_watchlist(
                     f"Since they were already on this list, here's a reply "
                     f"to the original thread.\n"
                     f"May this serve as a warning for this user.",
-            allowed_mentions=discord.AllowedMentions.none()
+            allowed_mentions=discord.AllowedMentions.none(),
         )
     else:
         msg, thread = await _create_uncool_watchlist_thread(
@@ -253,14 +278,16 @@ async def _add_to_watchlist(
     if allow_different_report_author:
         different_author_warning = " (mentioned message author below)"
     copyable_version = await thread.send(
-        f"Reported user: {user.mention} (`{user.id}`)" + different_author_warning,
+        f"Reported user: {user.mention} (`{user.id}`)"
+        + different_author_warning,
         allowed_mentions=discord.AllowedMentions.none())
 
     if message_id is not None:
         reported_message_data_message = await thread.send(
             f"Reported message: {reported_message.author.mention}"
             f"(`{reported_message.author.id}`) - {reported_message.jump_url}",
-            allowed_mentions=discord.AllowedMentions.none())
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
         await thread.send(f">>> {reported_message.content}",
                           allowed_mentions=discord.AllowedMentions.none())
 
@@ -289,21 +316,33 @@ async def _add_to_watchlist(
             ephemeral=True
         )
     else:
-        await _update_uncool_watchlist_embed(copyable_version.jump_url, reported_message_info, msg, reason, user)
+        await _update_uncool_watchlist_embed(
+            copyable_version.jump_url,
+            reported_message_info,
+            msg,
+            reason,
+            user
+        )
         await itx.followup.send(
             warning
             + ":white_check_mark: Successfully added user to watchlist.",
-            ephemeral=True
+            ephemeral=True,
         )
 
 
 @app_commands.check(is_staff_check)
 @module_enabled_check(ModuleKeys.watchlist)
 @app_commands.context_menu(name="Add user to watchlist")
-async def watchlist_ctx_user(itx: discord.Interaction[Bot], user: discord.User):
+async def watchlist_ctx_user(
+        itx: discord.Interaction[Bot],
+        user: discord.User
+):
     watchlist_reason_modal = WatchlistReasonModal(
-        _add_to_watchlist, "Add user to watchlist",
-        user, None, 300
+        _add_to_watchlist,
+        title="Add user to watchlist",
+        reported_user=user,
+        message=None,
+        timeout=300,
     )
     await itx.response.send_modal(watchlist_reason_modal)
 
@@ -316,8 +355,11 @@ async def watchlist_ctx_message(
         message: discord.Message
 ):
     watchlist_reason_modal = WatchlistReasonModal(
-        _add_to_watchlist, "Add user to watchlist using message",
-        message.author, message, 300
+        _add_to_watchlist,
+        title="Add user to watchlist using message",
+        reported_user=message.author,
+        message=message,
+        timeout=300,
     )
     await itx.response.send_modal(watchlist_reason_modal)
 
@@ -348,10 +390,14 @@ class WatchList(commands.Cog):
                           .transform(itx, user))
             warning = ""
         except app_commands.errors.TransformerError:
-            warning = ("This user is not in this server! Either they left or got banned, or you executed this in "
-                       "a server they're not in.\n"
-                       "If they got banned, there's no reason to look out for them anymore ;)\n"
-                       "It's also easier to mention them if you run it in the main server. Anyway,\n\n")
+            warning = (
+                "This user is not in this server! Either they left or got "
+                "banned, or you executed this in a server they're not in.\n"
+                "If they got banned, there's no reason to look out for them "
+                "anymore ;)\n"
+                "It's also easier to mention them if you run it in the main "
+                "server. Anyway,\n\n"
+            )
         await _add_to_watchlist(itx, user, reason, message_id, warning=warning)
 
     @app_commands.command(name="check_watchlist",
@@ -359,7 +405,11 @@ class WatchList(commands.Cog):
     @app_commands.describe(user="User to check")
     @app_commands.check(is_staff_check)
     @module_enabled_check(ModuleKeys.watchlist)
-    async def check_watchlist(self, itx: discord.Interaction[Bot], user: discord.User):
+    async def check_watchlist(
+            self,
+            itx: discord.Interaction[Bot],
+            user: discord.User
+    ):
         if not is_staff(itx, itx.user):
             await itx.response.send_message(
                 "You don't have the right permissions to do this.",
@@ -382,14 +432,14 @@ class WatchList(commands.Cog):
                 f"🔵 This user ({user.mention} `{user.id}`) is already "
                 f"on the watchlist.",
                 ephemeral=True,
-                allowed_mentions=discord.AllowedMentions.none()
+                allowed_mentions=discord.AllowedMentions.none(),
             )
         else:
             await itx.followup.send(
                 f"🟡 This user ({user.mention} `{user.id}`) is not yet "
                 f"on the watchlist.",
                 ephemeral=True,
-                allowed_mentions=discord.AllowedMentions.none()
+                allowed_mentions=discord.AllowedMentions.none(),
             )
 
     @commands.Cog.listener()
@@ -457,8 +507,11 @@ class WatchList(commands.Cog):
         on_watchlist: bool = watchlist_thread_id is not None
 
         if on_watchlist:
-            thread: discord.Thread = await watchlist_channel.guild.fetch_channel(
-                watchlist_thread_id)  # fetch, to retrieve (archived) thread.
+            thread: discord.Thread = \
+                await watchlist_channel.guild.fetch_channel(
+                    watchlist_thread_id
+                )
+            # ^ fetch, to retrieve (archived) thread.
             await message.forward(thread)
 
     @commands.Cog.listener()

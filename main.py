@@ -71,11 +71,13 @@ start_progress = ProgressBar(7)
 #       read channel history (locate previous starboard message, for example)
 #       move users between voice channels (custom vc)
 #       manage roles (for removing NPA and NVA roles)
-#       manage channels (Global: You need this to be able to set the position of CustomVCs in a category, apparently)
+#       manage channels (Global: You need this to be able to set the
+#        position of CustomVCs in a category, apparently)
 #           NEEDS TO BE GLOBAL?
 #           Create and Delete voice channels
 #       use embeds (for starboard)
-#       use (external) emojis (for starboard, if you have external starboard reaction...?)
+#       use (external) emojis (for starboard, if you have external
+#        starboard reaction...?)
 
 
 def get_token_data() -> tuple[
@@ -85,14 +87,17 @@ def get_token_data() -> tuple[
     motorcore.AgnosticDatabase
 ]:
     """
-    Ensures the api_keys.json file contains all the bot's required keys, and
-    uses these keys to start a link to the MongoDB.
+    Ensures the api_keys.json file contains all the bot's required
+    keys, and uses these keys to start a link to the MongoDB.
 
-    :return: Tuple of discord bot token, other api tokens, and a sync and async database client cluster connection.
+    :return: Tuple of discord bot token, other api tokens, and a sync
+    and async database client cluster connection.
 
     :raise FileNotFoundError: If the api_keys.json file does not exist.
-    :raise json.decoder.JSONDecodeError: If the api_keys.json file is not in correct JSON format.
-    :raise KeyError: If the api_keys.json file is missing the api key for an api used in the program.
+    :raise json.decoder.JSONDecodeError: If the api_keys.json file is
+     not in correct JSON format.
+    :raise KeyError: If the api_keys.json file is missing the api key
+     for an api used in the program.
     """
     load_progress.progress("Loading api keys...")
     try:
@@ -102,7 +107,8 @@ def get_token_data() -> tuple[
         bot_token: str = api_keys['Discord']
         missing_tokens: list[str] = []
         for key in ApiTokenDict.__annotations__:
-            # copy every other key to new dictionary to check if every key is in the file.
+            # copy every other key to new dictionary to check if every
+            #  key is in the file.
             if key not in api_keys:
                 missing_tokens.append(key)
                 continue
@@ -112,14 +118,18 @@ def get_token_data() -> tuple[
         raise
     except json.decoder.JSONDecodeError as ex:
         raise json.decoder.JSONDecodeError(
-            "Invalid JSON file. Please ensure it has correct formatting.", ex.doc, ex.pos).with_traceback(None)
+            "Invalid JSON file. Please ensure it has correct formatting.",
+            ex.doc,
+            ex.pos
+        ).with_traceback(None)
     if missing_tokens:
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
 
     load_progress.progress("Loading database clusters...")
     cluster: MongoClient = MongoClient(tokens['MongoDB'])
     rina_db: PyMongoDatabase = cluster["Rina"]
-    cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(tokens['MongoDB'])
+    cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(
+        tokens['MongoDB'])
     async_rina_db: motorcore.AgnosticDatabase  # = cluster["Rina"]
     async_rina_db = cluster.get_database("Rina", codec_options=codec_options)
     load_progress.step("Loaded database clusters", newline=False)
@@ -128,8 +138,10 @@ def get_token_data() -> tuple[
 
 def get_version() -> str:
     """
-    Dumb code for cool version updates. Reads version file and matches with current version string. Updates file if
-    string is newer, and adds another ".%d" for how often the bot has been started in this version.
+    Dumb code for cool version updates. Reads version file and matches
+    with current version string. Updates file if string is newer, and
+    adds another ".%d" for how often the bot has been started in
+    this version.
 
     :return: Current version/instance of the bot.
     """
@@ -165,10 +177,14 @@ def create_client(
     load_progress.progress("Creating bot")
 
     intents = discord.Intents.default()
-    intents.members = True  # apparently this needs to be defined because it's not included in Intents.default()?
-    intents.message_content = True  # to send 1984, and to otherwise read message content.
-    # setup default discord bot client settings, permissions, slash commands, and file paths
+    intents.members = True
+    # ^ apparently this needs to be defined because it's not included
+    #  in Intents.default()?
+    intents.message_content = True
+    # to send 1984, and to otherwise read message content.
 
+    # setup default discord bot client settings, permissions,
+    #  slash commands, and file paths
     discord.VoiceClient.warn_nacl = False
     bot: Bot = Bot(
         api_tokens=tokens,
@@ -178,7 +194,8 @@ def create_client(
 
         intents=intents,
         command_prefix="/!\"@:\\#",
-        #  unnecessary, but needs to be set so... uh... yeah. Unnecessary terminal warnings avoided.
+        # Unnecessary, but needs to be set so... uh... yeah. Unnecessary
+        #  terminal warnings avoided.
         case_insensitive=True,
         activity=discord.Game(name="with slash (/) commands!"),
         allowed_mentions=discord.AllowedMentions(everyone=False),
@@ -204,7 +221,8 @@ def start_app():
         except OverflowError:
             debug(text, color="green")
 
-        await client.log_channel.send(f":white_check_mark: **Started Rina** in version {version}")
+        await client.log_channel.send(
+            f":white_check_mark: **Started Rina** in version {version}")
 
         post_startup_progress = ProgressBar(4)
 
@@ -234,26 +252,34 @@ def start_app():
         client.sched = AsyncIOScheduler(logger=logger)
         client.sched.start()
 
-        # Cache server settings into client, to prevent having to load settings for every extension
+        # Cache server settings into client, to prevent having to load
+        #  settings for every extension.
         # Activate the extensions/programs/code for slash commands
 
         extension_loading_start_time = datetime.now().astimezone()
         extension_load_progress = ProgressBar(len(EXTENSIONS))
         for extID in range(len(EXTENSIONS)):
             extension_load_progress.progress(f"Loading {EXTENSIONS[extID]}")
-            await client.load_extension("extensions." + EXTENSIONS[extID] + ".module")
-        start_progress.step(f"Loaded extensions successfully "
-                            f"(in {datetime.now().astimezone() - extension_loading_start_time})")
+            await client.load_extension(
+                "extensions." + EXTENSIONS[extID] + ".module")
+        start_progress.step(
+            f"Loaded extensions successfully (in "
+            f"{datetime.now().astimezone() - extension_loading_start_time})"
+        )
         start_progress.progress("Loading server settings...")
         try:
-            client.log_channel = await client.fetch_channel(988118678962860032)
+            client.log_channel = \
+                await client.fetch_channel(988118678962860032)
         except discord.errors.Forbidden:
-            # client.log_channel = await client.fetch_channel(986304081234624554)
-            client.log_channel = await client.fetch_channel(1062396920187863111)
+            # client.log_channel = \
+            #     await client.fetch_channel(986304081234624554)
+            client.log_channel = \
+                await client.fetch_channel(1062396920187863111)
         client.bot_owner = await client.fetch_user(262913789375021056)
-        # client.bot_owner = (await client.application_info()).owner  # or client.owner / client.owner_id :P
-        # can't use the commented out code because Rina is owned by someone else in the main server than
-        # the dev server (=not me).
+        # client.bot_owner = (await client.application_info()).owner
+        # ^ or client.owner / client.owner_id :P
+        # can't use the commented out code because Rina is owned by
+        # someone else in the main server than the dev server (=not me).
         start_progress.step("Loaded server settings")
         start_progress.progress("Restarting ongoing reminders...")
         await relaunch_ongoing_reminders(client)
@@ -279,7 +305,7 @@ if __name__ == "__main__":
 # - Translator
 # - (Unisex) compliment quotes
 # - Add error catch for when dictionaryapi.com is down
-# - make more three-in-one commands have optional arguments, explaining what to do if you don't
-#       fill in the optional argument
+# - make more three-in-one commands have optional arguments, explaining
+#   what to do if you don't fill in the optional argument.
 
 # endregion

@@ -16,6 +16,8 @@ from extensions.emojistats.emojisendsource import EmojiSendSource
 from resources.checks import not_in_dms_check
 
 
+# todo: convert to TypedDict \/
+
 #   Rina.emojistats         # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
 # ------------------------------------------------------
 #               _id = Object('62f3004156483575bb3175de')
@@ -145,7 +147,11 @@ class EmojiStats(commands.Cog):
     @app_commands.rename(emoji_name="emoji")
     @app_commands.describe(emoji_name="Emoji you want to get data of")
     @app_commands.check(not_in_dms_check)
-    async def get_emoji_data(self, itx: discord.Interaction[Bot], emoji_name: str):
+    async def get_emoji_data(
+            self,
+            itx: discord.Interaction[Bot],
+            emoji_name: str
+    ):
         if ":" in emoji_name:
             emoji_name = emoji_name.strip().split(":")[2][:-1]
         emoji_id = emoji_name

@@ -1,4 +1,6 @@
-import random  # for dice rolls (/roll) and selecting a random staff interaction wait time
+import random
+# ^ for dice rolls (/roll) and selecting a random staff
+#  interaction wait time
 from typing import TypeVar
 
 import discord
@@ -167,39 +169,53 @@ class FunAddons(commands.Cog):
         self.headpat_wait += 1
         if self.headpat_wait >= 1000:
             # todo: do we want server-specific headpat times?
-            # todo attribute: add headpat channel blacklist. Should also look if messages are in thread of this channel.
-            #  Should also be able to be categories.
+            # todo attribute: add headpat channel blacklist. Should also
+            #  look if messages are in thread of this channel. Should
+            #  also be able to be categories.
             if (
-                    (type(message.channel) is discord.Thread and
-                     message.channel.parent == 987358841245151262) or  # <#welcome-verify>
-                    message.channel.name.startswith('ticket-') or
-                    message.channel.name.startswith('closed-') or
-                    message.channel.category.id in [
-                        959584962443632700, 959590295777968128,
-                        959928799309484032, 1041487583475138692,
-                        995330645901455380, 995330667665707108] or
+                    (type(message.channel) is discord.Thread
+                     and message.channel.parent == 987358841245151262)
+                    # ^ <#welcome-verify>
+                    or message.channel.name.startswith('ticket-')
+                    or message.channel.name.startswith('closed-')
                     # <#Bulletin Board>, <#Moderation Logs>,
                     # <#Verifier Archive>, <#Events>,
                     # <#Open Tickets>, <#Closed Tickets>
-                    message.guild.id in [981730502987898960]  # don't send in Mod server
+                    or message.channel.category.id in [
+                        959584962443632700, 959590295777968128,
+                        959928799309484032, 1041487583475138692,
+                        995330645901455380, 995330667665707108
+                    ]
+                    or message.guild.id in [981730502987898960]
+                    # ^ don't send in Mod server
             ):
                 return False
 
             self.headpat_wait = 0
-            # # TODO: re-enable code someday
-            # # people asked for no random headpats anymore; or make it opt-in. See GitHub #23
+            # TODO: re-enable code someday
+            #  people asked for no random headpats anymore; or make it
+            #  opt-in. See GitHub #23
+
             # try:
             #     added_pat = True
             #     await message.add_reaction(headpat_emoji)  #headpatWait
             # except discord.errors.Forbidden:
-            #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
-            #                                                    f"reaction to {message.jump_url} (Forbidden): "
-            #                                                    f"They might have blocked Rina...')
+            #     await log_to_guild(
+            #         self.client,
+            #         message.guild,
+            #         f"**:warning: Warning: **Couldn\'t add pat "
+            #         f"reaction to {message.jump_url} (Forbidden): "
+            #         f"They might have blocked Rina..."
+            #     )
             # except discord.errors.HTTPException as ex:
-            #     await log_to_guild(self.client, message.guild, f"**:warning: Warning: **Couldn\'t add pat "
-            #                                                    f"reaction to {message.jump_url}. "
-            #                                                    f"(HTTP/{ex.code}) "
-            #                                                    f"They might have blocked Rina...')
+            #     await log_to_guild(
+            #         self.client,
+            #         message.guild,
+            #         f"**:warning: Warning: **Couldn\'t add pat "
+            #         f"reaction to {message.jump_url}. "
+            #         f"(HTTP/{ex.code}) "
+            #         f"They might have blocked Rina..."
+            #     )
             # return True
 
         return False
@@ -209,8 +225,10 @@ class FunAddons(commands.Cog):
         if message.author.bot:
             return
 
-        if self.client.is_module_enabled(message.guild, ModuleKeys.headpat_reactions):
-            headpat_emoji: discord.Emoji | None = self.client.get_guild_attribute(
+        if self.client.is_module_enabled(
+                message.guild, ModuleKeys.headpat_reactions):
+            headpat_emoji: discord.Emoji | None
+            headpat_emoji = self.client.get_guild_attribute(
                 message.guild, AttributeKeys.headpat_emoji)
             if headpat_emoji is None:
                 raise MissingAttributesCheckFailure(
@@ -219,8 +237,10 @@ class FunAddons(commands.Cog):
             self.handle_random_pat_reaction(message, headpat_emoji)
             return
 
-        if self.client.is_module_enabled(message.guild, ModuleKeys.awawawa_reactions):
-            awawawa_emoji: discord.Emoji | None = self.client.get_guild_attribute(
+        if self.client.is_module_enabled(
+                message.guild, ModuleKeys.awawawa_reactions):
+            awawawa_emoji: discord.Emoji | None
+            awawawa_emoji = self.client.get_guild_attribute(
                 message.guild, AttributeKeys.awawawa_emoji)
             if awawawa_emoji is None:
                 raise MissingAttributesCheckFailure(

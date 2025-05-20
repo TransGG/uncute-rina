@@ -1,13 +1,16 @@
 from __future__ import annotations
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from datetime import datetime  # for startup and crash logging, and Reminders
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+# ^ for scheduling Reminders
+from datetime import datetime
+# ^ for startup and crash logging, and Reminders
 from typing import TYPE_CHECKING, TypeVar
 
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
 
 import motor.core as motorcore  # for typing
-from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+from pymongo.database import Database as PyMongoDatabase
+# ^ for MongoDB database typing
 
 from extensions.settings.objects import (
     AttributeKeys, EnabledModules, ServerAttributes)
@@ -22,7 +25,8 @@ G = TypeVar('G')
 
 
 class Bot(commands.Bot):
-    startup_time = datetime.now().astimezone()  # bot uptime start, used in /version in cmd_staffaddons
+    # bot uptime start, used in /version in cmd_staffaddons
+    startup_time = datetime.now().astimezone()
 
     commandList: list[discord.app_commands.AppCommand]
     log_channel: discord.TextChannel | discord.Thread
@@ -92,16 +96,21 @@ class Bot(commands.Bot):
         :param args: The attribute(s) to get the values of. Must be keys
          of ServerAttributes.
         :param default: The value to return if attribute was not found.
-        :return: A single or list of values matching the requested attributes,
-         with *default* if attributes are not found.
+        :return: A single or list of values matching the requested
+         attributes, with *default* if attributes are not found.
         """
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
         if len(args) == 0:
             raise ValueError("You must provide at least one argument!")
 
-        if (self.server_settings is None or  # settings have not been fetched yet.
-                guild_id not in self.server_settings):  # return early
+        if (
+                self.server_settings is None
+                or guild_id not in self.server_settings
+        ):
+            # If settings have not been fetched yet, or if the guild
+            #  doesn't have any settings (perhaps the bot was recently
+            #  added).
             if len(args) > 1:
                 return [default] * len(args)
             return default
@@ -119,7 +128,8 @@ class Bot(commands.Bot):
         for arg in args:
             if arg not in attributes:
                 assert arg not in ServerAttributes.__annotations__
-                raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
+                raise ValueError(
+                    f"Attribute '{arg}' is not a valid attribute!")
 
             att_value = attributes[arg]  # type:ignore
             if att_value is not None:
@@ -144,14 +154,19 @@ class Bot(commands.Bot):
         :param guild_id: The server to check the module state for.
         :param args: The module key(s) to get the state for.
 
-        :return: The enabled/disabled state of the module as boolean, or a list of booleans matching the list of
-         module keys given.
+        :return: The enabled/disabled state of the module as boolean, or
+         a list of booleans matching the list of module keys given.
         """
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
 
-        if (self.server_settings is None or  # settings have not been fetched yet.
-                guild_id not in self.server_settings):  # return early
+        if (
+                self.server_settings is None
+                or guild_id not in self.server_settings
+        ):
+            # If settings have not been fetched yet, or if the guild
+            #  doesn't have any settings (perhaps the bot was recently
+            #  added).
             return False
 
         modules = self.server_settings[guild_id].enabled_modules
@@ -176,7 +191,8 @@ class Bot(commands.Bot):
         :param user_id: The user or user id to check.
         :return: ``True`` if the given user is the bot, otherwise ``False``.
         """
-        if isinstance(user_id, discord.User) or isinstance(user_id, discord.Member):
+        if (isinstance(user_id, discord.User)
+                or isinstance(user_id, discord.Member)):
             user_id = user_id.id
         # Could also use hasattr(user_id, "id") for a more generic approach...
         #  But this should work fine enough.

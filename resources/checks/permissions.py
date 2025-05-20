@@ -9,11 +9,15 @@ if TYPE_CHECKING:
     from resources.customs import Bot
 
 
-def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.User) -> bool:
+def is_staff(
+        itx: discord.Interaction[Bot],
+        member: discord.Member | discord.User
+) -> bool:
     """
     Check if someone is staff.
 
-    :param itx: The interaction with ``itx.client.server_settings`` and ``itx.guild``.
+    :param itx: The interaction with ``itx.client.server_settings``
+     and ``itx.guild``.
     :param member: A discord user with or without roles attribute.
 
     :return: Whether the user has a staff role.
@@ -27,11 +31,15 @@ def is_staff(itx: discord.Interaction[Bot], member: discord.Member | discord.Use
     )
 
 
-def is_admin(itx: discord.Interaction[Bot], member: discord.Member | discord.User) -> bool:
+def is_admin(
+        itx: discord.Interaction[Bot],
+        member: discord.Member | discord.User
+) -> bool:
     """
     Check if someone is an admin.
 
-    :param itx: The interaction with ``itx.client.server_settings`` and ``itx.guild``.
+    :param itx: The interaction with ``itx.client.server_settings``
+     and ``itx.guild``.
     :param member: A discord user with or without roles attribute.
 
     :return: Whether the user has an admin role.

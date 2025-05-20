@@ -23,7 +23,8 @@ from extensions.tags.tags import (
 )
 
 
-# to prevent excessive spamming when multiple people mention staff. A sorta cooldown
+# To prevent excessive spamming when multiple people mention staff.
+#  A sort of cooldown
 report_message_reminder = datetime.min
 
 

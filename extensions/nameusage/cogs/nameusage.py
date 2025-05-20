@@ -1,4 +1,6 @@
-import re  # to remove pronouns from user-/nicknames and split names at capital letters
+import re
+# ^ to remove pronouns from user-/nicknames and split names at
+#  capital letters.
 
 import discord
 import discord.app_commands as app_commands
@@ -9,18 +11,33 @@ from resources.checks import not_in_dms_check
 from resources.customs import Bot
 
 
-class NameUsage(commands.GroupCog, name="nameusage", description="Get data about which names are used in which server"):
+class NameUsage(
+        commands.GroupCog,
+        name="nameusage",
+        description="Get data about which names are used in which server"
+):
     def __init__(self):
         pass
 
-    @app_commands.command(name="gettop", description="See how often different names occur in this server")
+    @app_commands.command(
+        name="gettop",
+        description="See how often different names occur in this server"
+    )
     @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Search most-used usernames', value=1),
-        discord.app_commands.Choice(name='Search most-used nicknames', value=2),
-        discord.app_commands.Choice(name='Search nicks and usernames', value=3),
+        discord.app_commands.Choice(name='Search most-used usernames',
+                                    value=1),
+        discord.app_commands.Choice(name='Search most-used nicknames',
+                                    value=2),
+        discord.app_commands.Choice(name='Search nicks and usernames',
+                                    value=3),
     ])
     @app_commands.check(not_in_dms_check)
-    async def nameusage_gettop(self, itx: discord.Interaction[Bot], mode: int):
+    async def nameusage_gettop(
+            self,
+            itx: discord.Interaction[Bot],
+            mode: int
+    ):
+        # todo: split this function into multiple smaller functions
         await itx.response.defer(ephemeral=True)
         sections = {}
         for member in itx.guild.members:
@@ -59,7 +76,12 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
                     _name_backup = new_name + " "
                     while new_name != _name_backup:
                         _name_backup = new_name
-                        new_name = re.sub(pronoun, "", new_name, flags=re.IGNORECASE)
+                        new_name = re.sub(
+                            pronoun,
+                            "",
+                            new_name,
+                            flags=re.IGNORECASE
+                        )
 
                 names[index] = new_name
 
@@ -75,7 +97,11 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
                         parts = []
                         match = 1
                         while match:
-                            match = re.search("[A-Z][a-z]*[A-Z]", section, re.MULTILINE)
+                            match = re.search(
+                                "[A-Z][a-z]*[A-Z]",
+                                section,
+                                re.MULTILINE
+                            )
                             if match:
                                 caps = match.span()[1] - 1
                                 parts.append(section[:caps])
@@ -111,27 +137,44 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
 
         result_page = pages[page]
         result_page2 = pages[page + 1]
-        mode_text = "usernames" if mode == 1 else "nicknames" if mode == 2 else "usernames and nicknames"
+        mode_text = ("usernames" if mode == 1
+                     else "nicknames" if mode == 2
+                     else "usernames and nicknames")
         embed_title = f'Most-used {mode_text} leaderboard!'
         embed = discord.Embed(color=8481900, title=embed_title)
         embed.add_field(name="Column 1", value=result_page)
         embed.add_field(name="Column 2", value=result_page2)
-        embed.set_footer(text="page: " + str(page + 1) + " / " + str(int(len(pages) / 2)))
+        embed.set_footer(
+            text="page: "
+                 + str(page + 1)
+                 + " / "
+                 + str(int(len(pages) / 2))
+        )
         view = GetTopPageView(pages, embed_title, timeout=60)
         await itx.followup.send("", embed=embed, view=view, ephemeral=True)
         await view.wait()
         if view.value is None:
             await itx.edit_original_response(view=None)
 
-    @app_commands.command(name="name", description="See how often different names occur in this server")
+    @app_commands.command(
+        name="name",
+        description="See how often different names occur in this server"
+    )
     @app_commands.describe(name="What specific name are you looking for?")
     @app_commands.choices(search_type=[
         discord.app_commands.Choice(name='usernames', value=1),
         discord.app_commands.Choice(name='nicknames', value=2),
-        discord.app_commands.Choice(name='Search both nicknames and usernames', value=3),
+        discord.app_commands.Choice(name='Search both nicknames and usernames',
+                                    value=3),
     ])
     @app_commands.check(not_in_dms_check)
-    async def nameusage_name(self, itx: discord.Interaction[Bot], name: str, search_type: int, public: bool = False):
+    async def nameusage_name(
+            self,
+            itx: discord.Interaction[Bot],
+            name: str,
+            search_type: int,
+            public: bool = False
+    ):
         await itx.response.defer(ephemeral=not public)
         count = 0
         type_string = ""
@@ -149,11 +192,14 @@ class NameUsage(commands.GroupCog, name="nameusage", description="Get data about
         elif search_type == 3:  # usernames and nicknames
             for member in itx.guild.members:
                 if member.nick is not None:
-                    if name.lower() in member.nick.lower() or name.lower() in member.name.lower():
+                    if (name.lower() in member.nick.lower()
+                            or name.lower() in member.name.lower()):
                         count += 1
                 elif name.lower() in member.name.lower():
                     count += 1
             type_string = "username or nickname"
         await itx.followup.send(
-            f"I found {count} {'person' if count == 1 else 'people'} with '{name.lower()}' in their {type_string}",
-            ephemeral=not public)
+            f"I found {count} {'person' if count == 1 else 'people'} "
+            f"with '{name.lower()}' in their {type_string}",
+            ephemeral=not public,
+        )

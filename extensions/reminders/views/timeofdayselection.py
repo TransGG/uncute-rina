@@ -15,9 +15,14 @@ class TimeOfDaySelection(discord.ui.View):
             def callback(itx):  # pass the button label to the callback
                 return self.callback(itx, option)
 
-            self.add_item(create_simple_button(option, discord.ButtonStyle.green, callback))
+            self.add_item(create_simple_button(
+                option, discord.ButtonStyle.green, callback))
 
-    async def callback(self, interaction: discord.Interaction[Bot], label: str):
+    async def callback(
+            self,
+            interaction: discord.Interaction[Bot],
+            label: str
+    ):
         self.value = label
         self.return_interaction = interaction
         self.stop()

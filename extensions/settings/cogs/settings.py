@@ -157,7 +157,8 @@ async def _value_autocomplete(
                     results.append(app_commands.Choice(name=guild.name,
                                                        value=str(guild.id)))
         elif issubclass(attribute_type, discord.User):
-            # Note: discord.User is a subclass of discord.abc.Messageable, so should be tested before that too.
+            # Note: discord.User is a subclass of discord.abc.Messageable,
+            #  so should be tested before that too.
             # iterate guild members
             for member in itx.guild.members:
                 if (current.lower() in member.name.lower()
@@ -646,8 +647,10 @@ class SettingsCog(commands.Cog):
     )
     #
     # @app_commands.check(is_admin_check)
-    # @migrate_group.command(name="database",
-    #                        description="Migrate bot settings to new database.")
+    # @migrate_group.command(
+    #     name="database",
+    #     description="Migrate bot settings to new database."
+    # )
     # async def database(
     #         self,
     #         itx: discord.Interaction
@@ -656,7 +659,8 @@ class SettingsCog(commands.Cog):
     #     await ServerSettings.migrate(itx.client.async_rina_db)
     #     await itx.response.send_message(
     #         "Successfully migrated databases.", ephemeral=True)
-    #     itx.client.server_settings = await ServerSettings.fetch_all(itx.client)
+    #     itx.client.server_settings = await ServerSettings.fetch_all(
+    #         itx.client)
     #     await itx.edit_original_response(
     #         content="Migrated databases and re-fetched all server settings.")
     #

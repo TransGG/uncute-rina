@@ -9,7 +9,11 @@ class ShareReminder(discord.ui.View):
         self.value = 0
         self.timeout = timeout
         self.return_interaction: discord.Interaction | None = None
-        self.add_item(create_simple_button("Share reminder in chat", discord.ButtonStyle.gray, self.callback))
+        self.add_item(create_simple_button(
+            "Share reminder in chat",
+            discord.ButtonStyle.gray,
+            self.callback)
+        )
 
     async def callback(self, interaction: discord.Interaction):
         self.value = 1

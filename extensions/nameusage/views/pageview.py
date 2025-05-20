@@ -15,18 +15,24 @@ class GetTopPageView(discord.ui.View):
         self.embed_title = embed_title
 
     async def _make_page(self):
-        # todo: extract duplicated code to a new PageView subclass. Oh yeah. This should definitely be a PageView.
+        # todo: extract duplicated code to a new PageView subclass.
+        #  Oh yeah. This should definitely be a PageView.
         result_page = self.pages[self.page * 2]
         result_page2 = self.pages[self.page * 2 + 1]
         embed = discord.Embed(color=8481900, title=self.embed_title)
         embed.add_field(name="Column 1", value=result_page)
         embed.add_field(name="Column 2", value=result_page2)
-        embed.set_footer(text="page: " + str(self.page + 1) + " / " + str(int(len(self.pages) / 2)))
+        embed.set_footer(
+            text="page: "
+                 + str(self.page + 1)
+                 + " / "
+                 + str(int(len(self.pages) / 2))
+        )
         return embed
 
-    # When the confirm button is pressed, set the inner value to `True` and
-    # stop the View from listening to more input.
-    # We also send the user an ephemeral message that we're confirming their choice.
+    # When the confirm button is pressed, set the inner value to `True`
+    #  and stop the View from listening to more input. We also send the
+    #  user an ephemeral message that we're confirming their choice.
     @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
     async def previous(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
         # self.value = "previous"

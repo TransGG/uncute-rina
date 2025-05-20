@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Required
 
 
 class HelpPage(TypedDict, total=False):
@@ -13,7 +13,7 @@ class HelpPage(TypedDict, total=False):
 
         Discord embeds only allow up to 10 fields.
     """
-    title: str
-    description: str
+    title: Required[str]
+    description: Required[str]
     fields: list[tuple[str, str]]
     staff_only: bool

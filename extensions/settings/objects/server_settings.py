@@ -269,14 +269,19 @@ class ServerSettings:
         return get_name_or_id_maybe(attribute)
 
     @staticmethod
-    async def get_entry(async_rina_db: motor.core.AgnosticDatabase, guild_id: int) -> ServerSettingData | None:
+    async def get_entry(
+            async_rina_db: motor.core.AgnosticDatabase,
+            guild_id: int
+    ) -> ServerSettingData | None:
         """
         Retrieve a database entry for the given guild ID.
 
-        :param async_rina_db: The database with which to retrieve the entry.
-        :param guild_id: The guild id of the guild to retrieve the entry for.
-
-        :return A ServerSettingData or None if there is no entry for the given guild.
+        :param async_rina_db: The database with which to retrieve
+         the entry.
+        :param guild_id: The guild id of the guild to retrieve the
+         entry for.
+        :return A ServerSettingData or None if there is no entry for
+         the given guild.
         """
         collection = async_rina_db[ServerSettings.DATABASE_KEY]
         query = {"guild_id": guild_id}
@@ -286,16 +291,20 @@ class ServerSettings:
     # @staticmethod
     # async def migrate(async_rina_db: motor.core.AgnosticDatabase):
     #     """
-    #     Migrate all data from the old guildInfo database to the new server_settings database.
+    #     Migrate all data from the old guildInfo database to the new
+    #     server_settings database.
     #
-    #     :param async_rina_db: The database to reference to look up the old and store the new database.
-    #     :raise IndexError: No online database of the old version was found.
+    #     :param async_rina_db: The database to reference to look up the
+    #      old and store the new database.
+    #     :raise IndexError: No online database of the old version
+    #      was found.
     #     """
     #     old_collection = async_rina_db["guildInfo"]
     #     new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
     #     new_settings = []
     #     async for old_setting in old_collection.find():
-    #         guild_id, attributes = convert_old_settings_to_new(old_setting)
+    #         guild_id, attributes = convert_old_settings_to_new(
+    #             old_setting)
     #         new_setting = ServerSettingData(
     #             guild_id=guild_id,
     #             attribute_ids=attributes,
@@ -314,7 +323,10 @@ class ServerSettings:
             value: Any
     ) -> tuple[bool, bool]:
         if "." in parameter or parameter.startswith("$"):
-            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{parameter}')")
+            raise ValueError(
+                f"Parameters are not allowed to contain '.' or "
+                f"start with '$'! (parameter: '{parameter}')"
+            )  # todo: check if i sanitize the input when responding.
         if parameter not in ServerAttributeIds.__annotations__:
             raise KeyError(f"'{parameter}' is not a valid Server Attribute.")
 
@@ -334,10 +346,14 @@ class ServerSettings:
             parameter: str
     ) -> tuple[bool, bool]:
         if "." in parameter or parameter.startswith("$"):
-            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{parameter}')")
+            raise ValueError(
+                f"Parameters are not allowed to contain '.' or "
+                f"start with '$'! (parameter: '{parameter}')"
+            )  # todo: check if i sanitize the input when responding.
         collection = async_rina_db[ServerSettings.DATABASE_KEY]
         query = {"guild_id": guild_id}
-        update = {"$unset": {f"attribute_ids.{parameter}": ""}}  # value "" is not used by MongoDB when unsetting.
+        update = {"$unset": {f"attribute_ids.{parameter}": ""}}
+        # value ("") is not used by MongoDB when unsetting.
 
         result = await collection.update_one(query, update, upsert=True)
         return result.modified_count > 0, result.did_upsert
@@ -350,21 +366,26 @@ class ServerSettings:
             value: bool
     ) -> tuple[bool, bool]:
         """
-        Set the state of the given module
+        Set the state of the given module.
 
         :param async_rina_db: The database to edit the module state.
-        :param guild_id: The id of the guild whose module state you want to change/
+        :param guild_id: The id of the guild whose module state you want
+         to change.
         :param module: The name of the module to set.
         :param value: The (new) value of the module.
-
-        :return: A tuple of booleans: whether any documents were changed, and whether any new documents were created.
+        :return: A tuple of booleans: whether any documents were
+         changed, and whether any new documents were created.
         """
         if "." in module or module.startswith("$"):
-            raise ValueError(f"Parameters are not allowed to contain '.' or start with '$'! (parameter: '{module}')")
+            raise ValueError(f"Parameters are not allowed to contain '.'"
+                             f" or start with '$'! (parameter: '{module}')")
         if module not in EnabledModules.__annotations__:
             raise KeyError(f"'{module}' is not a valid Module.")
         if type(value) is not bool:
-            raise TypeError(f"'{module}' must be a boolean, not '{type(value).__name__}'.")
+            raise TypeError(
+                f"'{module}' must be a boolean, not "
+                f"'{type(value).__name__}'."
+            )
 
         collection = async_rina_db[ServerSettings.DATABASE_KEY]
         query = {"guild_id": guild_id}
@@ -378,9 +399,13 @@ class ServerSettings:
     @staticmethod
     async def fetch_all(client: Bot) -> dict[int, ServerSettings]:
         """
-        Load all server settings from database and format into a ServerSettings object.
-        :param client: The bot to use to retrieve matching attribute objects from ids, and for async_rina_db
-        :return: A dictionary of guild_id and a tuple of the server's enabled modules and attributes.
+        Load all server settings from database and format into a
+        ServerSettings object.
+
+        :param client: The bot to use to retrieve matching attribute
+         objects from ids, and for async_rina_db
+        :return: A dictionary of guild_id and a tuple of the server's
+         enabled modules and attributes.
         """
         collection = client.async_rina_db[ServerSettings.DATABASE_KEY]
         settings_data = collection.find()
@@ -392,22 +417,29 @@ class ServerSettings:
                 server_setting = ServerSettings.load(client, setting)
                 server_settings[server_setting.guild.id] = server_setting
             except ParseError as ex:
-                warnings.warn(f"ParseError for {setting["guild_id"]}: " + ex.message)
+                warnings.warn(
+                    f"ParseError for {setting["guild_id"]}: "
+                    + ex.message
+                )
 
         return server_settings
 
     @staticmethod
     async def fetch(client: Bot, guild_id: int) -> ServerSettings:
         """
-        Load a given guild_id's settings from database and format into a ServerSettings object.
+        Load a given guild_id's settings from database and format into
+        a ServerSettings object.
 
-        :param client: The bot to use to retrieve matching attributes from ids, and for async_rina_db
+        :param client: The bot to use to retrieve matching attributes
+         from ids, and for async_rina_db.
         :param guild_id: The guild_id to look up.
 
-        :return: A ServerSettings object, corresponding to the given guild_id.
+        :return: A ServerSettings object, corresponding to the
+         given guild_id.
 
         :raise KeyError: If the given guild_id has no data yet.
-        :raise ParseError: If values from the database could not be parsed.
+        :raise ParseError: If values from the database could not
+         be parsed.
         """
         result = await ServerSettings.get_entry(client.async_rina_db, guild_id)
         if result is None:
@@ -416,28 +448,38 @@ class ServerSettings:
         return ServerSettings.load(client, result)
 
     @staticmethod
-    def load(client: discord.Client, settings: ServerSettingData) -> ServerSettings:
+    def load(
+            client: discord.Client,
+            settings: ServerSettingData
+    ) -> ServerSettings:
         """
-        Load all server settings from database and format into a ServerSettings object.
+        Load all server settings from database and format into a
+        ServerSettings object.
 
-        :param client: The client to use to retrieve matching attribute objects from ids.
+        :param client: The client to use to retrieve matching attribute
+         objects from ids.
         :param settings: The settings object to load.
 
-        :return A ServerSettings object with the setting's retrieved guild, enabled modules, and attributes.
+        :return A ServerSettings object with the setting's retrieved
+         guild, enabled modules, and attributes.
 
-        :raise ParseError: If attributes in the data object could not be parsed.
+        :raise ParseError: If attributes in the data object could not
+         be parsed.
         """
         guild_id = settings["guild_id"]
         enabled_modules = settings["enabled_modules"]
         attribute_ids = ServerAttributeIds(**settings["attribute_ids"])
-        guild, attributes = ServerSettings.get_attributes(client, guild_id, attribute_ids)
+        guild, attributes = ServerSettings.get_attributes(
+            client, guild_id, attribute_ids
+        )
         return ServerSettings(
             guild=guild,
             enabled_modules=enabled_modules,
             attributes=attributes
         )
 
-    # todo: perhaps a repair function to remove unknown/migrated keys from the database?
+    # todo: perhaps a repair function to remove unknown/migrated keys
+    #  from the database?
 
     @staticmethod
     def get_attributes(
@@ -446,15 +488,20 @@ class ServerSettings:
             attributes: ServerAttributeIds
     ) -> tuple[discord.Guild, ServerAttributes]:
         """
-        Load the guild and all attributes from the given ids, using the given client.
+        Load the guild and all attributes from the given ids, using
+        the given client.
 
-        :param client: The client to use to retrieve matching attribute objects from ids.
-        :param guild_id: The guild id of the guild of the server attributes.
+        :param client: The client to use to retrieve matching attribute
+         objects from ids.
+        :param guild_id: The guild id of the guild of the server
+         attributes.
         :param attributes: The ids of the attributes to load.
 
-        :return A tuple of the loaded guild and its attributes, corresponding with the given ids.
+        :return A tuple of the loaded guild and its attributes,
+         corresponding with the given ids.
 
-        :raise ParseError: The given ServerAttributeIds contains ids that can't be converted to their corresponding
+        :raise ParseError: The given ServerAttributeIds contains
+         ids that can't be converted to their corresponding
          ServerAttributes object.
         """
         invalid_arguments: dict[str, str | list[str]] = {}

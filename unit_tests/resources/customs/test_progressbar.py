@@ -22,7 +22,8 @@ def starts_with_light_blue(message: str) -> bool:
 
 
 def get_original_message(message: str) -> str:
-    message = message.split("[INFO]: ", 2)[1]  # remove unimportant timestamps and stuff
+    # remove unimportant timestamps and stuff
+    message = message.split("[INFO]: ", 2)[1]
     message = message.split("\x1b[0m", 1)[0]
     return message
 
@@ -38,9 +39,11 @@ def test_progress(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_light_blue(message), f"Message '{message}' was not light blue."
-    assert ends_with_color_reset_and_carriage_return(message), (f"Message '{message}' did not end with a "
-                                                                f"color reset and carriage return.")
+    assert starts_with_light_blue(message), \
+        f"Message '{message}' was not light blue."
+    assert ends_with_color_reset_and_carriage_return(message), \
+        (f"Message '{message}' did not end with a color reset and "
+         f"carriage return.")
 
     # Act
     message = get_original_message(message)
@@ -60,8 +63,10 @@ def test_step(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_green(message), f"Message '{message}' was not green."
-    assert ends_with_color_reset(message), f"Message '{message}' did not end with a color reset."
+    assert starts_with_green(message), \
+        f"Message '{message}' was not green."
+    assert ends_with_color_reset(message), \
+        f"Message '{message}' did not end with a color reset."
 
     # Act
     message = get_original_message(message)
@@ -81,8 +86,10 @@ def test_progress_newline(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_light_blue(message), f"Message '{message}' was not light blue."
-    assert ends_with_color_reset(message), f"Message '{message}' did not end with a color reset."
+    assert starts_with_light_blue(message), \
+        f"Message '{message}' was not light blue."
+    assert ends_with_color_reset(message), \
+        f"Message '{message}' did not end with a color reset."
 
     # Act
     message = get_original_message(message)
@@ -102,9 +109,11 @@ def test_step_no_newline(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_green(message), f"Message '{message}' was not green."
-    assert ends_with_color_reset_and_carriage_return(message), (f"Message '{message}' did not end with a "
-                                                                f"color reset and carriage return.")
+    assert starts_with_green(message), \
+        f"Message '{message}' was not green."
+    assert ends_with_color_reset_and_carriage_return(message), \
+        (f"Message '{message}' did not end with a color reset and "
+         f"carriage return.")
 
     # Act
     message = get_original_message(message)
@@ -125,8 +134,10 @@ def test_step_step(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_green(message), f"Message '{message}' was not green."
-    assert ends_with_color_reset(message), f"Message '{message}' did not end with a color reset."
+    assert starts_with_green(message), \
+        f"Message '{message}' was not green."
+    assert ends_with_color_reset(message), \
+        f"Message '{message}' did not end with a color reset."
 
     # Act
     message = get_original_message(message)
@@ -148,9 +159,11 @@ def test_step_progress(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_light_blue(message), f"Message '{message}' was not green."
-    assert ends_with_color_reset_and_carriage_return(message), (f"Message '{message}' did not end with a "
-                                                                f"color reset and carriage return.")
+    assert starts_with_light_blue(message), \
+        f"Message '{message}' was not green."
+    assert ends_with_color_reset_and_carriage_return(message), \
+        (f"Message '{message}' did not end with a color reset and "
+         f"carriage return.")
 
     # Act
     message = get_original_message(message)
@@ -172,9 +185,11 @@ def test_progress_progress(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_light_blue(message), f"Message '{message}' was not green."
-    assert ends_with_color_reset_and_carriage_return(message), (f"Message '{message}' did not end with a "
-                                                                f"color reset and carriage return.")
+    assert starts_with_light_blue(message), \
+        f"Message '{message}' was not green."
+    assert ends_with_color_reset_and_carriage_return(message), \
+        (f"Message '{message}' did not end with a color reset and "
+         f"carriage return.")
 
     # Act
     message = get_original_message(message)
@@ -195,8 +210,12 @@ def test_progress_step(caplog):
     message = caplog.messages[0]
 
     # Assert
-    assert starts_with_green(message), f"Message '{message}' was not green."
-    assert ends_with_color_reset(message), f"Message '{message}' did not end with a color reset and carriage return."
+    # todo: make a function "assert progress" to test both two \/
+    assert starts_with_green(message), \
+        f"Message '{message}' was not green."
+    assert ends_with_color_reset(message), \
+        (f"Message '{message}' did not end with a color reset and "
+         f"carriage return.")
 
     # Act
     message = get_original_message(message)

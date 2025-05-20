@@ -1,4 +1,6 @@
-import asyncio  # to create new reminder task that runs immediately (from a not-async ReminderObject __init__ function)
+import asyncio
+# to create new reminder task that runs immediately (from a
+#  not-async ReminderObject __init__ function)
 from datetime import datetime, timedelta, timezone
 
 import discord
@@ -71,18 +73,32 @@ class ReminderObject:
             # self.remindertime = self.remindertime.astimezone()
             # self.creationtime = self.creationtime.astimezone()
             if self.remindertime < datetime.now().astimezone():
-                self.alert = ("Your reminder was delayed. Probably because the bot was offline for a while. I "
-                              "hope it didn't cause much of an issue!\n")
+                cmd_mention = self.client.get_command_mention(
+                    "developer_request")
+                self.alert = (
+                    f"Your reminder was delayed. If this was longer than "
+                    f"a day, please report this to the developer using "
+                    f"{cmd_mention}"
+                    # "Probably because the bot was offline for a while. "
+                    # "I hope it didn't cause much of an issue!\n"
+                )
                 try:
                     asyncio.get_event_loop().create_task(self.send_reminder())
                 except RuntimeError:
                     pass
                 return
-            client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
+            client.sched.add_job(
+                self.send_reminder,
+                "date",
+                run_date=self.remindertime
+            )
         else:
             if self.remindertime < datetime.now().astimezone():
-                self.alert = ("Your reminder date/time has passed already. Perhaps the bot was offline for "
-                              "a while; perhaps you just filled in a time in the past!\n")
+                self.alert = (
+                    "Your reminder date/time has passed already. Perhaps "
+                    "the bot was offline for a while; perhaps you just "
+                    "filled in a time in the past!\n"
+                )
                 try:
                     asyncio.get_event_loop().create_task(self.send_reminder())
                 except RuntimeError:
@@ -96,36 +112,57 @@ class ReminderObject:
             }
             user_reminders.append(reminder_data)
             query = {"userID": user_id}
-            collection.update_one(query, {"$set": {"reminders": user_reminders}}, upsert=True)
-            # print(f"added job for {self.remindertime} and it's currently {self.creationtime}")
-            client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
+            collection.update_one(
+                query,
+                {"$set": {"reminders": user_reminders}},
+                upsert=True
+            )
+            client.sched.add_job(
+                self.send_reminder,
+                "date",
+                run_date=self.remindertime
+            )
 
     async def send_reminder(self):
         user = await self.client.fetch_user(self.userID)
         creationtime = int(self.creationtime.timestamp())
         try:
-            await user.send(f"{self.alert}On <t:{creationtime}:F>, you asked to be reminded of \"{self.reminder}\".")
+            await user.send(
+                f"{self.alert}On <t:{creationtime}:F>, you asked to be "
+                f"reminded of \"{self.reminder}\"."
+            )
         except discord.errors.Forbidden:
-            pass  # I guess this user has no servers in common with Rina anymore. Sucks for them.
+            # I guess this user has no servers in common with Rina
+            # anymore. Sucks for them.
+            pass
         collection = self.client.rina_db["reminders"]
         query = {"userID": self.userID}
         db_data = collection.find_one(query)
+        reminders = db_data["reminders"]
         index_subtraction = 0
-        for reminder_index in range(len(db_data['reminders'])):
-            if db_data['reminders'][reminder_index - index_subtraction]["remindertime"] <= int(
-                    datetime.now().timestamp()):
-                del db_data['reminders'][reminder_index - index_subtraction]
+        for reminder_index in range(len(reminders)):
+            current_index = reminder_index - index_subtraction
+            reminder_time = reminders[current_index]["remindertime"]
+            if (reminder_time <= int(datetime.now().timestamp())):
+                del reminders[current_index]
                 index_subtraction += 1
-                # See... If more than 1 reminder is placed at the same time, we don't want the reminder that is
-                # triggered first to remove both reminders from the database... But it may also not be worth
-                # figuring out if a reminder index exactly matches the one in the database to remove it.
-                # So just remove one of them, and hope the update_one doesn't cause thread-unsafe shenanigans.
-                # Any reminder that isn't deleted from the database (or is accidentally added back after) will
-                # eventually be recreated and sent when the bot restarts.
+                # See... If more than 1 reminder is placed at the same time,
+                #  we don't want the reminder that is triggered first to remove
+                #  both reminders from the database... But it may also not be
+                #  worth figuring out if a reminder index exactly matches the
+                #  one in the database to remove it. So just remove one of
+                #  them, and hope the update_one doesn't cause thread-unsafe
+                #  shenanigans.Any reminder that isn't deleted from the
+                #  database (or is accidentally added back after) will
+                #  eventually be recreated and sent when the bot restarts.
                 # Todo: I should probably handle this better.
                 break
-        if len(db_data['reminders']) > 0:
-            collection.update_one(query, {"$set": {"reminders": db_data['reminders']}}, upsert=True)
+        if len(reminders) > 0:
+            collection.update_one(
+                query,
+                {"$set": {"reminders": reminders}},
+                upsert=True
+            )
         else:
             collection.delete_one(query)
 
@@ -133,7 +170,7 @@ class ReminderObject:
 async def _handle_reminder_timestamp_parsing(
         itx: discord.Interaction[Bot],
         reminder_datetime: str
-) -> tuple[datetime, discord.Interaction]:  # todo: docstring
+) -> tuple[datetime, discord.Interaction[Bot]]:  # todo: docstring
     # validate format
     # note: "t" here is lowercase because the reminder_datetime string
     #  gets lowercased...
@@ -142,16 +179,21 @@ async def _handle_reminder_timestamp_parsing(
         # check input character validity
         for char in reminder_datetime:
             if char not in "0123456789-t:+z":  # z for timezone +0000
-                raise ValueError(f"`{char}` cannot be used for a reminder date/time.")
+                raise ValueError(
+                    f"`{char}` cannot be used for a reminder date/time.")
 
         date, time = reminder_datetime.split("t")
         if date.count("-") != 2:
-            raise ValueError("Incorrect date given! Please format the date as YYYY-MM-DD, like 2023-12-31")
+            raise ValueError(
+                "Incorrect date given! Please format the date as "
+                "YYYY-MM-DD, like 2023-12-31"
+            )
 
         has_timezone = "+" in time or "-" in time
         if has_timezone:
-            # to check if the user gave seconds, I count the amount of : in the message
-            # If the timezone is provided you always have ":" extra: 23:04:23+01:00 = 3 colons
+            # to check if the user gave seconds, I count the amount
+            #  of : in the message. If the timezone is provided you always
+            #  have ":" extra: 23:04:23+01:00 = 3 colons
             time = time.split("+")[0]
             time = time.split("-")[0]
         if time.count(":") == 1:
@@ -159,29 +201,44 @@ async def _handle_reminder_timestamp_parsing(
         elif time.count(":") == 2:
             mode = TimestampFormats.DateTimeToSeconds
         else:
-            raise ValueError("Incorrect time given! Please format the time as HH:MM:SS or HH:MM, like 23:59:59")
+            raise ValueError("Incorrect time given! Please format the time "
+                             "as HH:MM:SS or HH:MM, like 23:59:59")
 
     elif reminder_datetime.count("t") > 1:
-        raise ValueError("You should only use 'T' once! Like so: 2023-12-31T23:59+0100. "
-                         "Notice that the date and time are separated by the 'T', and "
-                         "the timezone only by the '+' or '-' sign. Not an additional 'T'. :)")
+        raise ValueError(
+            "You should only use 'T' once! Like so: 2023-12-31T23:59+0100. "
+            "Notice that the date and time are separated by the 'T', and "
+            "the timezone only by the '+' or '-' sign. Not an additional 'T'. "
+            ":)"
+        )
     else:
-        if reminder_datetime.count("-") != 2:  # should contain two dashes for YYYY-MM-DD
-            raise ValueError("Incorrect date given! Please format the date as YYYY-MM-DD, like 2023-12-31")
+        if reminder_datetime.count("-") != 2:
+            # should contain two dashes for YYYY-MM-DD
+            raise ValueError("Incorrect date given! Please format the date "
+                             "as YYYY-MM-DD, like 2023-12-31")
         mode = TimestampFormats.DateNoTime
 
     # error for unimplemented: giving date and time format without a timezone
     if not has_timezone and mode != TimestampFormats.DateNoTime:
-        raise ValueError("Because I don't know your timezone, I can't ensure it'll be sent at the right time. "
-                         "Please add the timezone like so '-0100' or '+0900'.")
+        raise ValueError(
+            "Because I don't know your timezone, I can't ensure it'll be "
+            "sent at the right time. Please add the timezone like so "
+            "'-0100' or '+0900'."
+        )
 
     # convert given time string to valid datetime
-    timestamp_format = ["%Y-%m-%dt%H:%M:%S%z", "%Y-%m-%dt%H:%M%z", "%Y-%m-%d"][mode.value]
+    timestamp_format = [
+        "%Y-%m-%dt%H:%M:%S%z",
+        "%Y-%m-%dt%H:%M%z",
+        "%Y-%m-%d"
+    ][mode.value]
     try:
         timestamp = datetime.strptime(reminder_datetime, timestamp_format)
     except ValueError:
         raise ValueError(
-            f"Incorrect format given! I could not convert {reminder_datetime} to format {timestamp_format}")
+            f"Incorrect format given! I could not convert "
+            f"{reminder_datetime} to format {timestamp_format}"
+        )
 
     # todo: move the above code to a new function
 
@@ -216,14 +273,23 @@ async def _handle_reminder_timestamp_parsing(
     return distance, itx
 
 
-async def _parse_reminder_time(itx: discord.Interaction[Bot], reminder_datetime: str) -> tuple[datetime, datetime]:
+async def _parse_reminder_time(
+        itx: discord.Interaction[Bot],
+        reminder_datetime: str
+) -> tuple[datetime, datetime]:
+    # todo: make followup message a separate method, and initiate it by
+    #  making this function raise a specific exception.
     """
-    Parse a datetime string: relative to today (2d 11h); a ISO8601 timestamp; or a unix timestamp. It outputs
-    the reminder's datetime and interaction's creation time with timezone awareness. If the ISO timestamp gives
-    a date but no time, it will prompt the user to select a time of day, and then returns the respective datetime.
+    Parse a datetime string: relative to today (2d 11h); a ISO8601
+    timestamp; or a unix timestamp. It outputs the reminder's datetime
+    and interaction's creation time with timezone awareness. If the ISO
+    timestamp gives a date but no time, it will prompt the user to
+    select a time of day, and then returns the respective datetime.
 
-    :param itx: The interaction to interpret as creation time, and with which to send a TimeOfDaySelection view.
-    :param reminder_datetime: The string to interpret and convert into the datetime for the reminder.
+    :param itx: The interaction to interpret as creation time, and with
+     which to send a TimeOfDaySelection view.
+    :param reminder_datetime: The string to interpret and convert into
+     the datetime for the reminder.
 
     :return: A tuple of (reminder datetime, interaction creation time)
 
@@ -233,15 +299,25 @@ async def _parse_reminder_time(itx: discord.Interaction[Bot], reminder_datetime:
     :raise MissingQuantityException:
     :raise MissingUnitException:
     :raise ReminderTimeSelectionMenuTimeOutException:
-    """
+    """  # todo: update docstring exceptions
     # Parse reminder input to get a datetime for the reminder scheduler
     creation_time = itx.created_at  # utc
-    assert creation_time.tzinfo == timezone.utc  # it is timezone aware, in utc
+    assert creation_time.tzinfo == timezone.utc
+    # ^ it is timezone-aware, in utc
     distance: datetime
     try:
-        possible_timestamp_datetime = reminder_datetime.replace("<t:", "").split(":")[0]
-        if possible_timestamp_datetime.isdecimal() and len(possible_timestamp_datetime) > 6:  # 1000000 = 20 Jan 1970
-            distance = datetime.fromtimestamp(int(possible_timestamp_datetime), timezone.utc)
+        possible_timestamp_datetime = (reminder_datetime
+                                       .replace("<t:", "")
+                                       .split(":")[0])
+        if (possible_timestamp_datetime.isdecimal()
+                and len(possible_timestamp_datetime) > 6):
+            # length of 6: 1000000 = 20 Jan 1970
+            # Safe bet it's a unix timestamp, not someone accidentally
+            #  pressing 7 digits.
+            distance = datetime.fromtimestamp(
+                int(possible_timestamp_datetime),
+                timezone.utc
+            )
             if distance < creation_time:
                 raise UnixTimestampInPastException(distance, creation_time)
         else:
@@ -254,11 +330,15 @@ async def _parse_reminder_time(itx: discord.Interaction[Bot], reminder_datetime:
             distance = TimeParser.parse_date(reminder_datetime, creation_time)
     except ValueError:
         try:
-            distance, itx = await _handle_reminder_timestamp_parsing(itx, reminder_datetime)
+            distance, itx = await _handle_reminder_timestamp_parsing(
+                itx, reminder_datetime)
             time_passed = distance - creation_time
             if time_passed > timedelta(days=365 * 3999):
-                raise ValueError("I don't think I can remind you `{}` years into the future..."
-                                 .format(time_passed.days // 365.2425))
+                raise ValueError(
+                    "I don't think I can remind you `{}` years into "
+                    "the future..."
+                    .format(time_passed.days // 365.2425)
+                )
         except ValueError as ex:
             raise TimestampParseException(ex)
 
@@ -272,31 +352,49 @@ async def _create_reminder(
         db_data: list[ReminderDict],
         from_copy: bool = False
 ):
-    reminder_object = ReminderObject(itx.client, creation_time, distance, itx.user.id, reminder, db_data)
+    reminder_object = ReminderObject(
+        itx.client,
+        creation_time,
+        distance,
+        itx.user.id,
+        reminder,
+        db_data
+    )
     _distance = int(distance.timestamp())
     cmd_mention = itx.client.get_command_mention("reminder reminders")
     view = ShareReminder()
     if from_copy:
         # send message without view.
         await itx.response.send_message(
-            f"Successfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!\n"
+            f"Successfully created a reminder for you on <t:{_distance}:F> "
+            f"for \"{reminder}\"!\n"
             f"Use {cmd_mention} to see your list of reminders",
             ephemeral=True
         )
         return
     else:
         await itx.response.send_message(
-            f"Successfully created a reminder for you on <t:{_distance}:F> for \"{reminder}\"!\n"
+            f"Successfully created a reminder for you on <t:{_distance}:F> "
+            f"for \"{reminder}\"!\n"
             f"Use {cmd_mention} to see your list of reminders",
             view=view, ephemeral=True
         )
 
     await view.wait()
     if view.value == 1:
-        msg = f"{itx.user.mention} shared a reminder on <t:{_distance}:F> for \"{reminder}\""
-        copy_view = CopyReminder(_create_reminder, reminder_object, timeout=300)
+        msg = (f"{itx.user.mention} shared a reminder on <t:{_distance}:F> "
+               f"for \"{reminder}\"")
+        copy_view = CopyReminder(
+            _create_reminder,
+            reminder_object,
+            timeout=300
+        )
         try:
-            await itx.channel.send(content=msg, view=copy_view, allowed_mentions=discord.AllowedMentions.none())
+            await itx.channel.send(
+                content=msg,
+                view=copy_view,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
         except discord.errors.Forbidden:
             await view.return_interaction.response.send_message(
                 msg, view=copy_view,

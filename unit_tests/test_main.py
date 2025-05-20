@@ -4,7 +4,8 @@ import os
 
 from main import EXTENSIONS
 
-# todo: add more tests. For example for expected crashes, and just overall testing each function.
+# todo: add more tests. For example for expected crashes, and just
+#  overall testing each function.
 
 
 def test_warn_all_modules_enabled():
@@ -27,7 +28,8 @@ def test_warn_all_modules_enabled():
             existing_modules_not_in_active_extensions.append(extension)
 
     if existing_modules_not_in_active_extensions:
-        msg = "Check that all modules are enabled: " + ', '.join(existing_modules_not_in_active_extensions)
+        msg = ("Check that all modules are enabled: "
+               + ', '.join(existing_modules_not_in_active_extensions))
         warn(msg)
 
 
@@ -49,5 +51,7 @@ def test_all_modules_exist():
         else:
             misnamed_extensions.append(extension)
 
-    assert not missing_extensions, "Missing module.py for these extensions!"
-    assert not misnamed_extensions, "Missing extension folder for these extensions!"
+    assert not missing_extensions, \
+        "Missing module.py for these extensions!"
+    assert not misnamed_extensions, \
+        "Missing extension folder for these extensions!"
