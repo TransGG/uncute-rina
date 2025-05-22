@@ -119,8 +119,9 @@ class DevRequest(commands.Cog):
                         f"({copyable_version.jump_url})",
             timestamp=datetime.now()
         )
+        username = getattr(itx.user, 'nick', None) or itx.user.name
         embed.set_author(
-            name=f"{itx.user.nick or itx.user.name}",
+            name=f"{username}",
             url=f"https://original.poster/{itx.user.id}/",
             icon_url=itx.user.display_avatar.url
         )

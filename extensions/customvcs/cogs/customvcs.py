@@ -381,12 +381,13 @@ class CustomVcs(commands.Cog):
                            f"to \"{name}\"{limit_info}",
                     name=name
                 )
+                username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
                     itx.client,
                     itx.guild,
                     f"Voice channel ({channel.id}) renamed from "
                     f"\"{old_name}\" to \"{name}\" (by "
-                    f"{itx.user.nick or itx.user.name}, {itx.user.id})"
+                    f"{username}, {itx.user.id})"
                 )
                 await itx.response.send_message(
                     warning + f"Voice channel successfully renamed "
@@ -423,10 +424,11 @@ class CustomVcs(commands.Cog):
                     user_limit=limit,
                     name=name
                 )
+                username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
                     itx.client,
                     itx.guild,
-                    f"{itx.user.nick or itx.user.name} ({itx.user.id}) "
+                    f"{username} ({itx.user.id}) "
                     f"changed VC ({channel.id}) name \"{old_name}\" to "
                     f"\"{name}\" and user limit from \"{old_limit}\" to "
                     f"\"{limit}\"{limit_info}"
