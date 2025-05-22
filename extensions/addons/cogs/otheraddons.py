@@ -281,7 +281,7 @@ class OtherAddons(commands.Cog):
                 "show_alternative": "true",
             }
             response_api = requests.get(
-                f"https://openexchangerates.org/api/latest.json",
+                "https://openexchangerates.org/api/latest.json",
                 params=params
             ).text
             data = json.loads(response_api)

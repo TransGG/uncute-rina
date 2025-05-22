@@ -1,4 +1,6 @@
 import json  # to read API json responses
+import urllib.parse
+
 import requests  # to read api calls
 
 import discord
@@ -181,18 +183,19 @@ class SearchAddons(commands.Cog):
                 ephemeral=True
             )
             return
-        query = query.replace("+", " plus ")
         # pluses are interpreted as a space (`%20`) in urls. In LaTeX,
         #  that can mean multiply.
         api_key = itx.client.api_tokens['Wolfram Alpha']
         params = {
             "appid": api_key,
-            "input": query,
+            "input": urllib.parse.quote(query),  # slashes are safe
             "output": "json",
         }
         try:
             data = requests.get(
-                f"https://api.wolframalpha.com/v2/query", params=params).json()
+                "https://api.wolframalpha.com/v2/query",
+                params=params
+            ).json()
         except requests.exceptions.JSONDecodeError:
             await itx.followup.send(
                 "Your input gave a malformed result! Perhaps it took "
