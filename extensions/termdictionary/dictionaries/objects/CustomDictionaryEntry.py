@@ -1,7 +1,7 @@
 from typing import TypedDict
 
 
-class DictionaryData(TypedDict):
+class CustomDictionaryEntry(TypedDict):
     term: str
     definition: str
     synonyms: list[str]
