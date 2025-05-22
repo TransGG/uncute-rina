@@ -174,7 +174,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                                    f"<t:{reminder['remindertime']}:F>")
                         index += 1
                     cmd_reminders = itx.client.get_command_mention_with_args(
-                        "reminder reminders", item="")
+                        "reminder reminders", item=" ")
                     out_msg = (
                         (f"You have {len(db_data['reminders'])} reminders "
                          f"(use {cmd_reminders} to get more info about a "

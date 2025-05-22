@@ -8,7 +8,7 @@ class TimeOfDaySelection(discord.ui.View):
     def __init__(self, options: list[str], timeout=180):
         super().__init__()
         self.value: str | None = None
-        self.return_interaction: discord.Interaction | None = None
+        self.return_interaction: discord.Interaction[Bot] | None = None
         self.timeout = timeout
 
         for option in options:

@@ -160,7 +160,7 @@ async def _get_current_voice_channel(
 
 
 async def _get_channel_if_owner(
-        itx: discord.Interaction | discord.Member,
+        itx: discord.Interaction[Bot] | discord.Member,
         action: str,
         from_event: bool = False
 ):

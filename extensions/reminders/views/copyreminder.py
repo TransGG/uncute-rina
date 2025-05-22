@@ -22,7 +22,7 @@ class CopyReminder(discord.ui.View):
     ):
         super().__init__()
         self.timeout = timeout
-        self.return_interaction: discord.Interaction | None = None
+        self.return_interaction: discord.Interaction[Bot] | None = None
         self.reminder = reminder
 
         # required to prevent circular imports ;-;

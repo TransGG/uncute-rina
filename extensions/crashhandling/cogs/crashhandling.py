@@ -28,7 +28,7 @@ async def _send_crash_message(
         traceback_text: str,
         error_source: str,
         color: discord.Colour,
-        itx: discord.Interaction | None = None
+        itx: discord.Interaction[Bot] | None = None
 ) -> None:
     """
     Sends crash message to Rina's main logging channel
