@@ -4,7 +4,6 @@ from abc import abstractmethod
 
 import discord
 import typing
-import types
 
 from resources.customs import Bot
 
@@ -39,6 +38,15 @@ def create_simple_button(
 
 
 class GenericTwoButtonView(discord.ui.View):
+    """
+    A generic view with two buttons. They are typically set as an
+    accept and cancel button. When the user clicks a button, the
+    state is stored in :py:attr:`self.value`.
+
+    :ivar value: The state of the button. ``None`` if the view timed
+     out, or a boolean whether :py:meth:`on_button_true` (``True``) or
+     :py:meth:`on_button_false` (``False``) was triggered.
+    """
     def __init__(
             self,
             button_true: tuple[str, discord.ButtonStyle] = (
@@ -78,6 +86,74 @@ class GenericTwoButtonView(discord.ui.View):
 
 
 class PageView(discord.ui.View):
+    """
+    A generic page view to nagivate through given pages.
+
+    The view can be subclassed to add new buttons. To do so, simply
+    add new button functions, then initialize this superclass. The
+    buttons will be placed on the left of the navigation buttons.
+
+    When adding custom buttons, the order is important. The one placed
+    first will get index 0 in :py:attr:`_children`. Subsequent ones
+    will get the next index, etc. Initializing the superclass will
+    place the page_up and page_down buttons in the following two
+    indexes.
+
+    If you wish to place buttons on the right side, you have to move
+    them manually AFTER initializing this superclass::
+
+        # Example:
+        # self._children contains 4 buttons:
+        # - A "Jump to index" button
+        # - A "Jump to page" button
+        # - The automatically-added "page_down" button
+        # - The automatically-added "page_up" button
+
+        # To move the "Jump to page" button after the navigation
+        #  buttons: Remove the second button: "Jump to page"
+        button_to_move = self._children.pop(1)
+        # Add the button to the end.
+        self._children.append(button_to_move)
+
+        # Outcome:
+        # - "Jump to index" button
+        # - "page_down" and "page_up" button
+        # - "Jump to page" button
+
+    While not recommended, the :py:meth:`on_page_down` and
+    :py:meth:`on_page_up` methods can be overridden to change the
+    page navigation functionality. By default, they control the
+    :py:attr:`page` index integer. But it's recommended
+    to use the :py:meth:`update_page` method instead.
+
+    When the user navigates the pages, the function
+    :py:meth:`update_page` is called. This function handles the page
+    updating and must be implemented by subclasses. For basic
+    implementation, subclasses can pass a list of pages, and use
+    :py:attr:`page` to select the correct page to display.
+
+    By default, when the user reaches the first or last page, the button
+    style changes to represent this boundary. When navigating beyond
+    the bounds of the pages, the selected page wraps around: If the user
+    goes down from the first page, it wraps around and jumps to the last
+    page. The same when going up a page from the last page. This can
+    be disabled with :py:attr:`loop_around_pages`.
+
+    The style of the buttons are handled by the properties
+    :py:meth:`page_down_style` and :py:meth:`page_up_style`.
+
+    :ivar page: The currently selected page index by the user. Typically
+     controlled by :py:meth:`on_page_down` and :py:meth:`on_page_up`.
+    :ivar loop_around_pages: Whether going to a page out of bounds
+     should loop the page index (<0 should go to page max_page_index,
+     and >max_page_index should go to page index 0). If this is
+     ``False``, the user will be told they have reached the first/last
+     page instead.
+    :ivar max_page_index: The maximum page index, after which to deny
+     any further page increments.
+    :ivar timeout: The duration (in seconds) to wait for inactivity
+     before the view times out.
+    """
     @property
     def page_down_style(self) -> tuple[discord.ButtonStyle, bool]:
         """
@@ -97,7 +173,7 @@ class PageView(discord.ui.View):
             button_style = discord.ButtonStyle.gray
         else:
             button_style = discord.ButtonStyle.blurple
-        
+
         return button_style, disabled
 
     @property
@@ -125,8 +201,10 @@ class PageView(discord.ui.View):
     @abstractmethod
     async def update_page(self, itx: discord.Interaction[Bot], view: PageView):
         """
-        Update the page message. This typically involves calculating the
-        message content for the message and updating the original message.
+        Update the page message.
+
+        This typically involves calculating the message content for the
+        message and updating the original message.
 
         :param itx: The interaction gained from the button or modal
          interaction by the user.
@@ -138,11 +216,6 @@ class PageView(discord.ui.View):
             self,
             starting_page: int,
             max_page_index: int,
-            page_update_function: typing.Callable[
-                                      [discord.Interaction[Bot], PageView],
-                                      types.CoroutineType[
-                                          typing.Any, typing.Any, None]
-                                  ] | None = None,
             prepended_buttons: list[discord.ui.Button] | None = None,
             appended_buttons: list[discord.ui.Button] | None = None,
             loop_around_pages: bool = True,
@@ -156,8 +229,6 @@ class PageView(discord.ui.View):
         if appended_buttons is None:
             appended_buttons = []
         self.page: int = starting_page
-        if page_update_function is not None:
-            self.update_page = page_update_function
         self.loop_around_pages = loop_around_pages
 
         self.max_page_index: int = max_page_index
@@ -169,7 +240,7 @@ class PageView(discord.ui.View):
             = self.page_up_style
         page_down_style: tuple[discord.ButtonStyle, bool] \
             = self.page_down_style
-        
+
         self.page_down_button = create_simple_button(
             "◀️",
             page_down_style[0],

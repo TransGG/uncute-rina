@@ -1,13 +1,14 @@
 from __future__ import annotations
+
+import discord  # for main discord bot functionality
+import discord.ext.commands as commands
+import discord.app_commands as app_commands
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ^ for scheduling Reminders
 from datetime import datetime
 # ^ for startup and crash logging, and Reminders
 from typing import TYPE_CHECKING, TypeVar
-
-import discord  # for main discord bot functionality
-import discord.ext.commands as commands
-
 import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
@@ -66,20 +67,26 @@ class Bot(commands.Bot):
         # </COMMAND SUBCOMMAND_GROUP SUBCOMMAND:ID>
         #              /\- is posed as 'subcommand', to make searching easier
         for command in self.commandList:
-            if command.name == command_name:
-                if subcommand is None:
-                    return command.mention
-                for subgroup in command.options:
-                    if subgroup.name == subcommand:
-                        if subcommand_group is None:
-                            return subgroup.mention
-                        # now it technically searches subcommand in
-                        #  subcmdgroup.options but to remove additional
-                        #  renaming of variables, it stays as is.
-                        # subcmdgroup = subgroup  # hm
-                        for subcmdgroup in subgroup.options:
-                            if subcmdgroup.name == subcommand_group:
-                                return subcmdgroup.mention
+            if command.name != command_name:
+                continue
+            if subcommand is None:
+                return command.mention
+
+            for subgroup in command.options:
+                if subgroup.name != subcommand:
+                    continue
+                if subcommand_group is None:
+                    assert type(subgroup) is app_commands.AppCommandGroup
+                    return subgroup.mention
+
+                # now it technically searches subcommand in
+                #  subcmdgroup.options but to remove additional
+                #  renaming of variables, it stays as is.
+                # subcmdgroup = subgroup  # hm
+                for subcmdgroup in subgroup.options:
+                    if subcmdgroup.name == subcommand_group:
+                        return subcmdgroup.mention
+        # no command found.
         return "/" + command_string
 
     def get_command_mention_with_args(
@@ -87,6 +94,14 @@ class Bot(commands.Bot):
             command_string: str,
             **kwargs: str
     ) -> str:
+        """
+        Turn a string into a command mention and format passed arguments.
+        :param command_string: Command you want to convert into a
+         mention (without slash in front of it).
+        :param kwargs: Additional arguments and their values to pass to
+         the command.
+        :return:
+        """
         command_mention = self.get_command_mention(command_string)
         for key, value in kwargs.items():
             command_mention += f" `{key}:{value}`"
@@ -95,14 +110,14 @@ class Bot(commands.Bot):
 
     def get_guild_attribute(
             self,
-            guild_id: discord.Guild | int,
+            guild: discord.Guild | int,
             *args: str,
             default: T = None
     ) -> object | list[object] | T:
         """
         Get ServerSettings attributes for the given guild.
 
-        :param guild_id: The guild or guild id of the server you want to
+        :param guild: The guild or guild id of the server you want to
          get attributes for.
         :param args: The attribute(s) to get the values of. Must be keys
          of ServerAttributes.
@@ -110,8 +125,12 @@ class Bot(commands.Bot):
         :return: A single or list of values matching the requested
          attributes, with *default* if attributes are not found.
         """
-        if type(guild_id) is discord.Guild:
-            guild_id: int = guild_id.id
+        if type(guild) is discord.Guild:
+            guild_id: int = guild.id
+        else:
+            assert type(guild) is int  # why doesn't the interpreter see this?
+            guild_id: int = guild
+
         if len(args) == 0:
             raise ValueError("You must provide at least one argument!")
 
