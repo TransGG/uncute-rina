@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from abc import abstractmethod
+
 import discord
 import typing
 
@@ -9,8 +12,8 @@ def create_simple_button(
         label: str,
         style: discord.ButtonStyle,
         callback: typing.Callable[
-            [discord.Interaction],
-            typing.Coroutine[typing.Any, typing.Any, None]],
+            [discord.Interaction[Bot]],
+            typing.Coroutine[typing.Any, typing.Any, typing.Any]],
         disabled: bool = False,
         label_is_emoji: bool = False,
 ) -> discord.ui.Button:
@@ -35,6 +38,15 @@ def create_simple_button(
 
 
 class GenericTwoButtonView(discord.ui.View):
+    """
+    A generic view with two buttons. They are typically set as an
+    accept and cancel button. When the user clicks a button, the
+    state is stored in :py:attr:`self.value`.
+
+    :ivar value: The state of the button. ``None`` if the view timed
+     out, or a boolean whether :py:meth:`on_button_true` (``True``) or
+     :py:meth:`on_button_false` (``False``) was triggered.
+    """
     def __init__(
             self,
             button_true: tuple[str, discord.ButtonStyle] = (
@@ -64,16 +76,84 @@ class GenericTwoButtonView(discord.ui.View):
             button_false[0], button_false[1], self.on_button_false
         ))
 
-    async def on_button_true(self, _: discord.Interaction):
+    async def on_button_true(self, _: discord.Interaction[Bot]):
         self.value = True
         self.stop()
 
-    async def on_button_false(self, _: discord.Interaction):
+    async def on_button_false(self, _: discord.Interaction[Bot]):
         self.value = False
         self.stop()
 
 
 class PageView(discord.ui.View):
+    """
+    A generic page view to nagivate through given pages.
+
+    The view can be subclassed to add new buttons. To do so, simply
+    add new button functions, then initialize this superclass. The
+    buttons will be placed on the left of the navigation buttons.
+
+    When adding custom buttons, the order is important. The one placed
+    first will get index 0 in :py:attr:`_children`. Subsequent ones
+    will get the next index, etc. Initializing the superclass will
+    place the page_up and page_down buttons in the following two
+    indexes.
+
+    If you wish to place buttons on the right side, you have to move
+    them manually AFTER initializing this superclass::
+
+        # Example:
+        # self._children contains 4 buttons:
+        # - A "Jump to index" button
+        # - A "Jump to page" button
+        # - The automatically-added "page_down" button
+        # - The automatically-added "page_up" button
+
+        # To move the "Jump to page" button after the navigation
+        #  buttons: Remove the second button: "Jump to page"
+        button_to_move = self._children.pop(1)
+        # Add the button to the end.
+        self._children.append(button_to_move)
+
+        # Outcome:
+        # - "Jump to index" button
+        # - "page_down" and "page_up" button
+        # - "Jump to page" button
+
+    While not recommended, the :py:meth:`on_page_down` and
+    :py:meth:`on_page_up` methods can be overridden to change the
+    page navigation functionality. By default, they control the
+    :py:attr:`page` index integer. But it's recommended
+    to use the :py:meth:`update_page` method instead.
+
+    When the user navigates the pages, the function
+    :py:meth:`update_page` is called. This function handles the page
+    updating and must be implemented by subclasses. For basic
+    implementation, subclasses can pass a list of pages, and use
+    :py:attr:`page` to select the correct page to display.
+
+    By default, when the user reaches the first or last page, the button
+    style changes to represent this boundary. When navigating beyond
+    the bounds of the pages, the selected page wraps around: If the user
+    goes down from the first page, it wraps around and jumps to the last
+    page. The same when going up a page from the last page. This can
+    be disabled with :py:attr:`loop_around_pages`.
+
+    The style of the buttons are handled by the properties
+    :py:meth:`page_down_style` and :py:meth:`page_up_style`.
+
+    :ivar page: The currently selected page index by the user. Typically
+     controlled by :py:meth:`on_page_down` and :py:meth:`on_page_up`.
+    :ivar loop_around_pages: Whether going to a page out of bounds
+     should loop the page index (<0 should go to page max_page_index,
+     and >max_page_index should go to page index 0). If this is
+     ``False``, the user will be told they have reached the first/last
+     page instead.
+    :ivar max_page_index: The maximum page index, after which to deny
+     any further page increments.
+    :ivar timeout: The duration (in seconds) to wait for inactivity
+     before the view times out.
+    """
     @property
     def page_down_style(self) -> tuple[discord.ButtonStyle, bool]:
         """
@@ -85,36 +165,49 @@ class PageView(discord.ui.View):
         :return: A tuple of the button color and whether the button
          should be disabled.
         """
+        disabled = (self.page == 0
+                    and not self.loop_around_pages)
         # set color to gray if clicking the button would make the page
         #  out of bounds and thus loop around.
-        return (
-            (discord.ButtonStyle.gray if self.page == 0
-             else discord.ButtonStyle.blurple),
-            self.page == 0 and not self.loop_around_pages
-        )
+        if self.page == 0:
+            button_style = discord.ButtonStyle.gray
+        else:
+            button_style = discord.ButtonStyle.blurple
+
+        return button_style, disabled
 
     @property
     def page_up_style(self) -> tuple[discord.ButtonStyle, bool]:
         """
-        Gives the button style depending on the current page: If incrementing the page index would
-        make it out of bounds, make it gray; else blurple. If loop_around_pages is disabled, gray
+        Gives the button style depending on the current page: If
+        incrementing the page index would make it out of bounds, make
+        it gray; else blurple. If loop_around_pages is disabled, gray
         buttons will be disabled too.
 
-        :return: A tuple of the button color and whether the button should be disabled.
+        :return: A tuple of the button color and whether the button
+         should be disabled.
         """
-        # set color to gray if clicking the button would make the page out of bounds and thus loop around
-        return (
-            (discord.ButtonStyle.gray if self.page == self.max_page_index
-             else discord.ButtonStyle.blurple),
-            self.page == self.max_page_index and not self.loop_around_pages
-        )
+        disabled = (self.page == self.max_page_index
+                    and not self.loop_around_pages)
+        # set color to gray if clicking the button would make the page
+        #  out of bounds and thus loop around.
+        if self.page == self.max_page_index:
+            button_style = discord.ButtonStyle.gray
+        else:
+            button_style = discord.ButtonStyle.blurple
 
+        return button_style, disabled
+
+    @abstractmethod
     async def update_page(self, itx: discord.Interaction[Bot], view: PageView):
         """
-        Update the page message. This typically involves calculating the message content for the message and updating
-        the original message.
+        Update the page message.
 
-        :param itx: The interaction gained from the button or modal interaction by the user.
+        This typically involves calculating the message content for the
+        message and updating the original message.
+
+        :param itx: The interaction gained from the button or modal
+         interaction by the user.
         :param view: The view class instance.
         """
         pass
@@ -123,9 +216,8 @@ class PageView(discord.ui.View):
             self,
             starting_page: int,
             max_page_index: int,
-            page_update_function: typing.Callable[[discord.Interaction, PageView], typing.Awaitable[None]],
-            prepended_buttons: list[discord.ui.Button] = None,
-            appended_buttons: list[discord.ui.Button] = None,
+            prepended_buttons: list[discord.ui.Button] | None = None,
+            appended_buttons: list[discord.ui.Button] | None = None,
             loop_around_pages: bool = True,
             timeout=None
     ):
@@ -137,7 +229,6 @@ class PageView(discord.ui.View):
         if appended_buttons is None:
             appended_buttons = []
         self.page: int = starting_page
-        self.update_page = page_update_function
         self.loop_around_pages = loop_around_pages
 
         self.max_page_index: int = max_page_index
@@ -145,8 +236,11 @@ class PageView(discord.ui.View):
         for pre_button in prepended_buttons:
             self.add_item(pre_button)
 
-        page_up_style: tuple[discord.ButtonStyle, bool] = self.page_up_style
-        page_down_style: tuple[discord.ButtonStyle, bool] = self.page_down_style
+        page_up_style: tuple[discord.ButtonStyle, bool] \
+            = self.page_up_style
+        page_down_style: tuple[discord.ButtonStyle, bool] \
+            = self.page_down_style
+
         self.page_down_button = create_simple_button(
             "◀️",
             page_down_style[0],
@@ -165,7 +259,7 @@ class PageView(discord.ui.View):
         for post_button in appended_buttons:
             self.add_item(post_button)
 
-    async def on_page_down(self, itx: discord.Interaction):
+    async def on_page_down(self, itx: discord.Interaction[Bot]):
         if self.page - 1 < 0:  # below lowest index
             self.page = self.max_page_index  # set to the highest index
         else:
@@ -174,7 +268,7 @@ class PageView(discord.ui.View):
         self.update_button_colors()
         await self.update_page(itx, self)
 
-    async def on_page_up(self, itx: discord.Interaction):
+    async def on_page_up(self, itx: discord.Interaction[Bot]):
         if self.page + 1 > self.max_page_index:  # above highest index
             self.page = 0  # set to the lowest index
         else:

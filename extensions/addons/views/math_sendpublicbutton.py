@@ -17,9 +17,9 @@ class SendPublicButtonMath(discord.ui.View):
     ):
         self.value = 1
         await itx.response.edit_message(content="Sent successfully!")
-        cmd_mention = itx.client.get_command_mention("math")
+        cmd_math = itx.client.get_command_mention("math")
         await itx.followup.send(
-            f"**{itx.user.mention} shared a {cmd_mention} output:**\n"
+            f"**{itx.user.mention} shared a {cmd_math} output:**\n"
             + itx.message.content,
             ephemeral=False,
             allowed_mentions=discord.AllowedMentions.none()

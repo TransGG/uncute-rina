@@ -54,13 +54,11 @@ class CustomTag:
         user_id: str = getattr(self.send_user, "id", "unknown id")
 
         return (
-            f"{username} (`{user_id}`) "
-            f"used {self.command_mention} `tag:{self.id}` "
-            f"anonymously"
-            + (f", in {self.send_channel.mention} (`{self.send_channel.id}`)\n"
+            f"{username} (`{user_id}`) used {self.command_mention} anonymously"
+            + (f", in {self.send_channel.mention} (`{self.send_channel.id}`)"
                if self.send_channel is not None
                else "")
-            + (f"[Jump to the tag message]({self.public_message.jump_url})"
+            + (f"\n[Jump to the tag message]({self.public_message.jump_url})"
                if self.public_message is not None
                else "")
         )
@@ -88,7 +86,8 @@ class CustomTag:
          sensitive tags are sent.
         """
         self.send_user = itx.user
-        self.command_mention = itx.client.get_command_mention("tag")
+        self.command_mention = itx.client.get_command_mention_with_args(
+            "tag", tag=self.id)
 
         if public:
             await self._handle_send_publicly(
@@ -154,7 +153,7 @@ class CustomTag:
         :param report_to_staff: Whether the guild wants to log when
          sensitive tags are sent.
         """
-        itx.response: discord.InteractionResponse  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if anonymous:
             view = SendPubliclyTagView(
                 self, False, timeout=60)
@@ -230,9 +229,9 @@ async def send_enabling_embeds_info(
 
 
 async def _send_tag_log_message(itx, tag_name) -> None:
-    cmd_mention = itx.client.get_command_mention("tag")
-    log_msg = (f"{itx.user.name} ({itx.user.id}) "
-               f"used {cmd_mention} `tag:{tag_name}` anonymously")
+    cmd_tag = itx.client.get_command_mention_with_args(
+        "tag", tag=tag_name)
+    log_msg = f"{itx.user.name} ({itx.user.id}) used {cmd_tag} anonymously"
     await log_to_guild(itx.client, itx.guild, log_msg)
 
 

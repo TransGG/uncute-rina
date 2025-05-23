@@ -43,7 +43,8 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 ephemeral=True)
             return
 
-        cmd_mention_help = itx.client.get_command_mention("help")
+        cmd_help = itx.client.get_command_mention_with_args(
+            "help", page="113")
         try:
             await parse_and_create_reminder(itx, reminder_datetime, reminder)
         except OverflowError as ex:
@@ -60,7 +61,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 f"Current time: {int(ex.creation_time.timestamp() + 0.5)} "
                 f"(<t:{int(ex.creation_time.timestamp() + 0.5)}:F>, "
                 f"<t:{int(ex.creation_time.timestamp() + 0.5)}:R>).\n"
-                f"For more info, use {cmd_mention_help} `page:113`.",
+                f"For more info, use {cmd_help}.",
                 ephemeral=True
             )
             return
@@ -81,7 +82,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 '    hour = h, hour, hours\n'
                 '    minute = m, min, mins, minute, minutes\n'
                 '    second = s, sec, secs, second, seconds\n'
-                f'For more info, use {cmd_mention_help} `page:113`.',
+                f'For more info, use {cmd_help}.',
                 ephemeral=True)
             return
         except TimestampParseException as ex:
@@ -98,7 +99,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 "If you give a time but not a timezone, I don't want you to "
                 "get reminded at the wrong time, "
                 "so I'll say something went wrong.\n"
-                f"For more info, use {cmd_mention_help} `page:113`.",
+                f"For more info, use {cmd_help}.",
                 ephemeral=True
             )
             return
@@ -107,7 +108,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 f"Couldn't make new reminder:\n> {str(ex)}\n\n"
                 f"Be sure you start the reminder time with a number "
                 f"like \"4 days\".\n"
-                f"For more info, use {cmd_mention_help} `page:113`.",
+                f"For more info, use {cmd_help}.",
                 ephemeral=True
             )
             return
@@ -122,7 +123,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 f"providing a unit will give this error. Note: a unix "
                 f"timestamp of 1000000 is 20 Jan 1970 "
                 f"(<t\\:1000000:D> = <t:1000000:D>)\n"
-                f"For more info, use {cmd_mention_help} `page:113`.",
+                f"For more info, use {cmd_help}.",
                 ephemeral=True
             )
             return
@@ -144,10 +145,10 @@ class RemindersCog(commands.GroupCog, name="reminder"):
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
-            cmd_mention = itx.client.get_command_mention("reminder remindme")
+            cmd_reminders = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment!\n"
-                f"Use {cmd_mention} to make a reminder!",
+                f"Use {cmd_reminders} to make a reminder!",
                 ephemeral=True)
             return
 
@@ -172,12 +173,12 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                         out.append(f"`{index}` | "
                                    f"<t:{reminder['remindertime']}:F>")
                         index += 1
-                    cmd_mention = itx.client.get_command_mention(
-                        "reminder reminders")
+                    cmd_reminders = itx.client.get_command_mention_with_args(
+                        "reminder reminders", item=" ")
                     out_msg = (
                         (f"You have {len(db_data['reminders'])} reminders "
-                         f"(use {cmd_mention} `item: ` to get more info about "
-                         f"a reminder):\n")
+                         f"(use {cmd_reminders} to get more info about a "
+                         f"reminder):\n")
                         + '\n'.join(out)[:1996]
                     )
                 await itx.response.send_message(out_msg, ephemeral=True)
@@ -199,19 +200,19 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 )
                 return
         except IndexError:
-            cmd_mention = itx.client.get_command_mention("reminder reminders")
+            cmd_reminders = itx.client.get_command_mention("reminder reminders")
             await itx.response.send_message(
                 f"I couldn't find any reminder with that ID!\n"
                 f"Look for the \"ID: `0`\" at the beginning of your reminder "
-                f"on the reminder list ({cmd_mention})",
+                f"on the reminder list ({cmd_reminders})",
                 ephemeral=True,
             )
             return
         except KeyError:
-            cmd_mention = itx.client.get_command_mention("reminder remindme")
+            cmd_reminders = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment.\n"
-                f"Use {cmd_mention} to make a reminder!",
+                f"Use {cmd_reminders} to make a reminder!",
                 ephemeral=True,
             )
             return
@@ -227,30 +228,30 @@ class RemindersCog(commands.GroupCog, name="reminder"):
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
         if db_data is None:
-            cmd_mention = itx.client.get_command_mention("reminder remindme")
+            cmd_remindme = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment! (so "
                 f"I can't remove any either..)\n"
-                f"Use {cmd_mention} to make a reminder!",
+                f"Use {cmd_remindme} to make a reminder!",
                 ephemeral=True)
             return
 
         try:
             del db_data['reminders'][item]
         except IndexError:
-            cmd_mention = itx.client.get_command_mention("reminder reminders")
+            cmd_remindme = itx.client.get_command_mention("reminder reminders")
             await itx.response.send_message(
                 f"I couldn't find any reminder with that ID!\n"
                 f"Look for the \"ID: `0`\" at the beginning of your reminder "
-                f"on the reminder list ({cmd_mention})",
+                f"on the reminder list ({cmd_remindme})",
                 ephemeral=True)
             return
         except KeyError:
-            cmd_mention = itx.client.get_command_mention("reminder remindme")
+            cmd_remindme = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment. (so "
                 f"I can't remove any either..)\n"
-                f"Use {cmd_mention} to make a reminder!",
+                f"Use {cmd_remindme} to make a reminder!",
                 ephemeral=True)
             return
         query = {"userID": itx.user.id}

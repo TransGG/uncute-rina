@@ -185,7 +185,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             e.set_footer(text=f"{page_index + 1}/{page_count}")
             pages.append(e)
 
-        async def go_to_page_button_callback(itx1: discord.Interaction):
+        async def go_to_page_button_callback(itx1: discord.Interaction[Bot]):
             # view: PageView = view
             await itx1.response.send_message(
                 f"This embed has {view.max_page_index + 1} pages!")
@@ -245,7 +245,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             from_channel: discord.VoiceChannel | discord.StageChannel = None,
             to_channel: discord.VoiceChannel | discord.StageChannel = None,
     ):
-        itx.response: discord.InteractionResponse  # type: ignore
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         # jeez the log is inconsistent lol
         user = itx.user
 

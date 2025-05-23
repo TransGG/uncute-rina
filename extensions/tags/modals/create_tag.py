@@ -1,5 +1,7 @@
 import discord
 
+from resources.customs import Bot
+
 
 class CreateTagModal(discord.ui.Modal):
     embed_title = discord.ui.TextInput(
@@ -36,7 +38,7 @@ class CreateTagModal(discord.ui.Modal):
     def __init__(self):
         super().__init__(title="Create a custom tag.")
 
-        self.return_interaction = None
+        self.return_interaction: discord.Interaction[Bot] | None = None
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: discord.Interaction[Bot]):
         self.return_interaction = interaction

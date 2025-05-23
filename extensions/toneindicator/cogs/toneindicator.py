@@ -266,11 +266,12 @@ def _handle_tag_definition(
         # > definition: /tag1 [!], /tag2, /tag3
         result_str += f"- \"{definition}\": {', '.join(acronyms)}\n"
     if any_overlaps:
-        cmd_mention = itx.client.get_command_mention("toneindicator")
+        cmd_toneindicator = itx.client.get_command_mention_with_args(
+            "toneindicator", mode="Exact acronym", tag=" ")
         result_str += (
-            f"Some acronyms have multiple definitions, marked with "
-            f"`[!]`. Use {cmd_mention} `mode:Exact acronym` `tag: `"
-            f"to find the other possible definitions for these tags."
+            f"Some acronyms have multiple definitions, marked with `[!]`. "
+            f"Use {cmd_toneindicator} to find the other possible definitions "
+            f"for these tags."
         )
     return result_str, bool(results)
 

@@ -89,10 +89,16 @@ async def _create_uncool_watchlist_thread(
     active_staff_role: discord.Guild | None = client.get_guild_attribute(
         watch_channel.guild, AttributeKeys.watchlist_reaction_role)
     if active_staff_role is None:
-        cmd_mention_settings = client.get_command_mention("settings")
+        cmd_settings = client.get_command_mention_with_args(
+            "settings",
+            type="Attribute",
+            setting=AttributeKeys.watchlist_reaction_role,
+            mode="Set",
+            value=" "
+        )
         await joiner_msg.edit(
             content=f"No role has been set up to be pinged when a watchlist "
-                    f"is created. Use {cmd_mention_settings} to add one."
+                    f"is created. Use {cmd_settings} to add one."
         )
     else:
         await joiner_msg.edit(content=f"<@&{active_staff_role.id}>")

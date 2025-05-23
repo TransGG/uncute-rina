@@ -154,7 +154,7 @@ def debug(
 
 
 def get_mod_ticket_channel(
-        client: Bot, guild_id: int | discord.Guild | discord.Interaction
+        client: Bot, guild_id: int | discord.Guild | discord.Interaction[Bot]
 ) -> discord.abc.Messageable | None:
     """
     Fetch the #contact-staff ticket channel for a specific guild.

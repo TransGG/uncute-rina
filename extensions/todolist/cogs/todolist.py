@@ -31,12 +31,13 @@ class TodoList(commands.Cog):
         # todo: use Enum for mode
         if mode == 1:  # Add item to to-do list
             if todo is None:
-                cmd_mention = itx.client.get_command_mention("todo")
+                cmd_todo = itx.client.get_command_mention_with_args(
+                    "todo", mode="Check")
                 await itx.response.send_message(
                     f"This command lets you add items to your to-do list!\n"
                     f"Type whatever you still plan to do in the `todo: `"
                     f" argument, and then you can see your current to-do list "
-                    f"with {cmd_mention} `mode:Check`!",
+                    f"with {cmd_todo}!",
                     ephemeral=True,
                 )
                 return
@@ -69,11 +70,12 @@ class TodoList(commands.Cog):
 
         elif mode == 2:  # Remove item from to-do list
             if todo is None:
-                cmd_mention = itx.client.get_command_mention("todo")
+                cmd_todo = itx.client.get_command_mention_with_args(
+                    "todo", mode="Check")
                 await itx.response.send_message(
                     f"Removing todo's with this command is done with IDs. "
                     f"You can see your current list of todo's using "
-                    f"{cmd_mention} `mode:Check`.\n"
+                    f"{cmd_todo}.\n"
                     f"This list will start every todo-list item with a "
                     f"number. This is the ID you're looking for. This number "
                     f"can be filled into the `todo: ` argument to remove it.",
@@ -105,10 +107,10 @@ class TodoList(commands.Cog):
             try:
                 del todo_list[todo]
             except IndexError:
-                cmd_mention = itx.client.get_command_mention("todo")
+                cmd_todo = itx.client.get_command_mention("todo")
                 await itx.response.send_message(
                     f"Couldn't delete that ID, because there isn't any item "
-                    f"on your list with that ID. Use {cmd_mention} "
+                    f"on your list with that ID. Use {cmd_todo} "
                     f"`mode:Check` to see the IDs assigned to each item on "
                     f"your list",
                     ephemeral=True,

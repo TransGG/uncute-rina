@@ -1,6 +1,8 @@
 import discord
 import typing
 
+from resources.customs import Bot
+
 
 class WatchlistReasonModal(discord.ui.Modal):
     """
@@ -23,7 +25,7 @@ class WatchlistReasonModal(discord.ui.Modal):
     def __init__(
             self,
             add_to_watchlist_func: typing.Callable[
-                [discord.Interaction, discord.User | discord.Member,
+                [discord.Interaction[Bot], discord.User | discord.Member,
                  str, str | None, typing.Optional[str]],
                 typing.Coroutine[typing.Any, typing.Any, None]],
             title: str,
@@ -47,7 +49,7 @@ class WatchlistReasonModal(discord.ui.Modal):
         )
         self.add_item(self.reason_text)
 
-    async def on_submit(self, itx: discord.Interaction):
+    async def on_submit(self, itx: discord.Interaction[Bot]):
         self.value = 1
         await self.add_to_watchlist_func(
             itx,

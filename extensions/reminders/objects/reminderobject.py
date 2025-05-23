@@ -73,12 +73,12 @@ class ReminderObject:
             # self.remindertime = self.remindertime.astimezone()
             # self.creationtime = self.creationtime.astimezone()
             if self.remindertime < datetime.now().astimezone():
-                cmd_mention = self.client.get_command_mention(
+                cmd_dev_request = self.client.get_command_mention(
                     "developer_request")
                 self.alert = (
                     f"Your reminder was delayed. If this was longer than "
                     f"a day, please report this to the developer using "
-                    f"{cmd_mention}"
+                    f"{cmd_dev_request}."
                     # "Probably because the bot was offline for a while. "
                     # "I hope it didn't cause much of an issue!\n"
                 )
@@ -361,14 +361,14 @@ async def _create_reminder(
         db_data
     )
     _distance = int(distance.timestamp())
-    cmd_mention = itx.client.get_command_mention("reminder reminders")
+    cmd_reminders = itx.client.get_command_mention("reminder reminders")
     view = ShareReminder()
     if from_copy:
         # send message without view.
         await itx.response.send_message(
             f"Successfully created a reminder for you on <t:{_distance}:F> "
             f"for \"{reminder}\"!\n"
-            f"Use {cmd_mention} to see your list of reminders",
+            f"Use {cmd_reminders} to see your list of reminders",
             ephemeral=True
         )
         return
@@ -376,7 +376,7 @@ async def _create_reminder(
         await itx.response.send_message(
             f"Successfully created a reminder for you on <t:{_distance}:F> "
             f"for \"{reminder}\"!\n"
-            f"Use {cmd_mention} to see your list of reminders",
+            f"Use {cmd_reminders} to see your list of reminders",
             view=view, ephemeral=True
         )
 
@@ -416,12 +416,13 @@ async def parse_and_create_reminder(
     #  (internally chosen limit))
     user_reminders = get_user_reminders(itx.client, itx.user)
     if len(user_reminders) > 50:
-        cmd_mention = itx.client.get_command_mention("reminder reminders")
-        cmd_mention1 = itx.client.get_command_mention("reminder remove")
+        cmd_reminders = itx.client.get_command_mention("reminder reminders")
+        cmd_remove = itx.client.get_command_mention_with_args(
+            "reminder remove", item=" ")
         message = (
-            f"Please don't make more than 50 reminders. Use {cmd_mention} to "
-            f"see your reminders, and use {cmd_mention1} `item: ` to remove "
-            f"a reminder."
+            f"Please don't make more than 50 reminders. Use {cmd_reminders} "
+            f"to see your reminders, and use {cmd_remove} to remove a "
+            f"reminder."
         )
         raise OverflowError(message)
 

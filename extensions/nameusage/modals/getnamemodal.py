@@ -1,5 +1,7 @@
 import discord
 
+from resources.customs import Bot
+
 
 class GetNameModal(discord.ui.Modal, title="Search page with word"):
     def __init__(self, pages, embed_title, timeout=None):
@@ -19,7 +21,7 @@ class GetNameModal(discord.ui.Modal, title="Search page with word"):
         )
         self.add_item(self.question_text)
 
-    async def on_submit(self, itx: discord.Interaction):
+    async def on_submit(self, itx: discord.Interaction[Bot]):
         self.value = 9  # failed; placeholder
         self.word = self.question_text.value.lower()
         for page_id in range(len(self.pages)):

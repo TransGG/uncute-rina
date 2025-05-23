@@ -189,7 +189,7 @@ class TagFunctions(commands.Cog):
             mode: str,
             tag_name: str,
     ):
-        itx.response: discord.InteractionResponse[Bot]  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if mode == TagMode.help.value:
             await send_help_menu(itx, 901)
         elif mode == TagMode.create.value:
@@ -220,16 +220,17 @@ class TagFunctions(commands.Cog):
             try:
                 color_tuple = await _parse_embed_color_input(color)
             except ValueError as ex:
-                cmd_mention_help = itx.client.get_command_mention('help')
+                cmd_help = itx.client.get_command_mention_with_args(
+                    'help', page="901")
                 await itx.response.send_message(
                     f"Invalid color:\n"
                     f"> {ex}\n"
-                    f"For more help, run {cmd_mention_help} `page:901`",
+                    f"For more help, run {cmd_help}.",
                     ephemeral=True
                 )
                 return
             if report_to_staff.lower() not in ["true", "false"]:
-                await itx.reponse.send_message(
+                await itx.response.send_message(
                     f"Invalid boolean for `report_to_staff`:"
                     f"Expected either `True`, `true`, `False`, or `false`\n"
                     f"but received `{report_to_staff}`.`",

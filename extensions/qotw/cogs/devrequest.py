@@ -92,11 +92,18 @@ class DevRequest(commands.Cog):
         developer_role = itx.client.get_guild_attribute(
             itx.user.guild, AttributeKeys.developer_request_channel)
         if developer_role is None:
-            cmd_mention_settings = itx.client.get_command_mention("settings")
+            cmd_settings = itx.client.get_command_mention_with_args(
+                "settings",
+                type="Attribute",
+                setting=AttributeKeys.developer_request_reaction_role,
+                mode="Set",
+                value=" ",
+            )
             await joiner_msg.edit(
                 content=f"No role has been set up to be pinged after a "
-                        f"developer request is created. Use "
-                        f"{cmd_mention_settings} to add one.")
+                        f"developer request is created. Use {cmd_settings} "
+                        f"to add one."
+            )
         else:
             await joiner_msg.edit(
                 content=f"<@&{developer_role.id}> <@{itx.user.id}>")
@@ -112,8 +119,9 @@ class DevRequest(commands.Cog):
                         f"({copyable_version.jump_url})",
             timestamp=datetime.now()
         )
+        username = getattr(itx.user, 'nick', None) or itx.user.name
         embed.set_author(
-            name=f"{itx.user.nick or itx.user.name}",
+            name=f"{username}",
             url=f"https://original.poster/{itx.user.id}/",
             icon_url=itx.user.display_avatar.url
         )
@@ -183,11 +191,11 @@ class DevRequest(commands.Cog):
             if starter_message.embeds[0].color in [emoji_color_options["🟡"],
                                                    emoji_color_options["🔵"]]:
                 try:
-                    cmd_mention = itx.client.get_command_mention(
+                    cmd_ping = itx.client.get_command_mention(
                         "ping_open_dev_requests")
                     await thread.send(
                         itx.user.mention
-                        + f" poked this thread with {cmd_mention}.\n"
+                        + f" poked this thread with {cmd_ping}.\n"
                           f"This channel got a message because it was "
                           f"archived and the request wasn't marked as "
                           f"completed or rejected.",

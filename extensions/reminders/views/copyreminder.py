@@ -5,6 +5,7 @@ from datetime import timezone
 import discord
 
 from resources.views.generics import create_simple_button
+from resources.customs import Bot
 
 from extensions.reminders.utils import get_user_reminders
 
@@ -21,7 +22,7 @@ class CopyReminder(discord.ui.View):
     ):
         super().__init__()
         self.timeout = timeout
-        self.return_interaction: discord.Interaction | None = None
+        self.return_interaction: discord.Interaction[Bot] | None = None
         self.reminder = reminder
 
         # required to prevent circular imports ;-;
@@ -35,26 +36,29 @@ class CopyReminder(discord.ui.View):
             self.button_callback
         ))
 
-    async def button_callback(self, itx: discord.Interaction):
+    async def button_callback(self, itx: discord.Interaction[Bot]):
         # Check if user has too many reminders
         #  (max 50 allowed (internally chosen limit))
         user_reminders = get_user_reminders(itx.client, itx.user)
         if len(user_reminders) > 50:
-            cmd_mention = itx.client.get_command_mention("reminder reminders")
-            cmd_mention1 = itx.client.get_command_mention("reminder remove")
+            cmd_reminders = itx.client.get_command_mention("reminder reminders")
+            cmd_remove = itx.client.get_command_mention_with_args(
+                "reminder remove", item=" ")
             await itx.response.send_message(
-                f"You already have more than 50 reminders! Use {cmd_mention} "
-                f"to see your reminders, and use {cmd_mention1} `item: ` to "
-                f"remove a reminder",
+                f"You already have more than 50 reminders! Use "
+                f"{cmd_reminders} to see your reminders, and use {cmd_remove} "
+                f"to remove a reminder",
                 ephemeral=True)
             return
         if self.reminder.remindertime < itx.created_at.astimezone():
-            cmd_mention = itx.client.get_command_mention("reminder remindme")
-            cmd_mention1 = itx.client.get_command_mention("help")
+            cmd_remindme = itx.client.get_command_mention_with_args(
+                "reminder remindme", time=" ", reminder=" ")
+            cmd_help = itx.client.get_command_mention_with_args(
+                "help", page="113")
             await itx.response.send_message(
-                f"This reminder has already passed! Use {cmd_mention} to "
-                f"create a new reminder, or use {cmd_mention1} `page:113` "
-                f"for more help about reminders.",
+                f"This reminder has already passed! Use {cmd_remindme} to "
+                f"create a new reminder, or use {cmd_help} for more help "
+                f"about reminders.",
                 ephemeral=True
             )
             return

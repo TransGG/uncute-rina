@@ -7,6 +7,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.addons.roll import generate_roll
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 
@@ -30,83 +31,6 @@ def _product_of_list(mult_list: list[T]) -> T:
     for x in mult_list:
         a *= x
     return a
-
-
-def _generate_roll(query: str) -> list[int]:
-    """
-    A helper command to generate a dice roll from a dice string
-    representation "2d6"
-
-    :param query: The string representing the dice roll.
-    :return: A list of outcomes following from the dice roll. 2d6 will return
-     a list with 2 integers, ranging from 1-6.
-    """
-    # print(query)
-    temp: list[str | int] = query.split("d")
-    # 2d4 = ["2","4"]
-    # 2d3d4 = ["2","3","4"] (huh?)
-    # 4 = 4
-    # [] (huh?)
-    if len(temp) > 2:
-        raise ValueError("Can't have more than 1 'd' in the "
-                         "query of your die!")
-    if len(temp) == 1:
-        try:
-            temp[0] = int(temp[0])
-        except ValueError:
-            raise TypeError(f"You can't do operations with '{temp[0]}'")
-        return [temp[0]]
-    if len(temp) < 1:
-        raise ValueError(f"I couldn't understand what you meant with "
-                         f"{query} ({str(temp)})")
-    dice = temp[0]
-    negative = dice.startswith("-")
-    if negative:
-        dice = dice.replace("-", "", 1)
-    faces = ""
-    for x in temp[1]:
-        if x in "0123456789":
-            faces += x
-        else:
-            break
-
-    # see what hasn't been parsed yet
-    remainder = temp[1][len(faces):]
-    if len(remainder) > 0:
-        raise TypeError(
-            f"Idk what happened, but you probably filled something in "
-            f"incorrectly:\n"
-            f"I parsed dice roll '{query}' into a roll of '{dice}' dice "
-            f"with '{faces}' faces, but got left with '{remainder}'. "
-            f"({dice}d{faces} and {remainder})"
-        )
-
-    try:
-        dice = int(dice)
-    except ValueError:
-        raise ValueError(f"You have to roll a numerical number of dice! "
-                         f"(You tried to roll '{dice}' dice)")
-    try:
-        faces = int(faces)
-    except ValueError:
-        raise TypeError(
-            f"You have to roll a die with a numerical number of faces! "
-            f"(You tried to roll {dice} dice with "
-            f"'{faces}' faces)")
-    if dice >= 1000000:
-        raise OverflowError(
-            f"Sorry, if I let you roll `{dice:,}` dice, the universe will "
-            f"implode, and Rina will stop responding to commands. "
-            f"Please stay below 1 million dice...")
-    if faces >= 1000000:
-        raise OverflowError(
-            f"Uh.. At that point, you're basically rolling a sphere. Even "
-            f"earth has less than `{faces:,}` faces. Please bowl with a "
-            f"sphere of fewer than 1 million faces...")
-
-    # turn a boolean 0 or 1 into a 1 or -1
-    negativity: int = (negative * -2 + 1)
-    return [negativity * random.randint(1, faces) for _ in range(dice)]
 
 
 async def _handle_awawa_reaction(
@@ -145,6 +69,61 @@ async def _handle_awawa_reaction(
             pass
 
     return False
+
+
+async def _get_dice_roll_output(dice, faces, mod):
+    """Helper to get the text output for a simple /roll."""
+    rolls = []
+    message_too_long = False
+    for _ in range(dice):
+        rolls.append(random.randint(1, faces))
+    dice_info = (f"I rolled {dice:,} di{'c' * (dice != 1)}e with "
+                 f"{faces:,} face{'s' * (faces > 1)}")
+    modifier_info = ""
+    if mod is None:
+        if dice == 1:
+            out = f": {str(sum(rolls))}"
+        else:
+            out = (f":\n"
+                   f"{' + '.join([str(roll) for roll in rolls])}  =  "
+                   f"{str(sum(rolls))}")
+    else:
+        modifier_info = f" and a modifier of {mod}"
+        out = (f":\n"
+               f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  "
+               f"{str(sum(rolls) + mod)}")
+    if len(dice_info) + len(out) > 300:
+        out = (f":\n"
+               f"With this many numbers, I've simplified it a little. "
+               f"You rolled `{sum(rolls) + (mod or 0):,}`.")
+        details = await _simplify_roll_output(rolls)
+        if len(details) > 1500:
+            details = ""
+        elif len(details) > 300:
+            message_too_long = True
+        out += "\n" + details
+    elif len(out) > 300:
+        message_too_long = True
+    output_string = dice_info + modifier_info + out
+    return output_string, message_too_long
+
+
+async def _simplify_roll_output(rolls: list[int]) -> str:
+    """Helper to represent dice rolls into (eyes, count) entries."""
+    roll_db = {}
+    for roll in rolls:
+        try:
+            roll_db[roll] += 1
+        except KeyError:
+            roll_db[roll] = 1
+    # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
+    # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)] that is then sorted b
+    # the first item in the tuple.
+    roll_db = dict(sorted([x for x in roll_db.items()]))
+    details = "You rolled "
+    for roll in roll_db:
+        details += f"'{roll}'x{roll_db[roll]}, "
+    return details
 
 
 class FunAddons(commands.Cog):
@@ -260,61 +239,24 @@ class FunAddons(commands.Cog):
             faces: app_commands.Range[int, 1, 999999],
             public: bool = False, mod: int | None = None, advanced: str | None = None
     ):
-        hide = False
         if advanced is None:
             await itx.response.defer(ephemeral=not public)
-            rolls = []
-            for _ in range(dice):
-                rolls.append(random.randint(1, faces))
-
-            if mod is None:
-                if dice == 1:
-                    out = (f"I rolled {dice} die with {faces} face{'s' * (faces > 1)}: "
-                           f"{str(sum(rolls))}")
-                else:
-                    out = (f"I rolled {dice} di{'c' * (dice > 1)}e with {faces} face{'s' * (faces > 1)}:\n"
-                           f"{' + '.join([str(roll) for roll in rolls])}  =  {str(sum(rolls))}")
-            else:
-                out = (f"I rolled {dice} {'die' if dice == 0 else 'dice'} with {faces} face{'s' * (faces > 1)} "
-                       f"and a modifier of {mod}:\n"
-                       f"({' + '.join([str(roll) for roll in rolls])}) + {mod}  =  {str(sum(rolls) + mod)}")
-            if len(out) > 300:
-                out = (f"I rolled {dice:,} {'die' if dice == 0 else 'dice'} with {faces:,} face{'s' * (faces > 1)} "
-                       f"and a modifier of {(mod or 0):,}") * (mod is not None) + \
-                      (f":\n"
-                       f"With this many numbers, I've simplified it a little. You rolled "
-                       f"`{sum(rolls) + (mod or 0):,}`.")
-                roll_db = {}
-                for roll in rolls:
-                    try:
-                        roll_db[roll] += 1
-                    except KeyError:
-                        roll_db[roll] = 1
-                # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
-                # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)] that is then sorted b
-                # the first item in the tuple.
-                roll_db = dict(sorted([x for x in roll_db.items()]))
-                details = "You rolled "
-                for roll in roll_db:
-                    details += f"'{roll}'x{roll_db[roll]}, "
-                if len(details) > 1500:
-                    details = ""
-                elif len(details) > 300:
-                    hide = True
-                out = out + "\n" + details
-            elif len(out) > 300:
-                hide = True
-            if hide:
+            out, delete_original = await _get_dice_roll_output(
+                dice, faces, mod)
+            if delete_original:
                 await itx.delete_original_response()
             await itx.followup.send(out, ephemeral=not public)
         else:
             await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ", "")
             if advanced == "help":
-                cmd_mention = itx.client.get_command_mention("help")
+                cmd_help = itx.client.get_command_mention_with_args(
+                    "help", page="112")
                 await itx.response.send(
-                    f"I don't think I ever added a help command... Ping mysticmia for more information about "
-                    f"this command, or run {cmd_mention} `page:112` for more information.")
+                    f"I don't think I ever added a help command... Ping "
+                    f"mysticmia for more information about this command, or "
+                    f"run {cmd_help} for more information."
+                )
 
             for char in advanced:
                 if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
@@ -331,14 +273,12 @@ class FunAddons(commands.Cog):
                 multiply.append(add_section.split('*'))
             # print("multiply:  ",multiply)
             try:
-                result = [[sum(_generate_roll(query)) for query in mult_section] for mult_section in multiply]
+                result = [[sum(generate_roll(query)) for query in mult_section] for mult_section in multiply]
             except (TypeError, ValueError, OverflowError) as ex:
-                ex = repr(ex).split("(", 1)
-                ex_type = ex[0]
-                ex_message = ex[1][1:-1]
+                ex_type = ex.__class__.__name__
                 if public:
                     await itx.delete_original_response()
-                await itx.followup.send(f"Wasn't able to roll your dice!\n  {ex_type}: {ex_message}", ephemeral=True)
+                await itx.followup.send(f"Wasn't able to roll your dice!\n  {ex_type}: {ex}", ephemeral=True)
                 return
             # print("result:    ",result)
             out = ["Input:  " + advanced]
@@ -349,14 +289,15 @@ class FunAddons(commands.Cog):
             out += [str(sum([_product_of_list(section) for section in result]))]
             output = discord.utils.escape_markdown('\n= '.join(out))
             if len(output) >= 1950:
-                output = ("Your result was too long! I couldn't send it. Try making your rolls a bit smaller, "
-                          "perhaps by splitting it into multiple operations...")
+                output = ("Your result was too long! I couldn't send it. "
+                          "Try making your rolls a bit smaller, perhaps by "
+                          "splitting it into multiple operations...")
             if len(output) >= 500:
-                hide = True
+                public = False
             try:
                 await itx.followup.send(output, ephemeral=not public)
             except discord.errors.NotFound:
-                if hide:
+                if public:
                     await itx.delete_original_response()
                 await itx.user.send(f"Couldn't send you the result of your roll because it took too long "
                                     f"or something. Here you go: \n{output}")
