@@ -1,8 +1,7 @@
-
 import discord
 
+import aiohttp
 import json
-import requests
 from typing import override
 import urllib.parse
 
@@ -53,8 +52,9 @@ def _extract_api_data(result):
 
 
 class DictionaryApiDictionary(DictionaryBase):
-    def __init__(self):
+    def __init__(self, session: aiohttp.ClientSession):
         super().__init__()
+        self._session = session
         self._embed: discord.Embed | None = None
         self._view: DictionaryapiPageview | None = None
 
@@ -73,15 +73,26 @@ class DictionaryApiDictionary(DictionaryBase):
 
         return pages
 
-    @staticmethod
-    async def _get_api_response(term: str) -> list[DictionaryApiEntry] | None:
-        response_api = requests.get(
+    async def _get_api_response(
+            self,
+            term: str
+    ) -> list[DictionaryApiEntry] | None:
+        url = (
             "https://api.dictionaryapi.dev/api/v2/entries/en/"
             + urllib.parse.quote(term.lower(), safe=())
             # ^ slashes aren't safe
-        ).text
+        )
+        async with self._session.get(url) as response:
+            response_api = await response.text()
+
         try:
-            return json.loads(response_api)
+            data = json.loads(response_api)
+            if type(data) is dict:
+                # should be a list of entries
+                return None
+
+            assert type(data) is list
+            return data
         except json.decoder.JSONDecodeError:
             return None
 
@@ -127,7 +138,11 @@ class DictionaryApiDictionary(DictionaryBase):
             view=self._view
         )
         await self._view.wait()
-        await itx.edit_original_response(view=None)
+        try:
+            await itx.edit_original_response(view=None)
+        except discord.NotFound:
+            # message was deleted?
+            pass
 
     @override
     async def handle_no_response(

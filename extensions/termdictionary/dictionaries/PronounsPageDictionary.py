@@ -1,9 +1,8 @@
-
 import discord
 
+import aiohttp
 import json
 import re  # to parse and remove https:/pronouns.page/ in-text page linking
-import requests
 from typing import override
 
 from .DictionaryBase import DictionaryBase
@@ -25,8 +24,10 @@ class PronounsPageDictionary(DictionaryBase):
     :ivar _character_overflow: Internal flag to track if response exceeds Discord's 2000-character limit.
     :ivar _expand_search: Boolean indicating whether to expand search to include synonyms/related terms.
     """
-    def __init__(self):
+
+    def __init__(self, session: aiohttp.ClientSession) -> None:
         super().__init__()
+        self._session = session
         self._result_str: str | None = None
         self._result_count = 0
         self._character_overflow = False
@@ -153,12 +154,16 @@ class PronounsPageDictionary(DictionaryBase):
             raise OverflowError(result_str)
         return result_str
 
-    @staticmethod
-    async def _get_api_response(term) -> list[PronounsPageEntry]:
+    async def _get_api_response(
+            self,
+            term: str
+    ) -> list[PronounsPageEntry]:
         http_safe_term = term.lower().replace("/", " ").replace("%", " ")
-        response_api = requests.get(
-            f'https://en.pronouns.page/api/terms/search/{http_safe_term}'
-        ).text
+        url = f'https://en.pronouns.page/api/terms/search/{http_safe_term}'
+
+        async with self._session.get(url) as response:
+            response_api = await response.text()
+
         data = json.loads(response_api)
         return data
 

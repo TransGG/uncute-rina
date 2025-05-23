@@ -1,5 +1,6 @@
 import math
 
+import aiohttp
 import discord
 
 from datetime import datetime
@@ -15,8 +16,9 @@ from resources.customs import Bot
 
 
 class UrbanDictionary(DictionaryBase):
-    def __init__(self):
+    def __init__(self, session: aiohttp.ClientSession):
         super().__init__()
+        self._session = session
         self._pages: list[discord.Embed] | None = None
 
     @staticmethod
@@ -79,13 +81,15 @@ class UrbanDictionary(DictionaryBase):
             pages.append(embed)
         return pages
 
-    @staticmethod
-    async def _get_api_response(current) -> list[UrbanDictionaryEntry]:
-        params = {"term": current}
-        response_api = requests.get(
-            'https://api.urbandictionary.com/v0/define',
-            params=params
-        ).text
+    async def _get_api_response(
+            self,
+            term: str
+    ) -> list[UrbanDictionaryEntry]:
+        params = {"term": term}
+        url = "https://api.urbandictionary.com/v0/define"
+        async with self._session.get(url, params=params) as response:
+            response_api = await response.text()
+
         data: dict[str, list[UrbanDictionaryEntry]] = json.loads(response_api)
         return data['list']  # empty responses have {"list":[]}
 
@@ -130,7 +134,11 @@ class UrbanDictionary(DictionaryBase):
             ephemeral=True,
         )
         await view.wait()
-        await itx.edit_original_response(view=None)
+        try:
+            await itx.edit_original_response(view=None)
+        except discord.NotFound:
+            # message was deleted?
+            pass
 
     @override
     async def handle_no_response(

@@ -18,7 +18,10 @@ class CustomDictionary(DictionaryBase):
         self._long_line: bool = False
         self._character_overflow: bool = False
 
-    async def _get_database_response(self, term: str) -> list[tuple[str, str]]:
+    async def _get_api_response(
+            self,
+            term: str
+    ) -> list[tuple[str, str]]:
         """Helper to get custom dictionary data from the database."""
         collection = self.client.async_rina_db["termDictionary"]
         query = {"synonyms": term.lower()}
@@ -33,14 +36,14 @@ class CustomDictionary(DictionaryBase):
 
     @override
     async def get_autocomplete(self, current: str) -> set[str]:
-        results = await self._get_database_response(current)
+        results = await self._get_api_response(current)
         if not results:
             return set()
         return set(current for current, _ in results)
 
     @override
     async def construct_response(self, term: str) -> None:
-        results = await self._get_database_response(term)
+        results = await self._get_api_response(term)
         if not results:
             return
         self.has_response = True

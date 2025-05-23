@@ -1,8 +1,9 @@
-import asyncio
-
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
+
+import aiohttp
+import asyncio
 
 from extensions.termdictionary.dictionaries import (
     CustomDictionary,
@@ -14,55 +15,30 @@ from extensions.termdictionary.dictionaries.UrbanDictionary import \
     UrbanDictionary
 from extensions.termdictionary.dictionary_sources import DictionarySources
 from extensions.termdictionary.utils import simplify
+
 from resources.checks import is_staff_check  # for staff dictionary commands
 from resources.customs import Bot
 # for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
 from resources.utils.utils import log_to_guild
 
 
-dictionary_sources: list[tuple[DictionarySources, DictionaryBase]] = [
-    # (d.CustomDictionary, CustomDictionary(client=itx.client)),
-    (DictionarySources.PronounsPage, PronounsPageDictionary()),
-    (DictionarySources.DictionaryApi, DictionaryApiDictionary()),
-    (DictionarySources.UrbanDictionary, UrbanDictionary()),
-]
-
-
-async def dictionary_autocomplete(itx: discord.Interaction[Bot], current: str):
-    if current == '':
-        return []
-
-    # select the right sources
-    sources = dictionary_sources[:]
-    if itx.namespace.source in DictionarySources:
-        if type(itx.namespace.source) is not DictionarySources:
-            source = DictionarySources(itx.namespace.source)
-        else:
-            source = itx.namespace.source
-
-        sources = [
-            dictionary for dictionary in dictionary_sources[:]
-            if dictionary[0] == source
-        ]
-
-    # fetch autocompletion results
-    tasks = [
-        source.get_autocomplete(current)
-        for _, source in sources
-    ]
-    results: list[set[str]] = await asyncio.gather(*tasks)
-    terms: set[str] = set.union(*results)
-
-    # respond with found autocompletion terms
-    return [
-        app_commands.Choice(name=term, value=term)
-        for term in terms
-    ][:7]  # limit choices to the first 7
-
-
 class TermDictionary(commands.Cog):
     def __init__(self):
-        pass
+        self._session = aiohttp.ClientSession()
+        self._dictionary_sources: list[
+            tuple[DictionarySources, DictionaryBase]
+        ] = [
+            # (d.CustomDictionary, CustomDictionary(client=itx.client)),
+            (DictionarySources.PronounsPage,
+             PronounsPageDictionary(self._session)),
+            (DictionarySources.DictionaryApi,
+             DictionaryApiDictionary(self._session)),
+            (DictionarySources.UrbanDictionary,
+             UrbanDictionary(self._session)),
+        ]
+
+    async def cog_unload(self):
+        await self._session.close()
 
     @app_commands.command(name="dictionary",
                           description="Look for terms in online dictionaries!")
@@ -95,7 +71,6 @@ class TermDictionary(commands.Cog):
             value=DictionarySources.UrbanDictionary.value
         ),
     ])
-    @app_commands.autocomplete(term=dictionary_autocomplete)
     async def dictionary(
             self,
             itx: discord.Interaction[Bot],
@@ -106,7 +81,7 @@ class TermDictionary(commands.Cog):
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         await itx.response.defer(ephemeral=public)
 
-        sources = dictionary_sources[:]
+        sources = self._dictionary_sources[:]
         if source != DictionarySources.All:
             # filter dictionary sources to only the enabled ones.
             sources = [
@@ -144,6 +119,52 @@ class TermDictionary(commands.Cog):
             f"no results. Maybe we should add this term to "
             f"the {cmd_dictionary} command ({cmd_define})"
         )
+
+    @dictionary.autocomplete("term")
+    async def dict_autocomplete_helper(
+            self,
+            itx: discord.Interaction[Bot],
+            current: str
+    ):
+        if current == '':
+            return []
+
+        # select the right sources
+        sources = self._dictionary_sources[:]
+        if itx.namespace.source in DictionarySources:
+            if type(itx.namespace.source) is not DictionarySources:
+                source = DictionarySources(itx.namespace.source)
+            else:
+                source = itx.namespace.source
+
+            sources = [
+                dictionary for dictionary in self._dictionary_sources[:]
+                if dictionary[0] == source
+            ]
+
+        # fetch autocompletion results
+        async def fetch_with_timeout(dictionary: DictionaryBase):
+            try:
+                return await asyncio.wait_for(
+                    dictionary.get_autocomplete(current),
+                    timeout=2.5,
+                )
+            except asyncio.TimeoutError:
+                return set()
+
+        tasks = [
+            fetch_with_timeout(source)
+            for _, source in sources
+        ]
+        results: list[set[str]] = await asyncio.gather(*tasks)
+
+        terms: set[str] = set.union(*results)
+
+        # respond with found autocompletion terms
+        return [
+            app_commands.Choice(name=term, value=term)
+            for term in terms
+        ][:7]  # limit choices to the first 7
 
     admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
 
