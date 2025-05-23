@@ -1,11 +1,10 @@
-import math
 
-import aiohttp
 import discord
 
+import aiohttp
 from datetime import datetime
 import json
-import requests
+import math
 from typing import override
 
 from extensions.termdictionary.dictionaries import DictionaryBase
@@ -16,6 +15,8 @@ from resources.customs import Bot
 
 
 class UrbanDictionary(DictionaryBase):
+    term_suffix = " [UD]"
+    
     def __init__(self, session: aiohttp.ClientSession):
         super().__init__()
         self._session = session
@@ -46,7 +47,7 @@ class UrbanDictionary(DictionaryBase):
         return score
 
     @staticmethod
-    async def _get_urban_dictionary_pages(data) -> list[discord.Embed]:
+    def _get_urban_dictionary_pages(data) -> list[discord.Embed]:
         data = sorted(
             data,
             key=lambda r: UrbanDictionary._calculate_post_score(r),
@@ -78,6 +79,7 @@ class UrbanDictionary(DictionaryBase):
                       f"at <t:{post_date}:T> (<t:{post_date}:R>)",
                 inline=False
             )
+            embed.set_footer(text=f"page: {len(pages) + 1} / {len(data)}")
             pages.append(embed)
         return pages
 
@@ -101,11 +103,13 @@ class UrbanDictionary(DictionaryBase):
 
         terms = set()
         for result in data:
-            terms.add(result["word"].capitalize() + " [UD]")
+            terms.add(result["word"].capitalize() + self.term_suffix)
         return terms
 
     @override
     async def construct_response(self, term: str) -> None:
+        if term.endswith(self.term_suffix):
+            term = term[:-len(self.term_suffix)]
         data = await self._get_api_response(term)
         if len(data) == 0:
             return
@@ -121,6 +125,12 @@ class UrbanDictionary(DictionaryBase):
     ) -> None:
         assert (self.has_response
                 and self._pages is not None)
+
+        if public:
+            # Remove public defer message to instead send this reply
+            #  privately. (can often contain swears and unexpected info
+            #  that you may not want to send publicly.
+            await itx.delete_original_response()
 
         embed = self._pages[0]
         embed.set_footer(text=f"page: 1 / {len(self._pages)}")

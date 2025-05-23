@@ -22,11 +22,16 @@ class DictionaryapiPageview(PageView):
     ):
         super().__init__(
             starting_page=0,
-            max_page_index=len(pages),
+            max_page_index=len(pages) - 1,
             timeout=timeout,
         )
         self.timeout = timeout
         self.pages = pages
+        self._children.append(self._children.pop(1))
+
+    def delete_extra_buttons(self):
+        self._children.pop(3)  # remove last button: send one
+        self._children.pop(0)  # remove first button: public
 
     @override
     async def update_page(

@@ -35,7 +35,7 @@ class PronounsPageDictionary(DictionaryBase):
         self._term: str | None = None
 
     @staticmethod
-    async def _clean_pronouns_page_response_links(
+    def _clean_pronouns_page_response_links(
             data: list[PronounsPageEntry]
     ) -> list[PronounsPageEntry]:
         """
@@ -70,7 +70,7 @@ class PronounsPageDictionary(DictionaryBase):
         return search
 
     @staticmethod
-    async def _get_expand_medium_search_string(result_str, search):
+    def _get_expand_medium_search_string(result_str, search):
         result_str += "Here is a list to make your search more specific:\n"
         results: list[str] = []
         for item in search:
@@ -85,7 +85,7 @@ class PronounsPageDictionary(DictionaryBase):
         return result_str
 
     @staticmethod
-    async def _get_expand_big_search_string(result_str, search):
+    def _get_expand_big_search_string(result_str, search):
         result_str += "Here is a list to make your search more specific:\n"
         results: list[str] = []
         for item in search:
@@ -97,7 +97,7 @@ class PronounsPageDictionary(DictionaryBase):
         return result_str
 
     @staticmethod
-    async def _select_exact_items(
+    def _select_exact_items(
             search: list[PronounsPageEntry], term
     ) -> list[PronounsPageEntry]:
         """
@@ -117,7 +117,7 @@ class PronounsPageDictionary(DictionaryBase):
         return results
 
     @staticmethod
-    async def _get_result_string(
+    def _get_result_string(
             results: list[PronounsPageEntry],
             search: list[PronounsPageEntry],
             term: str
@@ -170,7 +170,7 @@ class PronounsPageDictionary(DictionaryBase):
     @override
     async def get_autocomplete(self, current: str) -> set[str]:
         data = await self._get_api_response(current)
-        # find exact results online
+        # find exact results online (or synonyms)
         if len(data) == 0:
             return set()
 
@@ -178,7 +178,7 @@ class PronounsPageDictionary(DictionaryBase):
         for item in data:
             synonyms = item['term'].split("|")
             if simplify(current) in simplify(synonyms):
-                terms.add(synonyms[0])
+                terms.add(synonyms[0].capitalize())
 
         return terms
 
@@ -189,14 +189,16 @@ class PronounsPageDictionary(DictionaryBase):
         if len(data) == 0:
             return
 
-        search = await self._clean_pronouns_page_response_links(data)
+        search = self._clean_pronouns_page_response_links(data)
         self._result_count = len(search)
-        results = await self._select_exact_items(search, term)
+        results = self._select_exact_items(search, term)
 
         if len(results) > 0:
+            # there are results that match exactly.
             try:
-                self._result_str = await self._get_result_string(
+                self._result_str = self._get_result_string(
                     results, search, term)
+                self.has_response = True
             except OverflowError as ex:
                 self._character_overflow = True
                 self._result_str = str(ex)
@@ -207,11 +209,11 @@ class PronounsPageDictionary(DictionaryBase):
             f"I found {len(search)} result{'s' * (len(results) != 1)} for "
             f"'{term}' on en.pronouns.page! ")
         if len(search) > 25:
-            self._result_str = await self._get_expand_big_search_string(
+            self._result_str = self._get_expand_big_search_string(
                 start_string, search)
             self._expand_search = True
         elif len(search) > 2:
-            self._result_str = await self._get_expand_medium_search_string(
+            self._result_str = self._get_expand_medium_search_string(
                 start_string, search)
             self._expand_search = True
         elif len(search) > 0:
@@ -265,9 +267,21 @@ class PronounsPageDictionary(DictionaryBase):
             term: str
     ) -> None:
         itx.followup: discord.Webhook  # type: ignore
+
+        if self._character_overflow:
+            assert self._result_str is not None
+
+            await itx.followup.send(
+                self._result_str[:2000],
+                ephemeral=True,
+                suppress_embeds=True,
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+            return
+
         await itx.followup.send(
             f"I didn't find any results for '{term}' on en.pronouns.page",
             ephemeral=True,
             suppress_embeds=True,
-            allowed_mentions=discord.AllowedMentions.none()
+            allowed_mentions=discord.AllowedMentions.none(),
         )

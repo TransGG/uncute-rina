@@ -43,7 +43,7 @@ def term_page_to_embed(page: DetailedTermPage) -> discord.Embed:
     for section_name, section_values in sections.items():
         section_text = ""
         for value in section_values:
-            section_text += f"{line_id}-{value}\n"
+            section_text += f"`{line_id}`-{value}\n"
             line_id += 1
         if len(section_text) > 995:
             # limit to 1024 chars in Value field

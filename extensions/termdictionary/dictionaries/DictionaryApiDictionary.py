@@ -40,7 +40,7 @@ def _extract_api_data(result):
     for meaning in result["meanings"]:
         meaning_list = []
         for definition in meaning["definitions"]:
-            meaning_list.append("- " + definition['definition'])
+            meaning_list.append(definition['definition'])
             synonyms.update(definition['synonyms'])
             antonyms.update(definition['antonyms'])
 
@@ -133,6 +133,10 @@ class DictionaryApiDictionary(DictionaryBase):
         assert (self.has_response
                 and self._view is not None
                 and self._embed is not None)
+
+        if public:
+            self._view.delete_extra_buttons()
+
         await itx.followup.send(
             embed=self._embed,
             view=self._view

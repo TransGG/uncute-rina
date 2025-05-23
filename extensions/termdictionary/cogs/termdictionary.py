@@ -51,23 +51,23 @@ class TermDictionary(commands.Cog):
                                   "with the rest of the channel? (True=yes)")
     @app_commands.choices(source=[
         discord.app_commands.Choice(
-            name='Search from whichever has an answer',
+            name='All',
             value=DictionarySources.All.value
         ),
+        # discord.app_commands.Choice(
+        #     name='Custom dictionary',
+        #     value=DictionarySources.CustomDictionary.value
+        # ),
         discord.app_commands.Choice(
-            name='Search from custom dictionary',
-            value=DictionarySources.CustomDictionary.value
-        ),
-        discord.app_commands.Choice(
-            name='Search from en.pronouns.page',
+            name='en.pronouns.page',
             value=DictionarySources.PronounsPage.value
         ),
         discord.app_commands.Choice(
-            name='Search from dictionaryapi.dev',
+            name='dictionaryapi.dev',
             value=DictionarySources.DictionaryApi.value
         ),
         discord.app_commands.Choice(
-            name='Search from urbandictionary.com',
+            name='urbandictionary.com',
             value=DictionarySources.UrbanDictionary.value
         ),
     ])
@@ -79,7 +79,7 @@ class TermDictionary(commands.Cog):
             source: DictionarySources = DictionarySources.All,
     ):
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
-        await itx.response.defer(ephemeral=public)
+        await itx.response.defer(ephemeral=not public)
 
         sources = self._dictionary_sources[:]
         if source != DictionarySources.All:

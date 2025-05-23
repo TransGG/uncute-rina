@@ -10,7 +10,7 @@ class UrbanDictionaryPageView(PageView):
     def __init__(self, pages: list[discord.Embed], timeout=None):
         super().__init__(
             starting_page=0,
-            max_page_index=len(pages),
+            max_page_index=len(pages) - 1,
             timeout=timeout
         )
         self.timeout = timeout
