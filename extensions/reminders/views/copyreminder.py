@@ -41,7 +41,8 @@ class CopyReminder(discord.ui.View):
         #  (max 50 allowed (internally chosen limit))
         user_reminders = get_user_reminders(itx.client, itx.user)
         if len(user_reminders) > 50:
-            cmd_reminders = itx.client.get_command_mention("reminder reminders")
+            cmd_reminders = itx.client.get_command_mention(
+                "reminder reminders")
             cmd_remove = itx.client.get_command_mention_with_args(
                 "reminder remove", item=" ")
             await itx.response.send_message(

@@ -117,12 +117,12 @@ async def _simplify_roll_output(rolls: list[int]) -> str:
         except KeyError:
             roll_db[roll] = 1
     # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
-    # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)] that is then sorted b
-    # the first item in the tuple.
-    roll_db = dict(sorted([x for x in roll_db.items()]))
+    # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)]
+    #  that is then sorted by the first item in the tuple.
+    roll_db = sorted([x for x in roll_db.items()])
     details = "You rolled "
-    for roll in roll_db:
-        details += f"'{roll}'x{roll_db[roll]}, "
+    for roll, count in roll_db:
+        details += f"'{roll}'x{count}, "
     return details
 
 
@@ -227,32 +227,40 @@ class FunAddons(commands.Cog):
                     [AttributeKeys.awawawa_emoji])
             await _handle_awawa_reaction(message, awawawa_emoji)
 
-    @app_commands.command(name="roll", description="Roll a die or dice with random chance!")
-    @app_commands.describe(dice="How many dice do you want to roll?",
-                           faces="How many sides does every die have?",
-                           mod="Do you want to add a modifier? (add 2 after rolling the dice)",
-                           advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites dice/faces given; "
-                                    "'help' for more")
+    @app_commands.command(name="roll",
+                          description="Roll a die or dice with random chance!")
+    @app_commands.describe(
+        dice="How many dice do you want to roll?",
+        faces="How many sides does every die have?",
+        mod="Do you want to add a modifier? (add 2 after rolling the dice)",
+        advanced="Roll more advanced! example: 1d20+3*2d4. Overwrites "
+                 "dice/faces given; 'help' for more"
+    )
     async def roll(
-            self, itx: discord.Interaction[Bot],
+            self,
+            itx: discord.Interaction[Bot],
             dice: app_commands.Range[int, 1, 999999],
             faces: app_commands.Range[int, 1, 999999],
-            public: bool = False, mod: int | None = None, advanced: str | None = None
+            public: bool = False,
+            mod: int | None = None,
+            advanced: str | None = None,
     ):
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
+
         if advanced is None:
             await itx.response.defer(ephemeral=not public)
-            out, delete_original = await _get_dice_roll_output(
+            out, too_long = await _get_dice_roll_output(
                 dice, faces, mod)
-            if delete_original:
+            if too_long:
                 await itx.delete_original_response()
-            await itx.followup.send(out, ephemeral=not public)
+            await itx.followup.send(out, ephemeral=too_long)
         else:
             await itx.response.defer(ephemeral=not public)
             advanced = advanced.replace(" ", "")
             if advanced == "help":
                 cmd_help = itx.client.get_command_mention_with_args(
                     "help", page="112")
-                await itx.response.send(
+                await itx.response.send_message(
                     f"I don't think I ever added a help command... Ping "
                     f"mysticmia for more information about this command, or "
                     f"run {cmd_help} for more information."
@@ -262,8 +270,11 @@ class FunAddons(commands.Cog):
                 if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
                     if public:
                         await itx.delete_original_response()
-                    await itx.followup.send(f"Invalid input! This command doesn't have support for '{char}' yet!",
-                                            ephemeral=True)
+                    await itx.followup.send(
+                        f"Invalid input! This command doesn't have "
+                        f"support for '{char}' yet!",
+                        ephemeral=True,
+                    )
                     return
             _add = advanced.replace('-', '+-').split('+')
             add = [add_section for add_section in _add if len(add_section) > 0]
@@ -273,20 +284,29 @@ class FunAddons(commands.Cog):
                 multiply.append(add_section.split('*'))
             # print("multiply:  ",multiply)
             try:
-                result = [[sum(generate_roll(query)) for query in mult_section] for mult_section in multiply]
+                result = [[sum(generate_roll(query))
+                           for query in mult_section]
+                          for mult_section in multiply]
             except (TypeError, ValueError, OverflowError) as ex:
                 ex_type = ex.__class__.__name__
                 if public:
                     await itx.delete_original_response()
-                await itx.followup.send(f"Wasn't able to roll your dice!\n  {ex_type}: {ex}", ephemeral=True)
+                await itx.followup.send(
+                    f"Wasn't able to roll your dice!\n"
+                    f"  {ex_type}: {ex}",
+                    ephemeral=True,
+                )
                 return
             # print("result:    ",result)
             out = ["Input:  " + advanced]
             if "*" in advanced:
-                out += [' + '.join([' * '.join([str(x) for x in section]) for section in result])]
+                out += [' + '.join([' * '.join([str(x) for x in section])
+                                    for section in result])]
             if "+" in advanced or '-' in advanced:
-                out += [' + '.join([str(_product_of_list(section)) for section in result])]
-            out += [str(sum([_product_of_list(section) for section in result]))]
+                out += [' + '.join([str(_product_of_list(section))
+                                    for section in result])]
+            out += [str(sum([_product_of_list(section)
+                             for section in result]))]
             output = discord.utils.escape_markdown('\n= '.join(out))
             if len(output) >= 1950:
                 output = ("Your result was too long! I couldn't send it. "
@@ -299,5 +319,8 @@ class FunAddons(commands.Cog):
             except discord.errors.NotFound:
                 if public:
                     await itx.delete_original_response()
-                await itx.user.send(f"Couldn't send you the result of your roll because it took too long "
-                                    f"or something. Here you go: \n{output}")
+                await itx.user.send(
+                    f"Couldn't send you the result of your roll because "
+                    f"it took too long or something. Here you go: \n"
+                    f"{output}"
+                )

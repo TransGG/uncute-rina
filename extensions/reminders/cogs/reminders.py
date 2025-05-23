@@ -200,7 +200,8 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 )
                 return
         except IndexError:
-            cmd_reminders = itx.client.get_command_mention("reminder reminders")
+            cmd_reminders = itx.client.get_command_mention(
+                "reminder reminders")
             await itx.response.send_message(
                 f"I couldn't find any reminder with that ID!\n"
                 f"Look for the \"ID: `0`\" at the beginning of your reminder "

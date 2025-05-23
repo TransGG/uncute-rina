@@ -8,15 +8,16 @@ import math
 from typing import override
 
 from extensions.termdictionary.dictionaries import DictionaryBase
-from extensions.termdictionary.dictionaries.objects.UrbanDictionaryEntry import \
+from extensions.termdictionary.dictionaries.objects import (
     UrbanDictionaryEntry
+)
 from extensions.termdictionary.views import UrbanDictionaryPageView
 from resources.customs import Bot
 
 
 class UrbanDictionary(DictionaryBase):
     term_suffix = " [UD]"
-    
+
     def __init__(self, session: aiohttp.ClientSession):
         super().__init__()
         self._session = session
@@ -114,7 +115,7 @@ class UrbanDictionary(DictionaryBase):
         if len(data) == 0:
             return
 
-        self._pages = await self._get_urban_dictionary_pages(data)
+        self._pages = self._get_urban_dictionary_pages(data)
         self.has_response = True
 
     @override

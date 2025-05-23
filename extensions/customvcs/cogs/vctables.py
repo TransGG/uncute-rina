@@ -1193,10 +1193,11 @@ class VcTables(
                 f"viewing the voice channel.",
                 allowed_mentions=discord.AllowedMentions.none()
             )
-            cmd_participant = itx.client.get_command_mention("vctable participant")
+            cmd_participant = itx.client.get_command_mention_with_args(
+                "vctable participant", user=" ")
             await itx.edit_original_response(
-                content=f"Successfully enabled whitelist. Use {cmd_participant} "
-                        f"`user: ` to let more people speak.",
+                content=f"Successfully enabled whitelist. Use "
+                        f"{cmd_participant} to let more people speak.",
                 view=None,
             )
         else:

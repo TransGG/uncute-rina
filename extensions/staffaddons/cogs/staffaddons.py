@@ -171,7 +171,9 @@ class StaffAddons(commands.Cog):
     async def get_bot_version(self, itx: discord.Interaction[Bot]):
         # get most recently pushed bot version
         # noinspection LongLine
-        latest_rina = requests.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py").text
+        latest_rina = requests.get(
+            "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa
+        ).text
         latest_version = (latest_rina
                           .split("BOT_VERSION = \"", 1)[1]
                           .split("\"", 1)[0])

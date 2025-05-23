@@ -219,7 +219,7 @@ class PageView(discord.ui.View):
             prepended_buttons: list[discord.ui.Button] | None = None,
             appended_buttons: list[discord.ui.Button] | None = None,
             loop_around_pages: bool = True,
-            timeout=None
+            timeout: float | None = None
     ):
         super().__init__(timeout=timeout)
         if prepended_buttons is None:

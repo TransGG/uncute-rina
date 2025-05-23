@@ -107,7 +107,7 @@ async def _send_starboard_message(
         timestamp=message.created_at  # this, or datetime.now()
     )
     # noinspection LongLine
-    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"  # noqa
     embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
     embed.set_footer(text=f"{message.id}")
     if isinstance(message.author, discord.Member):
@@ -580,7 +580,7 @@ class Starboard(commands.Cog):
                 return
 
             # noinspection LongLine
-            broken_link = f"https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}"
+            broken_link = f"https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}"  # noqa
             await log_to_guild(
                 self.client,
                 self.client.get_guild(payload.guild_id),
@@ -724,7 +724,7 @@ class Starboard(commands.Cog):
             raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         # noinspection LongLine
-        if message_payload.message_id in starboard_message_ids_marked_for_deletion:
+        if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # noqa
             # marked messages is a global variable
             # this prevents having two 'message deleted' logs for
             # manual deletion of starboard message

@@ -106,26 +106,30 @@ class SearchAddons(commands.Cog):
 
         embed = discord.Embed(color=7829503, title=region.name)
         for issue in region.issues:
-            if type(region.issues[issue]['current_status']) is list:
+            if type(region.issues[issue]) is list:
                 value = "No data"
             else:
-                # value = region.issues[issue]['current_status']['value_formatted']
-                # if region.issues[issue]['current_status']['value'] in [
-                #     'Legal', 'Equal','No censorship',
+                assert type(region.issues[issue]) is not list
+                status = region.issues[issue]['current_status']
+                value = status['value_formatted']
+                # if status['value'] in [
+                #     'Legal',
+                #     'Equal',
+                #     'No censorship',
                 #     'surgery not required',
-                #     "Sexual orientation and gender identity", "Recognized"
+                #     "Sexual orientation and gender identity",
+                #     "Recognized"
                 # ]:
                 #     value = "❤️ " + value
-                # elif region.issues[issue]['current_status']['value'] in ["Illegal"]:
+                # elif status['value'] in ["Illegal"]:
                 #     value = "🚫 " + value
-                # elif region.issues[issue]['current_status']['value'] in [
-                #     "Not legally recognized", "Not banned", "Varies by Region"
-                # ]:
+                # elif status['value'] in ["Not legally recognized",
+                #                          "Not banned", "Varies by Region"]:
                 #     value = "🟨 " + value
                 # else:
                 #     value = "➖ " + value
                 status_description = \
-                    region.issues[issue]['current_status']['description']
+                    status['description']
                 description = region.issues[issue]['description']
                 if len(status_description) > 0:
                     if len(status_description) > 200:
@@ -285,10 +289,11 @@ class SearchAddons(commands.Cog):
                         #  a list of 1 value instead.
                         assumption["values"] = [assumption["values"]]
                     for value_index in range(len(assumption["values"])):
-                        assumption_data["${desc" + str(value_index + 1) + "}"] \
+                        word_id = str(value_index + 1)
+                        assumption_data["${desc" + word_id + "}"] \
                             = assumption["values"][value_index]["desc"]
                         try:
-                            assumption_data["${word" + str(value_index + 1) + "}"] \
+                            assumption_data["${word" + word_id + "}"] \
                                 = assumption["values"][value_index]["word"]
                         except KeyError:
                             # the "word" variable is only there

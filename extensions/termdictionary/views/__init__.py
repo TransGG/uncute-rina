@@ -1,4 +1,4 @@
 __all__ = ['DictionaryapiPageview', 'UrbanDictionaryPageView']
 
-from extensions.termdictionary.views.dictionaryapi import DictionaryapiPageview
-from extensions.termdictionary.views.urbandictionary import UrbanDictionaryPageView
+from .dictionaryapi import DictionaryapiPageview
+from .urbandictionary import UrbanDictionaryPageView

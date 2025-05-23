@@ -219,10 +219,10 @@ class OtherAddons(commands.Cog):
             return
 
         if "celcius" in message.content.lower():
-            # noinspection LongLine
             await message.reply(
                 "Fun fact: Celsius was named after a guy named "
-                "['Anders Celsius'](https://en.wikipedia.org/wiki/Anders_Celsius). "
+                "['Anders Celsius']"
+                "(https://en.wikipedia.org/wiki/Anders_Celsius). "
                 "'Celcius' is therefore an incorrect spelling. :)"
             )
 

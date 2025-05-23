@@ -6,7 +6,7 @@ import aiohttp
 import asyncio
 
 from extensions.termdictionary.dictionaries import (
-    CustomDictionary,
+    # CustomDictionary,
     DictionaryApiDictionary,
     DictionaryBase,
     PronounsPageDictionary,
@@ -18,7 +18,8 @@ from extensions.termdictionary.utils import simplify
 
 from resources.checks import is_staff_check  # for staff dictionary commands
 from resources.customs import Bot
-# for logging custom dictionary changes, or when a search query returns nothing or >2000 characters
+# For logging custom dictionary changes, or when a search query returns
+#  nothing or >2000 characters
 from resources.utils.utils import log_to_guild
 
 
@@ -166,15 +167,27 @@ class TermDictionary(commands.Cog):
             for term in terms
         ][:7]  # limit choices to the first 7
 
-    admin = app_commands.Group(name='dictionary_staff', description='Change custom entries in the dictionary')
+    admin = app_commands.Group(
+        name='dictionary_staff',
+        description='Change custom entries in the dictionary'
+    )
 
     @app_commands.check(is_staff_check)
-    @admin.command(name="define", description="Add a dictionary entry for a word!")
+    @admin.command(name="define",
+                   description="Add a dictionary entry for a word!")
     @app_commands.describe(
-        term="This is the main word for the dictionary entry: Egg, Hormone Replacement Therapy (HRT), (case sens.)",
+        term="This is the main word for the dictionary entry: "
+             "Egg, Hormone Replacement Therapy (HRT), (case sens.)",
         definition="Give this term a definition",
-        synonyms="Add synonyms (SEPARATE WITH \", \")")
-    async def define(self, itx: discord.Interaction[Bot], term: str, definition: str, synonyms: str = ""):
+        synonyms="Add synonyms (SEPARATE WITH \", \")"
+    )
+    async def define(
+            self,
+            itx: discord.Interaction[Bot],
+            term: str,
+            definition: str,
+            synonyms: str = ""
+    ):
         # Test if this term is already defined in this dictionary.
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
@@ -202,7 +215,8 @@ class TermDictionary(commands.Cog):
         synonym_overlap = collection.find(query)
         warnings = ""
         for overlap in synonym_overlap:
-            warnings += f"You have already given a synonym before in {overlap['term']}.\n"
+            warnings += (f"You have already given a synonym before "
+                         f"in {overlap['term']}.\n")
 
         # Add term to dictionary
         post = {

@@ -4,7 +4,8 @@ __all__ = [
     "DictionaryApiEntry",
     "DetailedTermPage",
     "term_page_to_embed",
-    "get_term_lines"
+    "get_term_lines",
+    "UrbanDictionaryEntry",
 ]
 
 from .CustomDictionaryEntry import CustomDictionaryEntry
@@ -13,5 +14,6 @@ from .DictionaryApiEntry import (
     DictionaryApiEntry,
     DetailedTermPage,
     term_page_to_embed,
-    get_term_lines
+    get_term_lines,
 )
+from .UrbanDictionaryEntry import UrbanDictionaryEntry

@@ -16,18 +16,6 @@ from extensions.emojistats.emojisendsource import EmojiSendSource
 from resources.checks import not_in_dms_check
 
 
-# todo: convert to TypedDict \/
-
-#   Rina.emojistats         # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
-# ------------------------------------------------------
-#               _id = Object('62f3004156483575bb3175de')
-#                id = "987785257661108324"          #  str  of emoji.id
-#              name = "ask"                         #  str  of emoji.name
-#  messageUsedCount = 11                            #  int  of how often messages have contained this emoji
-#          lastUsed = 1666720691                    #  int  of unix timestamp of when this emoji was last used
-#          animated = false                         #  bool of emoji.animated
-# reactionUsedCount = 8                             #  int  of how often messages have been replied to with this emoji
-
 async def _add_to_emoji_data(
         emoji: tuple[bool, str, str],
         async_rina_db: motorcore.AgnosticDatabase,

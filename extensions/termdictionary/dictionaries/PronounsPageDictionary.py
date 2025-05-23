@@ -17,12 +17,17 @@ class PronounsPageDictionary(DictionaryBase):
 
     This class handles dictionary entry lookup, response construction,
     and result formatting specific to the pronouns.page service.
-    It manages internal state for search results, response expansion, and Discord character limit constraints.
+    It manages internal state for search results, response expansion,
+    and Discord character limit constraints.
 
-    :ivar _result_str: Final response string to send to the user, or None if no results found.
-    :ivar _result_count: Number of matching results found for the current term.
-    :ivar _character_overflow: Internal flag to track if response exceeds Discord's 2000-character limit.
-    :ivar _expand_search: Boolean indicating whether to expand search to include synonyms/related terms.
+    :ivar _result_str: Final response string to send to the user, or
+     ``None`` if no results found.
+    :ivar _result_count: Number of matching results found for the
+     current term.
+    :ivar _character_overflow: Internal flag to track if response
+     exceeds Discord's 2000-character limit.
+    :ivar _expand_search: Boolean indicating whether to expand search
+     to include synonyms/related terms.
     """
 
     def __init__(self, session: aiohttp.ClientSession) -> None:
