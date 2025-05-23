@@ -133,28 +133,18 @@ class NameUsage(
             if result_page == "":
                 result_page = "_"
             pages.append(result_page)
-        page = 0
 
-        result_page = pages[page]
-        result_page2 = pages[page + 1]
         mode_text = ("usernames" if mode == 1
                      else "nicknames" if mode == 2
                      else "usernames and nicknames")
         embed_title = f'Most-used {mode_text} leaderboard!'
-        embed = discord.Embed(color=8481900, title=embed_title)
-        embed.add_field(name="Column 1", value=result_page)
-        embed.add_field(name="Column 2", value=result_page2)
-        embed.set_footer(
-            text="page: "
-                 + str(page + 1)
-                 + " / "
-                 + str(int(len(pages) / 2))
-        )
+
         view = GetTopPageView(pages, embed_title, timeout=60)
+        embed = view.make_page()
         await itx.followup.send("", embed=embed, view=view, ephemeral=True)
+
         await view.wait()
-        if view.value is None:
-            await itx.edit_original_response(view=None)
+        await itx.edit_original_response(view=None)
 
     @app_commands.command(
         name="name",

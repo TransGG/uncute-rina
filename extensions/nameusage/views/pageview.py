@@ -2,21 +2,25 @@ import discord
 
 from extensions.nameusage.modals.getnamemodal import GetNameModal
 from resources.customs import Bot
+from resources.views.generics import PageView
 
 
-# todo: use Generics.PageView
-class GetTopPageView(discord.ui.View):
-    def __init__(self, pages, embed_title, timeout=None):
-        super().__init__()
-        self.value = None
-        self.timeout = timeout
-        self.page = 0
+class GetTopPageView(PageView):
+    def __init__(
+            self,
+            pages: list[str],
+            embed_title,
+            timeout: float | None = None
+    ):
+        super().__init__(
+            starting_page=0,
+            max_page_index=int(len(pages) / 2) - 1,
+            timeout=timeout
+        )
         self.pages = pages
         self.embed_title = embed_title
 
-    async def _make_page(self):
-        # todo: extract duplicated code to a new PageView subclass.
-        #  Oh yeah. This should definitely be a PageView.
+    def make_page(self) -> discord.Embed:
         result_page = self.pages[self.page * 2]
         result_page2 = self.pages[self.page * 2 + 1]
         embed = discord.Embed(color=8481900, title=self.embed_title)
@@ -30,32 +34,31 @@ class GetTopPageView(discord.ui.View):
         )
         return embed
 
-    # When the confirm button is pressed, set the inner value to `True`
-    #  and stop the View from listening to more input. We also send the
-    #  user an ephemeral message that we're confirming their choice.
-    @discord.ui.button(label='Previous', style=discord.ButtonStyle.blurple)
-    async def previous(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
-        # self.value = "previous"
-        self.page -= 1
-        if self.page < 0:
-            self.page = int(len(self.pages) / 2) - 1
-        embed = await self._make_page()
-        await itx.response.edit_message(embed=embed)
+    async def update_page(
+            self,
+            itx: discord.Interaction[Bot],
+            view: PageView
+    ):
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
+        embed = self.make_page()
+        await itx.response.edit_message(
+            embed=embed,
+            view=view
+        )
 
-    @discord.ui.button(label='Next', style=discord.ButtonStyle.blurple)
-    async def next(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
-        self.page += 1
-        if self.page >= int(len(self.pages) / 2):
-            self.page = 0
-        embed = await self._make_page()
-        await itx.response.edit_message(embed=embed)
-
-    @discord.ui.button(label='Find my name', style=discord.ButtonStyle.blurple)
-    async def find_name(self, itx: discord.Interaction[Bot], _button: discord.ui.Button):
-        send_one = GetNameModal(self.pages, self.embed_title)
+    @discord.ui.button(
+        label='Find my name',
+        style=discord.ButtonStyle.blurple,
+    )
+    async def find_name(
+            self,
+            itx: discord.Interaction[Bot],
+            _button: discord.ui.Button
+    ):
+        send_one = GetNameModal(self.pages)
         await itx.response.send_modal(send_one)
         await send_one.wait()
-        if send_one.value in [None, 9]:
-            pass
-        else:
+        if (send_one.return_interaction is not None
+                and send_one.page is not None):
             self.page = send_one.page
+            await self.update_page(send_one.return_interaction, self)
