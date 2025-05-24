@@ -45,9 +45,10 @@ def test_output_nochange_match():
     func = _parse_reminder_time(itx, "0d")
 
     # Act
-    reminder_time, now = asyncio.run(func)
+    reminder_time, now, itx2 = asyncio.run(func)
 
     # Assert
+    assert itx is itx2
     assert current_time == now
     assert current_time == reminder_time
 
@@ -59,10 +60,11 @@ def test_output_timezones_match():
     func = _parse_reminder_time(itx, "0d")
 
     # Act
-    reminder_time, now = asyncio.run(func)
+    reminder_time, now, itx2 = asyncio.run(func)
     reminder_time = reminder_time.astimezone(timezone.utc)
 
     # Assert
+    assert itx is itx2
     assert current_time == now
     assert current_time == reminder_time
 
@@ -74,12 +76,13 @@ def test_relative_offset():
     func = _parse_reminder_time(itx, "500d,1h,1m,1s")
 
     # Act
-    reminder_time, _ = asyncio.run(func)
+    reminder_time, _, itx2 = asyncio.run(func)
     current_time = current_time.replace(tzinfo=timezone.utc)
     expected_time = (current_time + timedelta(
         days=500, hours=1, minutes=1, seconds=1))
 
     # Assert
+    assert itx is itx2
     assert expected_time == reminder_time
 
 
@@ -93,7 +96,7 @@ def test_offset_overflows():
     func = _parse_reminder_time(itx, "1y 20mo 50w 500d 30h 100m 100s")
 
     # Act
-    reminder_time, _ = asyncio.run(func)
+    reminder_time, _, itx2 = asyncio.run(func)
     intermediate_expected_time = datetime(
         year=2003, month=7, day=30, hour=23, minute=59, second=59,
         tzinfo=timezone.utc
@@ -102,6 +105,7 @@ def test_offset_overflows():
         days=500 + 50 * 7, hours=30, minutes=100, seconds=100)
 
     # Assert
+    assert itx is itx2
     assert expected_time == reminder_time
 
 
@@ -115,11 +119,12 @@ def test_discord_timestamp():
     func = _parse_reminder_time(itx, discord_format)
 
     # Act
-    reminder_time, _ = asyncio.run(func)
+    reminder_time, _, itx2 = asyncio.run(func)
     current_time = current_time.astimezone()
     expected_time = current_time + timedelta(days=1)
 
     # Assert
+    assert itx is itx2
     assert expected_time == reminder_time
 
 
@@ -140,10 +145,11 @@ def test_iso_date_timeshort_timezone():
     func2 = _parse_reminder_time(itx, date_string2)
 
     # Act
-    reminder_time1, _ = asyncio.run(func1)
-    reminder_time2, _ = asyncio.run(func2)
+    reminder_time1, _, itx2 = asyncio.run(func1)
+    reminder_time2, _, itx3 = asyncio.run(func2)
 
     # Assert
+    assert itx is itx2 is itx3
     assert reminder_time1.astimezone() \
            == reminder_time2.astimezone() + timedelta(hours=1)
 
@@ -161,12 +167,13 @@ def test_iso_date_timelong_timezone():
     func2 = _parse_reminder_time(itx, date_string2)
 
     # Act
-    reminder_time1, _ = asyncio.run(func1)
-    reminder_time2, _ = asyncio.run(func2)
+    reminder_time1, _, itx2 = asyncio.run(func1)
+    reminder_time2, _, itx3 = asyncio.run(func2)
 
     # Assert
     # same as test_..._timeshort(), but using %H instead of %I. This
     #  means the time will be padded to 2 characters.
+    assert itx is itx2 is itx3
     assert reminder_time1.astimezone() \
            == reminder_time2.astimezone() + timedelta(hours=1)
 
@@ -183,11 +190,12 @@ def test_iso_date_matches_unix_timestamp():
     func2 = _parse_reminder_time(itx, date_string2)
 
     # Act
-    reminder_time1, _ = asyncio.run(func1)
-    reminder_time2, _ = asyncio.run(func2)
+    reminder_time1, _, itx2 = asyncio.run(func1)
+    reminder_time2, _, itx3 = asyncio.run(func2)
     timezone_correction1 = reminder_time1
 
     # Assert
+    assert itx is itx2 is itx3
     assert timezone_correction1 == reminder_time2
 
 # endregion Correct functionality
@@ -204,7 +212,7 @@ def test_exception_iso_time_timezone():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_ymd():
@@ -216,7 +224,7 @@ def test_exception_american_format_ymd():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_dmy():
@@ -228,7 +236,7 @@ def test_exception_american_format_dmy():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_with_t_ymd():
@@ -240,7 +248,7 @@ def test_exception_american_format_with_t_ymd():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_with_t_dmy():
@@ -252,7 +260,7 @@ def test_exception_american_format_with_t_dmy():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_malformed_year():
@@ -264,7 +272,7 @@ def test_malformed_year():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_malformed_year_month():
@@ -276,7 +284,7 @@ def test_malformed_year_month():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_iso_date_timeshort():  # no timezone
@@ -294,7 +302,7 @@ def test_exception_iso_date_timeshort():  # no timezone
         #  the strftime, and as such the code should run into an
         #  exception.
         # This exception must be handled by the command in the Cog instead.
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_iso_date_timelong():  # no timezone
@@ -309,7 +317,7 @@ def test_exception_iso_date_timelong():  # no timezone
     with pytest.raises(TimestampParseException):
         # same as test_..._timeshort(), but using %H instead of %I. This
         #  means the time will be padded to 2 characters.
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_iso_date():
@@ -325,7 +333,10 @@ def test_exception_iso_date():
         #  of day when you want to be reminded. This would be directly
         #  handled using itx.response, which the test doesn't provide,
         #  resulting in an Attribute error.
-        reminder_time, _ = asyncio.run(func)
+        # Todo: handle this nicer, make these tests parameter-based,
+        #  and add tests for _handle_reminder_timestamp_parsing and
+        #  _validate_timestamp_format.
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_12_hour_clock():
@@ -337,7 +348,7 @@ def test_exception_12_hour_clock():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 
 def test_exception_12_hour_clock_timezone():
@@ -349,6 +360,6 @@ def test_exception_12_hour_clock_timezone():
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _ = asyncio.run(func)
+        reminder_time, _, _ = asyncio.run(func)
 
 # endregion Malformed input

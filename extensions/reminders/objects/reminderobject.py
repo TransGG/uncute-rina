@@ -186,35 +186,20 @@ async def _handle_reminder_timestamp_parsing(
             f"Incorrect format given! I could not convert "
             f"{reminder_datetime} to format {timestamp_format}"
         )
-    if timestamp < datetime.now() - timedelta(hours=48):
+
+    try:
+        timestamp = timestamp.astimezone(timezone.utc)
+    except OSError:
         raise ValueError(
-            "The given date is too far in the past! Please pick a date "
-            "that is later than.. yesterday. This guard is mainly to "
-            "prevent an error that happens when you try to set a timezone "
-            "to things from before the year 1970."
-        )
-    if timestamp > datetime.now() + timedelta(days=365 * 1000):
-        raise ValueError(
-            "The given date is too far in the future! Please pick a date "
-            "that is less than 1000 years into the future... This "
-            "is an Operating System error, because it simply doesn't "
-            "let me add a timezone to things from beyond the year 3001."
+            "Couldn't set timezone for this time object. I assume you "
+            "probably filled in something unrealistic, like a year before "
+            "1970 or after 3001."
         )
 
     distance = timestamp
 
     # clarify datetime timezone if necessary
     if mode == TimestampFormats.DateNoTime:
-        assert timestamp.tzinfo is None
-        try:
-            timestamp = timestamp.astimezone(timezone.utc)
-        except OSError:
-            raise ValueError(
-                "Couldn't set timezone for this time object. I assume you "
-                "probably filled in something unrealistic."
-            )
-        assert timestamp.tzinfo is not None
-
         options = {
             "1": (timestamp - timedelta(hours=12)),
             "2": (timestamp - timedelta(hours=12)),
