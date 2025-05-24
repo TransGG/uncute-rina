@@ -332,7 +332,7 @@ class Compliments(commands.Cog):
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
             called_cute: bool | None = self._contains_cuteness_assignment(
-                msg.content.lower())
+                msg)
             if called_cute is True:
                 try:
                     await message.add_reaction("<:this:960916817801535528>")

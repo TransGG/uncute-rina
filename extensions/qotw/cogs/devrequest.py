@@ -33,25 +33,16 @@ class DevRequest(commands.Cog):
             itx: discord.Interaction[Bot],
             suggestion: app_commands.Range[str, 25, 1500]
     ):
-        developer_request_channel: discord.TextChannel | None
-        developer_role: discord.Role | None
-        developer_request_channel, developer_role = \
+        developer_request_channel: discord.TextChannel | None = \
             itx.client.get_guild_attribute(
                 itx.guild,
                 AttributeKeys.developer_request_channel,
-                AttributeKeys.developer_request_reaction_role
             )
-        if developer_request_channel is None or developer_role is None:
-            # noinspection LongLine
-            missing = [key for key, value in {
-                AttributeKeys.developer_request_channel:
-                    developer_request_channel,
-                AttributeKeys.developer_request_reaction_role:
-                    developer_role
-            }.items()
-                if value is None]
+        if developer_request_channel is None:
             raise MissingAttributesCheckFailure(
-                ModuleKeys.dev_requests, missing)
+                ModuleKeys.dev_requests,
+                [AttributeKeys.developer_request_channel],
+            )
 
         if len(suggestion) > 4000:
             await itx.response.send_message(
@@ -91,8 +82,11 @@ class DevRequest(commands.Cog):
         # without mentioning them and do the same for the requester, though
         # this will only work if they're in the staff server..
         joiner_msg = await thread.send("role mention placeholder")
+        developer_role: discord.Role | None
         developer_role = itx.client.get_guild_attribute(
-            itx.user.guild, AttributeKeys.developer_request_channel)
+            itx.user.guild,
+            AttributeKeys.developer_request_reaction_role
+        )
         if developer_role is None:
             cmd_settings = itx.client.get_command_mention_with_args(
                 "settings",
