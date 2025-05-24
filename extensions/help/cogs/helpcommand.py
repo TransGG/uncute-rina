@@ -3,7 +3,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.customs import Bot
-from resources.utils import is_admin
+from resources.checks import is_admin
 from resources.utils.stringhelper import replace_string_command_mentions
 
 from extensions.help.helppages import help_pages, aliases, FIRST_PAGE

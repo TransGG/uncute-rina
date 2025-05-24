@@ -1,12 +1,17 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import discord
 
-from resources.checks.permissions import is_staff, is_admin
-from resources.customs import Bot
+from .permissions import is_staff, is_admin
 from .errors import (
     CommandDoesNotSupportDMsCheckFailure,
     InsufficientPermissionsCheckFailure
 )
 from .command_checks import is_in_dms
+
+if TYPE_CHECKING:
+    from resources.customs import Bot
 
 
 def is_staff_check(itx: discord.Interaction[Bot]):

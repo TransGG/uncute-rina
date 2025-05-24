@@ -15,7 +15,8 @@ from resources.checks import (
     CommandDoesNotSupportDMsCheckFailure,
     ModuleNotEnabledCheckFailure, MissingAttributesCheckFailure
 )
-from resources.utils import is_admin, log_to_guild, debug
+from resources.checks import is_admin
+from resources.utils import debug, log_to_guild
 
 
 appcommanderror_cooldown: datetime = datetime.fromtimestamp(0, timezone.utc)

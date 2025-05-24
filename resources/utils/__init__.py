@@ -1,6 +1,4 @@
 __all__ = [
-    'is_staff',
-    'is_admin',
     'replace_string_command_mentions',
     'TimeParser',
     'MissingQuantityException',
@@ -13,7 +11,6 @@ __all__ = [
     'codec_options',
 ]
 
-from resources.checks.permissions import is_staff, is_admin
 from .stringhelper import replace_string_command_mentions
 from .timeparser import (
     TimeParser,
