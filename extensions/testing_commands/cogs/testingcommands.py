@@ -80,10 +80,12 @@ async def _make_vclog_embed(
 
 class TestingCog(commands.GroupCog, name="testing"):
     def __init__(self):
-        # todo: try to implement tests for commands instead of doing roundabout ways like these.
+        # todo: try to implement tests for commands instead of doing
+        #  roundabout ways like these.
         pass
 
-    @app_commands.command(name="send_fake_watchlist_modlog", description="make a fake user modlog report")
+    @app_commands.command(name="send_fake_watchlist_modlog",
+                          description="make a fake user modlog report")
     @app_commands.describe(
         target="User to add",
         reason="Reason for adding",
@@ -93,8 +95,13 @@ class TestingCog(commands.GroupCog, name="testing"):
     )
     @app_commands.check(is_staff_check)
     async def send_fake_watchlist_mod_log(
-            self, itx: discord.Interaction, target: discord.User, reason: str = "",
-            rule: str = None, private_notes: str = "", role_changes: str = ""
+            self,
+            itx: discord.Interaction[Bot],
+            target: discord.User,
+            reason: str = "",
+            rule: str = None,
+            private_notes: str = "",
+            role_changes: str = ""
     ):
         staff_logs_category = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.staff_logs_category
@@ -104,30 +111,57 @@ class TestingCog(commands.GroupCog, name="testing"):
                 "testing", [AttributeKeys.staff_logs_category])
 
         embed = discord.Embed(title="did a log thing for x", color=16705372)
-        embed.add_field(name="User", value=f"{target.mention} (`{target.id}`)", inline=True)
-        embed.add_field(name="Moderator", value=f"{itx.user.mention}", inline=True)
-        embed.add_field(name="\u200b", value="\u200b", inline=False)
-        embed.add_field(name="Rule", value=f">>> {rule}", inline=True)
-        embed.add_field(name="\u200b", value="\u200b", inline=False)
-        embed.add_field(name="Reason", value=f">>> {reason}")
-        embed.add_field(name="\u200b", value="\u200b", inline=False)
-        embed.add_field(name="Private Notes", value=f">>> {private_notes}")
-        embed.add_field(name="\u200b", value="\u200b", inline=False)
-        embed.add_field(name="Role Changes", value=role_changes.replace("[[\\n]]", "\n"))
+        embed.add_field(name="User",
+                        value=f"{target.mention} (`{target.id}`)",
+                        inline=True)
+        embed.add_field(name="Moderator",
+                        value=f"{itx.user.mention}",
+                        inline=True)
+        embed.add_field(name="\u200b",
+                        value="\u200b",
+                        inline=False)
+        embed.add_field(name="Rule",
+                        value=f">>> {rule}",
+                        inline=True)
+        embed.add_field(name="\u200b",
+                        value="\u200b",
+                        inline=False)
+        embed.add_field(name="Reason",
+                        value=f">>> {reason}")
+        embed.add_field(name="\u200b",
+                        value="\u200b",
+                        inline=False)
+        embed.add_field(name="Private Notes",
+                        value=f">>> {private_notes}")
+        embed.add_field(name="\u200b",
+                        value="\u200b",
+                        inline=False)
+        embed.add_field(name="Role Changes",
+                        value=role_changes.replace("[[\\n]]", "\n"))
         # any channel in AttributeKeys.staff_logs_category should work.
         await staff_logs_category.send(embed=embed)
 
-    @app_commands.command(name="send_pageview_test", description="Send a test embed with page buttons")
+    @app_commands.command(name="send_pageview_test",
+                          description="Send a test embed with page buttons")
     @app_commands.describe(page_count="The amount of pages to send/test")
     @app_commands.check(is_staff_check)
     async def send_pageview_test_embed(
-            self, itx: discord.Interaction, page_count: app_commands.Range[int, 1, 10000] = 40
+            self,
+            itx: discord.Interaction[Bot],
+            page_count: app_commands.Range[int, 1, 10000] = 40
     ):
         def get_chars(length: int):
-            letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/   "
-            return (''.join(random.choice(letters) for _ in range(length))).strip()
+            letters = ("abcdefghijklmnopqrstuvwxyz"
+                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                       "0123456789+/   ")
+            return (''.join(random.choice(letters)
+                            for _ in range(length))
+                    ).strip()
 
-        async def update_test_page(itx1: discord.Interaction, view1: PageView):
+        async def update_test_page(
+                itx1: discord.Interaction[Bot],
+                view1: PageView
+        ):
             embed = view1.pages[view1.page]
             await itx1.response.edit_message(
                 content="updated a" + str(view1.page),
@@ -151,19 +185,35 @@ class TestingCog(commands.GroupCog, name="testing"):
             e.set_footer(text=f"{page_index + 1}/{page_count}")
             pages.append(e)
 
-        async def go_to_page_button_callback(itx1: discord.Interaction):
+        async def go_to_page_button_callback(itx1: discord.Interaction[Bot]):
             # view: PageView = view
-            await itx1.response.send_message(f"This embed has {view.max_page_index + 1} pages!")
+            await itx1.response.send_message(
+                f"This embed has {view.max_page_index + 1} pages!")
 
-        go_to_page_button = create_simple_button("🔢", discord.ButtonStyle.blurple, go_to_page_button_callback,
-                                                 label_is_emoji=True)
-        view = PageView(0, len(pages), update_test_page, appended_buttons=[go_to_page_button])
-        await itx.response.send_message("Sending this cool embed...", embed=pages[0], view=view)
+        go_to_page_button = create_simple_button(
+            "🔢",
+            discord.ButtonStyle.blurple,
+            go_to_page_button_callback,
+            label_is_emoji=True
+        )
+        view = PageView(
+            0,
+            len(pages),
+            update_test_page,
+            appended_buttons=[go_to_page_button]
+        )
+        await itx.response.send_message(
+            "Sending this cool embed...", embed=pages[0], view=view)
 
-    @app_commands.command(name="send_srmod_appeal_test", description="Send a test embed of a ban appeal")
+    @app_commands.command(name="send_srmod_appeal_test",
+                          description="Send a test embed of a ban appeal")
     @app_commands.describe(username="The username you want to fill in")
     @app_commands.check(is_staff_check)
-    async def send_srmod_appeal_test(self, itx: discord.Interaction, username: str):
+    async def send_srmod_appeal_test(
+            self,
+            itx: discord.Interaction[Bot],
+            username: str
+    ):
         embed: discord.Embed = discord.Embed(title="New Ban Appeal")
         embed.add_field(name="Which of the following are you appealing?",
                         value="Discord Ban")
@@ -195,7 +245,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             from_channel: discord.VoiceChannel | discord.StageChannel = None,
             to_channel: discord.VoiceChannel | discord.StageChannel = None,
     ):
-        itx.response: discord.InteractionResponse  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         # jeez the log is inconsistent lol
         user = itx.user
 

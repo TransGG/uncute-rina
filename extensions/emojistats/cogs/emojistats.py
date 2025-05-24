@@ -16,16 +16,6 @@ from extensions.emojistats.emojisendsource import EmojiSendSource
 from resources.checks import not_in_dms_check
 
 
-#   Rina.emojistats         # snippet of <:ask:987785257661108324> in a test db at 2024-02-17T00:06+01:00
-# ------------------------------------------------------
-#               _id = Object('62f3004156483575bb3175de')
-#                id = "987785257661108324"          #  str  of emoji.id
-#              name = "ask"                         #  str  of emoji.name
-#  messageUsedCount = 11                            #  int  of how often messages have contained this emoji
-#          lastUsed = 1666720691                    #  int  of unix timestamp of when this emoji was last used
-#          animated = false                         #  bool of emoji.animated
-# reactionUsedCount = 8                             #  int  of how often messages have been replied to with this emoji
-
 async def _add_to_emoji_data(
         emoji: tuple[bool, str, str],
         async_rina_db: motorcore.AgnosticDatabase,
@@ -145,7 +135,11 @@ class EmojiStats(commands.Cog):
     @app_commands.rename(emoji_name="emoji")
     @app_commands.describe(emoji_name="Emoji you want to get data of")
     @app_commands.check(not_in_dms_check)
-    async def get_emoji_data(self, itx: discord.Interaction, emoji_name: str):
+    async def get_emoji_data(
+            self,
+            itx: discord.Interaction[Bot],
+            emoji_name: str
+    ):
         if ":" in emoji_name:
             emoji_name = emoji_name.strip().split(":")[2][:-1]
         emoji_id = emoji_name
@@ -218,7 +212,7 @@ class EmojiStats(commands.Cog):
     @app_commands.check(not_in_dms_check)
     async def get_unused_emojis(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             public: bool = False,
             max_results: int = 10,
             used_max: int = sys.maxsize,
@@ -318,7 +312,7 @@ class EmojiStats(commands.Cog):
     @emojistats.command(name="getemojitop10",
                         description="Get top 10 most used emojis")
     @app_commands.check(not_in_dms_check)
-    async def get_emoji_top_10(self, itx: discord.Interaction):
+    async def get_emoji_top_10(self, itx: discord.Interaction[Bot]):
         collection = itx.client.async_rina_db["emojistats"]
         output = ""
         for source_type in ["messageUsedCount", "reactionUsedCount"]:

@@ -7,11 +7,17 @@ from resources.customs import Bot
 
 
 class BumpReminderObject:
-    def __init__(self, client: Bot, guild: discord.Guild, remindertime: datetime):
+    def __init__(
+            self,
+            client: Bot,
+            guild: discord.Guild,
+            remindertime: datetime
+    ):
         self.client = client
         self.guild = guild
         self.remindertime = remindertime - timedelta(seconds=1.5)
-        client.sched.add_job(self.send_reminder, "date", run_date=self.remindertime)
+        client.sched.add_job(self.send_reminder, "date",
+                             run_date=self.remindertime)
 
     async def send_reminder(self):
         if not self.client.is_module_enabled(
@@ -32,5 +38,7 @@ class BumpReminderObject:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.bump_reminder, missing)
 
-        await bump_channel.send(f"{bump_role.mention} The next bump is ready!",
-                                allowed_mentions=discord.AllowedMentions(roles=[bump_role]))
+        await bump_channel.send(
+            f"{bump_role.mention} The next bump is ready!",
+            allowed_mentions=discord.AllowedMentions(roles=[bump_role])
+        )

@@ -27,40 +27,57 @@ def get_embed_issues(embed: discord.Embed) -> tuple[list[str], int]:
         if key == "title":
             total_characters += len(value)
             if len(value) > 256:
-                issues.append(f"Title length exceeds 256 characters (is '{len(value)}').")
+                issues.append(
+                    f"Title length exceeds 256 characters (is '{len(value)}')."
+                )
 
         elif key == "description":
             total_characters += len(value)
             if len(value) > 4096:
-                issues.append(f"Description length exceeds 4096 characters (is '{len(value)}').")
+                issues.append(
+                    f"Description length exceeds 4096 characters "
+                    f"(is '{len(value)}')."
+                )
 
         elif key == "fields":
             value: list[d_embed.EmbedField]
             if len(value) > 25:
-                issues.append(f"Embed contains more than 25 fields (is '{len(value)}').")
+                issues.append(
+                    f"Embed contains more than 25 fields (is '{len(value)}')."
+                )
             for field in value:
                 for field_key, field_value in field.items():
                     if field_key == "type":
                         if field_value != "rich":
-                            issues.append(f"Field type '{field_value}' (for field with name '{field['name']}') "
-                                          f"is not supported.")
+                            issues.append(
+                                f"Field type '{field_value}' (for field with "
+                                f"name '{field['name']}') is not supported."
+                            )
                     if field_key == "name":
                         total_characters += len(field_value)
                         if len(field_value) > 256:
-                            issues.append(f"Field name '{field_value}' exceeds 256 characters "
-                                          f"(is '{len(field_value)}').")
+                            issues.append(
+                                f"Field name '{field_value}' exceeds 256 "
+                                f"characters (is '{len(field_value)}')."
+                            )
                     if field_key == "value":
                         total_characters += len(field_value)
                         if len(field_value) > 1024:
-                            issues.append(f"Field value for field with name '{field['name']}' exceeds 1024 characters "
-                                          f"(is '{len(field_value)}').")
+                            issues.append(
+                                f"Field value for field with name "
+                                f"'{field['name']}' exceeds 1024 characters "
+                                f"(is '{len(field_value)}')."
+                            )
 
         elif key == "footer":
             value: d_embed.EmbedFooter
             text = value["text"]
             total_characters += len(text)
             if len(text) > 2048:
-                issues.append(f"Footer length exceeds 2048 characters (is '{len(text)}').")
+                issues.append(
+                    f"Footer length exceeds 2048 characters "
+                    f"(is '{len(text)}')."
+                )
 
         elif key == "author":
             value: d_embed.EmbedAuthor
@@ -68,10 +85,13 @@ def get_embed_issues(embed: discord.Embed) -> tuple[list[str], int]:
                 if author_key == "name":
                     total_characters += len(author_value)
                     if len(author_value) > 256:
-                        issues.append(f"Author name '{author_value}' exceeds 256 characters "
-                                      f"(is '{len(author_value)}').")
+                        issues.append(
+                            f"Author name '{author_value}' exceeds 256 "
+                            f"characters (is '{len(author_value)}')."
+                        )
 
     if total_characters > 6000:
-        issues.append(f"Total character count of embed exceeds 6000 characters (is '{total_characters}').")
+        issues.append(f"Total character count of embed exceeds 6000 "
+                      f"characters (is '{total_characters}').")
 
     return issues, total_characters

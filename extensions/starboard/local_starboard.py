@@ -14,7 +14,8 @@ OriginalMessageId = int
 OriginalMessageData = tuple[OriginalChannelId, OriginalMessageId]
 DatabaseData = tuple[StarboardMessageId, OriginalChannelId, OriginalMessageId]
 
-local_starboard_index: dict[GuildId, dict[StarboardMessageId, OriginalMessageData]] = {}
+local_starboard_index: dict[
+    GuildId, dict[StarboardMessageId, OriginalMessageData]] = {}
 starboard_loaded = False
 
 
@@ -43,7 +44,8 @@ async def import_starboard_messages(
         if not client.is_me(starboard_msg.author):
             continue
         try:
-            guild_id, channel_id, message_id = parse_starboard_message(starboard_msg)
+            guild_id, channel_id, message_id \
+                = parse_starboard_message(starboard_msg)
         except (ValueError, IndexError):
             continue
         orig_data = (channel_id, message_id)

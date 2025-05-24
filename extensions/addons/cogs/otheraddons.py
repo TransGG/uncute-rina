@@ -20,13 +20,19 @@ STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 currency_options = {
     code: 0 for code in (
-        "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,"
-        "CDF,CHF,CLF,CLP,CNH,CNY,COP,CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,GGP,GHS,GIP,"
-        "GMD,GNF,GTQ,GYD,HKD,HNL,HRK,HTG,HUF,IDR,ILS,IMP,INR,IQD,IRR,ISK,JEP,JMD,JOD,JPY,KES,KGS,KHR,KMF,KPW,KRW,KWD,"
-        "KYD,KZT,LAK,LBP,LKR,LRD,LSL,LYD,MAD,MDL,MGA,MKD,MMK,MNT,MOP,MRU,MUR,MVR,MWK,MXN,MYR,MZN,NAD,NGN,NIO,NOK,NPR,"
-        "NZD,OMR,PAB,PEN,PGK,PHP,PKR,PLN,PYG,QAR,RON,RSD,RUB,RWF,SAR,SBD,SCR,SDG,SEK,SGD,SHP,SLL,SOS,SRD,SSP,STD,STN,"
-        "SVC,SYP,SZL,THB,TJS,TMT,TND,TOP,TRY,TTD,TWD,TZS,UAH,UGX,USD,UYU,UZS,VES,VND,VUV,WST,XAF,XAG,XAU,XCD,XDR,XOF,"
-        "XPD,XPF,XPT,YER,ZAR,ZMW,ZWL".split(","))}
+        "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,"
+        "BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,CHF,CLF,CLP,CNH,CNY,COP,"
+        "CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,"
+        "GGP,GHS,GIP,GMD,GNF,GTQ,GYD,HKD,HNL,HRK,HTG,HUF,IDR,ILS,IMP,INR,IQD,"
+        "IRR,ISK,JEP,JMD,JOD,JPY,KES,KGS,KHR,KMF,KPW,KRW,KWD,KYD,KZT,LAK,LBP,"
+        "LKR,LRD,LSL,LYD,MAD,MDL,MGA,MKD,MMK,MNT,MOP,MRU,MUR,MVR,MWK,MXN,MYR,"
+        "MZN,NAD,NGN,NIO,NOK,NPR,NZD,OMR,PAB,PEN,PGK,PHP,PKR,PLN,PYG,QAR,RON,"
+        "RSD,RUB,RWF,SAR,SBD,SCR,SDG,SEK,SGD,SHP,SLL,SOS,SRD,SSP,STD,STN,SVC,"
+        "SYP,SZL,THB,TJS,TMT,TND,TOP,TRY,TTD,TWD,TZS,UAH,UGX,USD,UYU,UZS,VES,"
+        "VND,VUV,WST,XAF,XAG,XAU,XCD,XDR,XOF,XPD,XPF,XPT,YER,ZAR,ZMW,ZWL"
+        .split(",")
+    )
+}
 conversion_rates = {  # [default 0, incrementation]
     "temperature": {
         "Celsius": [273.15, 1, "°C"],
@@ -96,12 +102,14 @@ conversion_rates = {  # [default 0, incrementation]
     },
     "currency": currency_options,
     "time": {
-        # 365.2421896698-6.15359\cdot10^{-6}a-7.29\cdot10^{-10}a^{2}+2.64\cdot10^{-10}a^{3}
+        # 365.2421896698-6.15359\cdot10^{-6}a-7.29
+        #  \cdot10^{-10}a^{2}+2.64\cdot10^{-10}a^{3}
         #     where `a` is centuries of 36525 SI days
-        # 31556925.1 <- this will hold up for 3 years (until 2025-7-13T21:48:21.351744),
+        # 31556925.1 <- this will hold up for 3 years (until
+        #  2025-7-13T21:48:21.351744),
         #     after which it will be 31556925.0
-        # 31556925.0 will hold up for another 18 years (until 2044); after which it will be
-        #     31556924.9 for 19 years (2063)
+        # 31556925.0 will hold up for another 18 years (until 2044);
+        #  after which it will be 31556924.9 for 19 years (2063)
         "decennium": [0, 1 / 315569251.0, "dec"],
         "year": [0, 1 / 31556925.1, "yr"],
         "month": [0, 12 / 31556925.1, "mo"],
@@ -124,21 +132,24 @@ def _get_emoji_from_str(
         client: Bot, emoji_str: str | None
 ) -> discord.Emoji | discord.PartialEmoji | None:
     """
-    Get a matching (partial) emoji object from an emoji string or emoji ID.
+    Get a matching (partial) emoji object from an emoji string or
+    emoji ID.
 
     :param client: The client/bot whose servers to check for the emoji.
-    :param emoji_str: The emoji (<a:Test_Emoji:0123456789> -> Emoji) or id (0123456789 -> PartialEmoji) to look for.
+    :param emoji_str: The emoji (<a:Test_Emoji:0123456789> -> Emoji)
+     or id (0123456789 -> PartialEmoji) to look for.
 
-    Returns:
-        - ``None``: If no emoji found, or it can't be used by the bot (not in the server).
-        - ``discord.PartialEmoji``: If emoji is Unicode.
-        - ``discord.Emoji``: If emoji is valid and can be used but the bot.
+    :return: PartialEmoji if emoji is Unicode; Emoji if emoji is custom;
+     or None if emoji wasn't found or can't be used by the bot (not in
+     the server?).
 
     .. note::
 
-        :py:func:`discord.PartialEmoji.from_str` turns "e" into ``<PartialEmoji name="e", id=None>``
-        this means :py:func:`discord.PartialEmoji.is_unicode_emoji` will return ``True`` because ``id == None``
-        (and ``name != None`` is implied?) so it might still raise a NotFound error.
+        :py:func:`discord.PartialEmoji.from_str` turns "e" into
+        ``<PartialEmoji name="e", id=None>`` this means
+        :py:func:`discord.PartialEmoji.is_unicode_emoji` will return
+        ``True`` because ``id == None`` (and ``name != None`` is
+        implied?) so it might still raise a NotFound error.
     """
     if emoji_str is None:
         return None
@@ -157,22 +168,24 @@ def _get_emoji_from_str(
         return emoji
 
 
-async def _unit_autocomplete(itx: discord.Interaction, current: str):
+async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
     options = options[itx.namespace.mode]
     if itx.namespace.mode == "currency":
         return [app_commands.Choice(name=option, value=option)
-                for option in options if option.lower().startswith(current.lower())
+                for option in options
+                if option.lower().startswith(current.lower())
                 ][:10]
     else:
         return [app_commands.Choice(name=option, value=option)
-                for option in options if current.lower() in option.lower()
+                for option in options
+                if current.lower() in option.lower()
                 ][:25]
 
 
-async def _role_autocomplete(itx: discord.Interaction, current: str):
+async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /remove-role command."""
     role_options = {
         1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
@@ -185,11 +198,15 @@ async def _role_autocomplete(itx: discord.Interaction, current: str):
                     current.lower() in role_options[role.id][1].lower()):
                 options.append(role.id)
     if options:
-        return [app_commands.Choice(name=role_options[role_id][0], value=role_options[role_id][1])
+        return [app_commands.Choice(name=role_options[role_id][0],
+                                    value=role_options[role_id][1])
                 for role_id in options
                 ][:15]
     else:
-        return [app_commands.Choice(name="You don't have any roles to remove!", value="none")]
+        return [
+            app_commands.Choice(name="You don't have any roles to remove!",
+                                value="none")
+        ]
 
 
 class OtherAddons(commands.Cog):
@@ -204,45 +221,76 @@ class OtherAddons(commands.Cog):
         if "celcius" in message.content.lower():
             await message.reply(
                 "Fun fact: Celsius was named after a guy named "
-                "['Anders Celsius'](https://en.wikipedia.org/wiki/Anders_Celsius). "
-                "'Celcius' is therefore an incorrect spelling. :)")
+                "['Anders Celsius']"
+                "(https://en.wikipedia.org/wiki/Anders_Celsius). "
+                "'Celcius' is therefore an incorrect spelling. :)"
+            )
 
     @app_commands.command(name="convert_unit",
-                          description="Convert temperature or distance from imperial to metric etc.")
+                          description="Convert temperature or distance from "
+                                      "imperial to metric etc."
+                          )
     @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Currency (USD, EUR, CAD, etc.)', value="currency"),
-        discord.app_commands.Choice(name='Length (miles,km,inch)', value="length"),
-        discord.app_commands.Choice(name='Speed (mph, km/h, m/s, etc.)', value="speed"),
-        discord.app_commands.Choice(name='Surface area (sq.ft., m^2)', value="surface area"),
-        discord.app_commands.Choice(name='Temperature (Fahrenheit, C, K, etc.)', value="temperature"),
-        discord.app_commands.Choice(name='Time (year, minute, sec, etc.)', value="time"),
-        discord.app_commands.Choice(name='Volume (m^3)', value="volume"),
-        discord.app_commands.Choice(name='Weight (pounds, ounces, kg, gram, etc.)', value="weight"),
+        discord.app_commands.Choice(
+            name='Currency (USD, EUR, CAD, etc.)', value="currency"),
+        discord.app_commands.Choice(
+            name='Length (miles,km,inch)', value="length"),
+        discord.app_commands.Choice(
+            name='Speed (mph, km/h, m/s, etc.)', value="speed"),
+        discord.app_commands.Choice(
+            name='Surface area (sq.ft., m^2)', value="surface area"),
+        discord.app_commands.Choice(
+            name='Temperature (Fahrenheit, C, K, etc.)', value="temperature"),
+        discord.app_commands.Choice(
+            name='Time (year, minute, sec, etc.)', value="time"),
+        discord.app_commands.Choice(
+            name='Volume (m^3)', value="volume"),
+        discord.app_commands.Choice(
+            name='Weight (pounds, ounces, kg, gram, etc.)', value="weight"),
     ])
-    @app_commands.describe(mode="What category of unit do you want to convert",
-                           from_unit="Which unit do you want to convert from?",
-                           public="Do you want to share the result with everyone in chat?")
+    @app_commands.describe(
+        mode="What category of unit do you want to convert",
+        from_unit="Which unit do you want to convert from?",
+        public="Do you want to share the result with everyone in chat?"
+    )
     @app_commands.rename(from_unit='from')
     @app_commands.autocomplete(from_unit=_unit_autocomplete)
     @app_commands.rename(from_unit='to')
     @app_commands.autocomplete(to_unit=_unit_autocomplete)
     async def convert_unit(
-            self, itx: discord.Interaction, mode: str, from_unit: str, value: float, to_unit: str, public: bool = False
+            self,
+            itx: discord.Interaction[Bot],
+            mode: str,
+            from_unit: str,
+            value: float,
+            to_unit: str,
+            public: bool = False
     ):
         rates = conversion_rates.copy()
         if mode not in rates:
-            await itx.response.send_message("You didn't give a valid conversion method/mode!", ephemeral=True)
+            await itx.response.send_message(
+                "You didn't give a valid conversion method/mode!",
+                ephemeral=True
+            )
             return
         if mode == "currency":
-            # more info: https://docs.openexchangerates.org/reference/latest-json
-            api_key = itx.client.api_tokens['Open Exchange Rates']
+            # more info:
+            #  https://docs.openexchangerates.org/reference/latest-json
+            params = {
+                "appid": itx.client.api_tokens['Open Exchange Rates'],
+                "show_alternative": "true",
+            }
             response_api = requests.get(
-                f"https://openexchangerates.org/api/latest.json?app_id={api_key}&show_alternative=true").text
+                "https://openexchangerates.org/api/latest.json",
+                params=params
+            ).text
             data = json.loads(response_api)
             if data.get("error", 0):
-                await itx.response.send_message("I'm sorry, something went wrong while trying to get "
-                                                "the latest currency exchange rates",
-                                                ephemeral=True)
+                await itx.response.send_message(
+                    "I'm sorry, something went wrong while trying to get "
+                    "the latest currency exchange rates",
+                    ephemeral=True
+                )
                 return
             options = {x: [0, data['rates'][x], x] for x in data['rates']}
             from_unit = from_unit.upper()
@@ -250,9 +298,11 @@ class OtherAddons(commands.Cog):
         else:
             options = rates[mode]
         if from_unit not in options or to_unit not in options:
-            await itx.response.send_message("Your unit conversion things need to be options that are in the "
-                                            "list/database (as given by the autocomplete)!",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                "Your unit conversion things need to be options that are "
+                "in the list/database (as given by the autocomplete)!",
+                ephemeral=True
+            )
             return
         base_value = (value + options[from_unit][0]) / options[from_unit][1]
         # base_value is essentially the "x" in the conversion rates
@@ -264,20 +314,34 @@ class OtherAddons(commands.Cog):
         result = round(result, 12)
         if mode == "currency":
             await itx.response.send_message(
-                f"Converting {mode} from {value} {from_unit} to {result} {options[to_unit][2]}", ephemeral=not public)
+                f"Converting {mode} from {value} {from_unit} to "
+                f"{result} {options[to_unit][2]}",
+                ephemeral=not public
+            )
         else:
             await itx.response.send_message(
-                f"Converting {mode} from {value} {from_unit} to {to_unit}: {result} {options[to_unit][2]}",
-                ephemeral=not public)
+                f"Converting {mode} from {value} {from_unit} to "
+                f"{to_unit}: {result} {options[to_unit][2]}",
+                ephemeral=not public
+            )
 
-    @app_commands.command(name="add_poll_reactions", description="Make rina add an upvote/downvote emoji to a message")
-    @app_commands.describe(message_id="What message do you want to add the votes to?",
-                           upvote_emoji="What emoji do you want to react first?",
-                           downvote_emoji="What emoji do you want to react second?",
-                           neutral_emoji="Neutral emoji option (placed between the up/downvote)")
+    @app_commands.command(
+        name="add_poll_reactions",
+        description="Make rina add an upvote/downvote emoji to a message"
+    )
+    @app_commands.describe(
+        message_id="What message do you want to add the votes to?",
+        upvote_emoji="What emoji do you want to react first?",
+        downvote_emoji="What emoji do you want to react second?",
+        neutral_emoji="Neutral emoji option (placed between the up/downvote)"
+    )
     async def add_poll_reactions(
-            self, itx: discord.Interaction[Bot], message_id: str,
-            upvote_emoji: str, downvote_emoji: str, neutral_emoji: str | None = None
+            self,
+            itx: discord.Interaction[Bot],
+            message_id: str,
+            upvote_emoji: str,
+            downvote_emoji: str,
+            neutral_emoji: str | None = None
     ):
         if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(
                 itx.guild, ModuleKeys.poll_reactions):
@@ -293,35 +357,46 @@ class OtherAddons(commands.Cog):
             except discord.errors.NotFound:
                 errors.append("- I couldn't find a message with this ID!")
             except discord.errors.Forbidden:
-                errors.append("- I'm not allowed to find a message in this channel!")
+                errors.append(
+                    "- I'm not allowed to find a message in this channel!")
             except discord.errors.HTTPException:
                 errors.append("- Fetching the message failed.")
         else:
             errors.append("- The message ID needs to be a number!")
 
-        upvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, upvote_emoji)
+        upvote_emoji: MaybeEmoji = _get_emoji_from_str(
+            itx.client, upvote_emoji)
         if upvote_emoji is None:
-            errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
+            errors.append("- I can't use this upvote emoji! "
+                          "(perhaps it's a nitro emoji)")
 
-        downvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, downvote_emoji)
+        downvote_emoji: MaybeEmoji = _get_emoji_from_str(
+            itx.client, downvote_emoji)
         if downvote_emoji is None:
-            errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
+            errors.append("- I can't use this downvote emoji! "
+                          "(perhaps it's a nitro emoji)")
 
         if neutral_emoji is None:
             neutral_emoji: MaybeEmoji = _get_emoji_from_str(
                 itx.client, neutral_emoji)
             if neutral_emoji is None:
-                errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
+                errors.append("- I can't use this neutral emoji! "
+                              "(perhaps it's a nitro emoji)")
 
         blacklisted_channels = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.poll_reaction_blacklisted_channels)
 
         if (blacklisted_channels is not None and
                 itx.channel.id in blacklisted_channels):
-            errors.append("- :no_entry: You are not allowed to use this command in this channel!")
+            errors.append("- :no_entry: You are not allowed to use this "
+                          "command in this channel!")
 
         if errors or not message:
-            await itx.response.send_message("Couldn't add poll reactions:\n" + '\n'.join(errors), ephemeral=True)
+            await itx.response.send_message(
+                "Couldn't add poll reactions:\n"
+                + '\n'.join(errors),
+                ephemeral=True
+            )
             return
 
         try:
@@ -330,39 +405,64 @@ class OtherAddons(commands.Cog):
             if neutral_emoji:
                 await message.add_reaction(neutral_emoji)
             await message.add_reaction(downvote_emoji)
-            await itx.edit_original_response(content=":white_check_mark: Successfully added emojis")
+            await itx.edit_original_response(
+                content=":white_check_mark: Successfully added emojis")
         except discord.errors.Forbidden:
-            await itx.edit_original_response(content=":no_entry: Couldn't add all poll reactions: Forbidden "
-                                                     "(maybe the user you're trying to add reactions to has "
-                                                     "blocked Rina)")
+            await itx.edit_original_response(
+                content=":no_entry: Couldn't add all poll reactions: "
+                        "Forbidden (maybe the user you're trying to add "
+                        "reactions to has blocked Rina)"
+            )
+            return
         except discord.errors.NotFound:
-            await itx.edit_original_response(content=":no_entry: Couldn't add all poll reactions: (at least) "
-                                                     "one of the emojis was not a real emoji!")
+            await itx.edit_original_response(
+                content=":no_entry: Couldn't add all poll reactions: "
+                        "(at least) one of the emojis was not a real emoji!"
+            )
         except discord.errors.HTTPException as ex:
             if ex.status == 400:
-                await itx.edit_original_response(content=":no_entry: Couldn't add all poll reactions: "
-                                                         "(at least) one of the emojis was not a real emoji!")
+                await itx.edit_original_response(
+                    content=":no_entry: Couldn't add all poll reactions: "
+                            "(at least) one of the emojis was not a real "
+                            "emoji!"
+                )
             else:
-                await itx.edit_original_response(content=":warning: Adding emojis failed!")
-        cmd_mention = itx.client.get_command_mention("add_poll_reactions")
+                await itx.edit_original_response(
+                    content=":warning: Adding emojis failed!"
+                )
+        cmd_poll = itx.client.get_command_mention("add_poll_reactions")
 
         if not is_in_dms(itx.guild):
-            await log_to_guild(itx.client, itx.guild,
-                               f"{itx.user.name} ({itx.user.id}) used {cmd_mention} on message {message.jump_url}")
+            await log_to_guild(
+                itx.client,
+                itx.guild,
+                f"{itx.user.name} ({itx.user.id}) used {cmd_poll} "
+                f"on message {message.jump_url}"
+            )
 
     @app_commands.command(name="get_rina_command_mention",
-                          description="Sends a hidden command mention for your command")
-    @app_commands.describe(command="Command to get a mention for (with/out slash)")
-    async def find_command_mention_itx(self, itx: discord.Interaction, command: str):
+                          description="Sends a hidden command mention for "
+                                      "your command"
+                          )
+    @app_commands.describe(
+        command="Command to get a mention for (with/out slash)"
+    )
+    async def find_command_mention_itx(
+            self,
+            itx: discord.Interaction[Bot],
+            command: str
+    ):
         command = command.removeprefix("/").lower()
         try:
             app_commands.commands.validate_name(command)
         except ValueError:
             await itx.response.send_message(
-                "Heads up: your command contains unavailable characters. Discord only allows "
-                "names to be between 1-32 characters and contain only lower-case letters, "
-                "numbers, hyphens, underscores, or spaces (for command groups).",
-                ephemeral=True)
+                "Heads up: your command contains unavailable characters. "
+                "Discord only allows names to be between 1-32 characters "
+                "and contain only lower-case letters, numbers, hyphens, "
+                "underscores, or spaces (for command groups).",
+                ephemeral=True
+            )
             return
 
         cmd_mention = itx.client.get_command_mention(command)
@@ -379,7 +479,7 @@ class OtherAddons(commands.Cog):
     @app_commands.describe(role_name="The name of the role to remove")
     @app_commands.autocomplete(role_name=_role_autocomplete)
     @module_enabled_check(ModuleKeys.remove_role_command)
-    async def remove_role(self, itx: discord.Interaction, role_name: str):
+    async def remove_role(self, itx: discord.Interaction[Bot], role_name: str):
         itx.user: discord.Member  # noqa
         # It shouldn't be a discord.User cause the app_command check
         #  prevents DMs.

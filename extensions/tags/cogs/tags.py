@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 # ^ to make report tag auto-trigger at most once every 15 minutes
 
 import discord
@@ -23,8 +23,9 @@ from extensions.tags.tags import (
 )
 
 
-# to prevent excessive spamming when multiple people mention staff. A sorta cooldown
-report_message_reminder_unix = 0  # int(datetime.now().timestamp())
+# To prevent excessive spamming when multiple people mention staff.
+#  A sort of cooldown
+report_message_reminder = datetime.min
 
 
 def _get_enabled_tag_ids(itx) -> set[str]:
@@ -34,7 +35,7 @@ def _get_enabled_tag_ids(itx) -> set[str]:
     return set(default_tags + custom_tags)
 
 
-async def _tag_autocomplete(itx: discord.Interaction, current: str):
+async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /tag command."""
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
@@ -99,8 +100,10 @@ class TagFunctions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        global report_message_reminder_unix
-        if message.guild is None or message.author.bot:
+        global report_message_reminder
+        if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
+            return
+        if message.author.bot:
             return
 
         staff_role_list: list[discord.Role]
@@ -117,11 +120,11 @@ class TagFunctions(commands.Cog):
 
         if any(staff_role_mentions in message.content
                for staff_role_mentions in staff_role_mentions):
-            time_now = int(datetime.now().timestamp())  # get time in unix
-            if time_now - report_message_reminder_unix > 900:  # 15 minutes
+            time_now = datetime.now()
+            if time_now - report_message_reminder > timedelta(minutes=15):
                 tag = create_report_info_tag(ticket_channel)
                 await tag.send_to_channel(message.channel)
-                report_message_reminder_unix = time_now
+                report_message_reminder = time_now
 
     @app_commands.command(name="tag",
                           description="Look up something through a tag")
@@ -133,7 +136,7 @@ class TagFunctions(commands.Cog):
     @module_enabled_check(ModuleKeys.tags)
     async def tag(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             tag: str,
             public: bool = True,
             anonymous: bool = True
@@ -186,7 +189,7 @@ class TagFunctions(commands.Cog):
             mode: str,
             tag_name: str,
     ):
-        itx.response: discord.InteractionResponse[Bot]  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if mode == TagMode.help.value:
             await send_help_menu(itx, 901)
         elif mode == TagMode.create.value:
@@ -217,16 +220,17 @@ class TagFunctions(commands.Cog):
             try:
                 color_tuple = await _parse_embed_color_input(color)
             except ValueError as ex:
-                cmd_mention_help = itx.client.get_command_mention('help')
+                cmd_help = itx.client.get_command_mention_with_args(
+                    'help', page="901")
                 await itx.response.send_message(
                     f"Invalid color:\n"
                     f"> {ex}\n"
-                    f"For more help, run {cmd_mention_help} `page:901`",
+                    f"For more help, run {cmd_help}.",
                     ephemeral=True
                 )
                 return
             if report_to_staff.lower() not in ["true", "false"]:
-                await itx.reponse.send_message(
+                await itx.response.send_message(
                     f"Invalid boolean for `report_to_staff`:"
                     f"Expected either `True`, `true`, `False`, or `false`\n"
                     f"but received `{report_to_staff}`.`",

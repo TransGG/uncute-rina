@@ -22,7 +22,10 @@ from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
 
 
-def extract_id_and_name(embed: discord.Embed, field_number: int) -> tuple[str, str]:
+def extract_id_and_name(
+        embed: discord.Embed,
+        field_number: int,
+) -> tuple[str, str]:
     """
     A helper function to extract id and name from Logger Bot or Anna's
     voice channel logs.
@@ -52,17 +55,27 @@ async def _get_vc_activity(
         min_time: float,
         max_time: float,
         msg_limit: int
-) -> list[tuple[float, tuple[int, str], tuple[int, str] | None, tuple[int, str] | None]]:
+) -> list[tuple[
+    float,
+    tuple[int, str],
+    tuple[int, str] | None,
+    tuple[int, str] | None
+]]:
     """
-    Retrieve the most recent voice channel activity from the logger channel and convert into neat string.
+    Retrieve the most recent voice channel activity from the logger
+    channel and convert into neat string.
 
-    :param voice_log_channel: Channel from which you want to get the voice channel logs / information.
-    :param min_time: A unix epoch timestamp for the earliest logs to fetch (up to how long ago).
-    :param max_time: A unix epoch timestamp for the latest logs to fetch (up to how recent).
+    :param voice_log_channel: Channel from which you want to get the
+     voice channel logs / information.
+    :param min_time: A unix epoch timestamp for the earliest logs to
+     fetch (up to how long ago).
+    :param max_time: A unix epoch timestamp for the latest logs to
+     fetch (up to how recent).
     :param msg_limit: How many log messages to look through.
 
-    :return: A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of
-     previous_channel or new_channel has a value.
+    :return: A list of (timestamp, user, previous_channel?,
+     new_channel?). Typically, at least one of previous_channel or
+     new_channel has a value.
     """
     # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
     output: list[tuple[
@@ -78,12 +91,15 @@ async def _get_vc_activity(
             limit=msg_limit,
             oldest_first=True
     ):
-        # oldest_first is by default true, since "after" != None, oldest_first will be true anyway.
+        # oldest_first is by default true, since "after" != None,
+        #  oldest_first will be true anyway.
         # Might as well make it definitive.
 
-        # For context: the embed message sent by the Logger bot looks like this:
-        #   author / image of user that sent message (author.name = username + descriminator
-        #     (#0 in new discord update))
+        # For context: the embed message sent by the Logger bot
+        #  looks like this:
+        #
+        #   author / image of user that sent message (author.name
+        #    = username + descriminator (#0 in new discord update))
         #  case 1: the user joins/leaves a voice channel
         #   description: **username#0** joined/left voice channel vc_name
         #   fields[0].name: Channel
@@ -91,20 +107,25 @@ async def _get_vc_activity(
         #   fields[1].name: ID
         #   fields[1].value: "```ini\nUser = 123456789\nChannel = 123456```"
         #  case 2: the user moves from one channel to another
-        #   description: **username#0** moved from <#123456> (name1) to <#234567> (name2)
+        #   description: **username#0** moved from <#123456>
+        #    (name1) to <#234567> (name2)
         #   fields[0].name: Current channel they are in    << New >>
         #   fields[0].value: <#234567> (name1)
         #   fields[0].name: Previously occupied channel    << Old >>
         #   fields[0].value: <#123456> (name2)
         #   fields[1].name: ID
-        #   fields[1].value: "```ini\nUser = 123456789\nNew = 234567\nOld = 123456```"
+        #   fields[1].value: "```ini\nUser = 123456789\nNew = 234567\n
+        #    Old = 123456```"
 
         for embed in message.embeds:
             username = embed.description.split("**", 2)[1].split("#", 1)[0]
-            # split **mysticmia#0** to mysticmia (taking discord usernames can't contain hashtags (cuz they can't))
+            # split **mysticmia#0** to mysticmia
+            #  (taking discord usernames can't contain hashtags (cuz
+            #  they can't))
             # print("Username = ", username)
             try:
-                # remove bold name and everything after the first word, to only select 'moved', 'joined', or 'left'.
+                # remove bold name and everything after the first word,
+                #  to only select 'moved', 'joined', or 'left'.
                 event_type = (
                     embed
                     .description
@@ -130,7 +151,8 @@ async def _get_vc_activity(
                 #  user "moved" in this case. There isn't any fool-proof
                 #  way to test otherwise.
                 event_type = "moved"
-                # Will get an assertion error if it's not, anyway, so I'll leave it as it is for now.
+                # Will get an assertion error if it's not, anyway, so
+                #  I'll leave it as it is for now.
 
             # print("Type = ", type)
             # print("Embed field count = ", len(embed.fields))
@@ -140,46 +162,69 @@ async def _get_vc_activity(
 
             try:
                 if embed.fields[0].name == "Action":
-                    # actions like server deafening or muting someone also get logged, but are
-                    # irrelevant for this diagram/command.
+                    # actions like server deafening or muting someone
+                    #  also get logged, but are irrelevant for this
+                    #  diagram/command.
                     continue
-                # Could be done more efficiently but oh well. Not like this is suitable for any
-                # other bot either anyway. And I'm limited by discord API anyway.
+                # Could be done more efficiently but oh well. Not like
+                #  this is suitable for any other bot either anyway. And
+                #  I'm limited by discord API anyway.
 
-                if len(embed.fields) == 3:  # user moved channels (3 fields: previous/current channel, and IDs)
+                if len(embed.fields) == 3:
+                    # user moved channels
+                    #  (3 fields: previous/current channel, and IDs)
                     if event_type != "moved":
-                        raise AssertionError(f"type '{event_type}' is not a valid type (should be 'moved')")
-                    current_id, current_name = extract_id_and_name(embed, 0)
+                        raise AssertionError(
+                            f"type '{event_type}' is not a valid type "
+                            f"(should be 'moved')"
+                        )
+
+                    current_id, current_name = extract_id_and_name(
+                        embed, 0)
                     current_channel_data.append(current_id)
                     current_channel_data.append(current_name)
-                    previous_id, previous_name = extract_id_and_name(embed, 1)
+                    previous_id, previous_name = extract_id_and_name(
+                        embed, 1)
                     previous_channel_data.append(previous_id)
                     previous_channel_data.append(previous_name)
                 elif len(embed.fields) == 2:
                     if event_type == "joined":
-                        current_id, current_name = extract_id_and_name(embed, 0)
+                        current_id, current_name = extract_id_and_name(
+                            embed, 0)
                         current_channel_data.append(current_id)
                         current_channel_data.append(current_name)
                     elif event_type == "left":
-                        previous_id, previous_name = extract_id_and_name(embed, 0)
+                        previous_id, previous_name = extract_id_and_name(
+                            embed, 0)
                         previous_channel_data.append(previous_id)
                         previous_channel_data.append(previous_name)
                     else:
                         raise AssertionError(
-                            f"type '{event_type}' is not a valid type (should be 'joined' or 'left')")
+                            f"type '{event_type}' is not a valid type "
+                            f"(should be 'joined' or 'left')"
+                        )
                 else:
                     raise AssertionError(
-                        f"Embed fields count was expected to be 3 or 2. Instead, it was '{len(embed.fields)}'")
+                        f"Embed fields count was expected to be 3 or 2. "
+                        f"Instead, it was '{len(embed.fields)}'"
+                    )
             except IndexError:
-                # TODO: try to figure out why it crashed that one time. Now with more details
-                # edit: Some actions, such as server-deafening another user, give a different log message.
+                # TODO: try to figure out why it crashed that one time.
+                #  Now with more details
+                # edit: Some actions, such as server-deafening another
+                #  user, give a different log message.
                 if len(embed.fields) == 0:
                     raise Exception("Embed has no fields!")
                 else:
                     if len(embed.fields[0].value.split("#", 1)) < 2:
                         raise Exception(
-                            f"First embed field '{embed.fields[0].value}' does not have hashtags for its ID!")
-                    raise Exception(f"Embed field '{embed.fields[0].value}' has some other error or something D:")
+                            f"First embed field '{embed.fields[0].value}' "
+                            f"does not have hashtags for its ID!"
+                        )
+                    raise Exception(
+                        f"Embed field '{embed.fields[0].value}' has some "
+                        f"other error or something D:"
+                    )
 
             # remove the ```ini\n  ...   ``` from the embed field
             id_data = (embed.fields[-1]
@@ -213,8 +258,6 @@ async def _get_vc_activity(
             event_timestamp = embed.timestamp.timestamp()
 
             try:
-                "A list of (timestamp, user, previous_channel?, new_channel?). Typically, at least one of"
-                "previous_channel or new_channel has a value."
                 event_user = (int(user_data[0]), user_data[1])
 
                 if len(previous_channel_data) == 0:
@@ -229,9 +272,14 @@ async def _get_vc_activity(
                     current_channel = (int(current_channel_data[0]),
                                        current_channel_data[1])
             except ValueError:
-                raise AssertionError(f"IDs were not numeric!\nFull error:\n{traceback.format_exc()}")
+                raise AssertionError(
+                    f"IDs were not numeric!\n"
+                    f"Full error:\n"
+                    f"{traceback.format_exc()}"
+                )
 
-            data = (event_timestamp, event_user, previous_channel, current_channel)
+            data = (event_timestamp, event_user,
+                    previous_channel, current_channel)
             output.append(data)
 
     return output
@@ -401,23 +449,30 @@ class VCLogReader(commands.Cog):
         if user_ids is not None:
             select_user_ids: list[str] = user_ids.replace(" ", "").split(",")
         # update typing (if channel mention)
-        requested_channel: discord.app_commands.AppCommandChannel | str = requested_channel
+        requested_channel: discord.app_commands.AppCommandChannel | str \
+            = requested_channel
         warning = ""
         if type(requested_channel) is discord.app_commands.AppCommandChannel:
             voice_channel = itx.client.get_channel(requested_channel.id)
         else:
             if not requested_channel.isdecimal():
-                await itx.response.send_message("You need to give a numerical ID!", ephemeral=True)
+                await itx.response.send_message(
+                    "You need to give a numerical ID!",
+                    ephemeral=True
+                )
                 return
             voice_channel = itx.client.get_channel(int(requested_channel))
 
         if voice_channel is None:
             # make custom vc if the voice channel we're trying to get
             #  logs does not exist anymore.
-            voice_channel = CustomVoiceChannel(channel_id=int(requested_channel),
-                                               name="Unknown Channel",
-                                               members=[])
-            warning = "Warning: This channel is not a voice channel, or has been deleted!\n\n"
+            voice_channel = CustomVoiceChannel(
+                channel_id=int(requested_channel),
+                name="Unknown Channel",
+                members=[]
+            )
+            warning = ("Warning: This channel is not a voice channel, "
+                       "or has been deleted!\n\n")
 
         vc_activity_logs_channel: discord.abc.Messageable | None
         vc_activity_logs_channel = itx.client.get_guild_attribute(
@@ -434,16 +489,25 @@ class VCLogReader(commands.Cog):
             lower_bound = float(lower_bound)
             upper_bound = float(upper_bound)
             if lower_bound <= 0:
-                await itx.response.send_message("Your period (data in the past [x] minutes) has to be above 0!",
-                                                ephemeral=True)
+                await itx.response.send_message(
+                    "Your period (data in the past [x] minutes) has to "
+                    "be above 0!",
+                    ephemeral=True,
+                )
                 return
             if upper_bound > lower_bound:
                 await itx.response.send_message(
-                    "Your upper bound can't be bigger (-> longer ago) than the lower bound!", ephemeral=True)
+                    "Your upper bound can't be bigger (-> longer ago) than "
+                    "the lower bound!",
+                    ephemeral=True,
+                )
                 return
         except ValueError:
             await itx.response.send_message(
-                "Your bounding period has to be a number for the amount of minutes that have passed", ephemeral=True)
+                "Your bounding period has to be a number for the amount of "
+                "minutes that have passed",
+                ephemeral=True,
+            )
             return
 
         lower_bound *= 60  # minutes to seconds
@@ -465,8 +529,12 @@ class VCLogReader(commands.Cog):
 
         await itx.response.defer(ephemeral=True)
 
-        events = await _get_vc_activity(vc_activity_logs_channel, min_time,
-                                        max_time, msg_log_limit)
+        events = await _get_vc_activity(
+            vc_activity_logs_channel,
+            min_time,
+            max_time,
+            msg_log_limit,
+        )
 
         if upper_bound == 0:
             # If looking until the current time/date, add fake "leave"
@@ -475,9 +543,12 @@ class VCLogReader(commands.Cog):
             #  joined or left during the given time frame] will still be
             #  plotted on the graph.
             for member in voice_channel.members:
-                events.append((current_time,
-                               (member.id, member.name),
-                               (voice_channel.id, voice_channel.name), None))
+                events.append((
+                    current_time,
+                    (member.id, member.name),
+                    (voice_channel.id, voice_channel.name),
+                    None
+                ))
 
         data, sorted_usernames = await _format_data_for_graph(
             events, max_time, min_time, select_user_ids, voice_channel)

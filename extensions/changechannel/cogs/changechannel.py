@@ -2,8 +2,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys
 from resources.checks import module_enabled_check
+from resources.customs import Bot
+
+from extensions.settings.objects import ModuleKeys
 
 
 class ChangeChannel(commands.Cog):
@@ -14,11 +16,11 @@ class ChangeChannel(commands.Cog):
     @module_enabled_check(ModuleKeys.change_channel)
     async def changechannel(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             destination: discord.TextChannel
     ):
-        itx.response: discord.InteractionResponse  # noqa
-        itx.followup: discord.Webhook  # noqa
+        itx.response: discord.InteractionResponse[Bot]  # type: ignore
+        itx.followup: discord.Webhook  # type: ignore
 
         if destination.id == itx.channel.id:
             await itx.response.send_message(

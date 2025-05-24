@@ -15,8 +15,10 @@ class BanAppealReactionsAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.ban_appeal_reactions):
             return
-        ban_appeal_webhook_id: discord.User | None = self.client.get_guild_attribute(
-            message.guild, AttributeKeys.ban_appeal_webhook_id)
+        ban_appeal_webhook_id: discord.User | None = \
+            self.client.get_guild_attribute(
+                message.guild, AttributeKeys.ban_appeal_webhook_id
+            )
         if ban_appeal_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.ban_appeal_reactions,
@@ -64,26 +66,36 @@ class BanAppealReactionsAddon(commands.Cog):
 
         username: str = field_value
         try:
-            thread = await message.create_thread(name=f"App-{platform[0]}-{username[:80]}",
-                                                 auto_archive_duration=10080)
+            thread = await message.create_thread(
+                name=f"App-{platform[0]}-{username[:80]}",
+                auto_archive_duration=10080
+            )
         except discord.errors.Forbidden:
             # no permission to send message (should be reported to staff
             # server owner I suppose)
             raise
         except discord.errors.HTTPException:
             # I expect this HTTP exception to have code=400 "BAD REQUEST"
-            thread = await message.create_thread(name=f"Appeal-{platform[0]}-Malformed username",
-                                                 auto_archive_duration=10080)
+            thread = await message.create_thread(
+                name=f"Appeal-{platform[0]}-Malformed username",
+                auto_archive_duration=10080
+            )
         await thread.join()
         joiner_msg = await thread.send("user-mention placeholder")
 
         ban_appeal_role = self.client.get_guild_attribute(
             message.guild, AttributeKeys.ban_appeal_reaction_role)
         if ban_appeal_role is None:
-            cmd_mention_settings = self.client.get_command_mention("settings")
+            cmd_settings = self.client.get_command_mention_with_args(
+                "settings",
+                type="Attribute",
+                setting=AttributeKeys.ban_appeal_reaction_role,
+                mode="Set",
+                value=" "
+            )
             await joiner_msg.edit(
                 content=f"No role has been set up to be pinged after a "
-                        f"ban appeal is created. Use {cmd_mention_settings} "
+                        f"ban appeal is created. Use {cmd_settings} "
                         f"to add one.")
         else:
             await joiner_msg.edit(content=f"<@&{ban_appeal_role.id}>")

@@ -5,7 +5,8 @@ from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 from resources.utils.discord_utils import get_or_fetch_channel
-from resources.utils.utils import log_to_guild  # to log starboard addition/removal
+from resources.utils.utils import log_to_guild
+# ^ to log starboard addition/removal
 
 from extensions.starboard.local_starboard import (
     add_to_local_starboard,
@@ -21,29 +22,39 @@ starboard_message_ids_marked_for_deletion = []
 
 
 async def _fetch_starboard_original_message(
-        client: Bot, starboard_message: discord.Message, starboard_emoji: discord.Emoji
+        client: Bot,
+        starboard_message: discord.Message,
+        starboard_emoji: discord.Emoji
 ) -> discord.Message | None:
     """
-    Uses the 'jump to original' link in a starboard message to fetch its original author's message.
+    Uses the 'jump to original' link in a starboard message to fetch
+    its original author's message.
 
     :param client: The bot, to get the correct logging channel.
-    :param starboard_message: The starboard message to get the original message of.
-    :param starboard_emoji: The starboard upvote emoji, used in logging messages.
+    :param starboard_message: The starboard message to get the original
+     message of.
+    :param starboard_emoji: The starboard upvote emoji, used in
+     logging messages.
 
-    :return: The original author's message, or None if it was not found (``Forbidden`` or ``NotFound``).
+    :return: The original author's message, or None if it was not
+     found (``Forbidden`` or ``NotFound``).
 
     .. note::
 
-        If the original message was deleted (``NotFound``), it deletes its starboard message too.
+        If the original message was deleted (``NotFound``), it deletes
+        its starboard message too.
     """
     # find original message
     try:
         guild_id, channel_id, message_id = \
             parse_starboard_message(starboard_message)
     except (ValueError, IndexError) as ex:
-        await log_to_guild(client, starboard_message.guild,
-                           f"{starboard_emoji} :x: Starboard message {starboard_message.id} was ignored "
-                           f"({ex})")
+        await log_to_guild(
+            client,
+            starboard_message.guild,
+            f"{starboard_emoji} :x: Starboard message {starboard_message.id} "
+            f"was ignored ({ex})"
+        )
         return None
     ch = client.get_channel(channel_id)
 
@@ -51,8 +62,10 @@ async def _fetch_starboard_original_message(
         await log_to_guild(
             client,
             starboard_message.guild,
-            f":warning: Couldn't find starboard channel from starboard message!\n"
-            f"starboard message: {starboard_message.channel.id}/{starboard_message.id}\n"
+            f":warning: Couldn't find starboard channel from starboard "
+            f"message!\n"
+            f"starboard message: "
+            f"{starboard_message.channel.id}/{starboard_message.id}\n"
             f"recovered channel id: {channel_id}"
         )
         return None
@@ -93,7 +106,8 @@ async def _send_starboard_message(
         description=f"{message.content}",
         timestamp=message.created_at  # this, or datetime.now()
     )
-    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+    # noinspection LongLine
+    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"  # noqa
     embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
     embed.set_footer(text=f"{message.id}")
     if isinstance(message.author, discord.Member):
@@ -109,12 +123,14 @@ async def _send_starboard_message(
     embed_list = []
     for attachment in message.attachments:
         try:
-            if attachment.content_type.split("/")[0] == "image":  # is image or GIF
+            if attachment.content_type.split("/")[0] == "image":
+                # attachment is an image or GIF
                 if len(embed_list) == 0:
                     embed.set_image(url=attachment.url)
                     embed_list = [embed]
                 else:
-                    # can only set one image per embed... But you can add multiple embeds :]
+                    # You can only set one image per embed... But you
+                    #  can add multiple embeds :]
                     embed = discord.Embed(
                         color=discord.Colour.from_rgb(r=255, g=172, b=51),
                     )
@@ -125,26 +141,34 @@ async def _send_starboard_message(
                     embed.set_field_at(
                         0,
                         name=embed.fields[0].name,
-                        value=embed.fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
-                                                      f"({attachment.content_type}))")
+                        value=embed.fields[0].value
+                        + f"\n\n(⚠️ +1 Unknown attachment "
+                          f"({attachment.content_type}))"
+                    )
                 else:
                     embed_list[0].set_field_at(
                         0,
                         name=embed_list[0].fields[0].name,
-                        value=embed_list[0].fields[0].value + f"\n\n(⚠️ +1 Unknown attachment "
-                                                              f"({attachment.content_type}))")
+                        value=embed_list[0].fields[0].value
+                        + f"\n\n(⚠️ +1 Unknown attachment "
+                          f"({attachment.content_type}))")
         except AttributeError:
-            # if it is neither an image, video, application, or recognised file type:
+            # if it is neither an image, video, application, nor
+            #  recognised file type:
             if len(embed_list) == 0:
                 embed.set_field_at(
                     0,
                     name=embed.fields[0].name,
-                    value=embed.fields[0].value + "\n\n(💔 +1 Unrecognized attachment type)")
+                    value=embed.fields[0].value
+                    + "\n\n(💔 +1 Unrecognized attachment type)"
+                )
             else:
                 embed_list[0].set_field_at(
                     0,
                     name=embed_list[0].fields[0].name,
-                    value=embed_list[0].fields[0].value + "\n\n(💔 +1 Unrecognized attachment type)")
+                    value=embed_list[0].fields[0].value
+                    + "\n\n(💔 +1 Unrecognized attachment type)"
+                )
     if len(embed_list) == 0:
         embed_list.append(embed)
 
@@ -154,12 +178,15 @@ async def _send_starboard_message(
         embeds=embed_list,
         allowed_mentions=discord.AllowedMentions.none(),
     )
+    attachment_urls = ','.join(att.url for att in message.attachments)
     await log_to_guild(client, starboard_channel.guild,
-                       f"{reaction.emoji} Starboard message {msg.jump_url} was "
-                       f"created from {message.jump_url}. "
+                       f"{reaction.emoji} Starboard message {msg.jump_url} "
+                       f"was created from {message.jump_url}. "
                        f"Content: \"\"\"{message.content[:1000]}\"\"\" and "
-                       f"attachments: {[att.url for att in message.attachments]}")
-    # add star reaction to original message to prevent message from being re-added to the starboard
+                       f"attachments: {attachment_urls}"
+                       )
+    # Add star reaction to original message to prevent message from
+    #  being re-added to the starboard.
     await msg.add_reaction(reaction.emoji)
     await msg.add_reaction("❌")
     await add_to_local_starboard(client.async_rina_db, msg, message)
@@ -234,7 +261,8 @@ async def _update_starboard_message_score(
             reaction_total = star_stat + reaction.count - reaction.me
             star_stat -= reaction.count - reaction.me
 
-    # if more x'es than stars, and more than [15] reactions, remove message
+    # if more x'es than stars, and more than [15] reactions, remove
+    #  the message.
     if star_stat < 0 and reaction_total >= downvote_init_value:
         await _delete_starboard_message(
             client, star_msg,
@@ -261,7 +289,9 @@ async def _update_starboard_message_score(
     try:
         await star_msg.edit(content=new_content, embeds=embeds)
     except discord.HTTPException as ex:
-        if ex.code == 429:  # too many requests; can't edit messages older than 1 hour more than x times an hour.
+        if ex.code == 429:
+            # Too many requests; can't edit messages older than 1 hour
+            #  more than x times an hour.
             return
         raise
 
@@ -401,8 +431,8 @@ def _get_starboard_message_data(
 async def _delete_starboard_message(
         client: Bot, starboard_message: discord.Message, reason: str) -> None:
     """
-    Handles custom starboard message deletion messages and preventing double logging messages when
-    the bot removes a starboard message.
+    Handles custom starboard message deletion messages and preventing
+    double logging messages when the bot removes a starboard message.
 
     :param client: The bot, to get the correct logging channel.
     :param starboard_message: The starboard message to delete.
@@ -411,7 +441,11 @@ async def _delete_starboard_message(
     await log_to_guild(client, starboard_message.guild, reason)
     starboard_message_ids_marked_for_deletion.append(starboard_message.id)
     await starboard_message.delete()
-    await delete_from_local_starboard(client.async_rina_db, starboard_message.guild.id, starboard_message.id)
+    await delete_from_local_starboard(
+        client.async_rina_db,
+        starboard_message.guild.id,
+        starboard_message.id
+    )
 
 
 async def _handle_starboard_create_or_update(
@@ -456,8 +490,9 @@ async def _handle_starboard_create_or_update(
             #  message to prevent duplicate entries in starboard.
             await message.add_reaction(starboard_emoji)
         except discord.errors.Forbidden:
-            # If "Reaction blocked", then maybe message author blocked Rina.
-            # Thus, I can't track if Rina added it to starboard already or not.
+            # If "Reaction blocked", then maybe message author blocked
+            #  Rina. Thus, I can't track if Rina added it to starboard
+            #  already or not.
             await log_to_guild(
                 client,
                 message.guild.id,
@@ -467,7 +502,12 @@ async def _handle_starboard_create_or_update(
             )
             return
 
-        await _send_starboard_message(client, message, starboard_channel, reaction)
+        await _send_starboard_message(
+            client,
+            message,
+            starboard_channel,
+            reaction
+        )
 
 
 class Starboard(commands.Cog):
@@ -503,22 +543,29 @@ class Starboard(commands.Cog):
         if None in (star_channel, star_minimum, channel_blacklist,
                     starboard_emoji, downvote_init_value):
             missing = [key for key, value in {
-                AttributeKeys.starboard_channel: star_channel,
-                AttributeKeys.starboard_minimum_upvote_count: star_minimum,
-                AttributeKeys.starboard_blacklisted_channels: channel_blacklist,
-                AttributeKeys.starboard_upvote_emoji: starboard_emoji,
+                AttributeKeys.starboard_channel:
+                    star_channel,
+                AttributeKeys.starboard_minimum_upvote_count:
+                    star_minimum,
+                AttributeKeys.starboard_blacklisted_channels:
+                    channel_blacklist,
+                AttributeKeys.starboard_upvote_emoji:
+                    starboard_emoji,
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
-                    downvote_init_value}.items()
+                    downvote_init_value
+            }.items()
                 if value is None]
             raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
         if self.client.is_me(payload.member) or \
                 (getattr(payload.emoji, "id", None) != starboard_emoji.id and
                  getattr(payload.emoji, "name", None) != "❌"):
-            # only run starboard code if the reactions tracked are actually starboard emojis (or the downvote emoji)
+            # Only run starboard code if the reactions tracked are actually
+            #  starboard emojis (or the downvote emoji).
             return
 
-        # get the message id from payload.message_id through the channel (with payload.channel_id) (oof lengthy process)
+        # get the message id from payload.message_id through the channel
+        #  (with payload.channel_id) (oof lengthy process)
         ch = self.client.get_channel(payload.channel_id)
         if ch is None:
             # channel not in cache?
@@ -526,25 +573,34 @@ class Starboard(commands.Cog):
         try:
             message = await ch.fetch_message(payload.message_id)
         except discord.errors.NotFound:
-            # likely caused by someone removing a PluralKit message by reacting with the :x: emoji.
+            # likely caused by someone removing a PluralKit message by
+            #  reacting with the :x: emoji.
 
             if payload.emoji.name == "❌":
                 return
 
-            broken_link = f"https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}"
+            # noinspection LongLine
+            broken_link = f"https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}"  # noqa
             await log_to_guild(
-                self.client, self.client.get_guild(payload.guild_id),
-                f'**:warning: Warning: **Couldn\'t find channel {payload.channel_id} (<#{payload.channel_id}>) o'
-                f'r message {payload.message_id}!\n'
+                self.client,
+                self.client.get_guild(payload.guild_id),
+                f'**:warning: Warning: **Couldn\'t find channel '
+                f'{payload.channel_id} (<#{payload.channel_id}>) or '
+                f'message {payload.message_id}!\n'
                 f'Potentially broken link: {broken_link}\n'
-                f'This is likely caused by someone removing a PluralKit message by reacting with the :x: emoji.\n'
+                f'This is likely caused by someone removing a PluralKit '
+                f'message by reacting with the :x: emoji.\n'
                 f'\n'
-                f"In this case, the user reacted with a '{repr(payload.emoji)}' emoji")
+                f"In this case, the user reacted with a "
+                f"'{repr(payload.emoji)}' emoji"
+            )
             return
 
         if message.channel.id == star_channel.id:
             if not self.client.is_me(message.author):
-                return  # only needs to update the message if it's a rina starboard message of course...
+                # only needs to update the message if it's a rina
+                #  starboard message of course...
+                return
 
             # fetch original message, so we can get the original author.
             starboard_original_message: discord.Message | None = \
@@ -557,8 +613,9 @@ class Starboard(commands.Cog):
                 await _delete_starboard_message(
                     self.client,
                     message,
-                    f"{starboard_emoji} :x: Starboard message {message.id} was removed "
-                    f"(from {starboard_original_message.id}) (original author downvoted the starboard message!)"
+                    f"{starboard_emoji} :x: Starboard message {message.id} "
+                    f"was removed (from {starboard_original_message.id}) "
+                    f"(original author downvoted the starboard message!)"
                 )
                 return
 
@@ -581,7 +638,10 @@ class Starboard(commands.Cog):
                 )
 
     @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+    async def on_raw_reaction_remove(
+            self,
+            payload: discord.RawReactionActionEvent
+    ):
         if payload.guild_id is None:
             return
         if not self.client.is_module_enabled(payload.guild_id,
@@ -638,7 +698,10 @@ class Starboard(commands.Cog):
             )
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, message_payload: discord.RawMessageDeleteEvent):
+    async def on_raw_message_delete(
+            self,
+            message_payload: discord.RawMessageDeleteEvent
+    ):
         # can raise discord.NotFound and discord.Forbidden.
 
         if not self.client.is_module_enabled(message_payload.guild_id,
@@ -660,16 +723,24 @@ class Starboard(commands.Cog):
                 if value is None]
             raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
-        if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # global variable
-            # this prevents having two 'message deleted' logs for manual deletion of starboard message
-            starboard_message_ids_marked_for_deletion.remove(message_payload.message_id)
+        # noinspection LongLine
+        if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # noqa
+            # marked messages is a global variable
+            # this prevents having two 'message deleted' logs for
+            # manual deletion of starboard message
+            starboard_message_ids_marked_for_deletion.remove(
+                message_payload.message_id)
             return
         if message_payload.channel_id == star_channel.id:
-            # check if the deleted message is a starboard message; if so, log it at starboard message deletion
-            await log_to_guild(self.client, star_channel.guild,
-                               f"{starboard_emoji} :x: Starboard message was removed "
-                               f"(from {message_payload.message_id}) "
-                               f"(Starboard message was deleted manually).")
+            # check if the deleted message is a starboard message;
+            #  if so, log it at starboard message deletion.
+            await log_to_guild(
+                self.client,
+                star_channel.guild,
+                f"{starboard_emoji} :x: Starboard message was removed "
+                f"(from {message_payload.message_id}) "
+                f"(Starboard message was deleted manually)."
+            )
             await delete_from_local_starboard(
                 self.client.async_rina_db,
                 message_payload.guild_id,

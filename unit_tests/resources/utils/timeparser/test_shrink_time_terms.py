@@ -43,8 +43,12 @@ def test_parse_all():
 def test_exception_invalid_time_term():
     # Arrange
     unknown_term = "NONEXISTENT TIME TERM"
-    assert unknown_term not in [val for key in TIMETERMS for val in TIMETERMS[key]]
-    terms = [
+    assert unknown_term not in [
+        val
+        for key in TIMETERMS
+        for val in TIMETERMS[key]
+    ]
+    terms: list[tuple[float, str]] = [
         (1, unknown_term)
     ]
     # Assert

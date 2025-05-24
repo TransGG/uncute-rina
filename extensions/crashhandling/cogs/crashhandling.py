@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 import traceback  # for crash logging
-import sys  # to stop the program (and automatically restart, thanks to pterodactyl)
+import sys
+# ^ to stop the program (and automatically restart, thanks to
+#  pterodactyl)
 
 import discord
 from discord import app_commands
@@ -13,7 +15,8 @@ from resources.checks import (
     CommandDoesNotSupportDMsCheckFailure,
     ModuleNotEnabledCheckFailure, MissingAttributesCheckFailure
 )
-from resources.utils import is_admin, log_to_guild, debug
+from resources.checks import is_admin
+from resources.utils import debug, log_to_guild
 
 
 appcommanderror_cooldown: datetime = datetime.fromtimestamp(0, timezone.utc)
@@ -26,17 +29,21 @@ async def _send_crash_message(
         traceback_text: str,
         error_source: str,
         color: discord.Colour,
-        itx: discord.Interaction | None = None
+        itx: discord.Interaction[Bot] | None = None
 ) -> None:
     """
     Sends crash message to Rina's main logging channel
 
-    :param client: The client to fetch logging channel and send the crash message with.
-    :param error_type: Whether the error an 'Error' or an 'AppCommand Error'
+    :param client: The client to fetch logging channel and send the
+     crash message with.
+    :param error_type: Whether the error an 'Error' or
+     an 'AppCommand Error'
     :param traceback_text: The traceback to send.
-    :param error_source: Name of the error source, displayed at the top of the message. Think of event or command.
+    :param error_source: Name of the error source, displayed at the top
+     of the message. Think of event or command.
     :param color: Color of the discord embed.
-    :param itx: Interaction with a potential guild. This might allow Rina to send the crash log to that guild instead.
+    :param itx: Interaction with a potential guild. This might allow
+     Rina to send the crash log to that guild instead.
     """
     log_channel = None
     if hasattr(itx, "guild"):
@@ -68,18 +75,20 @@ async def _send_crash_message(
         return
 
     error_caps = error_type.upper()
-    debug_message = (f"\n\n\n\n[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')}]"
+    time_prefix = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    debug_message = (f"\n\n\n\n[{time_prefix}]"
                      f"[{error_caps}]: {error_source}"
                      f"\n\n{traceback_text}\n")
     debug(f"{debug_message}", add_time=False)
 
-    # prevent the code block from being escaped by other inner tick marks
+    # Prevent the code block from being escaped by other inner
+    #  tick marks.
     msg = debug_message.replace("``",
                                 "`` ")
     embeds = []
     total_characters = 0
     while len(msg) > 0 and len(embeds) < 10:
-        # 4090 = 4096 (max description length of embeds) - len(2 * "```")
+        # 4090 = 4096 (max embed description length) - len(2 * "```")
         total_characters += len(error_type + ' Log')
         if total_characters < 7:
             # be able to place at least "```a```" in the embed.
@@ -101,27 +110,31 @@ async def _send_crash_message(
     )
 
 
-async def _reply(itx: discord.Interaction, message: str) -> None:
+async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
     """
-    A helper function to handle replying to an interaction by either using :py:func:`~discord.Webhook.send` or
-    :py:func:`~discord.InteractionResponse.send_message`, depending on if a response has been responded to already.
+    A helper function to handle replying to an interaction by either
+    using :py:func:`~discord.Webhook.send`
+    or :py:func:`~discord.InteractionResponse.send_message`,
+    depending on if a response has been responded to already.
 
     :param itx: The interaction to respond to.
     :param message: The message to respond with.
 
     .. note::
 
-        The function will always try to respond to the interaction ephemerally.
+        The function will always try to respond to the interaction
+        ephemerally.
     """
-    itx.response: discord.InteractionResponse  # noqa
-    itx.followup: discord.Webhook  # noqa
+    itx.response: discord.InteractionResponse[Bot]  # type: ignore
+    itx.followup: discord.Webhook  # type: ignore
     try:
         if itx.response.is_done():
             await itx.followup.send(message, ephemeral=True)
         else:
             try:
                 await itx.response.send_message(message, ephemeral=True)
-            except discord.errors.NotFound:  # interaction not found, e.g. took too long
+            except discord.errors.NotFound:
+                # interaction not found, e.g. took too long
                 await itx.followup.send(message, ephemeral=True)
     except discord.errors.NotFound:
         pass  # prevent other code from not running
@@ -137,7 +150,8 @@ class CrashHandling(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        # kill switch, see cmd_addons for other on_message events. (and a few other extensions)
+        # kill switch, see cmd_addons for other on_message events.
+        #  (and a few other extensions)
         if message.author.id == self.client.bot_owner.id:
             cool_keys = [
                 ":restart",
@@ -146,14 +160,17 @@ class CrashHandling(commands.Cog):
                 ":sudo shutdown",
             ]
             if message.content == ":kill now please stop" or any(
-                    [message.content.startswith(item) for item in cool_keys]):
+                    [message.content.startswith(item)
+                     for item in cool_keys]
+            ):
                 await message.add_reaction("🔄")
                 sys.exit(0)
                 # quitting the program also
         # this will only run if it hasn't already quit, of course
         if message.content.startswith(":sudo "):
             await message.reply(
-                "Cleo.CommandManager.InsufficientPermissionError: Could not run command: No permission\n"
+                "Cleo.CommandManager.InsufficientPermissionError: Could not "
+                "run command: No permission\n"
                 "Tryin to be part of the cool kids? Try reading this:\n"
                 "1 4M 4 V3RY C001 K16!")
             await message.add_reaction("⚠")
@@ -162,9 +179,13 @@ class CrashHandling(commands.Cog):
 
     async def on_error(self, event: str, *_args, **_kwargs):
         global commanderror_cooldown
-        if datetime.now().astimezone() - commanderror_cooldown < timedelta(seconds=10):
-            # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if
-            # within 10 seconds
+        if (
+                (datetime.now().astimezone()
+                 - commanderror_cooldown)
+                < timedelta(seconds=10)
+        ):
+            # prevent extra log (prevent excessive spam and saving
+            #  myself some large mentioning chain) if within 10 seconds
             return
 
         potential_guild: discord.Guild | int | None = None
@@ -183,8 +204,8 @@ class CrashHandling(commands.Cog):
         exception_name = exception_name.split(".")[-1]  # a.b.Error -> Error
         if exception_name == MissingAttributesCheckFailure.__name__:
             if self.client.server_settings is None:
-                # Don't send crash message. It's obvious attributes are missing
-                #  because no attributes have been loaded yet.
+                # Don't send crash message. It's obvious attributes are
+                #  missing because no attributes have been loaded yet.
                 return
 
             commanderror_cooldown = datetime.now().astimezone()
@@ -193,17 +214,23 @@ class CrashHandling(commands.Cog):
             exception_message = exception_message.strip()
             # exception is formatted using Exception.str(), which I overwrote:
             #  ExceptionName: module_name; attribute1, attribute2, attribute3
-            module_source, missing_attributes = exception_message.split("; ", 2)
+            module_source, missing_attributes = \
+                exception_message.split("; ", 2)
             missing_attributes = missing_attributes.split(", ")
-            cmd_mention = self.client.get_command_mention("settings")
+            cmd_settings = self.client.get_command_mention_with_args(
+                "settings",
+                type="Attribute",
+                setting=" ",
+                mode="Set",
+                value=" "
+            )
             await log_to_guild(
                 self.client,
                 potential_guild,
                 f"Module `{module_source}` ran into an error! This is likely "
                 f"because the module was enabled, but did not have the "
                 f"required attributes configured to execute its features.\n"
-                f"Use {cmd_mention} `type:Attribute` `setting: ` to set "
-                f"these missing attributes:\n"
+                f"Use {cmd_settings} to set these missing attributes:\n"
                 f"> " + ", ".join(missing_attributes)
             )
             return
@@ -216,7 +243,13 @@ class CrashHandling(commands.Cog):
             potential_guild = getattr(potential_guild, "id", potential_guild)
             event = f"guild: {potential_guild}, " + event
 
-        await _send_crash_message(self.client, "Error", msg, event, discord.Colour.from_rgb(r=255, g=77, b=77))
+        await _send_crash_message(
+            self.client,
+            "Error",
+            msg,
+            event,
+            discord.Colour.from_rgb(r=255, g=77, b=77)
+        )
 
     @staticmethod
     async def on_app_command_error(
@@ -241,42 +274,67 @@ class CrashHandling(commands.Cog):
             return
         elif error_type is ModuleNotEnabledCheckFailure:
             error: ModuleNotEnabledCheckFailure
-            cmd_mention_settings = itx.client.get_command_mention("settings")
             if itx.client.server_settings is None:
+                cmd_settings = itx.client.get_command_mention("settings")
                 await itx.response.send_message(
-                    "This module may or may not be enabled. Unfortunately, "
-                    "no server settings have been loaded. Perhaps "
-                    "the bot is still starting up? Admins can attempt to "
-                    "use the /settings command to add new data.",
+                    f"This module may or may not be enabled. Unfortunately, "
+                    f"no server settings have been loaded. Perhaps "
+                    f"the bot is still starting up? Admins can attempt to "
+                    f"use {cmd_settings} to add new data.",
                     ephemeral=True
                 )
                 return
-
+            cmd_settings = itx.client.get_command_mention_with_args(
+                "settings",
+                type="Module",
+                setting=error.module_key,
+                mode="Enable",
+            )
             if is_admin(itx, itx.user):
-                cmd_mention_help = itx.client.get_command_mention("help")
+                cmd_help = itx.client.get_command_mention("help")
                 await itx.response.send_message(
-                    f"This module is not enabled! Enable it using the following command:\n"
-                    f"- {cmd_mention_settings} `type:Module` `setting:{error.module_key}` `mode:Enable`\n"
-                    f"Make sure you also set the required attributes for this module. The required "
-                    f"attributes for modules and commands are explained in {cmd_mention_help}.",
+                    f"This module is not enabled! Enable it using the "
+                    f"following command:\n"
+                    f"- {cmd_settings}\n"
+                    f"Make sure you also set the required attributes for this "
+                    f"module. The required attributes for modules and "
+                    f"commands are explained in {cmd_help}.",
                     ephemeral=True)
                 return
-            await itx.response.send_message("This module is not enabled! Ask an admin to enable this module, "
-                                            "or have them hide this command from users in the server settings.",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                "This module is not enabled! Ask an admin to enable this "
+                "module, or have them hide this command from users in the "
+                "server settings.",
+                ephemeral=True
+            )
             return
         elif error_type is MissingAttributesCheckFailure:
             error: MissingAttributesCheckFailure
-            cmd_mention_settings = itx.client.get_command_mention("settings")
-            await _reply(itx, f"Your command failed to completely execute because it relied on certain "
-                              f"server attributes that were not defined! An admin will have to run "
-                              f"{cmd_mention_settings} `type:Attribute` `setting: ` for the following attribute(s):\n"
-                              f"> " + ', '.join(error.attributes))
+            cmd_settings = itx.client.get_command_mention_with_args(
+                "settings",
+                type="Attribute",
+                setting=" ",
+                mode="Set",
+                value=" "
+            )
+            await _reply(
+                itx,
+                f"Your command failed to completely execute because it relied "
+                f"on certain server attributes that were not defined! An "
+                f"admin will have to run {cmd_settings} "
+                f"`type:Attribute` `setting: ` for the following "
+                f"attribute(s):\n"
+                f"> " + ', '.join(error.attributes)
+            )
             return
 
-        if datetime.now().astimezone() - appcommanderror_cooldown < timedelta(seconds=60):
-            # prevent extra log (prevent excessive spam and saving myself some large mentioning chain) if
-            # within 1 minute
+        if (
+                (datetime.now().astimezone()
+                 - appcommanderror_cooldown)
+                < timedelta(seconds=60)
+        ):
+            # prevent extra log (prevent excessive spam and saving
+            #  myself some large mentioning chain) if within 1 minute
             await _reply(
                 itx,
                 ("Your command ran into an error, but another crash "
@@ -290,21 +348,21 @@ class CrashHandling(commands.Cog):
             )
             return
 
-        cmd_mention_settings = itx.client.get_command_mention("update")
+        cmd_settings = itx.client.get_command_mention("update")
         if isinstance(error, app_commands.errors.CommandNotFound):
             await _reply(
                 itx,
                 f"This command doesn't exist! Perhaps the commands are"
                 f" unsynced. Ask {itx.client.bot_owner} "
                 f"({itx.client.bot_owner.mention}) if she typed "
-                f"{cmd_mention_settings}!"
+                f"{cmd_settings}!"
             )
         elif isinstance(error, app_commands.errors.CommandSignatureMismatch):
             await _reply(
                 itx,
                 f"Error: CommandSignatureMismatch. Either Mia used GroupCog "
                 f"instead of Cog, or this command is out of date "
-                f"(try {cmd_mention_settings})"
+                f"(try {cmd_settings})"
             )
         else:
             if hasattr(error, 'original'):
@@ -312,16 +370,21 @@ class CrashHandling(commands.Cog):
                 if hasattr(error.original, 'status'):
                     error_reply += " " + str(error.original.status)
                     # if error.original.status == "403":
-                    #     await _reply(itx, "Error 403: It seems like I didn't have permissions for this action! "
-                    #                       f"If you believe this is an error, please message or "
-                    #                       f"ping {client.bot_owner}} :)")
+                    #     await _reply(
+                    #         itx,
+                    #         "Error 403: It seems like I didn't "
+                    #         "have permissions for this action! If you "
+                    #         "believe this is an error, please message or "
+                    #         f"ping {client.bot_owner}} :)"
+                    #     )
                 if hasattr(error.original, 'code'):
                     error_reply += " (" + str(error.original.code) + ")"
                 await _reply(
                     itx,
                     error_reply
                     + f". Please report the error and details to "
-                      f"{itx.client.bot_owner} ({itx.client.bot_owner.mention}) "
+                      f"{itx.client.bot_owner} "
+                      f"({itx.client.bot_owner.mention}) "
                       f"by pinging her or sending her a DM. (Though she "
                       f"should have received a message with error details "
                       f"herself as well.\n"
@@ -329,24 +392,39 @@ class CrashHandling(commands.Cog):
                     + str(error)
                 )
             else:
-                await _reply(itx, "Something went wrong executing your command!\n    " + repr(error)[:1700])
+                await _reply(
+                    itx,
+                    "Something went wrong executing your command!\n    "
+                    + repr(error)[:1700]
+                )
 
         try:
             msg = f"    Executor details: {itx.user} ({itx.user.id})\n"
         except Exception as ex:
-            msg = f"    Executor details: couldn't get interaction details: {repr(ex)}\n"
+            msg = (f"    Executor details: couldn't get interaction "
+                   f"details: {repr(ex)}\n")
             #   f"    command: {error.command}\n" + \
             #   f"    arguments: {error.args}\n"
         if hasattr(error, 'original'):
             if hasattr(error.original, 'code'):
                 msg += f"    code: {error.original.code}\n"
             if hasattr(error.original, 'status'):
-                msg += f"    original error: {error.original.status}: {error.original.text}\n\n"
+                msg += (f"    original error: {error.original.status}: "
+                        f"{error.original.text}\n\n")
                 #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
         # details: /help `page:1` `param2:hey`
-        command_details = f"</{itx.command.name}:{itx.data.get('id')}> " + ' '.join(
-            [f"`{k}:{v}`" for k, v in itx.namespace.__dict__.items()])
-        await _send_crash_message(itx.client, "AppCommand Error", msg, command_details,
-                                  discord.Colour.from_rgb(r=255, g=121, b=77), itx=itx)
+        command_details = (
+            f"</{itx.command.name}:{itx.data.get('id')}> "
+            + ' '.join([f"`{k}:{v}`"
+                        for k, v in itx.namespace.__dict__.items()])
+        )
+        await _send_crash_message(
+            itx.client,
+            "AppCommand Error",
+            msg,
+            command_details,
+            discord.Colour.from_rgb(r=255, g=121, b=77),
+            itx=itx
+        )
         appcommanderror_cooldown = datetime.now().astimezone()

@@ -5,6 +5,7 @@ import discord.ext.commands as commands
 from extensions.toneindicator.searchmode import SearchMode
 from resources.customs import Bot
 
+
 tone_indicators: dict[str, list[str]] = {
     "excited": ["/!", "/exc"],
     "alterous": ["/a", "/ars"],
@@ -265,11 +266,12 @@ def _handle_tag_definition(
         # > definition: /tag1 [!], /tag2, /tag3
         result_str += f"- \"{definition}\": {', '.join(acronyms)}\n"
     if any_overlaps:
-        cmd_mention = itx.client.get_command_mention("toneindicator")
+        cmd_toneindicator = itx.client.get_command_mention_with_args(
+            "toneindicator", mode="Exact acronym", tag=" ")
         result_str += (
-            f"Some acronyms have multiple definitions, marked with "
-            f"`[!]`. Use {cmd_mention} `mode:Exact acronym` `tag: `"
-            f"to find the other possible definitions for these tags."
+            f"Some acronyms have multiple definitions, marked with `[!]`. "
+            f"Use {cmd_toneindicator} to find the other possible definitions "
+            f"for these tags."
         )
     return result_str, bool(results)
 
@@ -311,20 +313,31 @@ def _handle_acronym(string, exact) -> tuple[str, bool]:
 
 
 class ToneIndicator(commands.Cog):
-    @app_commands.command(name="toneindicator", description="Look for the definition of a tone indicator")
-    @app_commands.describe(mode="Choose a search method, eg. /p -> platonic; or vice versa",
-                           string="This is your search query. What do you want to look for?",
-                           public="Do you want to share the search results with the rest of the channel? (True=yes)")
+    @app_commands.command(
+        name="toneindicator",
+        description="Look for the definition of a tone indicator"
+    )
+    @app_commands.describe(
+        mode="Choose a search method, eg. /p -> platonic; or vice versa",
+        string="This is your search query. What do you want to look for?",
+        public="Do you want to share the search results with the rest of "
+               "the channel? (True=yes)"
+    )
     @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Definition', value=SearchMode.definition.value),
-        discord.app_commands.Choice(name='Exact acronym', value=SearchMode.exact_acronym.value),
-        discord.app_commands.Choice(name='Rough acronym', value=SearchMode.rough_acronym.value),
+        discord.app_commands.Choice(name='Definition',
+                                    value=SearchMode.definition.value),
+        discord.app_commands.Choice(name='Exact acronym',
+                                    value=SearchMode.exact_acronym.value),
+        discord.app_commands.Choice(name='Rough acronym',
+                                    value=SearchMode.rough_acronym.value),
     ])
-    @app_commands.allowed_installs(guilds=True, users=True)
-    @app_commands.allowed_contexts(guilds=True, private_channels=True, dms=True)
+    @app_commands.allowed_installs(
+        guilds=True, users=True)
+    @app_commands.allowed_contexts(
+        guilds=True, private_channels=True, dms=True)
     async def toneindicator(
             self,
-            itx: discord.Interaction,
+            itx: discord.Interaction[Bot],
             mode: int,
             string: str,
             public: bool = False
@@ -347,7 +360,8 @@ class ToneIndicator(commands.Cog):
                 f"definition of a \"/j\", you should set `mode: ` to"
                 f"\"exact acronym\" or \"rough acronym\".\n"
                 f"If you believe this tone tag should be added to the "
-                f"dictionary, message @mysticmia on discord (bot developer)")
+                f"dictionary, message @mysticmia on discord (bot developer)"
+            )
 
         elif len(result_str.split("\n")) > 6 and public:
             public = False

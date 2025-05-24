@@ -1,13 +1,17 @@
 from __future__ import annotations
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # for scheduling Reminders
-from datetime import datetime  # for startup and crash logging, and Reminders
-from typing import TYPE_CHECKING, TypeVar
 
 import discord  # for main discord bot functionality
 import discord.ext.commands as commands
+import discord.app_commands as app_commands
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+# ^ for scheduling Reminders
+from datetime import datetime
+# ^ for startup and crash logging, and Reminders
+from typing import TYPE_CHECKING, TypeVar
 import motor.core as motorcore  # for typing
-from pymongo.database import Database as PyMongoDatabase  # for MongoDB database typing
+from pymongo.database import Database as PyMongoDatabase
+# ^ for MongoDB database typing
 
 from extensions.settings.objects import (
     AttributeKeys, EnabledModules, ServerAttributes)
@@ -22,7 +26,8 @@ G = TypeVar('G')
 
 
 class Bot(commands.Bot):
-    startup_time = datetime.now().astimezone()  # bot uptime start, used in /version in cmd_staffaddons
+    # bot uptime start, used in /version in cmd_staffaddons
+    startup_time = datetime.now().astimezone()
 
     commandList: list[discord.app_commands.AppCommand]
     log_channel: discord.TextChannel | discord.Thread
@@ -62,46 +67,80 @@ class Bot(commands.Bot):
         # </COMMAND SUBCOMMAND_GROUP SUBCOMMAND:ID>
         #              /\- is posed as 'subcommand', to make searching easier
         for command in self.commandList:
-            if command.name == command_name:
-                if subcommand is None:
-                    return command.mention
-                for subgroup in command.options:
-                    if subgroup.name == subcommand:
-                        if subcommand_group is None:
-                            return subgroup.mention
-                        # now it technically searches subcommand in
-                        #  subcmdgroup.options but to remove additional
-                        #  renaming of variables, it stays as is.
-                        # subcmdgroup = subgroup  # hm
-                        for subcmdgroup in subgroup.options:
-                            if subcmdgroup.name == subcommand_group:
-                                return subcmdgroup.mention
+            if command.name != command_name:
+                continue
+            if subcommand is None:
+                return command.mention
+
+            for subgroup in command.options:
+                if subgroup.name != subcommand:
+                    continue
+                if subcommand_group is None:
+                    assert type(subgroup) is app_commands.AppCommandGroup
+                    return subgroup.mention
+
+                # now it technically searches subcommand in
+                #  subcmdgroup.options but to remove additional
+                #  renaming of variables, it stays as is.
+                # subcmdgroup = subgroup  # hm
+                for subcmdgroup in subgroup.options:
+                    if subcmdgroup.name == subcommand_group:
+                        return subcmdgroup.mention
+        # no command found.
         return "/" + command_string
+
+    def get_command_mention_with_args(
+            self,
+            command_string: str,
+            **kwargs: str
+    ) -> str:
+        """
+        Turn a string into a command mention and format passed arguments.
+        :param command_string: Command you want to convert into a
+         mention (without slash in front of it).
+        :param kwargs: Additional arguments and their values to pass to
+         the command.
+        :return:
+        """
+        command_mention = self.get_command_mention(command_string)
+        for key, value in kwargs.items():
+            command_mention += f" `{key}:{value}`"
+
+        return command_mention
 
     def get_guild_attribute(
             self,
-            guild_id: discord.Guild | int,
+            guild: discord.Guild | int,
             *args: str,
             default: T = None
     ) -> object | list[object] | T:
         """
         Get ServerSettings attributes for the given guild.
 
-        :param guild_id: The guild or guild id of the server you want to
+        :param guild: The guild or guild id of the server you want to
          get attributes for.
         :param args: The attribute(s) to get the values of. Must be keys
          of ServerAttributes.
         :param default: The value to return if attribute was not found.
-        :return: A single or list of values matching the requested attributes,
-         with *default* if attributes are not found.
+        :return: A single or list of values matching the requested
+         attributes, with *default* if attributes are not found.
         """
-        if type(guild_id) is discord.Guild:
-            guild_id: int = guild_id.id
+        if type(guild) is discord.Guild:
+            guild_id: int = guild.id
+        else:
+            assert type(guild) is int  # why doesn't the interpreter see this?
+            guild_id: int = guild
+
         if len(args) == 0:
             raise ValueError("You must provide at least one argument!")
 
-        if (self.server_settings is None or  # settings have not been fetched yet.
-                guild_id not in self.server_settings):  # return early
+        if (
+                self.server_settings is None
+                or guild_id not in self.server_settings
+        ):
+            # If settings have not been fetched yet, or if the guild
+            #  doesn't have any settings (perhaps the bot was recently
+            #  added).
             if len(args) > 1:
                 return [default] * len(args)
             return default
@@ -119,7 +158,8 @@ class Bot(commands.Bot):
         for arg in args:
             if arg not in attributes:
                 assert arg not in ServerAttributes.__annotations__
-                raise ValueError(f"Attribute '{arg}' is not a valid attribute!")
+                raise ValueError(
+                    f"Attribute '{arg}' is not a valid attribute!")
 
             att_value = attributes[arg]  # type:ignore
             if att_value is not None:
@@ -144,14 +184,19 @@ class Bot(commands.Bot):
         :param guild_id: The server to check the module state for.
         :param args: The module key(s) to get the state for.
 
-        :return: The enabled/disabled state of the module as boolean, or a list of booleans matching the list of
-         module keys given.
+        :return: The enabled/disabled state of the module as boolean, or
+         a list of booleans matching the list of module keys given.
         """
         if type(guild_id) is discord.Guild:
             guild_id: int = guild_id.id
 
-        if (self.server_settings is None or  # settings have not been fetched yet.
-                guild_id not in self.server_settings):  # return early
+        if (
+                self.server_settings is None
+                or guild_id not in self.server_settings
+        ):
+            # If settings have not been fetched yet, or if the guild
+            #  doesn't have any settings (perhaps the bot was recently
+            #  added).
             return False
 
         modules = self.server_settings[guild_id].enabled_modules
@@ -176,7 +221,8 @@ class Bot(commands.Bot):
         :param user_id: The user or user id to check.
         :return: ``True`` if the given user is the bot, otherwise ``False``.
         """
-        if isinstance(user_id, discord.User) or isinstance(user_id, discord.Member):
+        if (isinstance(user_id, discord.User)
+                or isinstance(user_id, discord.Member)):
             user_id = user_id.id
         # Could also use hasattr(user_id, "id") for a more generic approach...
         #  But this should work fine enough.

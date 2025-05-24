@@ -13,7 +13,7 @@ class EqualDexRegion:
     :ivar issues: A list or dictionary of issues related to the laws of
      the country.
 
-    .. ISO Code: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements
+    .. ISO Code: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements # noqa
     """
     def __init__(self, data: dict):
         """
@@ -26,4 +26,7 @@ class EqualDexRegion:
         self.name: str = data['name']
         self.continent = data['continent']
         self.url: str = data['url']
-        self.issues: dict[str, list | dict[str, dict[str]]] = data['issues']
+        self.issues: dict[
+            str,
+            list[str] | dict[str, dict[str, str]]
+        ] = data['issues']
