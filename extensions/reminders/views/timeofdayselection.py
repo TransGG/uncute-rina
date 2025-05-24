@@ -12,16 +12,24 @@ class TimeOfDaySelection(discord.ui.View):
         self.timeout = timeout
 
         for option in options:
-            def callback(itx):  # pass the button label to the callback
-                return self.callback(itx, option)
+            def callback(itx, label=option):
+                """Helper to pass the button label to the callback"""
+                # Needs label= to create a copy of the `option` value,
+                #  otherwise the parameter is overwritten. (always
+                #  returns 7).
+                return self.callback(itx, label)
 
-            self.add_item(create_simple_button(
-                option, discord.ButtonStyle.green, callback))
+            button = create_simple_button(
+                label=option,
+                style=discord.ButtonStyle.green,
+                callback=callback,
+            )
+            self.add_item(button)
 
     async def callback(
             self,
             interaction: discord.Interaction[Bot],
-            label: str
+            label: str,
     ):
         self.value = label
         self.return_interaction = interaction

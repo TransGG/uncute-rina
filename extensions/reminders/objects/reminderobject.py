@@ -137,7 +137,7 @@ class ReminderObject:
             pass
         collection = self.client.rina_db["reminders"]
         query = {"userID": self.userID}
-        db_data = collection.find_one(query)
+        db_data: DatabaseData | None = collection.find_one(query)
         reminders = db_data["reminders"]
         index_subtraction = 0
         for reminder_index in range(len(reminders)):
@@ -171,7 +171,91 @@ async def _handle_reminder_timestamp_parsing(
         itx: discord.Interaction[Bot],
         reminder_datetime: str
 ) -> tuple[datetime, discord.Interaction[Bot]]:  # todo: docstring
-    # validate format
+    mode: TimestampFormats = _validate_timestamp_format(reminder_datetime)
+
+    # convert given time string to valid datetime
+    timestamp_format = [
+        "%Y-%m-%dt%H:%M:%S%z",
+        "%Y-%m-%dt%H:%M%z",
+        "%Y-%m-%d"
+    ][mode.value]
+    try:
+        timestamp = datetime.strptime(reminder_datetime, timestamp_format)
+    except ValueError:
+        raise ValueError(
+            f"Incorrect format given! I could not convert "
+            f"{reminder_datetime} to format {timestamp_format}"
+        )
+    if timestamp < datetime.now() - timedelta(hours=48):
+        raise ValueError(
+            "The given date is too far in the past! Please pick a date "
+            "that is later than.. yesterday. This guard is mainly to "
+            "prevent an error that happens when you try to set a timezone "
+            "to things from before the year 1970."
+        )
+    if timestamp > datetime.now() + timedelta(days=365 * 1000):
+        raise ValueError(
+            "The given date is too far in the future! Please pick a date "
+            "that is less than 1000 years into the future... This "
+            "is an Operating System error, because it simply doesn't "
+            "let me add a timezone to things from beyond the year 3001."
+        )
+
+    distance = timestamp
+
+    # clarify datetime timezone if necessary
+    if mode == TimestampFormats.DateNoTime:
+        assert timestamp.tzinfo is None
+        try:
+            timestamp = timestamp.astimezone(timezone.utc)
+        except OSError:
+            raise ValueError(
+                "Couldn't set timezone for this time object. I assume you "
+                "probably filled in something unrealistic."
+            )
+        assert timestamp.tzinfo is not None
+
+        options = {
+            "1": (timestamp - timedelta(hours=12)),
+            "2": (timestamp - timedelta(hours=12)),
+            "3": timestamp,
+            "4": (timestamp + timedelta(hours=6)),
+            "5": (timestamp + timedelta(hours=12)),
+            "6": (timestamp + timedelta(hours=18)),
+            "7": (timestamp + timedelta(hours=24)),
+        }
+        query = ("Since a date format doesn't tell me what time you want "
+                 "the reminder, you can pick a time yourself:")
+        for option in options:
+            timestamp_str = f"<t:{int(options[option].timestamp())}:F>"
+            query += f"\n  `{option}.` {timestamp_str}"
+        view = TimeOfDaySelection(list(options))
+        await itx.response.send_message(query, view=view, ephemeral=True)
+        await view.wait()
+        if view.value is None:
+            await itx.edit_original_response(
+                content="Reminder creation menu timed out.", view=None)
+            raise ReminderTimeSelectionMenuTimeOut()
+
+        assert (view.value is not None
+                and view.return_interaction is not None)
+        await itx.edit_original_response(view=None)
+        distance = options[view.value]
+        itx = view.return_interaction
+
+    # New itx is returned in case the response is used by the view.
+    return distance, itx
+
+
+def _validate_timestamp_format(reminder_datetime: str) -> TimestampFormats:
+    """
+    Validate a date time string and parse the timestamp string format.
+    :param reminder_datetime: The string to validate and identify the
+     format for.
+    :return: An expected format of the given timestamp string.
+    :raise ValueError: If the given timestamp string is not in a
+     recognised format.
+    """
     # note: "t" here is lowercase because the reminder_datetime string
     #  gets lowercased...
     has_timezone = False
@@ -217,7 +301,6 @@ async def _handle_reminder_timestamp_parsing(
             raise ValueError("Incorrect date given! Please format the date "
                              "as YYYY-MM-DD, like 2023-12-31")
         mode = TimestampFormats.DateNoTime
-
     # error for unimplemented: giving date and time format without a timezone
     if not has_timezone and mode != TimestampFormats.DateNoTime:
         raise ValueError(
@@ -225,58 +308,13 @@ async def _handle_reminder_timestamp_parsing(
             "sent at the right time. Please add the timezone like so "
             "'-0100' or '+0900'."
         )
-
-    # convert given time string to valid datetime
-    timestamp_format = [
-        "%Y-%m-%dt%H:%M:%S%z",
-        "%Y-%m-%dt%H:%M%z",
-        "%Y-%m-%d"
-    ][mode.value]
-    try:
-        timestamp = datetime.strptime(reminder_datetime, timestamp_format)
-    except ValueError:
-        raise ValueError(
-            f"Incorrect format given! I could not convert "
-            f"{reminder_datetime} to format {timestamp_format}"
-        )
-
-    # todo: move the above code to a new function
-
-    distance = timestamp
-    # clarify datetime timezone if necessary
-    if mode == TimestampFormats.DateNoTime:
-        options = {
-            "1": (timestamp - timedelta(hours=12)),
-            "2": (timestamp - timedelta(hours=12)),
-            "3": timestamp,
-            "4": (timestamp + timedelta(hours=6)),
-            "5": (timestamp + timedelta(hours=12)),
-            "6": (timestamp + timedelta(hours=18)),
-            "7": (timestamp + timedelta(hours=24)),
-        }
-        query = ("Since a date format doesn't tell me what time you want "
-                 "the reminder, you can pick a time yourself:")
-        for option in options:
-            timestamp_str = f"<t:{int(options[option].timestamp())}:F>"
-            query += f"\n  `{option}.` {timestamp_str}"
-        view = TimeOfDaySelection(list(options))
-        await itx.response.send_message(query, view=view, ephemeral=True)
-        await view.wait()
-        if view.value is None:
-            await itx.edit_original_response(
-                content="Reminder creation menu timed out.", view=None)
-            raise ReminderTimeSelectionMenuTimeOut()
-        distance = options[view.value]
-        itx = view.return_interaction
-
-    # New itx is returned in case the response is used by the view.
-    return distance, itx
+    return mode
 
 
 async def _parse_reminder_time(
         itx: discord.Interaction[Bot],
         reminder_datetime: str
-) -> tuple[datetime, datetime]:
+) -> tuple[datetime, datetime, discord.Interaction[Bot]]:
     # todo: make followup message a separate method, and initiate it by
     #  making this function raise a specific exception.
     """
@@ -342,7 +380,7 @@ async def _parse_reminder_time(
         except ValueError as ex:
             raise TimestampParseException(ex)
 
-    return distance, creation_time
+    return distance, creation_time, itx
 
 
 async def _create_reminder(
@@ -426,7 +464,7 @@ async def parse_and_create_reminder(
         )
         raise OverflowError(message)
 
-    distance, creation_time = await _parse_reminder_time(
+    distance, creation_time, itx = await _parse_reminder_time(
         itx, reminder_datetime)
 
     await _create_reminder(
