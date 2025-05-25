@@ -231,20 +231,32 @@ def start_app():
         post_startup_progress.complete("Loaded server settings.")
 
         post_startup_progress.begin("Loading all server tags...")
-        _ = await fetch_all_tags(client.async_rina_db)
+        try:
+            _ = await fetch_all_tags(client.async_rina_db)
+        except:
+            debug("loading failed!", color="red")
         post_startup_progress.complete("Loaded server tags.")
 
         post_startup_progress.begin("Loading all watchlist threads...")
-        _ = await fetch_all_watchlists(client.async_rina_db)
+        try:
+            _ = await fetch_all_watchlists(client.async_rina_db)
+        except:
+            debug("loading failed!", color="red")
         post_startup_progress.complete("Loaded watchlist threads.")
 
         post_startup_progress.begin("Loading all starboard messages...")
-        _ = await fetch_all_starboard_messages(client.async_rina_db)
+        try:
+            _ = await fetch_all_starboard_messages(client.async_rina_db)
+        except:
+            debug("loading failed!", color="red")
         post_startup_progress.complete("Loaded starboard messages.")
 
     @client.event
     async def setup_hook():
         start_progress.complete("Started Bot")
+        start_progress.begin("Caching bot's command names and their ids")
+        client.commandList = await client.tree.fetch_commands()
+        start_progress.complete("Cached bot's command names and their ids")
         start_progress.begin("Load extensions and scheduler")
         logger = logging.getLogger("apscheduler")
         logger.setLevel(logging.WARNING)
@@ -284,9 +296,6 @@ def start_app():
         start_progress.begin("Restarting ongoing reminders...")
         await relaunch_ongoing_reminders(client)
         start_progress.complete("Finished setting up reminders")
-        start_progress.begin("Caching bot's command names and their ids")
-        client.commandList = await client.tree.fetch_commands()
-        start_progress.complete("Cached bot's command names and their ids")
         start_progress.begin("Starting...")
 
     # endregion
