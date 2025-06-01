@@ -258,8 +258,8 @@ async def _handle_settings_attribute(
     :param value: The value to give the attribute or remove from the
      attribute (depending on the *modify_mode*).
     """
-    itx.response: discord.InteractionResponse[Bot]  # noqa
-    itx.followup: discord.Webhook  # noqa
+    itx.response: discord.InteractionResponse[Bot]  # type: ignore
+    itx.followup: discord.Webhook  # type: ignore
     attribute_keys = ServerAttributes.__annotations__
 
     if setting is None:
@@ -325,16 +325,32 @@ async def _handle_settings_attribute(
             itx.client.async_rina_db, itx.guild.id, setting
         )
     else:
+        if value is None:
+            await itx.followup.send(
+                "No value was given.",
+                ephemeral=True
+            )
+            return
+        
         invalid_arguments = {}
         attribute = parse_attribute(
             itx.client, itx.guild, setting, value,
             invalid_arguments=invalid_arguments
         )
+        if attribute is None:
+            await itx.followup.send(
+                f"Couldn't parse value '{value}' for attribute '{setting}'.",
+                ephemeral=True,
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+            return
+
         # raises ParseError if the ServerAttribute has a type that
         #  has no parsing function yet.
-        if invalid_arguments and modify_mode not in [
-                ModeAutocomplete.remove, ModeAutocomplete.remove
-        ]:
+        if (attribute is None
+                or invalid_arguments and modify_mode not in [
+                    ModeAutocomplete.remove, ModeAutocomplete.remove
+                ]):
             # allow removal of malformed data
             attribute_type, _ = get_attribute_type(setting)
             await itx.followup.send(

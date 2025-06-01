@@ -222,18 +222,14 @@ class PageView(discord.ui.View):
             timeout: float | None = None
     ):
         super().__init__(timeout=timeout)
-        if prepended_buttons is None:
-            # putting [] as default param makes it mutable,
-            #  shared across instances -_-
-            prepended_buttons = []
-        if appended_buttons is None:
-            appended_buttons = []
         self.page: int = starting_page
         self.loop_around_pages = loop_around_pages
 
         self.max_page_index: int = max_page_index
 
-        for pre_button in prepended_buttons:
+        for pre_button in prepended_buttons or []:
+            # ^ putting [] as default param makes it mutable,
+            #  shared across instances -_-
             self.add_item(pre_button)
 
         page_up_style: tuple[discord.ButtonStyle, bool] \
@@ -256,7 +252,9 @@ class PageView(discord.ui.View):
         self.add_item(self.page_down_button)
         self.add_item(self.page_up_button)
 
-        for post_button in appended_buttons:
+        for post_button in appended_buttons or []:
+            # ^ putting [] as default param makes it mutable,
+            #  shared across instances -_-
             self.add_item(post_button)
 
     async def on_page_down(self, itx: discord.Interaction[Bot]):

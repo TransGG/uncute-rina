@@ -150,9 +150,9 @@ def parse_attribute(
         client: discord.Client,
         guild: discord.Guild,
         attribute_key: str,
-        attribute_value: str,
+        attribute_value: str | int | None,
         *,
-        invalid_arguments: dict[str, str | list[str]] | None = None
+        invalid_arguments: dict[str, str] | None = None
 ) -> object | None:
     """
     Parse the attribute value as ServerAttribute based on the given
@@ -168,8 +168,6 @@ def parse_attribute(
     :raise ParseError: If the attribute could not be parsed or is of the
      wrong type.
     """
-    if invalid_arguments is None:
-        invalid_arguments = {}
     attribute_type, _ = get_attribute_type(attribute_key)
 
     if attribute_type is discord.Guild:
@@ -217,7 +215,10 @@ def parse_attribute(
         return None
 
     parsed_attribute = parse_id_generic(
-        invalid_arguments, attribute_key, func, attribute_value_id
+        invalid_arguments or {},  # discard output
+        attribute_key,
+        func,
+        attribute_value_id,
     )
     return parsed_attribute
 
@@ -504,7 +505,7 @@ class ServerSettings:
          ids that can't be converted to their corresponding
          ServerAttributes object.
         """
-        invalid_arguments: dict[str, str | list[str]] = {}
+        invalid_arguments: dict[str, str] = {}
         guild = client.get_guild(guild_id)
         if guild is None:
             invalid_arguments["guild_id"] = str(guild_id)
@@ -531,6 +532,7 @@ class ServerSettings:
                         parsed_values.append(parsed_value)
                 new_settings[attribute] = parsed_values
             else:
+                assert isinstance(attribute_value, (str, int))
                 new_settings[attribute] = parse_attribute(
                     client, guild, attribute, attribute_value,
                     invalid_arguments=invalid_arguments)

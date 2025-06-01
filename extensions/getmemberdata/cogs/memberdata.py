@@ -81,27 +81,27 @@ class MemberData(commands.Cog):
         description="See joined, left, and recently verified users in x days"
     )
     @app_commands.describe(
-        lower_bound="Get data from [period] days ago",
-        upper_bound="Get data up to [period] days ago",
+        lower_bound_str="Get data from [period] days ago",
+        upper_bound_str="Get data up to [period] days ago",
         doubles="If someone joined twice, are they counted double? "
                 "(y/n or 1/0)",
         public="Send the output to everyone in the channel"
     )
+    @app_commands.rename(lower_bound_str='lower_bound',
+                         upper_bound_str='upper_bound')
     @app_commands.check(not_in_dms_check)
     async def get_member_data(
             self,
             itx: discord.Interaction[Bot],
-            lower_bound: str,
-            upper_bound: str = None,
+            lower_bound_str: str,
+            upper_bound_str: str | None = None,
             doubles: bool = False,
             public: bool = False
     ):
         # todo: split function into multiple subfunctions.
-        if upper_bound is None:
-            upper_bound = 0  # 0 days from now
         try:
-            lower_bound = float(lower_bound)
-            upper_bound = float(upper_bound)
+            lower_bound = float(lower_bound_str)
+            upper_bound = float(upper_bound_str or 0)  # 0 days from now
             if lower_bound <= 0:
                 await itx.response.send_message(
                     "Your period (data in the past [x] days) has to be "

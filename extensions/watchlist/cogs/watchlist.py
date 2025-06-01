@@ -30,7 +30,7 @@ def _parse_watchlist_string_message_id(
     """
     Parse a given message_id from a /watchlist command
 
-    :param message_id: The message id to parse to an int (or ``None``)
+    :param message_id: The message id to parse to an int (or ``None``).
     :return: A tuple of the parsed message id (or ``None`` if ``None``
      given), and whether the message_id ended with " | overwrite", to
      allow the user to link someone else's message with the watchlist
@@ -43,14 +43,14 @@ def _parse_watchlist_string_message_id(
     if message_id.isdecimal():
         # required cuz discord client doesn't let you fill in message
         # IDs as ints; too large
-        message_id = int(message_id)
+        msg_id = int(message_id)
     else:
         if message_id.endswith(" | overwrite"):
             message_id = message_id.split(" | ")[0]
 
-        message_id = int(message_id)  # raises ValueError
+        msg_id = int(message_id)  # raises ValueError
         allow_different_report_author = True
-    return message_id, allow_different_report_author
+    return msg_id, allow_different_report_author
 
 
 async def _create_uncool_watchlist_thread(
@@ -86,9 +86,11 @@ async def _create_uncool_watchlist_thread(
                                      auto_archive_duration=10080)
     await thread.join()
     joiner_msg = await thread.send("user-mention placeholder")
-    active_staff_role: discord.Guild | None = client.get_guild_attribute(
-        watch_channel.guild, AttributeKeys.watchlist_reaction_role)
-    if active_staff_role is None:
+    watchlist_reaction_role: discord.Guild | None = client.get_guild_attribute(
+        watch_channel.guild,
+        AttributeKeys.watchlist_reaction_role
+    )
+    if watchlist_reaction_role is None:
         cmd_settings = client.get_command_mention_with_args(
             "settings",
             type="Attribute",
@@ -101,7 +103,7 @@ async def _create_uncool_watchlist_thread(
                     f"is created. Use {cmd_settings} to add one."
         )
     else:
-        await joiner_msg.edit(content=f"<@&{active_staff_role.id}>")
+        await joiner_msg.edit(content=f"<@&{watchlist_reaction_role.id}>")
         await joiner_msg.delete()
     return msg, thread
 
@@ -253,7 +255,9 @@ async def _add_to_watchlist(
 
     if already_on_watchlist:
         # fetch thread, in case the thread was archived (not in cache)
-        thread = await watch_channel.guild.fetch_channel(watchlist_thread_id)
+        thread: discord.Thread = await watch_channel.guild.fetch_channel(
+            watchlist_thread_id)  # type: ignore
+        
         # fetch message the thread is attached to (fetch, in case msg
         #  is not in cache)
         msg = await watch_channel.fetch_message(watchlist_thread_id)
@@ -309,7 +313,7 @@ async def _add_to_watchlist(
             f"Reason: {reason}"[:2000],
             allowed_mentions=discord.AllowedMentions.none()
         )
-        if copyable_version is None:
+        if copyable_version is None:  # todo: copyable_version = copyable_version or c
             copyable_version = c
 
     if already_on_watchlist:
@@ -386,9 +390,9 @@ class WatchList(commands.Cog):
     async def watchlist(
             self,
             itx: discord.Interaction[Bot],
-            user: discord.User,
+            user: discord.User | discord.Member,
             reason: str = "",
-            message_id: str = None
+            message_id: str | None = None
     ):
         try:
             user = await (app_commands.transformers
