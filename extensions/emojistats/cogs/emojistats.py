@@ -10,10 +10,10 @@ import discord.ext.commands as commands
 
 from extensions.emojistats.database_dicts import EmojiStatsData
 from extensions.reminders.objects.emoji_animate_type import EmojiAnimateType
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
+from resources.checks import not_in_dms_check
 
 from extensions.emojistats.emojisendsource import EmojiSendSource
-from resources.checks import not_in_dms_check
 
 
 async def _add_to_emoji_data(
@@ -134,10 +134,10 @@ class EmojiStats(commands.Cog):
                         description="Get emoji usage data from an ID!")
     @app_commands.rename(emoji_name="emoji")
     @app_commands.describe(emoji_name="Emoji you want to get data of")
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def get_emoji_data(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             emoji_name: str
     ):
         if ":" in emoji_name:
@@ -209,10 +209,10 @@ class EmojiStats(commands.Cog):
         discord.app_commands.Choice(name='Both',
                                     value=EmojiAnimateType.both.value),
     ])
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def get_unused_emojis(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             public: bool = False,
             max_results: int = 10,
             used_max: int = sys.maxsize,
@@ -311,8 +311,8 @@ class EmojiStats(commands.Cog):
 
     @emojistats.command(name="getemojitop10",
                         description="Get top 10 most used emojis")
-    @app_commands.check(not_in_dms_check)
-    async def get_emoji_top_10(self, itx: discord.Interaction[Bot]):
+    @not_in_dms_check
+    async def get_emoji_top_10(self, itx: GuildInteraction[Bot]):
         collection = itx.client.async_rina_db["emojistats"]
         output = ""
         for source_type in ["messageUsedCount", "reactionUsedCount"]:

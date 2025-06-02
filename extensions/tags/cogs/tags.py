@@ -13,7 +13,7 @@ from extensions.tags.local_tag_list import (
 from extensions.tags.modals.create_tag import CreateTagModal
 from extensions.tags.tag_manage_modes import TagMode
 from resources.checks import module_enabled_check, is_admin_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 from resources.utils import replace_string_command_mentions
 from resources.utils.utils import get_mod_ticket_channel
 # ^ for ticket channel id in Report tag
@@ -136,7 +136,7 @@ class TagFunctions(commands.Cog):
     @module_enabled_check(ModuleKeys.tags)
     async def tag(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             tag: str,
             public: bool = True,
             anonymous: bool = True
@@ -185,7 +185,7 @@ class TagFunctions(commands.Cog):
     @module_enabled_check(ModuleKeys.tags)
     async def tag_manage(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: str,
             tag_name: str,
     ):

@@ -18,6 +18,8 @@ from extensions.settings.objects import (
     TypeAutocomplete, ModeAutocomplete,
     parse_attribute, get_attribute_type, AttributeKeys, ModuleKeys
 )
+from resources.customs import GuildInteraction
+
 
 if typing.TYPE_CHECKING:
     from resources.customs import Bot
@@ -294,6 +296,8 @@ async def _handle_settings_attribute(
 
     await itx.response.defer(ephemeral=True)  # defer before any database calls
 
+    assert itx.guild is not None  # is_admin_check in parent function
+
     if modify_mode == ModeAutocomplete.view:
         entry = await ServerSettings.get_entry(itx.client.async_rina_db,
                                                itx.guild.id)
@@ -530,10 +534,10 @@ async def _has_guild_as_parent(
 
 
 async def _handle_settings_module(
-        itx: discord.Interaction[Bot],
+        itx: GuildInteraction[Bot],
         help_str: str,
         setting: str | None,
-        modify_mode: str | None
+        modify_mode: ModeAutocomplete | None
 ):
     """
     A helper function to handle setting server attributes.
@@ -681,13 +685,13 @@ class SettingsCog(commands.Cog):
     #         content="Migrated databases and re-fetched all server settings.")
     #
 
-    @app_commands.check(is_admin_check)
-    @module_enabled_check(ModuleKeys.watchlist)
     @migrate_group.command(
         name="migrate-watchlist",
         description="Fetch all watchlist threads for this server."
     )
-    async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
+    @app_commands.check(is_admin_check)
+    @module_enabled_check(ModuleKeys.watchlist)
+    async def migrate_watchlist(self, itx: GuildInteraction[Bot]):
         watchlist_channel: discord.TextChannel | None = \
             itx.client.get_guild_attribute(
                 itx.guild, AttributeKeys.watchlist_channel)
@@ -740,7 +744,6 @@ class SettingsCog(commands.Cog):
     @app_commands.autocomplete(mode=_mode_autocomplete)
     @app_commands.autocomplete(value=_value_autocomplete)
     @app_commands.check(is_admin_check)
-    @app_commands.check(not_in_dms_check)
     async def settings(
             self,
             itx: discord.Interaction[Bot],

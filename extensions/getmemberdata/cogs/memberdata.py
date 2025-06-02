@@ -11,7 +11,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.checks import not_in_dms_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 
 async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
@@ -89,10 +89,10 @@ class MemberData(commands.Cog):
     )
     @app_commands.rename(lower_bound_str='lower_bound',
                          upper_bound_str='upper_bound')
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def get_member_data(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             lower_bound_str: str,
             upper_bound_str: str | None = None,
             doubles: bool = False,

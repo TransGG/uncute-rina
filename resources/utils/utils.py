@@ -13,7 +13,7 @@ from resources.checks import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
 
 if TYPE_CHECKING:
-    from resources.customs import Bot
+    from resources.customs import Bot, GuildInteraction
 
 
 class DebugColor(Enum):
@@ -154,7 +154,7 @@ def debug(
 
 
 def get_mod_ticket_channel(
-        client: Bot, guild_id: int | discord.Guild | discord.Interaction[Bot]
+        client: Bot, guild_id: int | discord.Guild | GuildInteraction[Bot]
 ) -> discord.abc.Messageable | None:
     """
     Fetch the #contact-staff ticket channel for a specific guild.
@@ -167,8 +167,8 @@ def get_mod_ticket_channel(
     :raise MissingAttributesCheckFailure: If the guild has no ticket
      channel defined in its settings.
     """
-    if type(guild_id) is discord.Interaction:
-        guild_id = guild_id.guild_id
+    if isinstance(guild_id, discord.Interaction):
+        guild_id = guild_id.guild.id
     ticket_channel: discord.abc.Messageable | None = \
         client.get_guild_attribute(
             guild_id,

@@ -12,7 +12,7 @@ from resources.checks import (
     MissingAttributesCheckFailure
 )
 from resources.utils.utils import get_mod_ticket_channel
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 
 class QOTW(commands.Cog):
@@ -24,13 +24,13 @@ class QOTW(commands.Cog):
         description="Suggest a question for the weekly queue!"
     )
     @app_commands.describe(question="What question would you like to add?")
-    @app_commands.check(not_in_dms_check)
     @module_enabled_check(ModuleKeys.qotw)
-    async def qotw(self, itx: discord.Interaction[Bot], question: str):
+    @not_in_dms_check
+    async def qotw(self, itx: GuildInteraction[Bot], question: str):
         if len(question) > 400:
             ticket_channel: discord.abc.Messageable | None \
                 = get_mod_ticket_channel(itx.client, guild_id=itx.guild.id)
-            if ticket_channel:
+            if ticket_channel is not None:
                 special_request_string = (f"make a ticket (in "
                                           f"<#{ticket_channel.id}>).")
             else:

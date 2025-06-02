@@ -313,7 +313,7 @@ async def _add_to_watchlist(
             f"Reason: {reason}"[:2000],
             allowed_mentions=discord.AllowedMentions.none()
         )
-        if copyable_version is None:  # todo: copyable_version = copyable_version or c
+        if copyable_version is None:
             copyable_version = c
 
     if already_on_watchlist:
