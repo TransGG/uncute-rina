@@ -329,19 +329,25 @@ class OtherAddons(commands.Cog):
         name="add_poll_reactions",
         description="Make rina add an upvote/downvote emoji to a message"
     )
+    @app_commands.rename(
+        upvote_emoji_str="upvote_emoji",
+        downvote_emoji_str="downvote_emoji",
+        neutral_emoji_str="neutral_emoji",
+    )
     @app_commands.describe(
         message_id="What message do you want to add the votes to?",
-        upvote_emoji="What emoji do you want to react first?",
-        downvote_emoji="What emoji do you want to react second?",
-        neutral_emoji="Neutral emoji option (placed between the up/downvote)"
+        upvote_emoji_str="What emoji do you want to react first?",
+        downvote_emoji_str="What emoji do you want to react second?",
+        neutral_emoji_str="Neutral emoji option (placed between the "
+                          "up/downvote)"
     )
     async def add_poll_reactions(
             self,
             itx: discord.Interaction[Bot],
             message_id: str,
-            upvote_emoji: str,
-            downvote_emoji: str,
-            neutral_emoji: str | None = None
+            upvote_emoji_str: str,
+            downvote_emoji_str: str,
+            neutral_emoji_str: str | None = None
     ):
         if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(
                 itx.guild, ModuleKeys.poll_reactions):
@@ -365,20 +371,20 @@ class OtherAddons(commands.Cog):
             errors.append("- The message ID needs to be a number!")
 
         upvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, upvote_emoji)
+            itx.client, upvote_emoji_str)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! "
                           "(perhaps it's a nitro emoji)")
 
         downvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, downvote_emoji)
+            itx.client, downvote_emoji_str)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! "
                           "(perhaps it's a nitro emoji)")
 
-        if neutral_emoji is None:
+        if neutral_emoji_str is not None:
             neutral_emoji: MaybeEmoji = _get_emoji_from_str(
-                itx.client, neutral_emoji)
+                itx.client, neutral_emoji_str)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! "
                               "(perhaps it's a nitro emoji)")
@@ -398,6 +404,9 @@ class OtherAddons(commands.Cog):
                 ephemeral=True
             )
             return
+        assert upvote_emoji is not None
+        assert downvote_emoji is not None
+        assert neutral_emoji is not None
 
         try:
             await itx.response.send_message("Adding emojis...", ephemeral=True)
@@ -440,10 +449,10 @@ class OtherAddons(commands.Cog):
                 f"on message {message.jump_url}"
             )
 
-    @app_commands.command(name="get_rina_command_mention",
-                          description="Sends a hidden command mention for "
-                                      "your command"
-                          )
+    @app_commands.command(
+        name="get_rina_command_mention",
+        description="Sends a hidden command mention for your command"
+    )
     @app_commands.describe(
         command="Command to get a mention for (with/out slash)"
     )
@@ -454,7 +463,10 @@ class OtherAddons(commands.Cog):
     ):
         command = command.removeprefix("/").lower()
         try:
-            app_commands.commands.validate_name(command)
+            for section in command.split(" "):
+                # "/vctable create" would be invalidated because spaces
+                # aren't allowed, but it's still a valid command mention.
+                app_commands.commands.validate_name(section)
         except ValueError:
             await itx.response.send_message(
                 "Heads up: your command contains unavailable characters. "
@@ -465,7 +477,11 @@ class OtherAddons(commands.Cog):
             )
             return
 
-        cmd_mention = itx.client.get_command_mention(command)
+        try:
+            cmd_mention = itx.client.get_command_mention(command)
+        except ValueError as ex:
+            await itx.response.send_message(str(ex), ephemeral=True)
+            return
         await itx.response.send_message(
             f"Your input: `{command}`.\n"
             f"Command mention: {cmd_mention}.\n"

@@ -365,11 +365,12 @@ class CrashHandling(commands.Cog):
                 f"(try {cmd_settings})"
             )
         else:
-            if hasattr(error, 'original'):
-                error_reply = "Error"
-                if hasattr(error.original, 'status'):
-                    error_reply += " " + str(error.original.status)
-                    # if error.original.status == "403":
+            error_reply = "Error"
+            orig = getattr(error, 'original', None)
+            if orig is not None:
+                if hasattr(orig, 'status'):
+                    error_reply += " " + str(orig.status)
+                    # if orig.status == "403":
                     #     await _reply(
                     #         itx,
                     #         "Error 403: It seems like I didn't "
@@ -377,8 +378,8 @@ class CrashHandling(commands.Cog):
                     #         "believe this is an error, please message or "
                     #         f"ping {client.bot_owner}} :)"
                     #     )
-                if hasattr(error.original, 'code'):
-                    error_reply += " (" + str(error.original.code) + ")"
+                if hasattr(orig, 'code'):
+                    error_reply += " (" + str(orig.code) + ")"
                 await _reply(
                     itx,
                     error_reply
