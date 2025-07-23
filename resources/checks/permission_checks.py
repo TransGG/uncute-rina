@@ -45,6 +45,8 @@ def is_admin_check(itx: discord.Interaction[Bot]):
     :raise CommandDoesNotSupportDMsCheckFailure: If the command was
      executed in DMs
     """
-    if is_admin(itx, itx.user):  # can raise DMsCheckFailure
+    if is_in_dms(itx.guild):
+        raise CommandDoesNotSupportDMsCheckFailure()
+    if is_admin(itx, itx.user):
         return True
     raise InsufficientPermissionsCheckFailure("User is not admin")

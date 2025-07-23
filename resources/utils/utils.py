@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import discord
 
 from extensions.settings.objects import AttributeKeys, ServerSettings
-from resources.checks import MissingAttributesCheckFailure
+from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
 
 if TYPE_CHECKING:

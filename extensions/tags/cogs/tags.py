@@ -35,6 +35,7 @@ def _get_enabled_tag_ids(itx) -> set[str]:
     return set(default_tags + custom_tags)
 
 
+@module_enabled_check(ModuleKeys.tags)
 async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /tag command."""
     if current == "":
@@ -51,7 +52,8 @@ async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
 @module_enabled_check(ModuleKeys.tags)
 async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /tag-manage command."""
-    if itx.namespace.mode == TagMode.delete.value:
+    if (itx.namespace.mode == TagMode.delete.value
+            and itx.guild is not None):
         tag_objects = get_tags(itx.guild)
         return [
             app_commands.Choice(name=key, value=key)
@@ -103,6 +105,8 @@ class TagFunctions(commands.Cog):
         global report_message_reminder
         if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
             return
+        assert message.guild is not None
+
         if message.author.bot:
             return
 
@@ -257,5 +261,5 @@ class TagFunctions(commands.Cog):
                     f"There was no custom tag named '{tag_name}'.",
                     ephemeral=True)
         else:
-            await itx.response.send_message(f"'{mode}' is not a valid mode.",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                f"'{mode}' is not a valid mode.", ephemeral=True)

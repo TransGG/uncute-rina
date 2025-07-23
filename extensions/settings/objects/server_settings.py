@@ -254,9 +254,9 @@ class ServerSettings:
             name = None
             a_id = None
             if hasattr(attribute1, "name"):
-                name = attribute1.name
+                name = getattr(attribute1, "name")
             if hasattr(attribute1, "id"):
-                a_id = attribute1.id
+                a_id = getattr(attribute1, "id")
             if name or a_id:
                 return name, a_id
             else:

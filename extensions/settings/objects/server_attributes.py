@@ -3,6 +3,26 @@ from typing import TypedDict
 import discord
 
 
+type MessageableGuildChannel = (
+        discord.TextChannel
+        | discord.VoiceChannel
+        | discord.StageChannel
+        | discord.Thread
+        | discord.PartialMessageable
+)
+
+type GuildAttributeType = (
+        str | int
+        | discord.Guild
+        | MessageableGuildChannel | list[MessageableGuildChannel]
+        | discord.CategoryChannel
+        | discord.Emoji
+        | discord.Role | list[discord.Role]
+        | discord.User
+        | discord.VoiceChannel
+)
+
+
 class ServerAttributes(TypedDict):
     """A dictionary containing all customizable guild attributes.
 

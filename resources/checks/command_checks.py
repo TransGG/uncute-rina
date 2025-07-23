@@ -63,7 +63,7 @@ def module_enabled_check(
             func: CommandCallback[Any, ..., Any]
     ) -> CommandCallback[GroupT, P, T]:
         app_commands.check(decor_check)(func)
-        return func  # type: ignore
+        return func
 
     return decor_check1
 

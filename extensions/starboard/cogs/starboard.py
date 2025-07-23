@@ -572,6 +572,9 @@ class Starboard(commands.Cog):
             return
         try:
             message = await ch.fetch_message(payload.message_id)
+            # The payload's guild is used to check if starboard is enabled.
+            # Therefore, the original message must also be in a guild.
+            assert message.guild is not None
         except discord.errors.NotFound:
             # likely caused by someone removing a PluralKit message by
             #  reacting with the :x: emoji.

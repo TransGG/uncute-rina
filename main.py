@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import typing
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ^ for periodic timers
 from datetime import datetime  # for startup and crash logging
@@ -16,7 +18,7 @@ import discord  # for main discord bot functionality
 
 from extensions.reminders.objects import \
     relaunch_ongoing_reminders
-from extensions.settings.objects import ServerSettings
+from extensions.settings.objects import ServerSettings, MessageableGuildChannel
 from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
 from extensions.watchlist.local_watchlist import fetch_all_watchlists
@@ -28,7 +30,6 @@ from resources.utils import debug, codec_options
 
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-
 BOT_VERSION = "2.0.3.3"
 
 # noinspection SpellCheckingInspection
@@ -95,7 +96,7 @@ def get_token_data() -> tuple[
 
     :raise FileNotFoundError: If the api_keys.json file does not exist.
     :raise json.decoder.JSONDecodeError: If the api_keys.json file is
-     not in correct JSON format.
+     not in the correct JSON format.
     :raise KeyError: If the api_keys.json file is missing the api key
      for an api used in the program.
     """
@@ -107,7 +108,7 @@ def get_token_data() -> tuple[
         bot_token: str = api_keys['Discord']
         missing_tokens: list[str] = []
         for key in ApiTokenDict.__annotations__:
-            # copy every other key to new dictionary to check if every
+            # copy every other key to a new dictionary to check if every
             #  key is in the file.
             if key not in api_keys:
                 missing_tokens.append(key)
@@ -126,22 +127,24 @@ def get_token_data() -> tuple[
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
 
     load_progress.begin("Loading database clusters...")
-    cluster: MongoClient = MongoClient(tokens['MongoDB'])
-    rina_db: PyMongoDatabase = cluster["Rina"]
+    mongo_client: MongoClient = MongoClient(tokens['MongoDB'])
+    rina_db: PyMongoDatabase = mongo_client["Rina"]
     cluster: motorcore.AgnosticClient = motorasync.AsyncIOMotorClient(
         tokens['MongoDB'])
     async_rina_db: motorcore.AgnosticDatabase  # = cluster["Rina"]
     async_rina_db = cluster.get_database("Rina", codec_options=codec_options)
     load_progress.complete("Loaded database clusters", newline=False)
+    
     return bot_token, tokens, rina_db, async_rina_db
 
 
 def get_version() -> str:
     """
-    Dumb code for cool version updates. Reads version file and matches
-    with current version string. Updates file if string is newer, and
-    adds another ".%d" for how often the bot has been started in
-    this version.
+    Get the bot's version as dot-separated string, like 1.0.2.0.0
+    
+    Dumb code for cool version updates. It reads the version file and matches
+    it with the current version string. Updates file if string is newer, and
+    adds another ".%d" for how often the bot has been started in this version.
 
     :return: Current version/instance of the bot.
     """
@@ -234,21 +237,21 @@ def start_app():
         try:
             _ = await fetch_all_tags(client.async_rina_db)
         except:
-            debug("loading failed!", color="red")
+            debug("Loading tags failed!", color="red")
         post_startup_progress.complete("Loaded server tags.")
 
         post_startup_progress.begin("Loading all watchlist threads...")
         try:
             _ = await fetch_all_watchlists(client.async_rina_db)
         except:
-            debug("loading failed!", color="red")
+            debug("Loading watchlists failed!", color="red")
         post_startup_progress.complete("Loaded watchlist threads.")
 
         post_startup_progress.begin("Loading all starboard messages...")
         try:
             _ = await fetch_all_starboard_messages(client.async_rina_db)
         except:
-            debug("loading failed!", color="red")
+            debug("Loading starboard failed!", color="red")
         post_startup_progress.complete("Loaded starboard messages.")
 
     @client.event
@@ -280,13 +283,18 @@ def start_app():
         )
         start_progress.begin("Loading server settings...")
         try:
-            client.log_channel = \
-                await client.fetch_channel(988118678962860032)
+            log_channel = await client.fetch_channel(988118678962860032)
         except discord.errors.Forbidden:
             # client.log_channel = \
             #     await client.fetch_channel(986304081234624554)
-            client.log_channel = \
-                await client.fetch_channel(1062396920187863111)
+            log_channel = await client.fetch_channel(1062396920187863111)
+        if not isinstance(log_channel, MessageableGuildChannel.__value__):
+            raise TypeError(
+                f"Backup log channel expected a messageable guild channel, but "
+                f"got {type(log_channel)} instead!"
+            )
+        log_channel = typing.cast(MessageableGuildChannel, log_channel)
+        client.log_channel = log_channel
         client.bot_owner = await client.fetch_user(262913789375021056)
         # client.bot_owner = (await client.application_info()).owner
         # ^ or client.owner / client.owner_id :P

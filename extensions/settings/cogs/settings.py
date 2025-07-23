@@ -6,8 +6,10 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from resources.checks import (
-    is_admin_check, not_in_dms_check, module_enabled_check,
+    is_admin_check,
+    module_enabled_check,
     MissingAttributesCheckFailure,
+    CommandDoesNotSupportDMsCheckFailure,
 )
 
 from extensions.help.cogs import send_help_menu
@@ -49,7 +51,7 @@ def get_attribute_autocomplete_mode(
 async def _setting_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue]
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
@@ -80,8 +82,8 @@ async def _setting_autocomplete(
 async def _mode_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue]
 
     types = [ModeAutocomplete.view]
 
@@ -102,6 +104,11 @@ async def _mode_autocomplete(
         return [app_commands.Choice(name="Invalid setting given.",
                                     value=ModeAutocomplete.invalid.value)]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
+        if itx.namespace.setting is None:
+            return [app_commands.Choice(
+                name="No setting given. Please give a value for the "
+                     "'setting' parameter.",
+                value="-")]
         autocomplete_type = get_attribute_autocomplete_mode(
             itx.namespace.setting)
         if autocomplete_type is None:
@@ -120,10 +127,12 @@ async def _mode_autocomplete(
 async def _value_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)
-    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)
-    itx.namespace.value = typing.cast(str | None, itx.namespace.value)
+    if itx.guild is None:
+        raise CommandDoesNotSupportDMsCheckFailure()
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue]
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
@@ -145,6 +154,11 @@ async def _value_autocomplete(
                      "an attribute.",
                 value="-")]
 
+        if itx.namespace.setting is None:
+            return [app_commands.Choice(
+                name="No setting given. Please give a value for the "
+                     "'setting' parameter.",
+                value="-")]
         attribute_type, _ = get_attribute_type(itx.namespace.setting)
         if attribute_type is None:
             return [app_commands.Choice(name="Invalid setting given.",
@@ -335,7 +349,7 @@ async def _handle_settings_attribute(
                 ephemeral=True
             )
             return
-        
+
         invalid_arguments = {}
         attribute = parse_attribute(
             itx.client, itx.guild, setting, value,
@@ -369,7 +383,7 @@ async def _handle_settings_attribute(
 
         if hasattr(attribute, "id"):
             # guild, channel, emoji, role, user
-            database_value = attribute.id
+            database_value = getattr(attribute, "id")
         else:
             # int, str
             database_value = attribute
