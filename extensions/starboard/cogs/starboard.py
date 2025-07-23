@@ -1,9 +1,11 @@
+import typing
+
 import discord
 import discord.ext.commands as commands
 
-from extensions.settings.objects import AttributeKeys, ModuleKeys
+from extensions.settings.objects import AttributeKeys, ModuleKeys, MessageableGuildChannel
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from resources.customs import Bot, GuildMessage
 from resources.utils.discord_utils import get_or_fetch_channel
 from resources.utils.utils import log_to_guild
 # ^ to log starboard addition/removal
@@ -23,9 +25,9 @@ starboard_message_ids_marked_for_deletion = []
 
 async def _fetch_starboard_original_message(
         client: Bot,
-        starboard_message: discord.Message,
+        starboard_message: GuildMessage,
         starboard_emoji: discord.Emoji
-) -> discord.Message | None:
+) -> GuildMessage | None:
     """
     Uses the 'jump to original' link in a starboard message to fetch
     its original author's message.
@@ -58,7 +60,8 @@ async def _fetch_starboard_original_message(
         return None
     ch = client.get_channel(channel_id)
 
-    if ch is None:
+    if (ch is None
+            or not isinstance(ch, MessageableGuildChannel.__value__)):
         await log_to_guild(
             client,
             starboard_message.guild,
@@ -69,9 +72,10 @@ async def _fetch_starboard_original_message(
             f"recovered channel id: {channel_id}"
         )
         return None
+    ch = typing.cast(MessageableGuildChannel, ch)
 
     try:
-        original_message = await ch.fetch_message(message_id)
+        original_message = await fetch_message_from_channel(ch, message_id)
     except discord.NotFound:
         # if original message removed, remove starboard message
         await _delete_starboard_message(
@@ -96,7 +100,7 @@ async def _fetch_starboard_original_message(
 
 async def _send_starboard_message(
         client: Bot,
-        message: discord.Message,
+        message: GuildMessage,
         starboard_channel: discord.abc.Messageable,
         reaction: discord.Reaction
 ):
@@ -178,6 +182,7 @@ async def _send_starboard_message(
         embeds=embed_list,
         allowed_mentions=discord.AllowedMentions.none(),
     )
+    msg = typing.cast(GuildMessage, msg)  # sent to starboard channel = guild
     attachment_urls = ','.join(att.url for att in message.attachments)
     await log_to_guild(client, starboard_channel.guild,
                        f"{reaction.emoji} Starboard message {msg.jump_url} "
@@ -195,11 +200,11 @@ async def _send_starboard_message(
 async def _update_starboard_message_score(
         client: Bot,
         guild_id: int,
-        starboard_message: discord.Message | int | None,
-        original_message: discord.Message | int | None,
-        starboard_emoji: discord.Emoji,
+        starboard_message: GuildMessage | int | None,
+        original_message: GuildMessage | int | None,
+        starboard_emoji: discord.PartialEmoji | discord.Emoji,
         downvote_init_value: int,
-        original_message_channel: discord.abc.Messageable | int | None = None,
+        original_message_channel: MessageableGuildChannel | int | None = None,
 ) -> None:
     """
     Update the score of the starboard message, or delete when downvoted.
@@ -235,24 +240,24 @@ async def _update_starboard_message_score(
         # original message is invalid
         raise NotImplementedError()
 
-    star_reacters = []
+    star_reacter_ids: list[int] = []
     reaction_total = 0
     # get message's starboard-reacters
     for reaction in orig_msg.reactions:
         if reaction.emoji == starboard_emoji:
             async for user in reaction.users():
-                if user.id not in star_reacters:
-                    star_reacters.append(user.id)
+                if user.id not in star_reacter_ids:
+                    star_reacter_ids.append(user.id)
 
     # get starboard's starboard-reacters
     for reaction in star_msg.reactions:
         if reaction.emoji == starboard_emoji:
             async for user in reaction.users():
-                if user.id not in star_reacters:
-                    star_reacters.append(user.id)
+                if user.id not in star_reacter_ids:
+                    star_reacter_ids.append(user.id)
 
-    star_stat = len(star_reacters)
-    if client.user.id in star_reacters:
+    star_stat = len(star_reacter_ids)
+    if getattr(client.user, "id") in star_reacter_ids:
         star_stat -= 1
 
     for reaction in star_msg.reactions:
@@ -299,10 +304,10 @@ async def _update_starboard_message_score(
 async def _fetch_starboard_and_original_messages(
         client: Bot,
         guild_id: int,
-        original_message: discord.Message | int | None,
-        original_message_channel: discord.abc.Messageable | int | None,
-        starboard_message: discord.Message | int | None,
-) -> tuple[discord.Message, discord.Message]:
+        original_message: GuildMessage | int | None,
+        original_message_channel: MessageableGuildChannel | int | None,
+        starboard_message: GuildMessage | int | None,
+) -> tuple[GuildMessage, GuildMessage]:
     """
     A helper function to retrieve the original and starboard messages.
 
@@ -321,10 +326,11 @@ async def _fetch_starboard_and_original_messages(
      message in the database. (propagated from
      _get_starboard_message_data)
     """
-    orig_msg: discord.Message
-    star_msg: discord.Message
+    orig_msg: GuildMessage
+    star_msg: GuildMessage
 
-    if (original_message is None or starboard_message is None
+    if (original_message is None
+            or starboard_message is None
             or (original_message is not discord.Message
                 and original_message_channel is None)):
         original_message, original_message_channel, starboard_message = \
@@ -335,26 +341,33 @@ async def _fetch_starboard_and_original_messages(
                 starboard_message
             )
 
-    if type(original_message) is int:
-        if type(original_message_channel) is int:
-            original_message_channel = await get_or_fetch_channel(
+    if isinstance(original_message, int):
+        if isinstance(original_message_channel, int):
+            fetched_channel = await get_or_fetch_channel(
                 client, original_message_channel)
-        if original_message_channel is None:
+            assert isinstance(
+                fetched_channel, MessageableGuildChannel.__value__)
+            channel = typing.cast(
+                MessageableGuildChannel, fetched_channel)
+        elif original_message_channel is None:
             raise NotImplementedError(str(original_message_channel))
+        else:
+            channel = original_message_channel
 
-        orig_msg = await original_message_channel.fetch_message(
-            original_message)
+        orig_msg = await fetch_message_from_channel(
+            channel, original_message)
     else:
         orig_msg = original_message
 
-    if type(starboard_message) is int:
-        starboard_channel: discord.abc.Messageable | None
+    if isinstance(starboard_message, int):
+        starboard_channel: MessageableGuildChannel | None
         starboard_channel = client.get_guild_attribute(
             guild_id, AttributeKeys.starboard_channel)
         if starboard_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.starboard, [AttributeKeys.starboard_channel])
-        star_msg = await starboard_channel.fetch_message(starboard_message)
+        star_msg = await fetch_message_from_channel(
+            starboard_channel, starboard_message)
     else:
         star_msg = starboard_message
 
@@ -363,11 +376,11 @@ async def _fetch_starboard_and_original_messages(
 
 def _get_starboard_message_data(
         guild_id: int,
-        original_message: discord.Message | int | None,
-        original_message_channel: discord.abc.Messageable | int | None,
-        starboard_message: discord.Message | int | None,
-) -> tuple[discord.Message | int, discord.abc.Messageable,
-           discord.Message | int]:
+        original_message: GuildMessage | int | None,
+        original_message_channel: MessageableGuildChannel | int | None,
+        starboard_message: GuildMessage | int | None,
+) -> tuple[GuildMessage | int, MessageableGuildChannel | int,
+           GuildMessage | int]:
     """
     Get the ids of the starboard and original messages and channel.
 
@@ -388,8 +401,12 @@ def _get_starboard_message_data(
         if starboard_message is None:
             raise ValueError("original_message and starboard_message "
                              "cannot both be None")
-        starboard_message_id = getattr(starboard_message, "id",
-                                       starboard_message)
+
+        if isinstance(starboard_message, GuildMessage):
+            starboard_message_id = starboard_message.id
+        else:
+            starboard_message_id = starboard_message
+
         orig_data = get_original_message_info(
             guild_id, starboard_message_id)
         if orig_data is None:
@@ -403,8 +420,10 @@ def _get_starboard_message_data(
             original_message_channel = orig_data[0]
 
     elif starboard_message is None:
-        original_message_id = getattr(original_message, 'id',
-                                      original_message)
+        if isinstance(original_message, GuildMessage):
+            original_message_id = original_message.id
+        else:
+            original_message_id = original_message
 
         starboard_message = get_starboard_message_id(
             guild_id, original_message_id)
@@ -420,16 +439,24 @@ def _get_starboard_message_data(
             )
 
     if original_message_channel is None:
-        starboard_message_id = getattr(starboard_message, "id",
-                                       starboard_message)
+        if isinstance(starboard_message, GuildMessage):
+            starboard_message_id = starboard_message.id
+        else:
+            starboard_message_id = starboard_message
         orig_data = get_original_message_info(guild_id, starboard_message_id)
+        if orig_data is None:
+            raise IndexError(
+                f"Couldn't get original message from starboard message! "
+                f"Guild ID: {guild_id}, "
+                f"Starboard message ID: {starboard_message_id}"
+            )
         original_message_channel = orig_data[0]
 
     return original_message, original_message_channel, starboard_message
 
 
 async def _delete_starboard_message(
-        client: Bot, starboard_message: discord.Message, reason: str) -> None:
+        client: Bot, starboard_message: GuildMessage, reason: str) -> None:
     """
     Handles custom starboard message deletion messages and preventing
     double logging messages when the bot removes a starboard message.
@@ -451,13 +478,15 @@ async def _delete_starboard_message(
 async def _handle_starboard_create_or_update(
         client: Bot,
         reaction: discord.Reaction,
-        message: discord.Message,
+        message: GuildMessage,
         starboard_channel: discord.abc.Messageable,
         starboard_emoji: discord.PartialEmoji | discord.Emoji,
         channel_blacklist: list[discord.abc.Messageable],
         star_minimum: int,
         downvote_init_value: int,
 ):
+    # fetched from payload.guild_id.channel_id.message_id, so guild_id
+    # must've had a value
     if reaction.me:
         # check if this message is already in the starboard. If so,
         #  update it.
@@ -477,12 +506,8 @@ async def _handle_starboard_create_or_update(
         if client.is_me(message.author):
             # can't starboard Rina's message
             return
-        # noinspection PyProtectedMember
-        blacklist_ids: list[int] = [(await c._get_channel()).id
-                                    for c in channel_blacklist]
-        # ^ _get_channel is async, but most subclass implementations
-        #  are synchronous.
-        if message.channel.id in blacklist_ids:
+
+        if message.channel in channel_blacklist:
             return
 
         try:
@@ -510,6 +535,18 @@ async def _handle_starboard_create_or_update(
         )
 
 
+async def fetch_message_from_channel(
+        channel: MessageableGuildChannel, message_id: int
+) -> GuildMessage:
+    message = await channel.fetch_message(message_id)
+    # The payload's guild is used to check if starboard is enabled.
+    # Therefore, the original message must also be in a guild
+    # (hence GuildMessage).
+    assert message.guild is not None
+    message = typing.cast(GuildMessage, message)
+    return message
+
+
 class Starboard(commands.Cog):
     def __init__(self, client: Bot):
         self.client: Bot = client
@@ -520,11 +557,13 @@ class Starboard(commands.Cog):
     ):
         if payload.guild_id is None:
             return
+        if payload.member is None:
+            return
         if not self.client.is_module_enabled(payload.guild_id,
                                              ModuleKeys.starboard):
             return
 
-        star_channel: discord.abc.Messageable | None
+        star_channel: MessageableGuildChannel | None
         star_minimum: int | None
         channel_blacklist: list[discord.abc.Messageable] | None
         starboard_emoji: discord.Emoji | None
@@ -540,8 +579,11 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
         )
 
-        if None in (star_channel, star_minimum, channel_blacklist,
-                    starboard_emoji, downvote_init_value):
+        if (star_channel is None
+                or star_minimum is None
+                or channel_blacklist is None
+                or starboard_emoji is None
+                or downvote_init_value is None):
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel:
                     star_channel,
@@ -567,14 +609,13 @@ class Starboard(commands.Cog):
         # get the message id from payload.message_id through the channel
         #  (with payload.channel_id) (oof lengthy process)
         ch = self.client.get_channel(payload.channel_id)
-        if ch is None:
-            # channel not in cache?
+        if (ch is None  # channel not in cache?
+                or not isinstance(ch, MessageableGuildChannel.__value__)):
             return
+        ch = typing.cast(MessageableGuildChannel, ch)
+
         try:
-            message = await ch.fetch_message(payload.message_id)
-            # The payload's guild is used to check if starboard is enabled.
-            # Therefore, the original message must also be in a guild.
-            assert message.guild is not None
+            message = await fetch_message_from_channel(ch, payload.message_id)
         except discord.errors.NotFound:
             # likely caused by someone removing a PluralKit message by
             #  reacting with the :x: emoji.
@@ -662,7 +703,9 @@ class Starboard(commands.Cog):
                 AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
             )
 
-        if None in (star_channel, starboard_emoji, downvote_init_value):
+        if (star_channel is None
+                or starboard_emoji is None
+                or downvote_init_value is None):
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji,
@@ -710,8 +753,9 @@ class Starboard(commands.Cog):
         if not self.client.is_module_enabled(message_payload.guild_id,
                                              ModuleKeys.starboard):
             return
+        assert message_payload.guild_id is not None
 
-        star_channel: discord.abc.Messageable | None
+        star_channel: MessageableGuildChannel | None
         starboard_emoji: discord.Emoji | None
         star_channel, starboard_emoji = self.client.get_guild_attribute(
             message_payload.guild_id,
@@ -719,7 +763,7 @@ class Starboard(commands.Cog):
             AttributeKeys.starboard_upvote_emoji
         )
 
-        if None in (star_channel, starboard_emoji):
+        if star_channel is None or starboard_emoji is None:
             missing = [key for key, value in {
                 AttributeKeys.starboard_channel: star_channel,
                 AttributeKeys.starboard_upvote_emoji: starboard_emoji}.items()
@@ -758,7 +802,8 @@ class Starboard(commands.Cog):
             return
 
         try:
-            starboard_msg = await star_channel.fetch_message(starboard_msg_id)
+            starboard_msg = await fetch_message_from_channel(
+                star_channel, starboard_msg_id)
         except discord.HTTPException:
             return
         # can raise discord.NotFound and discord.Forbidden.

@@ -1,6 +1,6 @@
 import discord
 from motor.core import AgnosticDatabase
-from resources.customs import Bot
+from resources.customs import Bot, GuildMessage
 
 from resources.pymongo import (
     remove_data, DatabaseKeys, add_data, get_data, get_all_data
@@ -229,8 +229,8 @@ def parse_starboard_message(
 
 async def add_to_local_starboard(
         async_rina_db: AgnosticDatabase,
-        starboard_msg: discord.Message,
-        original_msg: discord.Message
+        starboard_msg: GuildMessage,
+        original_msg: GuildMessage
 ):
     """
     Add a starboard message to the database and local cache.
