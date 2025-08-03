@@ -26,8 +26,7 @@ from extensions.watchlist.local_watchlist import fetch_all_watchlists
 
 from resources.customs import Bot, ProgressBar
 from resources.customs import ApiTokenDict
-from resources.utils import debug, codec_options
-
+from resources.utils import debug, codec_options, DebugColor
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 BOT_VERSION = "2.0.3.3"
@@ -222,7 +221,7 @@ def start_app():
         try:
             start_progress.complete(text)
         except OverflowError:
-            debug(text, color="green")
+            debug(text, color=DebugColor.green)
 
         await client.log_channel.send(
             f":white_check_mark: **Started Rina** in version {version}")
@@ -237,21 +236,21 @@ def start_app():
         try:
             _ = await fetch_all_tags(client.async_rina_db)
         except:
-            debug("Loading tags failed!", color="red")
+            debug("Loading tags failed!", color=DebugColor.red)
         post_startup_progress.complete("Loaded server tags.")
 
         post_startup_progress.begin("Loading all watchlist threads...")
         try:
             _ = await fetch_all_watchlists(client.async_rina_db)
         except:
-            debug("Loading watchlists failed!", color="red")
+            debug("Loading watchlists failed!", color=DebugColor.red)
         post_startup_progress.complete("Loaded watchlist threads.")
 
         post_startup_progress.begin("Loading all starboard messages...")
         try:
             _ = await fetch_all_starboard_messages(client.async_rina_db)
         except:
-            debug("Loading starboard failed!", color="red")
+            debug("Loading starboard failed!", color=DebugColor.red)
         post_startup_progress.complete("Loaded starboard messages.")
 
     @client.event
@@ -290,8 +289,8 @@ def start_app():
             log_channel = await client.fetch_channel(1062396920187863111)
         if not isinstance(log_channel, MessageableGuildChannel.__value__):
             raise TypeError(
-                f"Backup log channel expected a messageable guild channel, but "
-                f"got {type(log_channel)} instead!"
+                f"Backup log channel expected a messageable guild channel, "
+                f"but got {type(log_channel)} instead!"
             )
         log_channel = typing.cast(MessageableGuildChannel, log_channel)
         client.log_channel = log_channel

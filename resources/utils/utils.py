@@ -1,53 +1,28 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 # ^ for logging, to show log time; and for parsetime
-from enum import Enum
 import logging  # for debug (logger.info)
 import warnings  # for debug (if given wrong color)
 from typing import TYPE_CHECKING
 
 import discord
 
-from extensions.settings.objects import AttributeKeys, ServerSettings, MessageableGuildChannel
+from extensions.settings.objects import (
+    AttributeKeys,
+    ServerSettings,
+    MessageableGuildChannel,
+)
 from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
+from resources.utils import DebugColor
 
 if TYPE_CHECKING:
     from resources.customs import Bot, GuildInteraction
 
 
-class DebugColor(Enum):
-    # todo: move to own file
-    default = "\033[0m"
-    black = "\033[30m"
-    red = "\033[31m"
-    lime = "\033[32m"
-    green = "\033[32m"
-    yellow = "\033[33m"
-    orange = "\033[33m"  # kinda orange i guess?
-    blue = "\033[34m"
-    magenta = "\033[35m"
-    purple = "\033[35m"
-    cyan = "\033[36m"
-    gray = "\033[37m"
-    lightblack = "\033[90m"
-    darkgray = "\033[90m"
-    lightred = "\033[91m"
-    lightlime = "\033[92m"
-    lightgreen = "\033[92m"
-    lightyellow = "\033[93m"
-    lightblue = "\033[94m"
-    lightmagenta = "\033[95m"
-    lightpurple = "\033[95m"
-    lightcyan = "\033[96m"
-    aqua = "\033[96m"
-    lightgray = "\033[97m"
-    white = "\033[97m"
-
-
 def debug(
         text: str = "",
-        color: DebugColor | str = DebugColor.default,
+        color: DebugColor = DebugColor.default,
         add_time: bool = True,
         end="\n",
         advanced=False
@@ -123,20 +98,7 @@ def debug(
                         1
                     )
         color = DebugColor.default
-    else:
-        original_color = color
-        if type(color) is str:
-            color = (color
-                     .replace(" ", "")
-                     .replace("-", "")
-                     .replace("_", ""))
-            color = getattr(DebugColor, color, None)
-        if color is None:
-            warnings.warn(
-                "Invalid color given for debug function: " + original_color,
-                SyntaxWarning
-            )
-            color = DebugColor.default
+
     if add_time:
         formatted_time_string = (datetime
                                  .now(timezone.utc)
@@ -206,7 +168,7 @@ async def log_to_guild(
     :raise MissingAttributesCheckFailure: If no logging channel is
      defined.
     """
-    log_channel: discord.abc.Messageable = client.get_guild_attribute(
+    log_channel: discord.abc.Messageable | None = client.get_guild_attribute(
         guild, AttributeKeys.log_channel)
     if log_channel is None:
         if ignore_dms and is_in_dms(guild):
@@ -220,6 +182,8 @@ async def log_to_guild(
             attribute_raw = "<server was None>"
         else:
             guild_id = getattr(guild, "id", guild)
+            assert type(guild_id) is int
+
             entry = await ServerSettings.get_entry(
                 client.async_rina_db, guild_id)
             if entry is None:
@@ -233,7 +197,7 @@ async def log_to_guild(
               "\n"
               "    log_channel_id: " + attribute_raw +
               "\n"
-              "    log message: " + msg, color="orange")
+              "    log message: " + msg, color=DebugColor.orange)
         return False
 
     await log_channel.send(

@@ -1,3 +1,4 @@
+from resources.utils import DebugColor
 from resources.utils.utils import debug
 
 
@@ -71,7 +72,7 @@ class ProgressBar:
             self._completions += 1
         progress_bar = self._get_progess_bar(busy=True)
         padding = self._get_line_clear_padding(text)
-        debug(progress_bar + text + padding, color="light_blue", end=end)
+        debug(progress_bar + text + padding, color=DebugColor.lightblue, end=end)
         self._previous_message_length = len(text) if not newline else 0
         self._just_began = True
 
@@ -89,6 +90,6 @@ class ProgressBar:
         self._completions += 1
         progress_bar = self._get_progess_bar(busy=False)
         padding = self._get_line_clear_padding(text)
-        debug(progress_bar + text + padding, color="green", end=end)
+        debug(progress_bar + text + padding, color=DebugColor.green, end=end)
         self._previous_message_length = len(text) if not newline else 0
         self._just_began = False

@@ -18,5 +18,6 @@ from .timeparser import (
     MissingUnitException,
     TIMETERMS,
 )
-from .utils import DebugColor, debug, get_mod_ticket_channel, log_to_guild
+from .utils import debug, get_mod_ticket_channel, log_to_guild
+from .debugcolor import DebugColor
 from .database import codec_options
