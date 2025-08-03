@@ -1,4 +1,5 @@
 import random
+import typing
 # ^ for dice rolls (/roll) and selecting a random staff
 #  interaction wait time
 from typing import TypeVar
@@ -9,7 +10,7 @@ import discord.ext.commands as commands
 
 from extensions.addons.roll import generate_roll
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from resources.customs import Bot, GuildMessage
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
 
@@ -133,7 +134,7 @@ class FunAddons(commands.Cog):
         self.rude_comments_opinion_cooldown = 0
 
     def handle_random_pat_reaction(
-            self, message: discord.Message, headpat_emoji: discord.Emoji
+            self, message: GuildMessage, headpat_emoji: discord.Emoji
     ) -> bool:
         """
         A helper function to handle on_message events by users
@@ -211,6 +212,7 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.headpat_reactions):
+            message = typing.cast(GuildMessage, message)
             headpat_emoji: discord.Emoji | None
             headpat_emoji = self.client.get_guild_attribute(
                 message.guild, AttributeKeys.headpat_emoji)

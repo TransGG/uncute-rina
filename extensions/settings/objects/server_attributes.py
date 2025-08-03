@@ -4,22 +4,22 @@ import discord
 
 
 type MessageableGuildChannel = (
-        discord.TextChannel
-        | discord.VoiceChannel
-        | discord.StageChannel
-        | discord.Thread
-        | discord.PartialMessageable
+    discord.TextChannel
+    | discord.VoiceChannel
+    | discord.StageChannel
+    | discord.Thread
+    | discord.PartialMessageable
 )
 
 type GuildAttributeType = (
-        str | int
-        | discord.Guild
-        | MessageableGuildChannel | list[MessageableGuildChannel]
-        | discord.CategoryChannel
-        | discord.Emoji
-        | discord.Role | list[discord.Role]
-        | discord.User
-        | discord.VoiceChannel
+    str | int
+    | discord.Guild
+    | MessageableGuildChannel | list[MessageableGuildChannel]
+    | discord.CategoryChannel
+    | discord.Emoji
+    | discord.Role | list[discord.Role]
+    | discord.User
+    | discord.VoiceChannel
 )
 
 
@@ -37,9 +37,9 @@ class ServerAttributes(TypedDict):
     admin_roles: list[discord.Role]
     staff_roles: list[discord.Role]
 
-    log_channel: discord.abc.Messageable | None
+    log_channel: MessageableGuildChannel | None
 
-    qotw_suggestions_channel: discord.abc.Messageable | None
+    qotw_suggestions_channel: MessageableGuildChannel | None
     developer_request_channel: discord.TextChannel | None
     # ^ needs to be able to have threads
     developer_request_reaction_role: discord.Role | None
@@ -47,8 +47,8 @@ class ServerAttributes(TypedDict):
     watchlist_channel: discord.TextChannel | None
     # ^ needs to be able to have threads
     watchlist_reaction_role: discord.Role | None
-    staff_reports_channel: discord.abc.Messageable | None
-    ticket_create_channel: discord.abc.Messageable | None
+    staff_reports_channel: MessageableGuildChannel | None
+    ticket_create_channel: MessageableGuildChannel | None
     staff_logs_category: discord.CategoryChannel | None
     badeline_bot: discord.User | None
 
@@ -65,21 +65,21 @@ class ServerAttributes(TypedDict):
     custom_vc_create_channel: discord.VoiceChannel | None
     custom_vc_category: discord.CategoryChannel | None
 
-    starboard_channel: discord.abc.Messageable | None
+    starboard_channel: MessageableGuildChannel | None
     starboard_upvote_emoji: discord.Emoji | None
-    starboard_blacklisted_channels: list[discord.abc.Messageable]
+    starboard_blacklisted_channels: list[MessageableGuildChannel]
     starboard_minimum_upvote_count: int | None
     starboard_minimum_vote_count_for_downvote_delete: int | None
 
-    bump_reminder_channel: discord.abc.Messageable | None
+    bump_reminder_channel: MessageableGuildChannel | None
     bump_reminder_role: discord.Role | None
     bump_reminder_bot: discord.User | None
 
-    poll_reaction_blacklisted_channels: list[discord.abc.Messageable]
+    poll_reaction_blacklisted_channels: list[MessageableGuildChannel]
 
-    selfies_channel: discord.abc.Messageable | None
+    selfies_channel: MessageableGuildChannel | None
 
-    voice_channel_activity_logs_channel: discord.abc.Messageable | None
+    voice_channel_activity_logs_channel: MessageableGuildChannel | None
 
     headpat_emoji: discord.Emoji | None
     awawawa_emoji: discord.Emoji | None

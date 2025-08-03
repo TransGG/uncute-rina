@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import discord
 
-from extensions.settings.objects import AttributeKeys, ServerSettings
+from extensions.settings.objects import AttributeKeys, ServerSettings, MessageableGuildChannel
 from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
 
@@ -155,7 +155,7 @@ def debug(
 
 def get_mod_ticket_channel(
         client: Bot, guild_id: int | discord.Guild | GuildInteraction[Bot]
-) -> discord.abc.Messageable | None:
+) -> MessageableGuildChannel | None:
     """
     Fetch the #contact-staff ticket channel for a specific guild.
 
@@ -169,7 +169,7 @@ def get_mod_ticket_channel(
     """
     if isinstance(guild_id, discord.Interaction):
         guild_id = guild_id.guild.id
-    ticket_channel: discord.abc.Messageable | None = \
+    ticket_channel: MessageableGuildChannel | None = \
         client.get_guild_attribute(
             guild_id,
             AttributeKeys.ticket_create_channel

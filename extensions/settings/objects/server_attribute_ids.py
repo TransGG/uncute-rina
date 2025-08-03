@@ -9,7 +9,7 @@ EmojiId = int
 TextChannelId = int
 VoiceChannelId = int
 CategoryChannelId = int
-MessageableChannelId = int
+MessageableGuildChannelId = int
 
 
 class ServerAttributeIds(TypedDict, total=False):
@@ -25,16 +25,16 @@ class ServerAttributeIds(TypedDict, total=False):
     admin_roles: list[RoleId]
     staff_roles: list[RoleId]
 
-    log_channel: MessageableChannelId
+    log_channel: MessageableGuildChannelId
 
-    qotw_suggestions_channel: MessageableChannelId
+    qotw_suggestions_channel: MessageableGuildChannelId
     developer_request_channel: TextChannelId
     developer_request_reaction_role: RoleId
 
     watchlist_channel: TextChannelId
     watchlist_reaction_role: RoleId
-    staff_reports_channel: MessageableChannelId
-    ticket_create_channel: MessageableChannelId
+    staff_reports_channel: MessageableGuildChannelId
+    ticket_create_channel: MessageableGuildChannelId
     staff_logs_category: CategoryChannelId
     badeline_bot: UserId
 
@@ -49,21 +49,21 @@ class ServerAttributeIds(TypedDict, total=False):
     custom_vc_create_channel: VoiceChannelId
     custom_vc_category: CategoryChannelId
 
-    starboard_channel: MessageableChannelId
+    starboard_channel: MessageableGuildChannelId
     starboard_upvote_emoji: EmojiId
-    starboard_blacklisted_channels: list[MessageableChannelId]
+    starboard_blacklisted_channels: list[MessageableGuildChannelId]
     starboard_minimum_upvote_count: int
     starboard_minimum_vote_count_for_downvote_delete: int
 
-    bump_reminder_channel: MessageableChannelId
+    bump_reminder_channel: MessageableGuildChannelId
     bump_reminder_role: RoleId
     bump_reminder_bot: UserId
 
-    poll_reaction_blacklisted_channels: list[MessageableChannelId]
+    poll_reaction_blacklisted_channels: list[MessageableGuildChannelId]
 
-    selfies_channel: MessageableChannelId
+    selfies_channel: MessageableGuildChannelId
 
-    voice_channel_activity_logs_channel: MessageableChannelId
+    voice_channel_activity_logs_channel: MessageableGuildChannelId
 
     headpat_emoji: EmojiId
     awawawa_emoji: EmojiId

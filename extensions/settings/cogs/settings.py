@@ -189,14 +189,16 @@ async def _value_autocomplete(
                     results.append(app_commands.Choice(
                         name=potential_user.name, value=str(potential_user.id))
                     )
-        elif issubclass(attribute_type, discord.abc.GuildChannel):
+        if any(issubclass(channel_type, discord.abc.GuildChannel)
+               for channel_type in attribute_type):
             for channel in itx.guild.channels:
-                if (isinstance(channel, attribute_type)
+                if (type(channel) in attribute_type
                         and (current in channel.name
                              or str(channel.id).startswith(current))):
                     results.append(app_commands.Choice(
                         name=channel.name, value=str(channel.id)))
-        elif issubclass(attribute_type, discord.abc.Messageable):
+        if any(issubclass(channel_type, discord.abc.Messageable)
+               for channel_type in attribute_type):
             # from channel id
             if current.isdecimal():
                 potential_channel = itx.client.get_channel(int(current))
@@ -210,40 +212,50 @@ async def _value_autocomplete(
                     )
             # iterate messageable guild channels
             for channel in itx.guild.channels:
-                if isinstance(channel, attribute_type):
+                if type(channel) in attribute_type:
                     if (current.lower() in channel.name.lower()
                             or str(channel.id).startswith(current)):
                         results.append(app_commands.Choice(
                             name=channel.name, value=str(channel.id)))
-        elif issubclass(attribute_type, discord.Role):
+        if discord.Role in attribute_type:
             # iterate guild roles
             for role in itx.guild.roles:
                 if (current.lower() in role.name.lower()
                         or str(role.id).startswith(current)):
                     results.append(app_commands.Choice(
                         name=role.name, value=str(role.id)))
-        elif issubclass(attribute_type, discord.Emoji):
+        if discord.Emoji in attribute_type:
             # iterate guild emojis
             for emoji in itx.guild.emojis:
                 if (current.lower() in emoji.name.lower()
                         or str(emoji.id).startswith(current)):
                     results.append(app_commands.Choice(
                         name=emoji.name, value=str(emoji.id)))
-        elif attribute_type == str:
+        if str in attribute_type:
             # leave as is
             results.append(app_commands.Choice(name=current, value=current))
-        elif attribute_type == int:
+        if str in attribute_type:
             # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
                 results.append(app_commands.Choice(
                     name=current, value=current))
-        else:
+        if len(results) == 0:
+            attribute_type_names = ','.join(
+                i.__name__ for i in attribute_type)
             results.append(
                 app_commands.Choice(
-                    name=f"Autocomplete for type '{attribute_type.__name__}' "
-                         f"not supported"[:100],
+                    name=f"No autocompletes for: "
+                         f"{attribute_type_names}"[:100],
                     value="-")
             )
+
+        # deduplicate
+        unique_results = set()
+        for result in results:
+            unique_results.add((result.name, result.value))
+        results = [app_commands.Choice(name=name, value=val)
+                   for name, val in unique_results]
+
         return results[:10]
 
     elif itx.namespace.type == TypeAutocomplete.module.value:
@@ -373,9 +385,12 @@ async def _handle_settings_attribute(
                 ]):
             # allow removal of malformed data
             attribute_type, _ = get_attribute_type(setting)
+            assert attribute_type is not None
+            attribute_type_names = ', '.join(
+                i.__name__ for i in attribute_type)
             await itx.followup.send(
                 (f"Could not parse `{value}` as value for "
-                 f"'{setting}' (expected {attribute_type.__name__}.\n"
+                 f"'{setting}' (expected one of {attribute_type_names}.\n"
                  f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]})"
                  )[:1999]
                 + ")",
@@ -473,10 +488,10 @@ async def _handle_settings_attribute(
             await itx.followup.send(
                 f"This attribute cannot be changed with this mode "
                 f"('{modify_mode.value}')\n"
-                f"It must be one of the following: " +
-                ', '.join([f"'{m.value}'" for m in expected_modify_mode]),
+                f"It must be one of the following: "
+                + ', '.join([f"'{m.value}'" for m in expected_modify_mode]),
                 # [enum.a, enum.b, enum.c] -> "'a', 'b', 'c'"
-                ephemeral=True
+                ephemeral=True,
             )
             return
 

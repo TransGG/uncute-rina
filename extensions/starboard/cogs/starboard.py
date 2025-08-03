@@ -3,7 +3,11 @@ import typing
 import discord
 import discord.ext.commands as commands
 
-from extensions.settings.objects import AttributeKeys, ModuleKeys, MessageableGuildChannel
+from extensions.settings.objects import (
+    AttributeKeys,
+    ModuleKeys,
+    MessageableGuildChannel,
+)
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot, GuildMessage
 from resources.utils.discord_utils import get_or_fetch_channel
@@ -126,7 +130,12 @@ async def _send_starboard_message(
     )
     embed_list = []
     for attachment in message.attachments:
-        try:
+        # The type checker doesn't seem to pick up that the embeds have been
+        #  created manually, and are manually given a `value` attribute.
+        assert embed.fields[0].value is not None
+        assert embed_list[0].fields[0].value is not None
+
+        if attachment.content_type is not None:
             if attachment.content_type.split("/")[0] == "image":
                 # attachment is an image or GIF
                 if len(embed_list) == 0:
@@ -156,7 +165,7 @@ async def _send_starboard_message(
                         value=embed_list[0].fields[0].value
                         + f"\n\n(⚠️ +1 Unknown attachment "
                           f"({attachment.content_type}))")
-        except AttributeError:
+        else:
             # if it is neither an image, video, application, nor
             #  recognised file type:
             if len(embed_list) == 0:
@@ -599,9 +608,10 @@ class Starboard(commands.Cog):
                 if value is None]
             raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
-        if self.client.is_me(payload.member) or \
-                (getattr(payload.emoji, "id", None) != starboard_emoji.id and
-                 getattr(payload.emoji, "name", None) != "❌"):
+        if (self.client.is_me(payload.member)
+                or (getattr(payload.emoji, "id", None) != starboard_emoji.id
+                    and getattr(payload.emoji, "name", None) != "❌")
+        ):
             # Only run starboard code if the reactions tracked are actually
             #  starboard emojis (or the downvote emoji).
             return
@@ -650,9 +660,9 @@ class Starboard(commands.Cog):
             starboard_original_message: discord.Message | None = \
                 await _fetch_starboard_original_message(
                     self.client, message, starboard_emoji)
-            if (starboard_original_message is not None and
-                    starboard_original_message.author.id == payload.user_id and
-                    payload.emoji.name == "❌"):
+            if (starboard_original_message is not None
+                    and starboard_original_message.author.id == payload.user_id
+                    and payload.emoji.name == "❌"):
                 # todo: add starboard original message author to database?
                 await _delete_starboard_message(
                     self.client,

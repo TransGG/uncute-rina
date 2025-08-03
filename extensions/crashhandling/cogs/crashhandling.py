@@ -8,7 +8,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from extensions.settings.objects import AttributeKeys
+from extensions.settings.objects import AttributeKeys, MessageableGuildChannel
 from resources.customs import Bot
 from resources.checks import (
     InsufficientPermissionsCheckFailure,
@@ -46,42 +46,37 @@ async def _send_crash_message(
     :param itx: Interaction with a potential guild. This might allow
      Rina to send the crash log to that guild instead.
     """
-    log_channel = None
-    if hasattr(itx, "guild"):
-        log_channel = client.get_guild_attribute(
-            itx.guild, AttributeKeys.log_channel)
-
-    if client.server_settings is None and log_channel is None:
-        debug(f"Error during startup\n\n\n[{error_type}]: {error_source}\n\n"
-              f"{traceback_text}\n\n")
+    log_channel = await _get_crash_logging_message(
+        client, error_source, error_type, itx, traceback_text
+    )
+    if log_channel is None:
         return
 
-    if log_channel is None:
-        # no guild settings, or itx -> 'NoneType' has no attribute '.guild'
-        backup_guild_ids = [959551566388547676, 985931648094834798,
-                            981615050664075404]
-        possible_log_channels = [
-            client.get_guild_attribute(guild_id, AttributeKeys.log_channel)
-            for guild_id in backup_guild_ids
-        ]
-        # grab the first non-None logging channel
-        for channel in possible_log_channels:
-            if channel is None:
-                continue
-            log_channel = channel
-            break
+    embeds = await _create_crash_embed(
+        color,
+        error_source,
+        error_type,
+        traceback_text
+    )
 
-    if log_channel is None:
-        # prevent infinite logging loops
-        return
+    await log_channel.send(
+        f"{client.bot_owner.mention}", embeds=embeds,
+        allowed_mentions=discord.AllowedMentions(users=[client.bot_owner])
+    )
 
+
+async def _create_crash_embed(
+        color: discord.Colour,
+        error_source: str,
+        error_type: str,
+        traceback_text: str
+):
     error_caps = error_type.upper()
     time_prefix = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     debug_message = (f"\n\n\n\n[{time_prefix}]"
                      f"[{error_caps}]: {error_source}"
                      f"\n\n{traceback_text}\n")
     debug(f"{debug_message}", add_time=False)
-
     # Prevent the code block from being escaped by other inner
     #  tick marks.
     msg = debug_message.replace("``",
@@ -104,11 +99,46 @@ async def _send_crash_message(
         )
         embeds.append(embed)
         msg = msg[4090:]
+    return embeds
 
-    await log_channel.send(
-        f"{client.bot_owner.mention}", embeds=embeds,
-        allowed_mentions=discord.AllowedMentions(users=[client.bot_owner])
-    )
+
+async def _get_crash_logging_message(
+        client: Bot,
+        error_source: str,
+        error_type: str,
+        itx: discord.Interaction[Bot] | None,
+        traceback_text: str
+):
+    log_channel: MessageableGuildChannel | None = None
+    potential_guild = getattr(itx, "guild", None)
+    if potential_guild is not None:
+        log_channel = client.get_guild_attribute(
+            potential_guild, AttributeKeys.log_channel)
+    if log_channel is None and client.server_settings is None:
+        debug(f"Error during startup\n\n\n[{error_type}]: {error_source}\n\n"
+              f"{traceback_text}\n\n")
+        return None
+
+    if log_channel is None:
+        # no guild settings, or itx -> 'NoneType' has no attribute '.guild'
+        backup_guild_ids = [959551566388547676, 985931648094834798,
+                            981615050664075404]
+        possible_log_channels: list[MessageableGuildChannel | None] = [
+            client.get_guild_attribute(guild_id, AttributeKeys.log_channel)
+            for guild_id in backup_guild_ids
+        ]
+        # grab the first non-None logging channel
+        for channel in possible_log_channels:
+            if channel is None:
+                continue
+            log_channel = channel
+            break
+
+    if log_channel is None:
+        # prevent infinite logging loops
+        return None
+
+    return log_channel
 
 
 async def _reply(itx: discord.Interaction[Bot], message: str) -> None:

@@ -5,10 +5,11 @@ import warnings
 
 import motor.core
 from typing import TypedDict, Any, TypeVar, Callable
+from types import UnionType
 
 import discord
 
-from .server_attributes import ServerAttributes
+from .server_attributes import ServerAttributes, GuildAttributeType
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
 
@@ -47,7 +48,7 @@ def parse_id_generic(
     return parsed_obj
 
 
-def get_attribute_type(attribute_key: str) -> tuple[type | None, bool]:
+def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
     """
     Get the type of a given attribute.
 
@@ -57,20 +58,28 @@ def get_attribute_type(attribute_key: str) -> tuple[type | None, bool]:
      attribute wasn't found) and whether the attribute was in a list.
     """
     attribute_types = typing.get_type_hints(ServerAttributes)
-    attribute_type = None
+    attribute_type: list[type] | None = None
     attribute_in_list = False
     if attribute_key in ServerAttributes.__annotations__:
         attribute_type = attribute_types[attribute_key]
-        if typing.get_origin(attribute_type) is typing.types.UnionType:
-            # typing.Union != typing.types.UnionType :/
-            # original was: `list[T] | None` (`Union[list[T], None]`).
-            #   get_origin returns `<class 'types.UnionType'>`
-            #   get_args   returns `(list[T], <class 'NoneType'>)`.
-            attribute_type = typing.get_args(attribute_type)[0]
-        if typing.get_origin(attribute_type) is list:
+        # typing.Union != types.UnionType :/
+        #  typing.Union is for `Union[int, str]`
+        #  types.UnionType is for `int | str`
+        if typing.get_origin(attribute_type) is UnionType:
+            # The original was: `type1 | type2 | None`.
+            #   get_origin returns `<class 'UnionType'>`
+            #   get_args returns `(<class 'type1'>, <class 'type2'>,
+            #    <class 'NoneType'>)`.
+            attribute_type = [t for t in typing.get_args(attribute_type)
+                              if t is not type(None)]
+        elif typing.get_origin(attribute_type) is list:
             # original was `list[T]`. get_args returns `T`
-            attribute_type = typing.get_args(attribute_type)[0]
+            attribute_type = [t for t in typing.get_args(attribute_type)]
+            # should not have any None's
             attribute_in_list = True
+        else:
+            raise NotImplementedError(
+                f"Type of {attribute_key} is not supported")
     return attribute_type, attribute_in_list
 
 

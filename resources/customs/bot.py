@@ -130,7 +130,7 @@ class Bot(commands.Bot):
             guild: discord.Guild | int,
             *args: str,
             default: T = None
-    ) -> object | list[object] | T:
+    ) -> GuildAttributeType | T | list[GuildAttributeType | T]:
         """
         Get ServerSettings attributes for the given guild.
 

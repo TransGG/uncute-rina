@@ -8,6 +8,7 @@ import discord.ext.commands as commands
 from extensions.settings.objects import (
     ModuleKeys,
     AttributeKeys,
+    MessageableGuildChannel,
 )
 from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
 from resources.checks.command_checks import is_in_dms
@@ -421,8 +422,10 @@ class OtherAddons(commands.Cog):
         else:
             neutral_emoji = None
 
-        blacklisted_channels = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.poll_reaction_blacklisted_channels)
+        blacklisted_channels: list[MessageableGuildChannel] = []
+        if itx.guild is not None:
+            blacklisted_channels = itx.client.get_guild_attribute(
+                itx.guild, AttributeKeys.poll_reaction_blacklisted_channels) \
 
         if (blacklisted_channels is not None
                 and itx.channel.id in blacklisted_channels):
