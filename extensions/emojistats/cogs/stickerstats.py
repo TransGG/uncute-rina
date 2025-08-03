@@ -191,7 +191,7 @@ class StickerStats(commands.Cog):
                 continue
 
             unused_stickers.append(
-                f"<{sticker.name}\\:{sticker.id}>" +
+                f"<{sticker.name}\\:{sticker.id}>"
                 f"({sticker_stat.get('messageUsedCount', 0)})"
             )
 

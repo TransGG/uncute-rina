@@ -5,7 +5,10 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
+from extensions.settings.objects import (
+    ModuleKeys,
+    AttributeKeys,
+)
 from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
 from resources.checks.command_checks import is_in_dms
 from resources.customs import Bot
@@ -157,7 +160,12 @@ def _get_emoji_from_str(
         return client.get_emoji(int(emoji_str))  # returns None if not found
     else:
         emoji_partial = discord.PartialEmoji.from_str(emoji_str)
-        if emoji_partial is None or emoji_partial.is_unicode_emoji():
+        if (
+                emoji_partial is None
+                or emoji_partial.is_unicode_emoji()
+                or emoji_partial.id is None  # <- for type checking.
+                # ^ Technically already done by is_unicode_emoji.
+        ):
             # see docstring note
             return emoji_partial
         emoji = client.get_emoji(emoji_partial.id)
@@ -187,15 +195,18 @@ async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
 
 async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /remove-role command."""
+    if isinstance(itx.user, discord.User):
+        return []
     role_options = {
         1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
         1126160612620243044: ("Hide Venting channel role", "NVA")  # NVA
     }
     options = []
+
     for role in itx.user.roles:
         if role.id in role_options:
-            if (current.lower() in role_options[role.id][0].lower() or
-                    current.lower() in role_options[role.id][1].lower()):
+            if (current.lower() in role_options[role.id][0].lower()
+                    or current.lower() in role_options[role.id][1].lower()):
                 options.append(role.id)
     if options:
         return [app_commands.Choice(name=role_options[role_id][0],
@@ -330,12 +341,13 @@ class OtherAddons(commands.Cog):
         description="Make rina add an upvote/downvote emoji to a message"
     )
     @app_commands.rename(
+        message_id_str="message_id",
         upvote_emoji_str="upvote_emoji",
         downvote_emoji_str="downvote_emoji",
         neutral_emoji_str="neutral_emoji",
     )
     @app_commands.describe(
-        message_id="What message do you want to add the votes to?",
+        message_id_str="What message do you want to add the votes to?",
         upvote_emoji_str="What emoji do you want to react first?",
         downvote_emoji_str="What emoji do you want to react second?",
         neutral_emoji_str="Neutral emoji option (placed between the "
@@ -344,7 +356,7 @@ class OtherAddons(commands.Cog):
     async def add_poll_reactions(
             self,
             itx: discord.Interaction[Bot],
-            message_id: str,
+            message_id_str: str,
             upvote_emoji_str: str,
             downvote_emoji_str: str,
             neutral_emoji_str: str | None = None
@@ -353,11 +365,29 @@ class OtherAddons(commands.Cog):
                 itx.guild, ModuleKeys.poll_reactions):
             # Server specifically disabled this feature.
             raise ModuleNotEnabledCheckFailure(ModuleKeys.poll_reactions)
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I don't know what channel you're sending this in, so I "
+                "can't find the message you're referring to either. Make "
+                "sure you're in a channel I can see!",
+                ephemeral=True
+            )
+            return
+        if isinstance(itx.channel, (discord.ForumChannel, discord.StageChannel,
+                                    discord.CategoryChannel)):
+            await itx.response.send_message(
+                "I can't add emojis to messages in this channel, because "
+                "these channels typically don't contain any messages in the "
+                "first place. Make sure you're running this command in the "
+                "correct channel!",
+                ephemeral=True
+            )
+            return
 
         errors = []
         message: None | discord.Message = None  # happy IDE
-        if message_id.isdecimal():
-            message_id = int(message_id)
+        if message_id_str.isdecimal():
+            message_id = int(message_id_str)
             try:
                 message = await itx.channel.fetch_message(message_id)
             except discord.errors.NotFound:
@@ -388,12 +418,14 @@ class OtherAddons(commands.Cog):
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! "
                               "(perhaps it's a nitro emoji)")
+        else:
+            neutral_emoji = None
 
         blacklisted_channels = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.poll_reaction_blacklisted_channels)
 
-        if (blacklisted_channels is not None and
-                itx.channel.id in blacklisted_channels):
+        if (blacklisted_channels is not None
+                and itx.channel.id in blacklisted_channels):
             errors.append("- :no_entry: You are not allowed to use this "
                           "command in this channel!")
 
@@ -496,9 +528,16 @@ class OtherAddons(commands.Cog):
     @app_commands.autocomplete(role_name=_role_autocomplete)
     @module_enabled_check(ModuleKeys.remove_role_command)
     async def remove_role(self, itx: discord.Interaction[Bot], role_name: str):
-        itx.user: discord.Member  # noqa
-        # It shouldn't be a discord.User cause the app_command check
-        #  prevents DMs.
+        if isinstance(itx.user, discord.User):
+            # It shouldn't be a discord.User cause the app_command check
+            #  prevents DMs. But to make the type checker happy, here you go.
+            await itx.response.send_message(
+                "The bot did not see you as Member of a server, so I couldn't "
+                "remove any roles from you! Make sure you're running this in "
+                "the channel of a server.",
+                ephemeral=True
+            )
+            return
 
         role_options = {
             "npa": ["NPA", 1126160553145020460],

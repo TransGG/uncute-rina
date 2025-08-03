@@ -13,7 +13,8 @@ from resources.customs import Bot
 from resources.checks import (
     InsufficientPermissionsCheckFailure,
     CommandDoesNotSupportDMsCheckFailure,
-    ModuleNotEnabledCheckFailure, MissingAttributesCheckFailure
+    ModuleNotEnabledCheckFailure,
+    MissingAttributesCheckFailure,
 )
 from resources.checks import is_admin
 from resources.utils import debug, log_to_guild

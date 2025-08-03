@@ -37,8 +37,8 @@ class QOTW(commands.Cog):
                 special_request_string = "contact staff directly."
             await itx.response.send_message(
                 "Please make your question shorter! (400 characters). "
-                "If you have a special request, please " +
-                special_request_string, ephemeral=True)
+                "If you have a special request, please "
+                + special_request_string, ephemeral=True)
             await itx.followup.send("-# " + question, ephemeral=True)
             return
 

@@ -55,8 +55,8 @@ def try_store_vc_rename(
             # (discord allows 2 renames in 10 minutes but can queue
             #  rename events, hence the voice channel rename ratelimit)
             recently_renamed_vcs[channel_id] = \
-                recently_renamed_vcs[channel_id] \
-                    [VOICE_CHANNEL_RENAME_RATELIMIT:]
+                recently_renamed_vcs[channel_id][
+                VOICE_CHANNEL_RENAME_RATELIMIT:]
     else:
         # create and continue command
         recently_renamed_vcs[channel_id] = []

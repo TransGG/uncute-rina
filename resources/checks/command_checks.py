@@ -32,7 +32,7 @@ def is_in_dms(guild: discord.Guild | int | None) -> bool:
 def module_enabled_check(
         module_key
 ) -> Callable[[CommandCallback[Any, ..., Any]],
-     CommandCallback[GroupT, P, T]]:
+              CommandCallback[GroupT, P, T]]:
     """
     A check to check if a module is enabled.
 
@@ -58,7 +58,7 @@ def module_enabled_check(
         if itx.client.is_module_enabled(itx.guild, module_key):
             return True
         raise ModuleNotEnabledCheckFailure(module_key)
-    
+
     def decor_check1(
             func: CommandCallback[Any, ..., Any]
     ) -> CommandCallback[GroupT, P, T]:
@@ -74,7 +74,7 @@ def not_in_dms_check(
     def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
         A check to check if the command/interaction was run in DMs.
-    
+
         :param itx: The interaction to check.
         :return: ``True`` if the interaction was not in a DM, else an
          exception.
@@ -84,7 +84,7 @@ def not_in_dms_check(
         if is_in_dms(itx.guild):
             raise CommandDoesNotSupportDMsCheckFailure()
         return True
-    
+
     app_commands.check(decor_check)(func)
     return func
 

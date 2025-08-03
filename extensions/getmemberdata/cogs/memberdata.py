@@ -20,7 +20,7 @@ async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
     data = await collection.find_one(query)
     if data is None:
         await collection.insert_one(query)
-        data = await collection.find_one(query)
+        data = query
 
     try:
         # see if this user already has data, if so, add a new joining
@@ -216,10 +216,12 @@ class MemberData(commands.Cog):
                     # remove the '0' line from before tracking
                     #  verifiedness of people after leaving
                     if (
-                            (min_time > 1700225500 and y == "left") or
+                            (min_time > 1700225500 and y == "left")
                             # ^ backwards compatability
-                            (min_time < 1700225000 and y == "left verified") or
-                            (min_time < 1700225000 and y == "left unverified")
+                            or (min_time < 1700225000
+                                and y == "left verified")
+                            or (min_time < 1700225000
+                                and y == "left unverified")
                     ):
                         # todo: consider just migrating all 'left' to
                         #  left-verified.
@@ -263,9 +265,9 @@ class MemberData(commands.Cog):
                 "verified": "b"
             }
             for graph in df:
-                if graph == "time":
+                if str(graph) == "time":
                     continue
-                ax1.plot(df['time'], df[graph], color[graph], label=graph)
+                ax1.plot(df['time'], df[graph], color[str(graph)], label=graph)
             ax1.legend()
             if doubles:
                 re_text = "inc"

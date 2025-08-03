@@ -55,7 +55,7 @@ def _parse_watchlist_string_message_id(
 
 async def _create_uncool_watchlist_thread(
         client: Bot,
-        user: discord.Member,
+        user: discord.Member | discord.User,
         watch_channel: discord.TextChannel
 ) -> tuple[discord.Message, discord.Thread]:
     """
@@ -132,9 +132,9 @@ async def _update_uncool_watchlist_embed(
 
 async def _add_to_watchlist(
         itx: discord.Interaction[Bot],
-        user: discord.Member,
+        user: discord.Member | discord.User,
         reason: str = "",
-        message_id: str | None = None,
+        message_id_str: str | None = None,
         warning=""
 ):
     if not is_staff(itx, itx.user):
@@ -157,7 +157,7 @@ async def _add_to_watchlist(
     #  reported user, used in case you want to report someone but want
     #  to use someone else's message as evidence or context.
     message_id, allow_different_report_author = \
-        _parse_watchlist_string_message_id(message_id)
+        _parse_watchlist_string_message_id(message_id_str)
 
     if len(reason) > 4000:
         # embeds have 4096 description length limit (and 6000 total
@@ -257,7 +257,7 @@ async def _add_to_watchlist(
         # fetch thread, in case the thread was archived (not in cache)
         thread: discord.Thread = await watch_channel.guild.fetch_channel(
             watchlist_thread_id)  # type: ignore
-        
+
         # fetch message the thread is attached to (fetch, in case msg
         #  is not in cache)
         msg = await watch_channel.fetch_message(watchlist_thread_id)

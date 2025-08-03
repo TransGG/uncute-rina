@@ -38,9 +38,9 @@ async def _add_to_emoji_data(
         await collection.insert_one(query)
 
     if location == EmojiSendSource.MESSAGE:
-        location = "messageUsedCount"
+        location_str = "messageUsedCount"
     elif location == EmojiSendSource.REACTION:
-        location = "reactionUsedCount"
+        location_str = "reactionUsedCount"
     else:
         raise ValueError("Cannot add to database since the location of "
                          "the reaction isn't defined correctly.")
@@ -48,7 +48,7 @@ async def _add_to_emoji_data(
     # Increment the usage of the emoji in the dictionary, depending
     #  on where it was used (see $location above).
     await collection.update_one(
-        query, {"$inc": {location: 1}}, upsert=True)
+        query, {"$inc": {location_str: 1}}, upsert=True)
     await collection.update_one(
         query,
         {"$set": {"lastUsed": datetime.now().timestamp(),
@@ -179,11 +179,12 @@ class EmojiStats(commands.Cog):
         last_used_time_string = last_used_time.strftime(
             '%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S (UTC)')
         await itx.response.send_message(
-            f"Data for {emote}" + f"  ({emote})\n".replace(':', '\\:') +
-            f"messageUsedCount: {msg_used}\n"
-            f"reactionUsedCount: {reaction_used}\n"
-            f"Animated: {animated}\n"
-            f"Last used: {last_used_time_string}",
+            f"Data for {emote}"
+            + f"  ({emote})\n".replace(':', '\\:')
+            + f"messageUsedCount: {msg_used}\n"
+              f"reactionUsedCount: {reaction_used}\n"
+              f"Animated: {animated}\n"
+              f"Last used: {last_used_time_string}",
             ephemeral=True)
 
     @emojistats.command(name="get_unused_emojis",
@@ -233,7 +234,7 @@ class EmojiStats(commands.Cog):
         # Can also be written as:
         #  [x for x in collection if x.get(messageUsedCount,0)
         #   + x.get(reactionUsedCount,0) <= used_max]
-        query = {
+        query: dict = {
             "$expr": {
                 "$lte": [
                     {"$add": [

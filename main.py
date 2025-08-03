@@ -134,14 +134,14 @@ def get_token_data() -> tuple[
     async_rina_db: motorcore.AgnosticDatabase  # = cluster["Rina"]
     async_rina_db = cluster.get_database("Rina", codec_options=codec_options)
     load_progress.complete("Loaded database clusters", newline=False)
-    
+
     return bot_token, tokens, rina_db, async_rina_db
 
 
 def get_version() -> str:
     """
     Get the bot's version as dot-separated string, like 1.0.2.0.0
-    
+
     Dumb code for cool version updates. It reads the version file and matches
     it with the current version string. Updates file if string is newer, and
     adds another ".%d" for how often the bot has been started in this version.

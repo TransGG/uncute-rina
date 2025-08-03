@@ -1,6 +1,8 @@
+import typing
+
 import discord
 
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 
 class CreateTagModal(discord.ui.Modal):
@@ -38,7 +40,21 @@ class CreateTagModal(discord.ui.Modal):
     def __init__(self):
         super().__init__(title="Create a custom tag.")
 
-        self.return_interaction: discord.Interaction[Bot] | None = None
+        self.return_interaction: GuildInteraction[Bot] | None = None
 
-    async def on_submit(self, interaction: discord.Interaction[Bot]):
-        self.return_interaction = interaction
+    async def on_submit(self, itx: discord.Interaction[Bot]):  # pyright: ignore [reportIncompatibleMethodOverride] # noqa
+        itx.response: discord.InteractionResponse  # type: ignore
+        if itx.guild is None:
+            await itx.response.send_message(
+                "Discord did not provide any Guild information when you "
+                "submitted this modal. Make sure you ran this in a server and "
+                "weren't kicked out halfway through or something. If you "
+                "think this is unintended, please report it to TransPlace"
+                "staff/developers.",
+                ephemeral=True,
+            )
+            return
+
+        assert itx.guild is not None
+        guild_itx = typing.cast(GuildInteraction[Bot], itx)
+        self.return_interaction = guild_itx

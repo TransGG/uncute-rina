@@ -179,9 +179,9 @@ class DevRequest(commands.Cog):
                 not_found_count += 1
                 continue  # thread starter message was removed.
 
-            if (starter_message is None or
-                    not itx.client.is_me(starter_message.author) or
-                    len(starter_message.embeds) == 0):
+            if (starter_message is None
+                    or not itx.client.is_me(starter_message.author)
+                    or len(starter_message.embeds) == 0):
                 ignored_count += 1
                 continue
             if starter_message.embeds[0].color in [emoji_color_options["🟡"],
@@ -234,7 +234,8 @@ class DevRequest(commands.Cog):
                 ModuleKeys.dev_requests,
                 [AttributeKeys.developer_request_channel])
 
-        if dev_request_channel.id != payload.channel_id:
+        if (dev_request_channel.id != payload.channel_id
+                or payload.member is None):
             return
 
         if getattr(payload.emoji, "name", None) not in emoji_color_options:

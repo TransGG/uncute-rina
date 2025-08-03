@@ -349,10 +349,13 @@ class SearchAddons(commands.Cog):
             view = SendPublicButtonMath()
             await itx.followup.send(
                 f"Input\n> {interpreted_input}\n"
-                f"Result:\n> {output}" +
-                other_results +
-                alternatives +
-                warnings, view=view, ephemeral=True)
+                f"Result:\n> {output}"
+                + other_results
+                + alternatives
+                + warnings,
+                view=view,
+                ephemeral=True
+            )
             await view.wait()
             if view.value is None:
                 await itx.edit_original_response(view=None)

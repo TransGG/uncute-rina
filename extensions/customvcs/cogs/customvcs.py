@@ -282,13 +282,13 @@ class CustomVcs(commands.Cog):
                 and type(after.channel) is discord.VoiceChannel
                 and after.channel == customvc_hub
         ):
-                await _create_new_custom_vc(
-                    self.client,
-                    member,
-                    after.channel,
-                    customvc_category,
-                    customvc_hub
-                )
+            await _create_new_custom_vc(
+                self.client,
+                member,
+                after.channel,
+                customvc_category,
+                customvc_hub
+            )
 
     @app_commands.command(
         name="editvc",
@@ -396,7 +396,6 @@ class CustomVcs(commands.Cog):
                     ephemeral=True)
                 return
 
-        limit_info = ""
         old_name = channel.name
         old_limit = channel.user_limit
         try:
@@ -408,7 +407,7 @@ class CustomVcs(commands.Cog):
             if not limit and name:
                 await channel.edit(
                     reason=f"Voice channel renamed from \"{channel.name}\" "
-                           f"to \"{name}\"{limit_info}",
+                           f"to \"{name}\"",
                     name=str(name)  # apparently literals aren't strings...?
                 )
                 username = getattr(itx.user, 'nick', None) or itx.user.name
@@ -436,8 +435,8 @@ class CustomVcs(commands.Cog):
                     itx.guild,
                     f"Voice channel \"{old_name}\" ({channel.id}) edited the "
                     f"user limit from \"{old_limit}\" to \"{limit}\" "
-                    f"(by {getattr(itx.user, "nick") or itx.user.name}, {itx.user.id})"
-                    f"{limit_info}"
+                    f"(by {getattr(itx.user, "nick") or itx.user.name}, "
+                    f"{itx.user.id})"
                 )
                 await itx.response.send_message(
                     warning + f"Voice channel user limit for \"{old_name}\" "
@@ -452,7 +451,7 @@ class CustomVcs(commands.Cog):
                            f"\"{channel.name}\" to \"{name}\" and user limit "
                            f"from \"{limit}\" to \"{old_limit}\"",
                     user_limit=limit,
-                    name=name
+                    name=str(name)  # Literal is apparently not a string?
                 )
                 username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
@@ -461,7 +460,7 @@ class CustomVcs(commands.Cog):
                     f"{username} ({itx.user.id}) "
                     f"changed VC ({channel.id}) name \"{old_name}\" to "
                     f"\"{name}\" and user limit from \"{old_limit}\" to "
-                    f"\"{limit}\"{limit_info}"
+                    f"\"{limit}\""
                 )
                 await itx.response.send_message(
                     warning + "Voice channel name and user limit "

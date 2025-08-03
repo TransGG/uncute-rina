@@ -51,7 +51,7 @@ def get_attribute_autocomplete_mode(
 async def _setting_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
@@ -82,8 +82,8 @@ async def _setting_autocomplete(
 async def _mode_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue]
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa
 
     types = [ModeAutocomplete.view]
 
@@ -129,11 +129,10 @@ async def _value_autocomplete(
 ) -> list[app_commands.Choice[str]]:
     if itx.guild is None:
         raise CommandDoesNotSupportDMsCheckFailure()
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue]
-    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # pyright: ignore [reportAttributeAccessIssue]
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue]
-    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue]
-
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue] # noqa
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
             app_commands.Choice(
@@ -164,23 +163,23 @@ async def _value_autocomplete(
             return [app_commands.Choice(name="Invalid setting given.",
                                         value="-")]
 
-        results = []
-        if issubclass(attribute_type, discord.Guild):
+        results: list[app_commands.Choice] = []
+        if discord.Guild in attribute_type:
             # iterate all guilds
             for guild in itx.client.guilds:
                 if (current.lower() in guild.name.lower()
                         or str(guild.id).startswith(current)):
-                    results.append(app_commands.Choice(name=guild.name,
-                                                       value=str(guild.id)))
-        elif issubclass(attribute_type, discord.User):
+                    results.append(app_commands.Choice(
+                        name=guild.name, value=str(guild.id)))
+        if discord.User in attribute_type:
             # Note: discord.User is a subclass of discord.abc.Messageable,
             #  so should be tested before that too.
             # iterate guild members
             for member in itx.guild.members:
                 if (current.lower() in member.name.lower()
                         or str(member.id).startswith(current)):
-                    results.append(app_commands.Choice(name=member.name,
-                                                       value=str(member.id)))
+                    results.append(app_commands.Choice(
+                        name=member.name, value=str(member.id)))
                 if len(results) > 20:
                     break
             # from user id
@@ -201,7 +200,10 @@ async def _value_autocomplete(
             # from channel id
             if current.isdecimal():
                 potential_channel = itx.client.get_channel(int(current))
-                if potential_channel is not None:
+                if (potential_channel is not None
+                        and not isinstance(potential_channel,
+                                           discord.abc.PrivateChannel)
+                ):
                     results.append(app_commands.Choice(
                         name=potential_channel.name,
                         value=str(potential_channel.id))
@@ -381,12 +383,9 @@ async def _handle_settings_attribute(
             )
             return
 
-        if hasattr(attribute, "id"):
-            # guild, channel, emoji, role, user
-            database_value = getattr(attribute, "id")
-        else:
-            # int, str
-            database_value = attribute
+        # [guild, channel, emoji, role, user] if it has an id
+        # else [int, str], for example
+        database_value = getattr(attribute, "id", attribute)
 
         if setting == AttributeKeys.parent_server:
             # Check if the given server or one of its parents has this server
@@ -492,13 +491,13 @@ async def _handle_settings_attribute(
              "database and get more information about the problem:"
              + ex.message
              )[:2000],
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
     await itx.followup.send(
         f"Successfully modified the value for '{setting}'!",
-        ephemeral=True
+        ephemeral=True,
     )
 
 
@@ -513,6 +512,8 @@ async def _reload_or_store_server_settings(
     :param guild: The guild you want to refresh or add server
      settings to.
     """
+    if client.server_settings is None:
+        raise ParseError("No server settings have been loaded yet!")
     if guild.id in client.server_settings:
         await client.server_settings[guild.id].reload(client)
     else:
@@ -571,7 +572,7 @@ async def _handle_settings_module(
             await itx.response.send_message(
                 "No settings have been loaded yet! Please wait a little bit, "
                 "or message @mysticmia about this error message.",
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
@@ -592,7 +593,7 @@ async def _handle_settings_module(
             ("Here is a list of modules you can set, and their values.\n"
              + enabled_modules_string + disabled_modules_string + help_str
              )[:2000],
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -612,7 +613,7 @@ async def _handle_settings_module(
             "autocomplete cache (discord is silly) (on Desktop at least). "
             "Otherwise reopen the app, maybe that works.\n"
             + help_str,
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -621,7 +622,7 @@ async def _handle_settings_module(
         state_str = 'Enabled' if module_enabled else 'Disabled'
         await itx.response.send_message(
             f"The module '{setting}' is currently '{state_str}'.",
-            ephemeral=True
+            ephemeral=True,
         )
         return
     elif modify_mode == ModeAutocomplete.enable:
@@ -633,7 +634,7 @@ async def _handle_settings_module(
             "That is not a valid mode for this setting!"
             "When setting the mode for a Module, it must be either"
             "'Enable', 'Disable', or 'View'.",
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -646,7 +647,7 @@ async def _handle_settings_module(
             "This module is already "
             + ("enabled" if enable else "disabled")
             + "!\n" + help_str,
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -663,7 +664,7 @@ async def _handle_settings_module(
              "the database and get more information about the problem:"
              + ex.message
              )[:2000],
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -677,7 +678,7 @@ class SettingsCog(commands.Cog):
 
     migrate_group = app_commands.Group(
         name="migrate",
-        description="A grouping of migrate commands."
+        description="A grouping of migrate commands.",
     )
     #
     # @app_commands.check(is_admin_check)

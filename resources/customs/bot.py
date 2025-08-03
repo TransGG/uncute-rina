@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 T = TypeVar('T')
 G = TypeVar('G')
 
+
 class Bot(commands.Bot):
     # bot uptime start, used in /version in cmd_staffaddons
     startup_time = datetime.now().astimezone()
@@ -87,7 +88,7 @@ class Bot(commands.Bot):
                     )
                 if subcommand_group is None:
                     return subgroup.mention
-                
+
                 # now it technically searches subcommand in
                 #  subcmdgroup.options but to remove additional
                 #  renaming of variables, it stays as is.
@@ -158,7 +159,7 @@ class Bot(commands.Bot):
             #  doesn't have any settings (perhaps the bot was recently
             #  added).
             if len(args) > 1:
-                return [default] * len(args)
+                return [default for _ in args]
             return default
 
         attributes = self.server_settings[guild_id].attributes

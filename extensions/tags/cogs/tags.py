@@ -63,7 +63,7 @@ async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
     return []
 
 
-async def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
+def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
     """
     Helper for parsing r,g,b input for embed colors.
 
@@ -211,38 +211,13 @@ class TagFunctions(commands.Cog):
                 # interaction aborted
                 return
             itx = create_tag_modal.return_interaction
-
-            title = create_tag_modal.embed_title.value
-            description = create_tag_modal.description.value
-            description = replace_string_command_mentions(
-                description, itx.client)
-            color = create_tag_modal.color.value
-            report_to_staff = create_tag_modal.report_to_staff.value
-
-            if color is None:
-                color = "0,0,0"  # #000000 is default embed color.
+            assert itx.guild is not None
             try:
-                color_tuple = await _parse_embed_color_input(color)
+                color_tuple, description, report_to_staff, title = \
+                    self._parse_tag_information(create_tag_modal, itx)
             except ValueError as ex:
-                cmd_help = itx.client.get_command_mention_with_args(
-                    'help', page="901")
-                await itx.response.send_message(
-                    f"Invalid color:\n"
-                    f"> {ex}\n"
-                    f"For more help, run {cmd_help}.",
-                    ephemeral=True
-                )
+                await itx.response.send_message(ex, ephemeral=True)
                 return
-            if report_to_staff.lower() not in ["true", "false"]:
-                await itx.response.send_message(
-                    f"Invalid boolean for `report_to_staff`:"
-                    f"Expected either `True`, `true`, `False`, or `false`\n"
-                    f"but received `{report_to_staff}`.`",
-                    ephemeral=True
-                )
-                return
-            report_to_staff = report_to_staff.lower() == "true"
-
             await create_tag(
                 itx.client.async_rina_db, itx.guild, tag_name,
                 title, description, color_tuple, report_to_staff
@@ -263,3 +238,32 @@ class TagFunctions(commands.Cog):
         else:
             await itx.response.send_message(
                 f"'{mode}' is not a valid mode.", ephemeral=True)
+
+    @staticmethod
+    def _parse_tag_information(create_tag_modal, itx):
+        title = create_tag_modal.embed_title.value
+        description = create_tag_modal.description.value
+        description = replace_string_command_mentions(
+            description, itx.client)
+        color = create_tag_modal.color.value
+        report_to_staff = create_tag_modal.report_to_staff.value
+        try:
+            color_tuple = _parse_embed_color_input(
+                color or "0,0,0"  # #000000 is default embed color.
+            )  # raises ValueError
+        except ValueError as ex:
+            cmd_help = itx.client.get_command_mention_with_args(
+                'help', page="901")
+            raise ValueError(
+                f"Invalid color:\n"
+                f"> {ex}\n"
+                f"For more help, run {cmd_help}.",
+            )
+        if report_to_staff.lower() not in ["true", "false"]:
+            raise ValueError(
+                f"Invalid boolean for `report_to_staff`:"
+                f"Expected either `True`, `true`, `False`, or `false`\n"
+                f"but received `{report_to_staff}`.`",
+            )
+        report_to_staff = report_to_staff.lower() == "true"
+        return color_tuple, description, report_to_staff, title

@@ -28,11 +28,11 @@ def test_matching_keys():
 @pytest.mark.parametrize("attribute", ServerAttributes.__annotations__.keys())
 def test_attribute_types(attribute: str):
     attribute_type = ServerAttributes.__annotations__[attribute]
-    
+
     origin = typing.get_origin(attribute_type)
     assert (origin is UnionType
             or origin is list)
-    
+
     if origin is UnionType:
         # It must be of the form "type1 | type2 | ... | None".
         #  with at least 1 type and 1 None.
@@ -56,7 +56,7 @@ def test_attribute_types(attribute: str):
         for sub_type in typing.get_args(attribute_type):
             assert sub_type is not NoneType
             assert sub_type is not list
-            
+
             if sub_type is UnionType:
                 for list_subtype in typing.get_args(sub_type):
                     assert typing.get_origin(list_subtype) is not list
@@ -79,7 +79,6 @@ def test_get_attribute_types(
         expected_output: tuple[list[type] | None, bool]
 ):
     assert get_attribute_type(attribute) == expected_output
-
 
 
 def test_attribute_key_attribute_match_value():
