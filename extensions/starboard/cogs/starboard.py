@@ -608,7 +608,8 @@ class Starboard(commands.Cog):
                 if value is None]
             raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
-        if (self.client.is_me(payload.member)
+        if (
+                self.client.is_me(payload.member)
                 or (getattr(payload.emoji, "id", None) != starboard_emoji.id
                     and getattr(payload.emoji, "name", None) != "❌")
         ):

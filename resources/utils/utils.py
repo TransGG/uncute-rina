@@ -2,7 +2,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 # ^ for logging, to show log time; and for parsetime
 import logging  # for debug (logger.info)
-import warnings  # for debug (if given wrong color)
 from typing import TYPE_CHECKING
 
 import discord
@@ -14,7 +13,7 @@ from extensions.settings.objects import (
 )
 from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
-from resources.utils import DebugColor
+from .debugcolor import DebugColor
 
 if TYPE_CHECKING:
     from resources.customs import Bot, GuildInteraction
@@ -27,8 +26,6 @@ def debug(
         end="\n",
         advanced=False
 ) -> None:
-    # todo make all debug calls use DebugColor instead of string
-    #  for `color`
     """
     Log a message to the console.
 
@@ -192,12 +189,15 @@ async def log_to_guild(
                 attribute_raw = str(entry["attribute_ids"].get(
                     AttributeKeys.log_channel, "<no attribute data>"))  # noqa
 
-        debug("Exception in log_channel (log_channel could not be loaded):\n"
-              "    guild: " + repr(guild) +
-              "\n"
-              "    log_channel_id: " + attribute_raw +
-              "\n"
-              "    log message: " + msg, color=DebugColor.orange)
+        debug(
+            "Exception in log_channel (log_channel could not be loaded):\n"
+            "    guild: " + repr(guild)
+            + "\n    log_channel_id: "
+            + attribute_raw
+            + "\n    log message: "
+            + msg,
+            color=DebugColor.orange
+        )
         return False
 
     await log_channel.send(

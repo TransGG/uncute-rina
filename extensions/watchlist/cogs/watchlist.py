@@ -467,7 +467,9 @@ class WatchList(commands.Cog):
                 AttributeKeys.badeline_bot,
                 AttributeKeys.watchlist_channel
             )
-        if None in (staff_logs_category, badeline_bot, watchlist_channel):
+        if (staff_logs_category is None
+                or badeline_bot is None
+                or watchlist_channel is None):
             missing = [key for key, value in {
                 AttributeKeys.staff_logs_category: staff_logs_category,
                 AttributeKeys.badeline_bot: badeline_bot,
@@ -480,7 +482,7 @@ class WatchList(commands.Cog):
             #  a discord.Member, whereas badeline_bot would be a discord.User
             return
 
-        if message.channel.category != staff_logs_category:
+        if getattr(message.channel, "category", None) != staff_logs_category:
             return
         if type(message.channel) is discord.Thread:
             # ignore the #rules channel with its threads
@@ -530,6 +532,9 @@ class WatchList(commands.Cog):
             user_id = get_user_id_from_watchlist(
                 event.guild_id, event.thread_id)
         except WatchlistNotLoadedException:
+            return
+
+        if user_id is None:
             return
 
         await remove_watchlist(self.client.async_rina_db,
