@@ -6,6 +6,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.addons.wolframresult import WolframResult, WolframQueryResult
 from resources.customs import Bot
 
 from extensions.addons.equaldexregion import EqualDexRegion
@@ -19,6 +20,151 @@ from extensions.addons.views.math_sendpublicbutton import (
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
+
+
+def format_wolfram_success_output(data: WolframQueryResult) -> str:
+    interpreted_input = ""
+    output = ""
+    other_primary_outputs = []
+    error_or_nodata = 0
+
+    for pod in data["pods"]:
+        subpods = []
+        if pod["id"] == "Input":
+            for subpod in pod["subpods"]:
+                subpods.append(
+                    subpod["plaintext"].replace("\n", "\n>     ")
+                )
+            interpreted_input = '\n> '.join(subpods)
+        if pod["id"] == "Result":
+            for subpod in pod["subpods"]:
+                if subpod.get("nodata") or subpod.get("error"):
+                    # error or nodata == True
+                    error_or_nodata += 1
+                subpods.append(
+                    subpod["plaintext"].replace("\n", "\n>     ")
+                )
+            output = '\n> '.join(subpods)
+        elif pod.get("primary", False):
+            for subpod in pod["subpods"]:
+                if len(subpod["plaintext"]) == 0:
+                    continue
+                if subpod.get("nodata") or subpod.get("error"):
+                    # error or nodata == True
+                    error_or_nodata += 1
+                other_primary_outputs.append(
+                    subpod["plaintext"].replace("\n", "\n>     ")
+                )
+    if len(output) == 0 and len(other_primary_outputs) == 0:
+        error_or_nodata = 0
+        # if there is no result and all other pods are
+        #  'primary: False'
+        for pod in data["pods"]:
+            if pod["id"] not in ["Input", "Result"]:
+                for subpod in pod["subpods"]:
+                    if len(subpod["plaintext"]) == 0:
+                        continue
+                    if subpod.get("nodata") or subpod.get("error"):
+                        # error or nodata == True
+                        error_or_nodata += 1
+                    other_primary_outputs.append(
+                        subpod["plaintext"].replace("\n", "\n>     ")
+                    )
+    if len(other_primary_outputs) > 0:
+        other_results = '\n> '.join(other_primary_outputs)
+        other_results = "\nOther results:\n> " + other_results
+    else:
+        other_results = ""
+    data_count = len(other_primary_outputs) + bool(len(output))
+    if data_count <= error_or_nodata:
+        raise ValueError(
+            "There was no data for your answer!\n"
+            "It seems all your answers had an error or were "
+            "'nodata entries', meaning you might need to try a "
+            "different query to get an answer to your question!"
+        )
+
+    assumptions = []
+    if "assumptions" in data:
+        if type(data["assumptions"]) is dict:
+            # only 1 assumption, instead of a list. So just make
+            #  a list of 1 assumption instead.
+            data["assumptions"] = [data["assumptions"]]
+        for assumption in data.get("assumptions", []):
+            assumption_data = {}
+            # because Wolfram|Alpha is being annoyingly
+            #  inconsistent.
+            if "word" in assumption:
+                assumption_data["${word}"] = assumption["word"]
+            if type(assumption["values"]) is dict:
+                # only 1 value, instead of a list. So just make
+                #  a list of 1 value instead.
+                assumption["values"] = [assumption["values"]]
+            for value_index in range(len(assumption["values"])):
+                word_id = str(value_index + 1)
+                assumption_data["${desc" + word_id + "}"] \
+                    = assumption["values"][value_index]["desc"]
+                try:
+                    assumption_data["${word" + word_id + "}"] \
+                        = assumption["values"][value_index]["word"]
+                except KeyError:
+                    # the "word" variable is only there
+                    #  sometimes. for some stupid reason.
+                    pass
+
+            if "template" in assumption:
+                template: str = assumption["template"]
+                for replacer in assumption_data:
+                    template = template.replace(
+                        replacer, assumption_data[replacer]
+                    )
+                if template.endswith("."):
+                    template = template[:-1]
+                assumptions.append(template + "?")
+            else:
+                template: str = (
+                        assumption["type"]
+                        + " - "
+                        + assumption["desc"]
+                        + " (todo)"
+                )
+                assumptions.append(template)
+    if len(assumptions) > 0:
+        alternatives = "\nAssumptions:\n> " + '\n> '.join(assumptions)
+    else:
+        alternatives = ""
+    warnings = []
+    if "warnings" in data:
+        # not sure if multiple warnings will be stored into a
+        #  list instead.
+        # Edit: Turns out they do.
+        if type(data["warnings"]) is list:
+            for warning in data["warnings"]:
+                warnings.append(warning["text"])
+        else:
+            warnings.append(data["warnings"]["text"])
+    if len(data.get("timedout", "")) > 0:
+        warnings.append(
+            "Timed out: "
+            + data["timedout"].replace(",", ", ")
+        )
+    if len(data.get("timedoutpods", "")) > 0:
+        warnings.append(
+            "Timed out pods: "
+            + data["timedout"].replace(",", ", ")
+        )
+    if len(warnings) > 0:
+        warnings = ("\nWarnings:\n> "
+                    + '\n> '.join(warnings))
+    else:
+        warnings = ""
+    return (
+        f"Input\n> {interpreted_input}\n"
+        f"Result:\n> {output}"
+        + other_results
+        + alternatives
+        + warnings
+    )
 
 
 class SearchAddons(commands.Cog):
@@ -174,20 +320,6 @@ class SearchAddons(commands.Cog):
                 ephemeral=True
             )
             return
-        if "&" in query:
-            await itx.followup.send(
-                "Your query cannot contain an ampersand (&/and symbol)! "
-                "(it can mess with the URL)\n"
-                "For the bitwise 'and' operator, try replacing '&' with "
-                "' bitwise and '. "
-                "Example '4 & 6' -> '4 bitwise and 6'\n"
-                "For other uses, try replacing the ampersand with 'and' "
-                "or the word(s) it symbolizes.",
-                ephemeral=True
-            )
-            return
-        # pluses are interpreted as a space (`%20`) in urls. In LaTeX,
-        #  that can mean multiply.
         api_key = itx.client.api_tokens['Wolfram Alpha']
         params = {
             "appid": api_key,
@@ -195,7 +327,7 @@ class SearchAddons(commands.Cog):
             "output": "json",
         }
         try:
-            data = requests.get(
+            api_response: WolframResult = requests.get(
                 "https://api.wolframalpha.com/v2/query",
                 params=params
             ).json()
@@ -207,151 +339,20 @@ class SearchAddons(commands.Cog):
             )
             return
 
-        data = data["queryresult"]
-        if data["success"]:
-            interpreted_input = ""
-            output = ""
-            other_primary_outputs = []
-            error_or_nodata = 0
-            for pod in data["pods"]:
-                subpods = []
-                if pod["id"] == "Input":
-                    for subpod in pod["subpods"]:
-                        subpods.append(
-                            subpod["plaintext"].replace("\n", "\n>     ")
-                        )
-                    interpreted_input = '\n> '.join(subpods)
-                if pod["id"] == "Result":
-                    for subpod in pod["subpods"]:
-                        if subpod.get("nodata") or subpod.get("error"):
-                            # error or nodata == True
-                            error_or_nodata += 1
-                        subpods.append(
-                            subpod["plaintext"].replace("\n", "\n>     ")
-                        )
-                    output = '\n> '.join(subpods)
-                elif pod.get("primary", False):
-                    for subpod in pod["subpods"]:
-                        if len(subpod["plaintext"]) == 0:
-                            continue
-                        if subpod.get("nodata") or subpod.get("error"):
-                            # error or nodata == True
-                            error_or_nodata += 1
-                        other_primary_outputs.append(
-                            subpod["plaintext"].replace("\n", "\n>     ")
-                        )
-            if len(output) == 0 and len(other_primary_outputs) == 0:
-                error_or_nodata = 0
-                # if there is no result and all other pods are
-                #  'primary: False'
-                for pod in data["pods"]:
-                    if pod["id"] not in ["Input", "Result"]:
-                        for subpod in pod["subpods"]:
-                            if len(subpod["plaintext"]) == 0:
-                                continue
-                            if subpod.get("nodata") or subpod.get("error"):
-                                # error or nodata == True
-                                error_or_nodata += 1
-                            other_primary_outputs.append(
-                                subpod["plaintext"].replace("\n", "\n>     ")
-                            )
-            if len(other_primary_outputs) > 0:
-                other_results = '\n> '.join(other_primary_outputs)
-                other_results = "\nOther results:\n> " + other_results
-            else:
-                other_results = ""
-            data_count = len(other_primary_outputs) + bool(len(output))
-            if data_count <= error_or_nodata:
-                # if there are more or an equal amount of errors as
-                #  there are text entries
+        data: WolframQueryResult = api_response["queryresult"]
+        if data.get("success", False):
+            try:
+                output_string = format_wolfram_success_output(data)
+            except ValueError as ex:
                 await itx.followup.send(
-                    "There was no data for your answer!\n"
-                    "It seems all your answers had an error or were "
-                    "'nodata entries', meaning you might need to try a "
-                    "different query to get an answer to your question!",
-                    ephemeral=True)
+                    str(ex),
+                    ephemeral=True
+                )
                 return
-            assumptions = []
-            if "assumptions" in data:
-                if type(data["assumptions"]) is dict:
-                    # only 1 assumption, instead of a list. So just make
-                    #  a list of 1 assumption instead.
-                    data["assumptions"] = [data["assumptions"]]
-                for assumption in data.get("assumptions", []):
-                    assumption_data = {}
-                    # because Wolfram|Alpha is being annoyingly
-                    #  inconsistent.
-                    if "word" in assumption:
-                        assumption_data["${word}"] = assumption["word"]
-                    if type(assumption["values"]) is dict:
-                        # only 1 value, instead of a list. So just make
-                        #  a list of 1 value instead.
-                        assumption["values"] = [assumption["values"]]
-                    for value_index in range(len(assumption["values"])):
-                        word_id = str(value_index + 1)
-                        assumption_data["${desc" + word_id + "}"] \
-                            = assumption["values"][value_index]["desc"]
-                        try:
-                            assumption_data["${word" + word_id + "}"] \
-                                = assumption["values"][value_index]["word"]
-                        except KeyError:
-                            # the "word" variable is only there
-                            #  sometimes. for some stupid reason.
-                            pass
 
-                    if "template" in assumption:
-                        template: str = assumption["template"]
-                        for replacer in assumption_data:
-                            template = template.replace(
-                                replacer, assumption_data[replacer]
-                            )
-                        if template.endswith("."):
-                            template = template[:-1]
-                        assumptions.append(template + "?")
-                    else:
-                        template: str = (
-                            assumption["type"]
-                            + " - "
-                            + assumption["desc"]
-                            + " (todo)"
-                        )
-                        assumptions.append(template)
-            if len(assumptions) > 0:
-                alternatives = "\nAssumptions:\n> " + '\n> '.join(assumptions)
-            else:
-                alternatives = ""
-            warnings = []
-            if "warnings" in data:
-                # not sure if multiple warnings will be stored into a
-                #  list instead.
-                # Edit: Turns out they do.
-                if type(data["warnings"]) is list:
-                    for warning in data["warnings"]:
-                        warnings.append(warning["text"])
-                else:
-                    warnings.append(data["warnings"]["text"])
-            if len(data.get("timedout", "")) > 0:
-                warnings.append(
-                    "Timed out: "
-                    + data["timedout"].replace(",", ", ")
-                )
-            if len(data.get("timedoutpods", "")) > 0:
-                warnings.append(
-                    "Timed out pods: "
-                    + data["timedout"].replace(",", ", ")
-                )
-            if len(warnings) > 0:
-                warnings = ("\nWarnings:\n> "
-                            + '\n> '.join(warnings))
-            else:
-                warnings = ""
             view = SendPublicButtonMath()
             await itx.followup.send(
-                f"Input\n> {interpreted_input}\n"
-                f"Result:\n> {output}"
-                + other_results
-                + alternatives
-                + warnings,
+                output_string,
                 view=view,
                 ephemeral=True
             )
@@ -360,7 +361,14 @@ class SearchAddons(commands.Cog):
                 await itx.edit_original_response(view=None)
             return
         else:
-            if data["error"]:
+            if data.get("error", False) is True:
+                await itx.followup.send(
+                    f"Got an error, but no extra data... Kinda weird?",
+                    ephemeral=True,
+                )
+                return
+
+            if "error" in data and isinstance(data["error"], dict):
                 code = data["error"]["code"]
                 message = data["error"]["msg"]
                 await itx.followup.send(
@@ -368,12 +376,12 @@ class SearchAddons(commands.Cog):
                     f"to that!\n"
                     f"> code: {code}\n"
                     f"> message: {message}",
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
             elif "didyoumeans" in data:
                 didyoumeans = {}
-                if type(data["didyoumeans"]) is list:
+                if isinstance(data["didyoumeans"], list):
                     for option in data["didyoumeans"]:
                         didyoumeans[option["score"]] = option["val"]
                 else:
@@ -428,11 +436,18 @@ class SearchAddons(commands.Cog):
             else:
                 # welp. Apparently you can get *no* info in the output
                 #  as well!! UGHHHHH
+                input_string = data.get("inputstring", None)
                 await itx.followup.send(
                     "Error: No further info\n"
                     "It appears you filled in something for which I can't "
                     "get extra feedback..\n"
-                    "Feel free to report the situation to MysticMia#7612",
+                    "Feel free to report the situation to MysticMia#7612"
+                    + "\n\n"
+                      "Interpreted input:\n"
+                      "> {input_string}"
+                      if input_string is not None
+                      else ""
+                    ,
                     ephemeral=True
                 )
                 return
