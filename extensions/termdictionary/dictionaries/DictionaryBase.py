@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+import aiohttp
 import discord
 
 from resources.customs import Bot
@@ -17,7 +18,8 @@ class DictionaryBase:
     :ivar character_overflow: Indicates whether the constructed response
      exceeds Discord's character limit.
     """
-    def __init__(self):
+    def __init__(self, session: aiohttp.ClientSession) -> None:
+        self._session = session
         self.has_response = False
         self._character_overflow = False
 

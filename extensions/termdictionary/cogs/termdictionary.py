@@ -27,15 +27,15 @@ class TermDictionary(commands.Cog):
     def __init__(self):
         self._session = aiohttp.ClientSession()
         self._dictionary_sources: list[
-            tuple[DictionarySources, DictionaryBase]
+            tuple[DictionarySources, type[DictionaryBase]]
         ] = [
             # (d.CustomDictionary, CustomDictionary(client=itx.client)),
             (DictionarySources.PronounsPage,
-             PronounsPageDictionary(self._session)),
+             PronounsPageDictionary),
             (DictionarySources.DictionaryApi,
-             DictionaryApiDictionary(self._session)),
+             DictionaryApiDictionary),
             (DictionarySources.UrbanDictionary,
-             UrbanDictionary(self._session)),
+             UrbanDictionary),
         ]
 
     async def cog_unload(self):
@@ -72,6 +72,10 @@ class TermDictionary(commands.Cog):
             value=DictionarySources.UrbanDictionary.value
         ),
     ])
+    @app_commands.allowed_installs(
+        guilds=True, users=True)
+    @app_commands.allowed_contexts(
+        guilds=True, private_channels=True, dms=True)
     async def dictionary(
             self,
             itx: discord.Interaction[Bot],
@@ -89,6 +93,12 @@ class TermDictionary(commands.Cog):
                 dictionary for dictionary in sources
                 if dictionary[0] == source
             ]
+
+        # instantiate classes
+        sources = [
+            (dictionary[0], dictionary[1](self._session))
+            for dictionary in sources
+        ]
 
         await asyncio.gather(*[
             source.construct_response(term)

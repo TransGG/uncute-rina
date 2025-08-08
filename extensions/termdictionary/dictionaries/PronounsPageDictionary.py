@@ -31,8 +31,7 @@ class PronounsPageDictionary(DictionaryBase):
     """
 
     def __init__(self, session: aiohttp.ClientSession) -> None:
-        super().__init__()
-        self._session = session
+        super().__init__(session)
         self._result_str: str | None = None
         self._result_count = 0
         self._character_overflow = False
@@ -189,14 +188,18 @@ class PronounsPageDictionary(DictionaryBase):
 
     @override
     async def construct_response(self, term: str) -> None:
+        print("a term", term)
         self._term = term
         data = await self._get_api_response(term)
+        print("b data", data)
         if len(data) == 0:
             return
 
         search = self._clean_pronouns_page_response_links(data)
+        print("c search", search)
         self._result_count = len(search)
         results = self._select_exact_items(search, term)
+        print("d results", results)
 
         if len(results) > 0:
             # there are results that match exactly.

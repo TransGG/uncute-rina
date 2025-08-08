@@ -270,6 +270,10 @@ class OtherAddons(commands.Cog):
     @app_commands.autocomplete(from_unit=_unit_autocomplete)
     @app_commands.rename(from_unit='to')
     @app_commands.autocomplete(to_unit=_unit_autocomplete)
+    @app_commands.allowed_installs(
+        guilds=True, users=True)
+    @app_commands.allowed_contexts(
+        guilds=True, private_channels=True, dms=True)
     async def convert_unit(
             self,
             itx: discord.Interaction[Bot],
@@ -301,7 +305,7 @@ class OtherAddons(commands.Cog):
             if data.get("error", 0):
                 await itx.response.send_message(
                     "I'm sorry, something went wrong while trying to get "
-                    "the latest currency exchange rates",
+                    "the latest currency exchange rates.",
                     ephemeral=True
                 )
                 return
@@ -325,16 +329,17 @@ class OtherAddons(commands.Cog):
         # result = x * 1.8 - 459.67
         result = (base_value * options[to_unit][1]) - options[to_unit][0]
         result = round(result, 12)
+        formatted_value = int(value) if value.is_integer() else value
         if mode == "currency":
             await itx.response.send_message(
-                f"Converting {mode} from {value} {from_unit} to "
-                f"{result} {options[to_unit][2]}",
+                f"Converted {mode} from {formatted_value} {from_unit} to "
+                f"{result} {options[to_unit][2]}.",
                 ephemeral=not public
             )
         else:
             await itx.response.send_message(
-                f"Converting {mode} from {value} {from_unit} to "
-                f"{to_unit}: {result} {options[to_unit][2]}",
+                f"Converted {mode} from {formatted_value} {from_unit} to "
+                f"{to_unit}: {result} {options[to_unit][2]}.",
                 ephemeral=not public
             )
 

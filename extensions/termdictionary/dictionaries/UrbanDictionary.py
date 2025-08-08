@@ -19,8 +19,7 @@ class UrbanDictionary(DictionaryBase):
     term_suffix = " [UD]"
 
     def __init__(self, session: aiohttp.ClientSession):
-        super().__init__()
-        self._session = session
+        super().__init__(session)
         self._pages: list[discord.Embed] | None = None
 
     @staticmethod
