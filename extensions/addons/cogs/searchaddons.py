@@ -1,5 +1,4 @@
 import json  # to read API json responses
-import urllib.parse
 
 import requests  # to read api calls
 
@@ -192,7 +191,7 @@ class SearchAddons(commands.Cog):
         api_key = itx.client.api_tokens['Wolfram Alpha']
         params = {
             "appid": api_key,
-            "input": urllib.parse.quote(query),  # slashes are safe
+            "input": query,
             "output": "json",
         }
         try:
