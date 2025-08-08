@@ -47,7 +47,7 @@ def get_attribute_autocomplete_mode(
     return attribute_type_single_value
 
 
-@app_commands.check(is_admin_check)
+@is_admin_check
 async def _setting_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
@@ -78,7 +78,7 @@ async def _setting_autocomplete(
         return []
 
 
-@app_commands.check(is_admin_check)
+@is_admin_check
 async def _mode_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
@@ -123,7 +123,7 @@ async def _mode_autocomplete(
         return []
 
 
-@app_commands.check(is_admin_check)
+@is_admin_check
 async def _value_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
@@ -202,7 +202,8 @@ async def _value_autocomplete(
             # from channel id
             if current.isdecimal():
                 potential_channel = itx.client.get_channel(int(current))
-                if (potential_channel is not None
+                if (
+                        potential_channel is not None
                         and not isinstance(potential_channel,
                                            discord.abc.PrivateChannel)
                 ):
@@ -719,7 +720,7 @@ class SettingsCog(commands.Cog):
         name="migrate-watchlist",
         description="Fetch all watchlist threads for this server."
     )
-    @app_commands.check(is_admin_check)
+    @is_admin_check
     @module_enabled_check(ModuleKeys.watchlist)
     async def migrate_watchlist(self, itx: GuildInteraction[Bot]):
         watchlist_channel: discord.TextChannel | None = \
@@ -773,10 +774,10 @@ class SettingsCog(commands.Cog):
     @app_commands.autocomplete(setting=_setting_autocomplete)
     @app_commands.autocomplete(mode=_mode_autocomplete)
     @app_commands.autocomplete(value=_value_autocomplete)
-    @app_commands.check(is_admin_check)
+    @is_admin_check
     async def settings(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             setting_type: str,
             setting: str | None = None,
             mode: str | None = None,

@@ -7,7 +7,7 @@ import discord.ext.commands as commands
 from discord import RawThreadDeleteEvent
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 from resources.checks.permissions import is_staff
 # ^ to check role in _add_to_watchlist, as backup
 from resources.checks import (
@@ -340,12 +340,12 @@ async def _add_to_watchlist(
         )
 
 
-@app_commands.check(is_staff_check)
-@module_enabled_check(ModuleKeys.watchlist)
 @app_commands.context_menu(name="Add user to watchlist")
+@is_staff_check
+@module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_user(
-        itx: discord.Interaction[Bot],
-        user: discord.User
+        itx: GuildInteraction[Bot],
+        user: discord.User,
 ):
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
@@ -357,9 +357,9 @@ async def watchlist_ctx_user(
     await itx.response.send_modal(watchlist_reason_modal)
 
 
-@app_commands.check(is_staff_check)
-@module_enabled_check(ModuleKeys.watchlist)
 @app_commands.context_menu(name="Add msg to watchlist")
+@module_enabled_check(ModuleKeys.watchlist)
+@is_staff_check
 async def watchlist_ctx_message(
         itx: discord.Interaction[Bot],
         message: discord.Message
@@ -385,7 +385,7 @@ class WatchList(commands.Cog):
     @app_commands.describe(user="User to add",
                            reason="Reason for adding",
                            message_id="Message to add to reason")
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     @module_enabled_check(ModuleKeys.watchlist)
     async def watchlist(
             self,
@@ -413,7 +413,7 @@ class WatchList(commands.Cog):
     @app_commands.command(name="check_watchlist",
                           description="Check if a user is on the watchlist.")
     @app_commands.describe(user="User to check")
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     @module_enabled_check(ModuleKeys.watchlist)
     async def check_watchlist(
             self,

@@ -7,8 +7,7 @@ import discord.app_commands as app_commands
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
     module_enabled_check  # for dev request thread ping
-from resources.customs import Bot
-
+from resources.customs import Bot, GuildInteraction
 
 emoji_color_options = {
     "🔴": discord.Colour.from_rgb(r=255, g=100, b=100),
@@ -30,7 +29,7 @@ class DevRequest(commands.Cog):
     @module_enabled_check(ModuleKeys.dev_requests)
     async def developer_request(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             suggestion: app_commands.Range[str, 25, 1500]
     ):
         developer_request_channel: discord.TextChannel | None = \
@@ -136,11 +135,11 @@ class DevRequest(commands.Cog):
         name="ping_open_dev_requests",
         description="Send a message in closed green dev request threads"
     )
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     @module_enabled_check(ModuleKeys.dev_requests)
     async def ping_open_developer_requests(
             self,
-            itx: discord.Interaction[Bot]
+            itx: GuildInteraction[Bot]
     ):
         await itx.response.send_message("`[+  ]`: Fetching cached threads.",
                                         ephemeral=True)

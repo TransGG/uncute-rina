@@ -164,8 +164,8 @@ class TagFunctions(commands.Cog):
                 await custom_tag.send(itx, public, anonymous)
         elif tag == "help":
             await itx.response.send_message(
-                "List of tags currently available to send:\n" +
-                '\n'.join(["- " + i for i in tag_info_dict]),
+                "List of tags currently available to send:\n"
+                + '\n'.join(["- " + i for i in tag_info_dict]),
                 ephemeral=True
             )
         else:
@@ -184,8 +184,8 @@ class TagFunctions(commands.Cog):
         discord.app_commands.Choice(name=TagMode.delete.value,
                                     value=TagMode.delete.value),
     ])
-    @app_commands.check(is_admin_check)
     @app_commands.autocomplete(tag_name=_tag_name_autocomplete)
+    @is_admin_check
     @module_enabled_check(ModuleKeys.tags)
     async def tag_manage(
             self,
