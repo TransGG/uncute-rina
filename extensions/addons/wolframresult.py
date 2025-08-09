@@ -7,6 +7,7 @@ from typing import TypedDict, Required, NotRequired, Literal, Any
 class WolframUserInfoUsed(TypedDict):
     name: Literal[
         "Country",
+        "TimeZone"
     ]
 
 
@@ -147,11 +148,12 @@ class WolframAssumptionValue(TypedDict):
 
 
 class WolframAssumption(TypedDict, total=False):
-    type: WolframAssumptionType  # "SubCategory"
-    word: str
+    type: Required[WolframAssumptionType]  # "SubCategory"
+    word: Required[str]
     template: str  # "Assuming ${desc1}. Use ${desc2} instead"
     count: int  # len(values)
-    values: list[WolframAssumptionValue]
+    values: list[WolframAssumptionValue] | WolframAssumptionValue
+    # ^ because of course it can't just be a list of 1 element.
 
 
 class WolframSource(TypedDict):
@@ -240,15 +242,17 @@ class WolframQueryResult(TypedDict, total=False):
     requestId: str  # can be identical to "parentId"
     pods: list[WolframPod]
     assumptions: list[WolframAssumption]
+    # ^ When given 1 value, it's still in a list: with 1 element.
     examplepage: WolframExamplePage
     relatedqueries: WolframRelatedQueries
     timing: Required[float]  # typically up to 20.001
     timedout: Required[str]  # list of strings separated by comma, or ""
     # ^ think "Data,Percent,Unity,AtmosphericProperties,UnitInformation,Music,Geometry"  # noqa
-    timedoutpods: Required[str]  # ""
+    timedoutpods: Required[str]  # list of pods that timed out during format
+    # ^ think "Weather history & forecast,Weather station information"
     sources: list[WolframSource]
     recalculate: str  # url
-    warnings: list[WolframWarning]
+    warnings: list[WolframWarning] | WolframWarning
     generalization: Any
     futuretopic: WolframFutureTopic
 
