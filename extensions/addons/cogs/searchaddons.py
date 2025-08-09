@@ -189,7 +189,7 @@ def _read_wolfram_pods(
         if pod["id"] == "Input":
             interpreted_input = "\n> ".join(subpods)
         elif pod["id"] == "Result":
-            output = f"\n> ".join(subpods)
+            output = "\n> ".join(subpods)
     return (
         interpreted_input,
         output,
@@ -219,7 +219,6 @@ def _format_wolfram_assumptions(data: WolframQueryResult) -> str:
                 or assumption["count"] == 0
                 or "values" not in assumption):
             continue
-
 
         assumption_data = {}
         # because Wolfram|Alpha is being annoyingly

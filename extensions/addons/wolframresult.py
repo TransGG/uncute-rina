@@ -1,4 +1,4 @@
-from typing import TypedDict, Required, NotRequired, Literal, Any
+from typing import TypedDict, Required, Literal, Any
 
 # Some values are typically identical, denoted with "var1" etc.
 
