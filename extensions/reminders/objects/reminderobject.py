@@ -330,7 +330,10 @@ async def _parse_reminder_time(
     """  # todo: update docstring exceptions
     # Parse reminder input to get a datetime for the reminder scheduler
     creation_time = itx.created_at  # utc
-    assert creation_time.tzinfo == timezone.utc
+    assert creation_time.tzinfo == timezone.utc, (
+        "Expected discord to provide a timezone of UTC, but it was "
+        f"`{creation_time.tzinfo}` instead!"
+    )
     # ^ it is timezone-aware, in utc
     distance: datetime
     try:

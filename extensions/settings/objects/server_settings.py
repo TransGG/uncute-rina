@@ -486,7 +486,11 @@ class ServerSettings:
                         parsed_values.append(parsed_value)
                 new_settings[attribute] = parsed_values
             else:
-                assert isinstance(attribute_value, (str, int))
+                assert isinstance(attribute_value, (str, int, type(None))), (
+                    f"Expected attribute {attribute} to have value type str "
+                    f"or int, but `{attribute_value}` was of type "
+                    f"`{type(attribute_value)}`"
+                )
                 new_settings[attribute] = parse_attribute(
                     client, guild, attribute, attribute_value,
                     invalid_arguments=invalid_arguments)

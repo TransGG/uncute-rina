@@ -355,7 +355,14 @@ async def _fetch_starboard_and_original_messages(
             fetched_channel = await get_or_fetch_channel(
                 client, original_message_channel)
             assert isinstance(
-                fetched_channel, MessageableGuildChannel.__value__)
+                fetched_channel, MessageableGuildChannel.__value__), (
+                f"Expected the fetched channel of the original message channel "
+                f"to be of one of the MessagebleGuildChannel union values "
+                f"({MessageableGuildChannel.__value__}), but it was "
+                f"{type(fetched_channel)}` instead!\n"
+                f"Channel id: {original_message_channel}`"
+                f"Fetched: {fetched_channel}"
+            )
             channel = typing.cast(
                 MessageableGuildChannel, fetched_channel)
         elif original_message_channel is None:

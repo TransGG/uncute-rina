@@ -406,7 +406,10 @@ async def _handle_settings_attribute(
         if setting == AttributeKeys.parent_server:
             # Check if the given server or one of its parents has this server
             #  marked as a parent already.
-            assert type(database_value) is int
+            assert type(database_value) is int, (
+                f"Expected the database value to be of type `int` but it was "
+                f"{type(database_value)} instead: {database_value}"
+            )
             has_current_server, parent_server_id = await _has_guild_as_parent(
                 itx.client, itx.guild, database_value)
             if has_current_server:

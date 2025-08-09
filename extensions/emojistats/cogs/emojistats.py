@@ -103,8 +103,10 @@ class EmojiStats(commands.Cog):
                                           .replace(">", "")
                                           .split(":"))
 
-            assert emoji_id.isdecimal(), \
-                f"Emoji `{emoji}` should have a numeric emoji id"
+            assert emoji_id.isdecimal(), (
+                f"Emoji `{emoji}` should have a numeric emoji id, but it "
+                f"is `{emoji_id}` instead!"
+            )
             # should be decimal due to regex
 
             animated = (animated.split("<")[-1] == "a")

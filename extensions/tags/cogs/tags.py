@@ -84,7 +84,9 @@ def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
                          f"Expected format: {expected_format}.")
 
     color_values = [int(i) for i in color_value_strings]
-    assert len(color_values) == 3
+    assert len(color_values) == 3, (
+        f"Expected 3 color values, got {len(color_values)} instead!"
+    )
 
     if not all(0 <= i <= 255 for i in color_values):
         raise ValueError(f"Your color values must be a number "
