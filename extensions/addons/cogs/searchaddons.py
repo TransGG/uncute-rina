@@ -6,7 +6,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.addons.wolframresult import WolframResult, WolframQueryResult
+from extensions.addons.wolframresult import WolframResult, WolframQueryResult, WolframPod
 from resources.customs import Bot
 
 from extensions.addons.equaldexregion import EqualDexRegion
@@ -16,24 +16,151 @@ from extensions.addons.views.equaldex_additionalinfo import (
 from extensions.addons.views.math_sendpublicbutton import (
     SendPublicButtonMath
 )
-
+from resources.utils import debug, DebugColor
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 
-def format_wolfram_success_output(data: WolframQueryResult) -> str:
+def format_wolfram_success_output(data: WolframQueryResult) -> tuple[bool, str]:
+    """
+    Helper function to parse api response data into a user-friendly string.
+
+    :param data: The API data to parse and format.
+    :return: A tuple of successful parsing and the output string. If
+     unsuccessful, the output string is the error message.
+    """
+    if data["numpods"] == 0 or "pods" not in data:
+        return False, "The output had no pods with data."
+
+    if len(data["pods"]) != data["numpods"]:
+        debug(repr(data), DebugColor.orange)
+        return (
+            False,
+            f"The response `numpods` did not match the actual returned number "
+            f"of pods! "
+            f"(numpods: {data['numpods']}, pod count: {len(data['pods'])}"
+            + f", inputstring: {data['inputstring']})"
+              if "inputstring" in data else ""
+            + ")",
+        )
+
+    interpreted_input, output, other_primary_outputs, error_or_nodata = \
+        _read_wolfram_pods(data["pods"])
+
+    if len(output) == 0 and len(other_primary_outputs) == 0:
+        # if there is no result and all other pods are
+        #  'primary: False'
+        error_or_nodata, other_primary_outputs = \
+            _read_wolfram_nonprimary_pods(data["pods"])
+    if len(other_primary_outputs) > 0:
+        other_results = (
+            "\nOther results:\n> "
+            + '\n> '.join(other_primary_outputs)
+        )
+    else:
+        other_results = ""
+    data_count = len(other_primary_outputs) + bool(len(output))
+    if data_count <= error_or_nodata:
+        return (
+            False,
+            "There was no data for your answer!\n"
+            "It seems all your answers had an error or were "
+            "'nodata entries', meaning you might need to try a "
+            "different query to get an answer to your question!"
+        )
+
+    assumptions = _format_wolfram_assumptions(data)
+    warnings = _format_wolfram_warnings(data)
+    return (
+        True,
+        f"Input\n> {interpreted_input}\n"
+        f"Result:\n> {output}"
+        + other_results
+        + assumptions
+        + warnings
+    )
+
+
+def _format_wolfram_warnings(data: WolframQueryResult) -> str:
+    """
+    Helper to check all warnings and format them as string.
+    :param data: The API data to format.
+    :return: A formatted string of the warnings, or empty if no warnings are
+     in the API response.
+    """
+    warnings = []
+    if "warnings" in data:
+        # not sure if multiple warnings will be stored into a
+        #  list instead.
+        # Edit: Turns out they do.
+        if isinstance(data["warnings"], list):
+            for warning in data["warnings"]:
+                warnings.append(warning["text"])
+        else:
+            warnings.append(data["warnings"]["text"])
+    if len(data.get("timedout", "")) > 0:
+        warnings.append(
+            "Timed out: "
+            + data["timedout"].replace(",", ", ")
+        )
+    if len(data.get("timedoutpods", "")) > 0:
+        warnings.append(
+            "Timed out pods: "
+            + data["timedout"].replace(",", ", ")
+        )
+    if len(warnings) > 0:
+        warnings = ("\nWarnings:\n> "
+                    + '\n> '.join(warnings))
+    else:
+        warnings = ""
+    return warnings
+
+
+def _read_wolfram_nonprimary_pods(
+        pods: list[WolframPod],
+) -> tuple[int, list[str]]:
+    """
+    Helper to re-iterate all pods when no primary result is given.
+    :param pods: The pods to iterate and format.
+    :return: A tuple of the new number of no-data and erroring pods; and a list
+     of formatted pod outputs.
+    """
+    error_or_nodata = 0
+    other_primary_outputs = []
+    for pod in pods:
+        if pod["numsubpods"] == 0 or "subpods" not in pod:
+            continue
+
+        if pod["id"] not in ["Input", "Result"]:
+            for subpod in pod["subpods"]:
+                if ("plaintext" not in subpod
+                        or len(subpod["plaintext"]) == 0):
+                    continue
+                if subpod.get("nodata") or subpod.get("error"):
+                    # error or nodata == True
+                    error_or_nodata += 1
+                other_primary_outputs.append(
+                    subpod["plaintext"].replace("\n", "\n>     ")
+                )
+    return error_or_nodata, other_primary_outputs
+
+
+def _read_wolfram_pods(
+        pods: list[WolframPod]
+) -> tuple[str, str, list[str], int]:
+    """
+    Helper to read every pod and its subpods.
+    :param pods: A list of the pods to parse.
+    :return: A tuple of the interpreted input, the output, a list of other
+     outputs, and the number of no-data or erroring pods.
+    """
     interpreted_input = ""
     output = ""
     other_primary_outputs = []
     error_or_nodata = 0
 
-    if data["numpods"] == 0:
-        raise ValueError("TODO")  # Todo: fix
-
-    assert "pods" in data and len(data["pods"]) == data["numpods"]
-
-    for pod in data["pods"]:
+    for pod in pods:
         if pod["numsubpods"] == 0 or "subpods" not in pod:
             continue
 
@@ -63,83 +190,24 @@ def format_wolfram_success_output(data: WolframQueryResult) -> str:
             interpreted_input = "\n> ".join(subpods)
         elif pod["id"] == "Result":
             output = f"\n> ".join(subpods)
-
-    if len(output) == 0 and len(other_primary_outputs) == 0:
-        error_or_nodata = 0
-        # if there is no result and all other pods are
-        #  'primary: False'
-        for pod in data["pods"]:
-            if pod["numsubpods"] == 0 or "subpods" not in pod:
-                continue
-
-            if pod["id"] not in ["Input", "Result"]:
-                for subpod in pod["subpods"]:
-                    if ("plaintext" not in subpod
-                            or len(subpod["plaintext"]) == 0):
-                        continue
-                    if subpod.get("nodata") or subpod.get("error"):
-                        # error or nodata == True
-                        error_or_nodata += 1
-                    other_primary_outputs.append(
-                        subpod["plaintext"].replace("\n", "\n>     ")
-                    )
-    if len(other_primary_outputs) > 0:
-        other_results = '\n> '.join(other_primary_outputs)
-        other_results = "\nOther results:\n> " + other_results
-    else:
-        other_results = ""
-    data_count = len(other_primary_outputs) + bool(len(output))
-    if data_count <= error_or_nodata:
-        raise ValueError(
-            "There was no data for your answer!\n"
-            "It seems all your answers had an error or were "
-            "'nodata entries', meaning you might need to try a "
-            "different query to get an answer to your question!"
-        )
-
-    assumptions = _format_wolfram_assumptions(data)
-    if len(assumptions) > 0:
-        alternatives = "\nAssumptions:\n> " + '\n> '.join(assumptions)
-    else:
-        alternatives = ""
-    warnings = []
-    if "warnings" in data:
-        # not sure if multiple warnings will be stored into a
-        #  list instead.
-        # Edit: Turns out they do.
-        if isinstance(data["warnings"], list):
-            for warning in data["warnings"]:
-                warnings.append(warning["text"])
-        else:
-            warnings.append(data["warnings"]["text"])
-    if len(data.get("timedout", "")) > 0:
-        warnings.append(
-            "Timed out: "
-            + data["timedout"].replace(",", ", ")
-        )
-    if len(data.get("timedoutpods", "")) > 0:
-        warnings.append(
-            "Timed out pods: "
-            + data["timedout"].replace(",", ", ")
-        )
-    if len(warnings) > 0:
-        warnings = ("\nWarnings:\n> "
-                    + '\n> '.join(warnings))
-    else:
-        warnings = ""
     return (
-        f"Input\n> {interpreted_input}\n"
-        f"Result:\n> {output}"
-        + other_results
-        + alternatives
-        + warnings
+        interpreted_input,
+        output,
+        other_primary_outputs,
+        error_or_nodata,
     )
 
 
-def _format_wolfram_assumptions(data: WolframQueryResult):
+def _format_wolfram_assumptions(data: WolframQueryResult) -> str:
+    """
+    Helper to find and format assumptions for Wolfram's API.
+    :param data: The data to format.
+    :return: A formatted string, or an empty string if no assumptions
+     were given in the API response.
+    """
     assumptions = []
     if "assumptions" not in data:
-        return assumptions
+        return ""
 
     # if type(data["assumptions"]) is dict:
     #     # only 1 assumption, instead of a list. So just make
@@ -147,7 +215,6 @@ def _format_wolfram_assumptions(data: WolframQueryResult):
     #     data["assumptions"] = [data["assumptions"]]
 
     for assumption in data["assumptions"]:
-        assert not isinstance(assumption, str)
         if ("count" not in assumption
                 or assumption["count"] == 0
                 or "values" not in assumption):
@@ -192,10 +259,15 @@ def _format_wolfram_assumptions(data: WolframQueryResult):
                     + " (todo)"
             )
             assumptions.append(template)
-    return assumptions
+
+    if len(assumptions) > 0:
+        assumption_str = "\nAssumptions:\n> " + '\n> '.join(assumptions)
+    else:
+        assumption_str = ""
+    return assumption_str
 
 
-def format_wolfram_error_output(data: WolframQueryResult) -> str:
+def _format_wolfram_error_output(data: WolframQueryResult) -> str:
     if data.get("error", False) is True:
         return "Got an error, but no extra data... Kinda weird?"
 
@@ -441,11 +513,10 @@ class SearchAddons(commands.Cog):
 
         data: WolframQueryResult = api_response["queryresult"]
         if data.get("success", False):
-            try:
-                output_string = format_wolfram_success_output(data)
-            except ValueError as ex:
+            success, output_string = format_wolfram_success_output(data)
+            if not success:
                 await itx.followup.send(
-                    str(ex),
+                    str(output_string),
                     ephemeral=True
                 )
                 return
@@ -461,15 +532,9 @@ class SearchAddons(commands.Cog):
                 await itx.edit_original_response(view=None)
             return
         else:
-            output_string = format_wolfram_error_output(data)
+            output_string = _format_wolfram_error_output(data)
             await itx.followup.send(
                 output_string,
                 ephemeral=True,
             )
             return
-        # await itx.followup.send(
-        #     "debug; It seems you reached the end of the function without "
-        #     "actually getting a response! Please report the query to "
-        #     "MysticMia#7612",
-        #     ephemeral=True
-        # )
