@@ -6,7 +6,11 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.addons.wolframresult import WolframResult, WolframQueryResult, WolframPod
+from extensions.addons.wolframresult import (
+    WolframResult,
+    WolframQueryResult,
+    WolframPod,
+)
 from resources.customs import Bot
 
 from extensions.addons.equaldexregion import EqualDexRegion
@@ -22,7 +26,9 @@ STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 
-def format_wolfram_success_output(data: WolframQueryResult) -> tuple[bool, str]:
+def format_wolfram_success_output(
+        data: WolframQueryResult
+) -> tuple[bool, str]:
     """
     Helper function to parse api response data into a user-friendly string.
 
@@ -252,10 +258,10 @@ def _format_wolfram_assumptions(data: WolframQueryResult) -> str:
             assumptions.append(template + "?")
         else:
             template: str = (
-                    assumption["type"]
-                    + " - "
-                    + assumption["word"]
-                    + " (todo)"
+                assumption["type"]
+                + " - "
+                + assumption["word"]
+                + " (todo)"
             )
             assumptions.append(template)
 

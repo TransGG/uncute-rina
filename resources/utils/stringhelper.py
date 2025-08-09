@@ -1,4 +1,10 @@
-from resources.customs import Bot
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from resources.customs import Bot
 
 
 def replace_string_command_mentions(text: str, client: Bot) -> str:

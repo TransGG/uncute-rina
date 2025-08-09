@@ -1,5 +1,4 @@
-from resources.utils import DebugColor
-from resources.utils.utils import debug
+from resources.utils import DebugColor, debug
 
 
 class ProgressBar:
