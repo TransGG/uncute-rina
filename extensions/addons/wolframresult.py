@@ -122,10 +122,10 @@ class WolframPodInfo(TypedDict):
 
 
 class WolframPod(TypedDict, total=False):
-    title: Required[WolframTitleName]  # "Input", "Result", "Number Line", "Number Name"
-    scanner: Required[WolframScannerName]  # "Identity", "Simplification", "NumberLine"
-    id: Required[WolframIdName]  # "Input", "Result", "NumberLine", "NumberName"
-    position: Required[int]  # 1 or 11, "typically multiples of 100" (that's a lie)
+    title: Required[WolframTitleName]  # "Input", "Result", "Number Line", "Number Name" # noqa
+    scanner: Required[WolframScannerName]  # "Identity", "Simplification", "NumberLine" # noqa
+    id: Required[WolframIdName]  # "Input", "Result", "NumberLine", "NumberName" # noqa
+    position: Required[int]  # 1 or 11, "typically multiples of 100" (that's a lie) # noqa
     error: Required[bool | WolframErrorInfo]
     primary: bool
     numsubpods: Required[int]  # len(subpods) presumably.
@@ -196,10 +196,10 @@ class WolframReinterpretWarning(TypedDict):
 
 
 type WolframWarning = (
-        WolframSpellcheckWarning
-        | WolframDelimiterWarning
-        | WolframTranslationWarning
-        | WolframReinterpretWarning
+    WolframSpellcheckWarning
+    | WolframDelimiterWarning
+    | WolframTranslationWarning
+    | WolframReinterpretWarning
 )
 
 
