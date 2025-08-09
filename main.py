@@ -235,23 +235,38 @@ def start_app():
         post_startup_progress.begin("Loading all server tags...")
         try:
             _ = await fetch_all_tags(client.async_rina_db)
-        except:
-            debug("Loading tags failed!", color=DebugColor.red)
-        post_startup_progress.complete("Loaded server tags.")
+        except Exception as ex:
+            debug(
+                f"Loading tags failed!\n"
+                f"Reason: {ex}",
+                color=DebugColor.red
+            )
+        else:
+            post_startup_progress.complete("Loaded server tags.")
 
         post_startup_progress.begin("Loading all watchlist threads...")
         try:
             _ = await fetch_all_watchlists(client.async_rina_db)
-        except:
-            debug("Loading watchlists failed!", color=DebugColor.red)
-        post_startup_progress.complete("Loaded watchlist threads.")
+        except Exception as ex:
+            debug(
+                f"Loading watchlists failed!\n"
+                f"Reason: {ex}",
+                color=DebugColor.red
+            )
+        else:
+            post_startup_progress.complete("Loaded watchlist threads.")
 
         post_startup_progress.begin("Loading all starboard messages...")
         try:
             _ = await fetch_all_starboard_messages(client.async_rina_db)
-        except:
-            debug("Loading starboard failed!", color=DebugColor.red)
-        post_startup_progress.complete("Loaded starboard messages.")
+        except Exception as ex:
+            debug(
+                f"Loading starboard failed!\n"
+                f"Reason: {ex}",
+                color=DebugColor.red
+            )
+        else:
+            post_startup_progress.complete("Loaded starboard messages.")
 
     @client.event
     async def setup_hook():
