@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import typing
-import warnings
 
 import motor.core
-from typing import TypedDict, Any, TypeVar, Callable
+from typing import TypedDict, Any, TypeVar, Callable, TypeAliasType
 from types import UnionType
 
 import discord
 
+from resources.utils.debug import debug, DebugColor
 from .server_attributes import ServerAttributes, GuildAttributeType
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
@@ -32,19 +32,12 @@ T = TypeVar('T')
 
 
 def parse_id_generic(
-        invalid_arguments: dict[str, str],
-        invalid_argument_name: str,
         get_object_function: Callable[[int], T | None],
         object_id: int | None
 ) -> T | None:
     parsed_obj: T | None = None
     if object_id is not None:
         parsed_obj = get_object_function(object_id)
-        if parsed_obj is None:
-            invalid_arguments[invalid_argument_name] = f"{object_id}"
-        else:
-            if parsed_obj is None:
-                invalid_arguments[invalid_argument_name] = str(object_id)
     return parsed_obj
 
 
@@ -106,45 +99,61 @@ def parse_attribute(
      wrong type.
     """
     attribute_type, _ = get_attribute_type(attribute_key)
+    if attribute_type is None:
+        raise ParseError(f"No type found for attribute key {attribute_key}")
 
-    if attribute_type is discord.Guild:
-        func = client.get_guild
-    elif (attribute_type is discord.abc.GuildChannel
-          or attribute_type is discord.Thread):
+    def is_attribute_type(val: type):
+        f = any(
+            val in typing.get_args(i.__value__)
+            if type(i) is TypeAliasType
+            else val is i
+            for i in attribute_type
+        )
+        return f
+
+    funcs = set()
+
+    if is_attribute_type(discord.Guild):
+        funcs.add(client.get_guild)
+    if (is_attribute_type(discord.abc.GuildChannel)
+            or is_attribute_type(discord.Thread)):
         # Could use isinstance(), but I feel like it should only
         #  parse if the type matches exactly.
-        func = guild.get_channel_or_thread
-    elif attribute_type is discord.abc.Messageable:
-        func = client.get_channel
-    elif attribute_type is discord.TextChannel:
-        func = client.get_channel
-    elif attribute_type is discord.User:
-        func = client.get_user
-    elif attribute_type is discord.Role:
-        func = guild.get_role
-    elif attribute_type is discord.CategoryChannel:
+        funcs.add(guild.get_channel_or_thread)
+    if is_attribute_type(discord.abc.Messageable):
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.TextChannel):
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.User):
+        funcs.add(client.get_user)
+    if is_attribute_type(discord.Role):
+        funcs.add(guild.get_role)
+    if is_attribute_type(discord.CategoryChannel):
         # I think it's safe to assume the stored value was an object of
         #  the correct type in the first place. As in, it's a
         #  CategoryChannel id, not a VoiceChannel id.
-        func = client.get_channel
-    elif attribute_type is discord.VoiceChannel:
-        func = client.get_channel
-    elif attribute_type is discord.Emoji:
-        func = guild.get_emoji
-    elif attribute_type is int:
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.channel.VoiceChannel):
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.Emoji):
+        funcs.add(guild.get_emoji)
+    if is_attribute_type(int):
         def get_int(x: int) -> int:
             """Helper to just return the already-parsed int object."""
             # this function exists because apparently `lambda x: x` is
             #  bad for tracebacks or something.
             return x
         # the value should already be an int anyway
-        func = get_int
-    elif attribute_type is str:
+        funcs.add(get_int)
+    if is_attribute_type(str):
         return str(attribute_value)
-    else:
-        raise ParseError(f"Type '{attribute_type}' of attribute "
-                         f"{attribute_key} could not be parsed. "
-                         f"(Attribute value: '{attribute_value}')")
+
+    if len(funcs) == 0:
+        raise ParseError(
+            f"Type '{attribute_type}' of attribute "
+            f"{attribute_key} could not be parsed. "
+            f"(Attribute value: '{attribute_value}')"
+        )
 
     if attribute_value is None:
         # to prevent TypeError from int(None) later.
@@ -156,12 +165,18 @@ def parse_attribute(
     except ValueError:
         return None
 
-    parsed_attribute = parse_id_generic(
-        invalid_arguments or {},  # discard output
-        attribute_key,
-        func,
-        attribute_value_id,
-    )
+    parsed_attribute = None
+    for func in funcs:
+        parsed_attribute = parse_id_generic(
+            func,
+            attribute_value_id,
+        )
+        if parsed_attribute is not None:
+            break
+
+    if parsed_attribute is None and invalid_arguments is not None:
+        invalid_arguments[attribute_key] = str(attribute_value_id)
+
     return parsed_attribute
 
 
@@ -356,9 +371,11 @@ class ServerSettings:
                 server_setting = ServerSettings.load(client, setting)
                 server_settings[server_setting.guild.id] = server_setting
             except ParseError as ex:
-                warnings.warn(
-                    f"ParseError for {setting["guild_id"]}: "
+                debug(
+                    f"ParseError for {setting["guild_id"]}:\n"
                     + ex.message
+                    + "\n",
+                    DebugColor.lightred,
                 )
 
         return server_settings
@@ -446,10 +463,9 @@ class ServerSettings:
         invalid_arguments: dict[str, str] = {}
         guild = client.get_guild(guild_id)
         if guild is None:
-            invalid_arguments["guild_id"] = str(guild_id)
             raise ParseError(
-                "Some server settings could not be parsed: "
-                + ', '.join([f"{k}:{v}" for k, v in invalid_arguments.items()])
+                f"Guild id could not be parsed:\n"
+                f"- guild_id: {guild_id}"
             )
 
         new_settings: dict[str, Any | None] = {
@@ -477,7 +493,7 @@ class ServerSettings:
 
         if invalid_arguments:
             raise ParseError(
-                "Some server settings could not be parsed: \n- "
+                "Some server settings could not be parsed:\n- "
                 + '\n- '.join(
                     [f"{k}: {v}" for k, v in invalid_arguments.items()]
                 )
