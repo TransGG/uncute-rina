@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import discord
+from discord import app_commands
 
 from .permissions import is_staff, is_admin
 from .errors import (
@@ -13,38 +14,57 @@ from .command_checks import is_in_dms
 if TYPE_CHECKING:
     from resources.customs import Bot
 
-
-def is_staff_check(itx: discord.Interaction[Bot]):
-    """
-    A check to check if the command executor has a staff role.
-
-    :param itx: The interaction to check.
-    :return: ``True`` if the executor has a staff role, else
-     an exception.
-    :raise InsufficientPermissionsCheckFailure: If the user does not
-     have a staff role.
-    :raise CommandDoesNotSupportDMsCheckFailure: If the command was
-     executed in DMs
-    """
-    if is_in_dms(itx.guild):
-        raise CommandDoesNotSupportDMsCheckFailure()
-    if is_staff(itx, itx.user):
-        return True
-    raise InsufficientPermissionsCheckFailure("User is not staff")
+    from discord.app_commands.commands import (
+        CommandCallback, GroupT, P, T,
+    )
 
 
-def is_admin_check(itx: discord.Interaction[Bot]):
-    """
-    A check to check if the command executor has an admin role.
+def is_staff_check(
+        func: CommandCallback[Any, ..., Any]
+) -> CommandCallback[GroupT, P, T]:
+    def decor_check(itx: discord.Interaction[Bot]) -> bool:
+        """
+        A check to check if the command/interaction was run by a staff member
+        of this server.
 
-    :param itx: The interaction to check.
-    :return: ``True`` if the executor has an admin role, else an
-     exception.
-    :raise InsufficientPermissionsCheckFailure: If the user does not
-     have an admin role.
-    :raise CommandDoesNotSupportDMsCheckFailure: If the command was
-     executed in DMs
-    """
-    if is_admin(itx, itx.user):  # can raise DMsCheckFailure
-        return True
-    raise InsufficientPermissionsCheckFailure("User is not admin")
+        :param itx: The interaction to check.
+        :return: ``True`` if the interaction was run by a staff member, else
+         an exception.
+        :raise CommandDoesNotSupportDMsCheckFailure: If the command was run
+         outside a server.
+        :raise InsufficientPermissionsCheckFailure: If the command was not run
+         by a staff member.
+        """
+        if is_in_dms(itx.guild):
+            raise CommandDoesNotSupportDMsCheckFailure()
+        if is_staff(itx, itx.user):
+            return True
+        raise InsufficientPermissionsCheckFailure("User is not staff")
+
+    return app_commands.check(decor_check)(func)
+
+
+def is_admin_check(
+        func: CommandCallback[Any, ..., Any]
+) -> CommandCallback[GroupT, P, T]:
+    def decor_check(itx: discord.Interaction[Bot]) -> bool:
+        """
+        A check to check if the command/interaction was run by an admin staff
+        member of this server.
+
+        :param itx: The interaction to check.
+        :return: ``True`` if the interaction was run by an admin, else
+         an exception.
+        :raise CommandDoesNotSupportDMsCheckFailure: If the command was run
+         outside a server.
+        :raise InsufficientPermissionsCheckFailure: If the command was not run
+         by an admin.
+        """
+        if is_in_dms(itx.guild):
+            raise CommandDoesNotSupportDMsCheckFailure()
+        if is_admin(itx, itx.user):
+            return True
+        raise InsufficientPermissionsCheckFailure("User is not admin")
+
+    app_commands.check(decor_check)(func)
+    return func

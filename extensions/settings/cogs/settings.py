@@ -6,8 +6,10 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from resources.checks import (
-    is_admin_check, not_in_dms_check, module_enabled_check,
+    is_admin_check,
+    module_enabled_check,
     MissingAttributesCheckFailure,
+    CommandDoesNotSupportDMsCheckFailure,
 )
 
 from extensions.help.cogs import send_help_menu
@@ -18,6 +20,8 @@ from extensions.settings.objects import (
     TypeAutocomplete, ModeAutocomplete,
     parse_attribute, get_attribute_type, AttributeKeys, ModuleKeys
 )
+from resources.customs import GuildInteraction
+
 
 if typing.TYPE_CHECKING:
     from resources.customs import Bot
@@ -43,11 +47,11 @@ def get_attribute_autocomplete_mode(
     return attribute_type_single_value
 
 
-@app_commands.check(is_admin_check)
+@is_admin_check
 async def _setting_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
@@ -74,12 +78,12 @@ async def _setting_autocomplete(
         return []
 
 
-@app_commands.check(is_admin_check)
+@is_admin_check
 async def _mode_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa
 
     types = [ModeAutocomplete.view]
 
@@ -100,6 +104,11 @@ async def _mode_autocomplete(
         return [app_commands.Choice(name="Invalid setting given.",
                                     value=ModeAutocomplete.invalid.value)]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
+        if itx.namespace.setting is None:
+            return [app_commands.Choice(
+                name="No setting given. Please give a value for the "
+                     "'setting' parameter.",
+                value="-")]
         autocomplete_type = get_attribute_autocomplete_mode(
             itx.namespace.setting)
         if autocomplete_type is None:
@@ -114,15 +123,16 @@ async def _mode_autocomplete(
         return []
 
 
-@app_commands.check(is_admin_check)
+@is_admin_check
 async def _value_autocomplete(
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)
-    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)
-    itx.namespace.value = typing.cast(str | None, itx.namespace.value)
-
+    if itx.guild is None:
+        raise CommandDoesNotSupportDMsCheckFailure()
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue] # noqa
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
             app_commands.Choice(
@@ -143,28 +153,33 @@ async def _value_autocomplete(
                      "an attribute.",
                 value="-")]
 
+        if itx.namespace.setting is None:
+            return [app_commands.Choice(
+                name="No setting given. Please give a value for the "
+                     "'setting' parameter.",
+                value="-")]
         attribute_type, _ = get_attribute_type(itx.namespace.setting)
         if attribute_type is None:
             return [app_commands.Choice(name="Invalid setting given.",
                                         value="-")]
 
-        results = []
-        if issubclass(attribute_type, discord.Guild):
+        results: list[app_commands.Choice] = []
+        if discord.Guild in attribute_type:
             # iterate all guilds
             for guild in itx.client.guilds:
                 if (current.lower() in guild.name.lower()
                         or str(guild.id).startswith(current)):
-                    results.append(app_commands.Choice(name=guild.name,
-                                                       value=str(guild.id)))
-        elif issubclass(attribute_type, discord.User):
+                    results.append(app_commands.Choice(
+                        name=guild.name, value=str(guild.id)))
+        if discord.User in attribute_type:
             # Note: discord.User is a subclass of discord.abc.Messageable,
             #  so should be tested before that too.
             # iterate guild members
             for member in itx.guild.members:
                 if (current.lower() in member.name.lower()
                         or str(member.id).startswith(current)):
-                    results.append(app_commands.Choice(name=member.name,
-                                                       value=str(member.id)))
+                    results.append(app_commands.Choice(
+                        name=member.name, value=str(member.id)))
                 if len(results) > 20:
                     break
             # from user id
@@ -174,58 +189,74 @@ async def _value_autocomplete(
                     results.append(app_commands.Choice(
                         name=potential_user.name, value=str(potential_user.id))
                     )
-        elif issubclass(attribute_type, discord.abc.GuildChannel):
+        if any(issubclass(channel_type, discord.abc.GuildChannel)
+               for channel_type in attribute_type):
             for channel in itx.guild.channels:
-                if (isinstance(channel, attribute_type)
+                if (type(channel) in attribute_type
                         and (current in channel.name
                              or str(channel.id).startswith(current))):
                     results.append(app_commands.Choice(
                         name=channel.name, value=str(channel.id)))
-        elif issubclass(attribute_type, discord.abc.Messageable):
+        if any(issubclass(channel_type, discord.abc.Messageable)
+               for channel_type in attribute_type):
             # from channel id
             if current.isdecimal():
                 potential_channel = itx.client.get_channel(int(current))
-                if potential_channel is not None:
+                if (
+                        potential_channel is not None
+                        and not isinstance(potential_channel,
+                                           discord.abc.PrivateChannel)
+                ):
                     results.append(app_commands.Choice(
                         name=potential_channel.name,
                         value=str(potential_channel.id))
                     )
             # iterate messageable guild channels
             for channel in itx.guild.channels:
-                if isinstance(channel, attribute_type):
+                if type(channel) in attribute_type:
                     if (current.lower() in channel.name.lower()
                             or str(channel.id).startswith(current)):
                         results.append(app_commands.Choice(
                             name=channel.name, value=str(channel.id)))
-        elif issubclass(attribute_type, discord.Role):
+        if discord.Role in attribute_type:
             # iterate guild roles
             for role in itx.guild.roles:
                 if (current.lower() in role.name.lower()
                         or str(role.id).startswith(current)):
                     results.append(app_commands.Choice(
                         name=role.name, value=str(role.id)))
-        elif issubclass(attribute_type, discord.Emoji):
+        if discord.Emoji in attribute_type:
             # iterate guild emojis
             for emoji in itx.guild.emojis:
                 if (current.lower() in emoji.name.lower()
                         or str(emoji.id).startswith(current)):
                     results.append(app_commands.Choice(
                         name=emoji.name, value=str(emoji.id)))
-        elif attribute_type == str:
+        if str in attribute_type:
             # leave as is
             results.append(app_commands.Choice(name=current, value=current))
-        elif attribute_type == int:
+        if str in attribute_type:
             # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
                 results.append(app_commands.Choice(
                     name=current, value=current))
-        else:
+        if len(results) == 0:
+            attribute_type_names = ','.join(
+                i.__name__ for i in attribute_type)
             results.append(
                 app_commands.Choice(
-                    name=f"Autocomplete for type '{attribute_type.__name__}' "
-                         f"not supported"[:100],
+                    name=f"No autocompletes for: "
+                         f"{attribute_type_names}"[:100],
                     value="-")
             )
+
+        # deduplicate
+        unique_results = set()
+        for result in results:
+            unique_results.add((result.name, result.value))
+        results = [app_commands.Choice(name=name, value=val)
+                   for name, val in unique_results]
+
         return results[:10]
 
     elif itx.namespace.type == TypeAutocomplete.module.value:
@@ -258,8 +289,8 @@ async def _handle_settings_attribute(
     :param value: The value to give the attribute or remove from the
      attribute (depending on the *modify_mode*).
     """
-    itx.response: discord.InteractionResponse[Bot]  # noqa
-    itx.followup: discord.Webhook  # noqa
+    itx.response: discord.InteractionResponse[Bot]  # type: ignore
+    itx.followup: discord.Webhook  # type: ignore
     attribute_keys = ServerAttributes.__annotations__
 
     if setting is None:
@@ -294,6 +325,8 @@ async def _handle_settings_attribute(
 
     await itx.response.defer(ephemeral=True)  # defer before any database calls
 
+    assert itx.guild is not None  # is_admin_check in parent function
+
     if modify_mode == ModeAutocomplete.view:
         entry = await ServerSettings.get_entry(itx.client.async_rina_db,
                                                itx.guild.id)
@@ -325,21 +358,40 @@ async def _handle_settings_attribute(
             itx.client.async_rina_db, itx.guild.id, setting
         )
     else:
+        if value is None:
+            await itx.followup.send(
+                "No value was given.",
+                ephemeral=True
+            )
+            return
+
         invalid_arguments = {}
         attribute = parse_attribute(
             itx.client, itx.guild, setting, value,
             invalid_arguments=invalid_arguments
         )
+        if attribute is None:
+            await itx.followup.send(
+                f"Couldn't parse value '{value}' for attribute '{setting}'.",
+                ephemeral=True,
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+            return
+
         # raises ParseError if the ServerAttribute has a type that
         #  has no parsing function yet.
-        if invalid_arguments and modify_mode not in [
-                ModeAutocomplete.remove, ModeAutocomplete.remove
-        ]:
+        if (attribute is None
+                or invalid_arguments and modify_mode not in [
+                    ModeAutocomplete.remove, ModeAutocomplete.remove
+                ]):
             # allow removal of malformed data
             attribute_type, _ = get_attribute_type(setting)
+            assert attribute_type is not None
+            attribute_type_names = ', '.join(
+                i.__name__ for i in attribute_type)
             await itx.followup.send(
                 (f"Could not parse `{value}` as value for "
-                 f"'{setting}' (expected {attribute_type.__name__}.\n"
+                 f"'{setting}' (expected one of {attribute_type_names}.\n"
                  f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]})"
                  )[:1999]
                 + ")",
@@ -347,12 +399,9 @@ async def _handle_settings_attribute(
             )
             return
 
-        if hasattr(attribute, "id"):
-            # guild, channel, emoji, role, user
-            database_value = attribute.id
-        else:
-            # int, str
-            database_value = attribute
+        # [guild, channel, emoji, role, user] if it has an id
+        # else [int, str], for example
+        database_value = getattr(attribute, "id", attribute)
 
         if setting == AttributeKeys.parent_server:
             # Check if the given server or one of its parents has this server
@@ -440,10 +489,10 @@ async def _handle_settings_attribute(
             await itx.followup.send(
                 f"This attribute cannot be changed with this mode "
                 f"('{modify_mode.value}')\n"
-                f"It must be one of the following: " +
-                ', '.join([f"'{m.value}'" for m in expected_modify_mode]),
+                f"It must be one of the following: "
+                + ', '.join([f"'{m.value}'" for m in expected_modify_mode]),
                 # [enum.a, enum.b, enum.c] -> "'a', 'b', 'c'"
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
@@ -458,13 +507,13 @@ async def _handle_settings_attribute(
              "database and get more information about the problem:"
              + ex.message
              )[:2000],
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
     await itx.followup.send(
         f"Successfully modified the value for '{setting}'!",
-        ephemeral=True
+        ephemeral=True,
     )
 
 
@@ -479,6 +528,8 @@ async def _reload_or_store_server_settings(
     :param guild: The guild you want to refresh or add server
      settings to.
     """
+    if client.server_settings is None:
+        raise ParseError("No server settings have been loaded yet!")
     if guild.id in client.server_settings:
         await client.server_settings[guild.id].reload(client)
     else:
@@ -514,10 +565,10 @@ async def _has_guild_as_parent(
 
 
 async def _handle_settings_module(
-        itx: discord.Interaction[Bot],
+        itx: GuildInteraction[Bot],
         help_str: str,
         setting: str | None,
-        modify_mode: str | None
+        modify_mode: ModeAutocomplete | None
 ):
     """
     A helper function to handle setting server attributes.
@@ -537,7 +588,7 @@ async def _handle_settings_module(
             await itx.response.send_message(
                 "No settings have been loaded yet! Please wait a little bit, "
                 "or message @mysticmia about this error message.",
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
@@ -558,7 +609,7 @@ async def _handle_settings_module(
             ("Here is a list of modules you can set, and their values.\n"
              + enabled_modules_string + disabled_modules_string + help_str
              )[:2000],
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -578,7 +629,7 @@ async def _handle_settings_module(
             "autocomplete cache (discord is silly) (on Desktop at least). "
             "Otherwise reopen the app, maybe that works.\n"
             + help_str,
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -587,7 +638,7 @@ async def _handle_settings_module(
         state_str = 'Enabled' if module_enabled else 'Disabled'
         await itx.response.send_message(
             f"The module '{setting}' is currently '{state_str}'.",
-            ephemeral=True
+            ephemeral=True,
         )
         return
     elif modify_mode == ModeAutocomplete.enable:
@@ -599,7 +650,7 @@ async def _handle_settings_module(
             "That is not a valid mode for this setting!"
             "When setting the mode for a Module, it must be either"
             "'Enable', 'Disable', or 'View'.",
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -612,7 +663,7 @@ async def _handle_settings_module(
             "This module is already "
             + ("enabled" if enable else "disabled")
             + "!\n" + help_str,
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -629,7 +680,7 @@ async def _handle_settings_module(
              "the database and get more information about the problem:"
              + ex.message
              )[:2000],
-            ephemeral=True
+            ephemeral=True,
         )
         return
 
@@ -643,7 +694,7 @@ class SettingsCog(commands.Cog):
 
     migrate_group = app_commands.Group(
         name="migrate",
-        description="A grouping of migrate commands."
+        description="A grouping of migrate commands.",
     )
     #
     # @app_commands.check(is_admin_check)
@@ -665,13 +716,13 @@ class SettingsCog(commands.Cog):
     #         content="Migrated databases and re-fetched all server settings.")
     #
 
-    @app_commands.check(is_admin_check)
-    @module_enabled_check(ModuleKeys.watchlist)
     @migrate_group.command(
         name="migrate-watchlist",
         description="Fetch all watchlist threads for this server."
     )
-    async def migrate_watchlist(self, itx: discord.Interaction[Bot]):
+    @is_admin_check
+    @module_enabled_check(ModuleKeys.watchlist)
+    async def migrate_watchlist(self, itx: GuildInteraction[Bot]):
         watchlist_channel: discord.TextChannel | None = \
             itx.client.get_guild_attribute(
                 itx.guild, AttributeKeys.watchlist_channel)
@@ -723,11 +774,10 @@ class SettingsCog(commands.Cog):
     @app_commands.autocomplete(setting=_setting_autocomplete)
     @app_commands.autocomplete(mode=_mode_autocomplete)
     @app_commands.autocomplete(value=_value_autocomplete)
-    @app_commands.check(is_admin_check)
-    @app_commands.check(not_in_dms_check)
+    @is_admin_check
     async def settings(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             setting_type: str,
             setting: str | None = None,
             mode: str | None = None,

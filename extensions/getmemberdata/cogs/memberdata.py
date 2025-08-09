@@ -11,7 +11,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.checks import not_in_dms_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 
 async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
@@ -20,7 +20,7 @@ async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
     data = await collection.find_one(query)
     if data is None:
         await collection.insert_one(query)
-        data = await collection.find_one(query)
+        data = query
 
     try:
         # see if this user already has data, if so, add a new joining
@@ -81,27 +81,27 @@ class MemberData(commands.Cog):
         description="See joined, left, and recently verified users in x days"
     )
     @app_commands.describe(
-        lower_bound="Get data from [period] days ago",
-        upper_bound="Get data up to [period] days ago",
+        lower_bound_str="Get data from [period] days ago",
+        upper_bound_str="Get data up to [period] days ago",
         doubles="If someone joined twice, are they counted double? "
                 "(y/n or 1/0)",
         public="Send the output to everyone in the channel"
     )
-    @app_commands.check(not_in_dms_check)
+    @app_commands.rename(lower_bound_str='lower_bound',
+                         upper_bound_str='upper_bound')
+    @not_in_dms_check
     async def get_member_data(
             self,
-            itx: discord.Interaction[Bot],
-            lower_bound: str,
-            upper_bound: str = None,
+            itx: GuildInteraction[Bot],
+            lower_bound_str: str,
+            upper_bound_str: str | None = None,
             doubles: bool = False,
             public: bool = False
     ):
         # todo: split function into multiple subfunctions.
-        if upper_bound is None:
-            upper_bound = 0  # 0 days from now
         try:
-            lower_bound = float(lower_bound)
-            upper_bound = float(upper_bound)
+            lower_bound = float(lower_bound_str)
+            upper_bound = float(upper_bound_str or 0)  # 0 days from now
             if lower_bound <= 0:
                 await itx.response.send_message(
                     "Your period (data in the past [x] days) has to be "
@@ -216,10 +216,12 @@ class MemberData(commands.Cog):
                     # remove the '0' line from before tracking
                     #  verifiedness of people after leaving
                     if (
-                            (min_time > 1700225500 and y == "left") or
+                            (min_time > 1700225500 and y == "left")
                             # ^ backwards compatability
-                            (min_time < 1700225000 and y == "left verified") or
-                            (min_time < 1700225000 and y == "left unverified")
+                            or (min_time < 1700225000
+                                and y == "left verified")
+                            or (min_time < 1700225000
+                                and y == "left unverified")
                     ):
                         # todo: consider just migrating all 'left' to
                         #  left-verified.
@@ -263,9 +265,9 @@ class MemberData(commands.Cog):
                 "verified": "b"
             }
             for graph in df:
-                if graph == "time":
+                if str(graph) == "time":
                     continue
-                ax1.plot(df['time'], df[graph], color[graph], label=graph)
+                ax1.plot(df['time'], df[graph], color[str(graph)], label=graph)
             ax1.legend()
             if doubles:
                 re_text = "inc"

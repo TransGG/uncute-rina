@@ -11,12 +11,15 @@ class CustomVcStaffEditorModal(
         title='Edit a custom vc\'s channel'
 ):
     def __init__(
-            self, vc_hub: int, vc_log, vc_category, vctable_prefix
+            self,
+            vc_hub: discord.VoiceChannel,
+            vc_category: discord.CategoryChannel,
+            vctable_prefix: str,
     ):
         super().__init__()
-        self.vcHub = vc_hub
-        self.vcLog = vc_log
-        self.vcCategory = vc_category
+        self.vc_hub = vc_hub
+        self.vc_category = vc_category
+        self.vc_prefix = vctable_prefix
 
         self.channel_id = discord.ui.TextInput(
             label='Channel Id',
@@ -39,10 +42,14 @@ class CustomVcStaffEditorModal(
         self.add_item(self.limit)
 
     async def on_submit(self, itx: discord.Interaction[Bot]):
-        name = str(self.name)
-        if name == "":
-            name = None
-
+        if itx.guild is None:
+            await itx.response.send_message(
+                "Your interaction was not connected to a server, so I also "
+                "can't find the channel you want to edit. Make sure you are "
+                "running this in a server!",
+                ephemeral=True,
+            )
+            return
         try:
             # limit = self.limit
             channel_id = int(str(self.channel_id))
@@ -51,7 +58,7 @@ class CustomVcStaffEditorModal(
                 "Your channel id has to be .. number-able. It contains "
                 "a non-integer character. In other words, there's something "
                 "other than a number in your Channel Id box",
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
@@ -63,7 +70,7 @@ class CustomVcStaffEditorModal(
         except ValueError:
             await itx.response.send_message(
                 "I can only set the limit to a whole number...",
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
@@ -72,30 +79,30 @@ class CustomVcStaffEditorModal(
             if type(channel) is not discord.VoiceChannel:
                 await itx.response.send_message(
                     "This isn't a voice channel. You can't edit this channel.",
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
         except discord.errors.HTTPException:
             await itx.response.send_message(
                 "Retrieving this channel failed. Perhaps a connection issue?",
-                ephemeral=True
+                ephemeral=True,
             )
             return
         except Exception:
             await itx.response.send_message(
                 "Sorry, I couldn't find that channel. Are you sure you "
                 "have the correct **voice** channel id?",
-                ephemeral=True
+                ephemeral=True,
             )
             raise
 
         warning = ""
-        if (getattr(channel.category, "id") not in [self.vcCategory]
-                or channel.id == self.vcHub):
+        if (getattr(channel.category, "id", None) != self.vc_category
+                or channel.id == self.vc_hub):
             await itx.response.send_message(
                 "You can't change that voice channel's name (not with "
                 "this command, at least)!",
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
@@ -107,21 +114,26 @@ class CustomVcStaffEditorModal(
                 f"I have queued the previous two renaming edits. You can "
                 f"queue another rename <t:{first_rename_time + 600}:R> "
                 f"(<t:{first_rename_time + 600}:t>).",
-                ephemeral=True
+                ephemeral=True,
             )
             return
 
         limit_info = ""
+        name = str(self.name) or None
         old_name = channel.name
         old_limit = channel.user_limit
-        if old_name.startswith('〙') != name.startswith('〙'):
-            # todo: fix
+        if (
+                name is not None
+                and (old_name.startswith(self.vc_prefix)
+                     != name.startswith(self.vc_prefix))
+        ):
             warning += (
-                "You're renaming a vc channel with a '〙' symbol. This symbol "
-                "is used to blacklist voice channels from being automatically "
-                "removed when the last user leaves. If you want a channel to "
-                "stay (and not be deleted) when no-one is in it, you should "
-                "start the channel with the symbol.\n"
+                f"You're renaming a vc channel with a '{self.vc_prefix}' "
+                f"symbol. This symbol is used to blacklist voice channels "
+                f"from being automatically removed when the last user leaves. "
+                f"If you want a channel to stay (and not be deleted) when "
+                f"no-one is in it, you should start the channel with the "
+                f"symbol.\n"
             )
         try:
             if not limit and not name:
@@ -163,7 +175,8 @@ class CustomVcStaffEditorModal(
                     itx.guild,
                     f"Staff: Voice channel ({channel.id}) renamed from "
                     f"\"{old_name}\" to \"{name}\" (by "
-                    f"{itx.user.nick or itx.user.name}, {itx.user.id})"
+                    f"{getattr(itx.user, "nick") or itx.user.name}, "
+                    f"{itx.user.id})"
                 )
                 await itx.response.send_message(
                     warning

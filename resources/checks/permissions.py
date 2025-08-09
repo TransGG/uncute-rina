@@ -22,12 +22,16 @@ def is_staff(
 
     :return: Whether the user has a staff role.
     """
+    if isinstance(member, discord.User):
+        # No roles, no server, so no staff
+        return False
+
     staff_roles: list[discord.Role] = itx.client.get_guild_attribute(
         itx.guild, AttributeKeys.staff_roles, default=[])
     roles_set: set[discord.Role] = set(staff_roles)
     return (
-        len(roles_set.intersection(member.roles)) > 0 or
-        is_admin(itx, member)
+        len(roles_set.intersection(member.roles)) > 0
+        or is_admin(itx, member)
     )
 
 
@@ -44,11 +48,15 @@ def is_admin(
 
     :return: Whether the user has an admin role.
     """
+    if isinstance(member, discord.User) or itx.guild is None:
+        # No roles, no server, so no staff
+        return False
+
     admin_roles: list[discord.Role] = itx.client.get_guild_attribute(
         itx.guild, AttributeKeys.admin_roles, default=[])
     roles_set: set[discord.Role] = set(admin_roles)
     return (
-        len(roles_set.intersection(member.roles)) > 0 or
-        member.id == itx.guild.owner_id or
-        member.id == itx.client.bot_owner.id
+        len(roles_set.intersection(member.roles)) > 0
+        or member.id == itx.guild.owner_id
+        or member.id == itx.client.bot_owner.id
     )

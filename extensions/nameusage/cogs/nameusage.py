@@ -8,7 +8,7 @@ import discord.ext.commands as commands
 
 from extensions.nameusage.views.pageview import GetTopPageView
 from resources.checks import not_in_dms_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 
 class NameUsage(
@@ -31,10 +31,10 @@ class NameUsage(
         discord.app_commands.Choice(name='Search nicks and usernames',
                                     value=3),
     ])
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def nameusage_gettop(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: int
     ):
         # todo: split this function into multiple smaller functions
@@ -157,10 +157,10 @@ class NameUsage(
         discord.app_commands.Choice(name='Search both nicknames and usernames',
                                     value=3),
     ])
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def nameusage_name(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             name: str,
             search_type: int,
             public: bool = False

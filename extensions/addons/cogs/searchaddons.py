@@ -1,5 +1,4 @@
 import json  # to read API json responses
-import urllib.parse
 
 import requests  # to read api calls
 
@@ -7,6 +6,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.addons.wolframresult import WolframResult, WolframQueryResult, WolframPod
 from resources.customs import Bot
 
 from extensions.addons.equaldexregion import EqualDexRegion
@@ -16,10 +16,327 @@ from extensions.addons.views.equaldex_additionalinfo import (
 from extensions.addons.views.math_sendpublicbutton import (
     SendPublicButtonMath
 )
-
+from resources.utils import debug, DebugColor
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
+
+
+def format_wolfram_success_output(data: WolframQueryResult) -> tuple[bool, str]:
+    """
+    Helper function to parse api response data into a user-friendly string.
+
+    :param data: The API data to parse and format.
+    :return: A tuple of successful parsing and the output string. If
+     unsuccessful, the output string is the error message.
+    """
+    if data["numpods"] == 0 or "pods" not in data:
+        return False, "The output had no pods with data."
+
+    if len(data["pods"]) != data["numpods"]:
+        debug(repr(data), DebugColor.orange)
+        return (
+            False,
+            f"The response `numpods` did not match the actual returned number "
+            f"of pods! "
+            f"(numpods: {data['numpods']}, pod count: {len(data['pods'])}"
+            + f", inputstring: {data['inputstring']})"
+              if "inputstring" in data else ""
+            + ")",
+        )
+
+    interpreted_input, output, other_primary_outputs, error_or_nodata = \
+        _read_wolfram_pods(data["pods"])
+
+    if len(output) == 0 and len(other_primary_outputs) == 0:
+        # if there is no result and all other pods are
+        #  'primary: False'
+        error_or_nodata, other_primary_outputs = \
+            _read_wolfram_nonprimary_pods(data["pods"])
+    if len(other_primary_outputs) > 0:
+        other_results = (
+            "\nOther results:\n> "
+            + '\n> '.join(other_primary_outputs)
+        )
+    else:
+        other_results = ""
+    data_count = len(other_primary_outputs) + bool(len(output))
+    if data_count <= error_or_nodata:
+        return (
+            False,
+            "There was no data for your answer!\n"
+            "It seems all your answers had an error or were "
+            "'nodata entries', meaning you might need to try a "
+            "different query to get an answer to your question!"
+        )
+
+    assumptions = _format_wolfram_assumptions(data)
+    warnings = _format_wolfram_warnings(data)
+    return (
+        True,
+        f"Input\n> {interpreted_input}\n"
+        f"Result:\n> {output}"
+        + other_results
+        + assumptions
+        + warnings
+    )
+
+
+def _format_wolfram_warnings(data: WolframQueryResult) -> str:
+    """
+    Helper to check all warnings and format them as string.
+    :param data: The API data to format.
+    :return: A formatted string of the warnings, or empty if no warnings are
+     in the API response.
+    """
+    warnings = []
+    if "warnings" in data:
+        # not sure if multiple warnings will be stored into a
+        #  list instead.
+        # Edit: Turns out they do.
+        if isinstance(data["warnings"], list):
+            for warning in data["warnings"]:
+                warnings.append(warning["text"])
+        else:
+            warnings.append(data["warnings"]["text"])
+    if len(data.get("timedout", "")) > 0:
+        warnings.append(
+            "Timed out: "
+            + data["timedout"].replace(",", ", ")
+        )
+    if len(data.get("timedoutpods", "")) > 0:
+        warnings.append(
+            "Timed out pods: "
+            + data["timedout"].replace(",", ", ")
+        )
+    if len(warnings) > 0:
+        warnings = ("\nWarnings:\n> "
+                    + '\n> '.join(warnings))
+    else:
+        warnings = ""
+    return warnings
+
+
+def _read_wolfram_nonprimary_pods(
+        pods: list[WolframPod],
+) -> tuple[int, list[str]]:
+    """
+    Helper to re-iterate all pods when no primary result is given.
+    :param pods: The pods to iterate and format.
+    :return: A tuple of the new number of no-data and erroring pods; and a list
+     of formatted pod outputs.
+    """
+    error_or_nodata = 0
+    other_primary_outputs = []
+    for pod in pods:
+        if pod["numsubpods"] == 0 or "subpods" not in pod:
+            continue
+
+        if pod["id"] not in ["Input", "Result"]:
+            for subpod in pod["subpods"]:
+                if ("plaintext" not in subpod
+                        or len(subpod["plaintext"]) == 0):
+                    continue
+                if subpod.get("nodata") or subpod.get("error"):
+                    # error or nodata == True
+                    error_or_nodata += 1
+                other_primary_outputs.append(
+                    subpod["plaintext"].replace("\n", "\n>     ")
+                )
+    return error_or_nodata, other_primary_outputs
+
+
+def _read_wolfram_pods(
+        pods: list[WolframPod]
+) -> tuple[str, str, list[str], int]:
+    """
+    Helper to read every pod and its subpods.
+    :param pods: A list of the pods to parse.
+    :return: A tuple of the interpreted input, the output, a list of other
+     outputs, and the number of no-data or erroring pods.
+    """
+    interpreted_input = ""
+    output = ""
+    other_primary_outputs = []
+    error_or_nodata = 0
+
+    for pod in pods:
+        if pod["numsubpods"] == 0 or "subpods" not in pod:
+            continue
+
+        subpods = []
+        for subpod in pod["subpods"]:
+            if ("plaintext" not in subpod
+                    or len(subpod["plaintext"]) == 0):
+                continue
+
+            if pod["id"] == "Input":
+                subpods.append(
+                    subpod["plaintext"].replace("\n", "\n>     ")
+                )
+            else:
+                if subpod.get("nodata") or subpod.get("error"):
+                    # error or nodata == True
+                    error_or_nodata += 1
+                if pod["id"] == "Result":
+                    subpods.append(
+                        subpod["plaintext"].replace("\n", "\n>     ")
+                    )
+                elif pod.get("primary", False):
+                    other_primary_outputs.append(
+                        subpod["plaintext"].replace("\n", "\n>     ")
+                    )
+        if pod["id"] == "Input":
+            interpreted_input = "\n> ".join(subpods)
+        elif pod["id"] == "Result":
+            output = f"\n> ".join(subpods)
+    return (
+        interpreted_input,
+        output,
+        other_primary_outputs,
+        error_or_nodata,
+    )
+
+
+def _format_wolfram_assumptions(data: WolframQueryResult) -> str:
+    """
+    Helper to find and format assumptions for Wolfram's API.
+    :param data: The data to format.
+    :return: A formatted string, or an empty string if no assumptions
+     were given in the API response.
+    """
+    assumptions = []
+    if "assumptions" not in data:
+        return ""
+
+    # if type(data["assumptions"]) is dict:
+    #     # only 1 assumption, instead of a list. So just make
+    #     #  a list of 1 assumption instead.
+    #     data["assumptions"] = [data["assumptions"]]
+
+    for assumption in data["assumptions"]:
+        if ("count" not in assumption
+                or assumption["count"] == 0
+                or "values" not in assumption):
+            continue
+
+
+        assumption_data = {}
+        # because Wolfram|Alpha is being annoyingly
+        #  inconsistent.
+        if "word" in assumption:
+            assumption_data["${word}"] = assumption["word"]
+
+        if isinstance(assumption["values"], dict):
+            # only 1 value, instead of a list. So just make
+            #  a list of 1 value instead.
+            assumption["values"] = [assumption["values"]]
+
+        for value_index, value in enumerate(assumption["values"]):
+            word_id = str(value_index + 1)
+            assumption_data["${desc" + word_id + "}"] \
+                = value["desc"]
+            if "word" not in assumption:
+                continue
+
+            assumption_data["${word" + word_id + "}"] \
+                = assumption["word"]
+
+        if "template" in assumption:
+            template: str = assumption["template"]
+            for replacer in assumption_data:
+                template = template.replace(
+                    replacer, assumption_data[replacer]
+                )
+            if template.endswith("."):
+                template = template[:-1]
+            assumptions.append(template + "?")
+        else:
+            template: str = (
+                    assumption["type"]
+                    + " - "
+                    + assumption["word"]
+                    + " (todo)"
+            )
+            assumptions.append(template)
+
+    if len(assumptions) > 0:
+        assumption_str = "\nAssumptions:\n> " + '\n> '.join(assumptions)
+    else:
+        assumption_str = ""
+    return assumption_str
+
+
+def _format_wolfram_error_output(data: WolframQueryResult) -> str:
+    if data.get("error", False) is True:
+        return "Got an error, but no extra data... Kinda weird?"
+
+    if "error" in data and isinstance(data["error"], dict):
+        code = data["error"]["code"]
+        message = data["error"]["msg"]
+        return (
+            f"I'm sorry, but I wasn't able to give a response "
+            f"to that!\n"
+            f"> code: {code}\n"
+            f"> message: {message}"
+        )
+    elif "didyoumeans" in data:
+        didyoumeans = {}
+        if isinstance(data["didyoumeans"], list):
+            for option in data["didyoumeans"]:
+                didyoumeans[option["score"]] = option["val"]
+        else:
+            didyoumeans[data["didyoumeans"]["score"]] \
+                = data["didyoumeans"]["val"]
+        options_sorted = sorted(
+            didyoumeans.items(),
+            key=lambda x: float(x[0]),
+            reverse=True
+        )
+        options = [value for _, value in options_sorted]
+        options_str = "\n> ".join(options)
+        return (
+            f"I'm sorry, but I wasn't able to give a response to "
+            f"that! However, here are some possible improvements "
+            f"to your prompt:\n"
+            f"> {options_str}"
+        )
+    elif "languagemsg" in data:  # x does not support [language].
+        return (
+            f"Error:\n> {data['languagemsg']['english']}\n"
+            f"> {data['languagemsg']['other']}"
+        )
+    elif "futuretopic" in data:  # x does not support [language].
+        return (
+            f"Error:\n> {data['futuretopic']['topic']}\n"
+            f"> {data['futuretopic']['msg']}"
+        )
+    # why aren't these in the documentation? cmon wolfram, please.
+    elif "tips" in data:
+        # not sure if this is put into a list if there are multiple.
+        return f"Error:\n> {data['tips']['text']}"
+    elif "examplepage" in data:
+        # not sure if this is put into a list if there are multiple.
+        return (
+            f"Here is an example page for the things you can do with "
+            f"{data['examplepage']['category']}:\n"
+            f"> {data['examplepage']['url']}"
+        )
+    else:
+        # welp. Apparently you can get *no* info in the output
+        #  as well!! UGHHHHH
+        input_string = data.get("inputstring", None)
+        return (
+            "Error: No further info\n"
+            "It appears you filled in something for which I can't "
+            "get extra feedback..\n"
+            "Feel free to report the situation to MysticMia#7612"
+            + "\n\n"
+              "Interpreted input:\n"
+              "> {input_string}"
+              if input_string is not None
+              else ""
+        )
 
 
 class SearchAddons(commands.Cog):
@@ -175,28 +492,14 @@ class SearchAddons(commands.Cog):
                 ephemeral=True
             )
             return
-        if "&" in query:
-            await itx.followup.send(
-                "Your query cannot contain an ampersand (&/and symbol)! "
-                "(it can mess with the URL)\n"
-                "For the bitwise 'and' operator, try replacing '&' with "
-                "' bitwise and '. "
-                "Example '4 & 6' -> '4 bitwise and 6'\n"
-                "For other uses, try replacing the ampersand with 'and' "
-                "or the word(s) it symbolizes.",
-                ephemeral=True
-            )
-            return
-        # pluses are interpreted as a space (`%20`) in urls. In LaTeX,
-        #  that can mean multiply.
         api_key = itx.client.api_tokens['Wolfram Alpha']
         params = {
             "appid": api_key,
-            "input": urllib.parse.quote(query),  # slashes are safe
+            "input": query,
             "output": "json",
         }
         try:
-            data = requests.get(
+            api_response: WolframResult = requests.get(
                 "https://api.wolframalpha.com/v2/query",
                 params=params
             ).json()
@@ -208,235 +511,30 @@ class SearchAddons(commands.Cog):
             )
             return
 
-        data = data["queryresult"]
-        if data["success"]:
-            interpreted_input = ""
-            output = ""
-            other_primary_outputs = []
-            error_or_nodata = 0
-            for pod in data["pods"]:
-                subpods = []
-                if pod["id"] == "Input":
-                    for subpod in pod["subpods"]:
-                        subpods.append(
-                            subpod["plaintext"].replace("\n", "\n>     ")
-                        )
-                    interpreted_input = '\n> '.join(subpods)
-                if pod["id"] == "Result":
-                    for subpod in pod["subpods"]:
-                        if subpod.get("nodata") or subpod.get("error"):
-                            # error or nodata == True
-                            error_or_nodata += 1
-                        subpods.append(
-                            subpod["plaintext"].replace("\n", "\n>     ")
-                        )
-                    output = '\n> '.join(subpods)
-                elif pod.get("primary", False):
-                    for subpod in pod["subpods"]:
-                        if len(subpod["plaintext"]) == 0:
-                            continue
-                        if subpod.get("nodata") or subpod.get("error"):
-                            # error or nodata == True
-                            error_or_nodata += 1
-                        other_primary_outputs.append(
-                            subpod["plaintext"].replace("\n", "\n>     ")
-                        )
-            if len(output) == 0 and len(other_primary_outputs) == 0:
-                error_or_nodata = 0
-                # if there is no result and all other pods are
-                #  'primary: False'
-                for pod in data["pods"]:
-                    if pod["id"] not in ["Input", "Result"]:
-                        for subpod in pod["subpods"]:
-                            if len(subpod["plaintext"]) == 0:
-                                continue
-                            if subpod.get("nodata") or subpod.get("error"):
-                                # error or nodata == True
-                                error_or_nodata += 1
-                            other_primary_outputs.append(
-                                subpod["plaintext"].replace("\n", "\n>     ")
-                            )
-            if len(other_primary_outputs) > 0:
-                other_results = '\n> '.join(other_primary_outputs)
-                other_results = "\nOther results:\n> " + other_results
-            else:
-                other_results = ""
-            data_count = len(other_primary_outputs) + bool(len(output))
-            if data_count <= error_or_nodata:
-                # if there are more or an equal amount of errors as
-                #  there are text entries
+        data: WolframQueryResult = api_response["queryresult"]
+        if data.get("success", False):
+            success, output_string = format_wolfram_success_output(data)
+            if not success:
                 await itx.followup.send(
-                    "There was no data for your answer!\n"
-                    "It seems all your answers had an error or were "
-                    "'nodata entries', meaning you might need to try a "
-                    "different query to get an answer to your question!",
-                    ephemeral=True)
+                    str(output_string),
+                    ephemeral=True
+                )
                 return
-            assumptions = []
-            if "assumptions" in data:
-                if type(data["assumptions"]) is dict:
-                    # only 1 assumption, instead of a list. So just make
-                    #  a list of 1 assumption instead.
-                    data["assumptions"] = [data["assumptions"]]
-                for assumption in data.get("assumptions", []):
-                    assumption_data = {}
-                    # because Wolfram|Alpha is being annoyingly
-                    #  inconsistent.
-                    if "word" in assumption:
-                        assumption_data["${word}"] = assumption["word"]
-                    if type(assumption["values"]) is dict:
-                        # only 1 value, instead of a list. So just make
-                        #  a list of 1 value instead.
-                        assumption["values"] = [assumption["values"]]
-                    for value_index in range(len(assumption["values"])):
-                        word_id = str(value_index + 1)
-                        assumption_data["${desc" + word_id + "}"] \
-                            = assumption["values"][value_index]["desc"]
-                        try:
-                            assumption_data["${word" + word_id + "}"] \
-                                = assumption["values"][value_index]["word"]
-                        except KeyError:
-                            # the "word" variable is only there
-                            #  sometimes. for some stupid reason.
-                            pass
 
-                    if "template" in assumption:
-                        template: str = assumption["template"]
-                        for replacer in assumption_data:
-                            template = template.replace(
-                                replacer, assumption_data[replacer]
-                            )
-                        if template.endswith("."):
-                            template = template[:-1]
-                        assumptions.append(template + "?")
-                    else:
-                        template: str = (
-                            assumption["type"]
-                            + " - "
-                            + assumption["desc"]
-                            + " (todo)"
-                        )
-                        assumptions.append(template)
-            if len(assumptions) > 0:
-                alternatives = "\nAssumptions:\n> " + '\n> '.join(assumptions)
-            else:
-                alternatives = ""
-            warnings = []
-            if "warnings" in data:
-                # not sure if multiple warnings will be stored into a
-                #  list instead.
-                # Edit: Turns out they do.
-                if type(data["warnings"]) is list:
-                    for warning in data["warnings"]:
-                        warnings.append(warning["text"])
-                else:
-                    warnings.append(data["warnings"]["text"])
-            if len(data.get("timedout", "")) > 0:
-                warnings.append(
-                    "Timed out: "
-                    + data["timedout"].replace(",", ", ")
-                )
-            if len(data.get("timedoutpods", "")) > 0:
-                warnings.append(
-                    "Timed out pods: "
-                    + data["timedout"].replace(",", ", ")
-                )
-            if len(warnings) > 0:
-                warnings = ("\nWarnings:\n> "
-                            + '\n> '.join(warnings))
-            else:
-                warnings = ""
             view = SendPublicButtonMath()
             await itx.followup.send(
-                f"Input\n> {interpreted_input}\n"
-                f"Result:\n> {output}" +
-                other_results +
-                alternatives +
-                warnings, view=view, ephemeral=True)
+                output_string,
+                view=view,
+                ephemeral=True
+            )
             await view.wait()
             if view.value is None:
                 await itx.edit_original_response(view=None)
             return
         else:
-            if data["error"]:
-                code = data["error"]["code"]
-                message = data["error"]["msg"]
-                await itx.followup.send(
-                    f"I'm sorry, but I wasn't able to give a response "
-                    f"to that!\n"
-                    f"> code: {code}\n"
-                    f"> message: {message}",
-                    ephemeral=True
-                )
-                return
-            elif "didyoumeans" in data:
-                didyoumeans = {}
-                if type(data["didyoumeans"]) is list:
-                    for option in data["didyoumeans"]:
-                        didyoumeans[option["score"]] = option["val"]
-                else:
-                    didyoumeans[data["didyoumeans"]["score"]] \
-                        = data["didyoumeans"]["val"]
-                options_sorted = sorted(
-                    didyoumeans.items(),
-                    key=lambda x: float(x[0]),
-                    reverse=True
-                )
-                options = [value for _, value in options_sorted]
-                options_str = "\n> ".join(options)
-                await itx.followup.send(
-                    f"I'm sorry, but I wasn't able to give a response to "
-                    f"that! However, here are some possible improvements "
-                    f"to your prompt:\n"
-                    f"> {options_str}",
-                    ephemeral=True
-                )
-                return
-            elif "languagemsg" in data:  # x does not support [language].
-                await itx.followup.send(
-                    f"Error:\n> {data['languagemsg']['english']}\n"
-                    f"> {data['languagemsg']['other']}",
-                    ephemeral=True
-                )
-                return
-            elif "futuretopic" in data:  # x does not support [language].
-                await itx.followup.send(
-                    f"Error:\n> {data['futuretopic']['topic']}\n"
-                    f"> {data['futuretopic']['msg']}",
-                    ephemeral=True
-                )
-                return
-            # why aren't these in the documentation? cmon wolfram, please.
-            elif "tips" in data:
-                # not sure if this is put into a list if there are multiple.
-                await itx.followup.send(
-                    f"Error:\n> {data['tips']['text']}",
-                    ephemeral=True
-                )
-                return
-            elif "examplepage" in data:
-                # not sure if this is put into a list if there are multiple.
-                await itx.followup.send(
-                    f"Here is an example page for the things you can do with "
-                    f"{data['examplepage']['category']}:\n"
-                    f"> {data['examplepage']['url']}",
-                    ephemeral=True
-                )
-                return
-            else:
-                # welp. Apparently you can get *no* info in the output
-                #  as well!! UGHHHHH
-                await itx.followup.send(
-                    "Error: No further info\n"
-                    "It appears you filled in something for which I can't "
-                    "get extra feedback..\n"
-                    "Feel free to report the situation to MysticMia#7612",
-                    ephemeral=True
-                )
-                return
-        # await itx.followup.send(
-        #     "debug; It seems you reached the end of the function without "
-        #     "actually getting a response! Please report the query to "
-        #     "MysticMia#7612",
-        #     ephemeral=True
-        # )
+            output_string = _format_wolfram_error_output(data)
+            await itx.followup.send(
+                output_string,
+                ephemeral=True,
+            )
+            return

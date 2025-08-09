@@ -36,6 +36,10 @@ async def _reset_voice_channel_permissions_if_vctable(
         This function does not check if the channel is actually a
         custom voice channel.
     """
+    assert voice_channel.category is not None, (
+        "Couldn't reset voice channel permissions of custom VC because "
+        "the channel was not in a category."
+    )
     if len(voice_channel.overwrites) > len(  # todo: invert if-statement
             voice_channel.category.overwrites):
         # if VcTable, reset ownership; and all owners leave:
@@ -234,6 +238,7 @@ class CustomVcs(commands.Cog):
         customvc_category: discord.CategoryChannel | None
         vctable_prefix: str | None
         blacklisted_channels: list[discord.VoiceChannel]
+        vc_blacklist_prefix: str | None
         (
             customvc_hub, customvc_category, vctable_prefix,
             blacklisted_channels, vc_blacklist_prefix
@@ -245,8 +250,10 @@ class CustomVcs(commands.Cog):
             AttributeKeys.custom_vc_blacklisted_channels,
             AttributeKeys.custom_vc_blacklist_prefix
         )
-        if None in (customvc_hub, customvc_category,
-                    vctable_prefix, vc_blacklist_prefix):
+        if (customvc_hub is None
+                or customvc_category is None
+                or vctable_prefix is None
+                or vc_blacklist_prefix is None):
             # `blacklisted_channels` can be left empty.
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: customvc_hub,
@@ -260,21 +267,28 @@ class CustomVcs(commands.Cog):
 
         if (before.channel is not None
                 and before.channel in before.channel.guild.voice_channels):
-            if is_vc_custom(before.channel, customvc_category, customvc_hub,
-                            blacklisted_channels, vc_blacklist_prefix):
+            if (
+                    type(before.channel) is discord.VoiceChannel
+                    and is_vc_custom(
+                        before.channel, customvc_category, customvc_hub,
+                        blacklisted_channels, vc_blacklist_prefix)
+            ):
                 # only run if this voice state regards a custom voice channel
                 await _handle_custom_voice_channel_leave_events(
                     self.client, member, before.channel, vctable_prefix)
 
-        if after.channel is not None:
-            if after.channel.id == customvc_hub.id:
-                await _create_new_custom_vc(
-                    self.client,
-                    member,
-                    after.channel,
-                    customvc_category,
-                    customvc_hub
-                )
+        if (
+                after.channel is not None
+                and type(after.channel) is discord.VoiceChannel
+                and after.channel == customvc_hub
+        ):
+            await _create_new_custom_vc(
+                self.client,
+                member,
+                after.channel,
+                customvc_category,
+                customvc_hub
+            )
 
     @app_commands.command(
         name="editvc",
@@ -288,23 +302,27 @@ class CustomVcs(commands.Cog):
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ):
-        (vc_hub, vc_log, vc_category, vctable_prefix, vc_blacklist_prefix,
+        vc_hub: discord.VoiceChannel | None
+        vc_category: discord.CategoryChannel | None
+        vctable_prefix: str | None
+        vc_blacklist_prefix: str | None
+        vc_blacklisted_channels: list[discord.VoiceChannel]
+        (vc_hub, vc_category, vctable_prefix, vc_blacklist_prefix,
          vc_blacklisted_channels) = itx.client.get_guild_attribute(
             itx.guild,
             AttributeKeys.custom_vc_create_channel,
-            AttributeKeys.log_channel,
             AttributeKeys.custom_vc_category,
             AttributeKeys.vctable_prefix,
             AttributeKeys.custom_vc_blacklist_prefix,
             AttributeKeys.custom_vc_blacklisted_channels,
         )
-        assert type(vc_blacklisted_channels) is list
 
-        if None in (vc_hub, vc_log, vc_category, vctable_prefix,
-                    vc_blacklist_prefix):
+        if (vc_hub is None
+                or vc_category is None
+                or vctable_prefix is None
+                or vc_blacklist_prefix is None):
             missing = [key for key, value in {
                 AttributeKeys.custom_vc_create_channel: vc_hub,
-                AttributeKeys.log_channel: vc_log,
                 AttributeKeys.custom_vc_category: vc_category,
                 AttributeKeys.vctable_prefix: vctable_prefix,
                 AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix
@@ -315,10 +333,19 @@ class CustomVcs(commands.Cog):
 
         warning = ""
 
-        if itx.user.voice is None:
+        if isinstance(itx.user, discord.User):
+            await itx.response.send_message(
+                "Your command was not received as member of a discord server! "
+                "Please make sure you are inside a server and are connected "
+                "to a custom voice channel.",
+                ephemeral=True
+            )
+            return
+
+        if itx.user.voice is None or itx.user.voice.channel is None:
             if is_staff(itx, itx.user):
                 staff_modal = CustomVcStaffEditorModal(
-                    vc_hub, vc_log, vc_category, vctable_prefix)
+                    vc_hub, vc_category, vctable_prefix)
                 await itx.response.send_modal(staff_modal)
                 return
             await itx.response.send_message(
@@ -326,8 +353,10 @@ class CustomVcs(commands.Cog):
                 ephemeral=True
             )
             return
+
         channel = itx.user.voice.channel
-        if (channel.category != vc_category
+        if (channel.category is None
+                or channel.category != vc_category
                 or channel.id == vc_hub
                 or channel in vc_blacklisted_channels
                 or channel.name.startswith(vc_blacklist_prefix)):
@@ -336,6 +365,7 @@ class CustomVcs(commands.Cog):
                 ephemeral=True
             )
             return
+
         if name is not None:
             if name.startswith(vc_blacklist_prefix):
                 await itx.response.send_message(
@@ -349,8 +379,8 @@ class CustomVcs(commands.Cog):
                 return
             if name == "Untitled voice chat":
                 warning += "Are you really going to change it to that..\n"
-            if len(itx.user.voice.channel.overwrites) > len(
-                    itx.user.voice.channel.category.overwrites):
+            if len(channel.overwrites) > len(
+                    channel.category.overwrites):
                 # if VcTable, add prefix
                 name = vctable_prefix + name
 
@@ -366,7 +396,6 @@ class CustomVcs(commands.Cog):
                     ephemeral=True)
                 return
 
-        limit_info = ""
         old_name = channel.name
         old_limit = channel.user_limit
         try:
@@ -378,8 +407,8 @@ class CustomVcs(commands.Cog):
             if not limit and name:
                 await channel.edit(
                     reason=f"Voice channel renamed from \"{channel.name}\" "
-                           f"to \"{name}\"{limit_info}",
-                    name=name
+                           f"to \"{name}\"",
+                    name=str(name)  # apparently literals aren't strings...?
                 )
                 username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
@@ -406,8 +435,8 @@ class CustomVcs(commands.Cog):
                     itx.guild,
                     f"Voice channel \"{old_name}\" ({channel.id}) edited the "
                     f"user limit from \"{old_limit}\" to \"{limit}\" "
-                    f"(by {itx.user.nick or itx.user.name}, {itx.user.id})"
-                    f"{limit_info}"
+                    f"(by {getattr(itx.user, "nick") or itx.user.name}, "
+                    f"{itx.user.id})"
                 )
                 await itx.response.send_message(
                     warning + f"Voice channel user limit for \"{old_name}\" "
@@ -422,7 +451,7 @@ class CustomVcs(commands.Cog):
                            f"\"{channel.name}\" to \"{name}\" and user limit "
                            f"from \"{limit}\" to \"{old_limit}\"",
                     user_limit=limit,
-                    name=name
+                    name=str(name)  # Literal is apparently not a string?
                 )
                 username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
@@ -431,7 +460,7 @@ class CustomVcs(commands.Cog):
                     f"{username} ({itx.user.id}) "
                     f"changed VC ({channel.id}) name \"{old_name}\" to "
                     f"\"{name}\" and user limit from \"{old_limit}\" to "
-                    f"\"{limit}\"{limit_info}"
+                    f"\"{limit}\""
                 )
                 await itx.response.send_message(
                     warning + "Voice channel name and user limit "

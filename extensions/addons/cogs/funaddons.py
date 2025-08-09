@@ -1,4 +1,5 @@
 import random
+import typing
 # ^ for dice rolls (/roll) and selecting a random staff
 #  interaction wait time
 from typing import TypeVar
@@ -9,7 +10,7 @@ import discord.ext.commands as commands
 
 from extensions.addons.roll import generate_roll
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from resources.customs import Bot, GuildMessage
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
 
@@ -46,8 +47,8 @@ async def _handle_awawa_reaction(
     # adding headpats on abababa or awawawawa
     msg_content = message.content.lower()
 
-    if len(msg_content) > 5 and (msg_content.startswith("aba") or
-                                 msg_content.startswith("awa")):
+    if len(msg_content) > 5 and (msg_content.startswith("aba")
+                                 or msg_content.startswith("awa")):
         # check if the message content is /(ab|aw)+a/i
         replaced = msg_content.replace("ab", "").replace("aw", "")
         if replaced == "a":
@@ -133,7 +134,7 @@ class FunAddons(commands.Cog):
         self.rude_comments_opinion_cooldown = 0
 
     def handle_random_pat_reaction(
-            self, message: discord.Message, headpat_emoji: discord.Emoji
+            self, message: GuildMessage, headpat_emoji: discord.Emoji
     ) -> bool:
         """
         A helper function to handle on_message events by users
@@ -144,6 +145,9 @@ class FunAddons(commands.Cog):
 
         :return: Whether a reaction was added to the message.
         """
+        channel_name = getattr(message.channel, "name", None)
+        channel_category = getattr(message.channel, "category", None)
+
         # adding headpats every x messages
         self.headpat_wait += 1
         if self.headpat_wait >= 1000:
@@ -155,12 +159,14 @@ class FunAddons(commands.Cog):
                     (type(message.channel) is discord.Thread
                      and message.channel.parent == 987358841245151262)
                     # ^ <#welcome-verify>
-                    or message.channel.name.startswith('ticket-')
-                    or message.channel.name.startswith('closed-')
+                    or channel_name is None
+                    or channel_name.startswith('ticket-')
+                    or channel_name.startswith('closed-')
+                    or channel_category is None
                     # <#Bulletin Board>, <#Moderation Logs>,
                     # <#Verifier Archive>, <#Events>,
                     # <#Open Tickets>, <#Closed Tickets>
-                    or message.channel.category.id in [
+                    or channel_category.id in [
                         959584962443632700, 959590295777968128,
                         959928799309484032, 1041487583475138692,
                         995330645901455380, 995330667665707108
@@ -206,6 +212,7 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.headpat_reactions):
+            message = typing.cast(GuildMessage, message)
             headpat_emoji: discord.Emoji | None
             headpat_emoji = self.client.get_guild_attribute(
                 message.guild, AttributeKeys.headpat_emoji)

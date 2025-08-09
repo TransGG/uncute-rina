@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 
 recently_renamed_vcs: dict[int, list[datetime]] = {}  # make your own vcs!
+VOICE_CHANNEL_RENAME_RATELIMIT = 2
 
 
 def clear_vc_rename_log(channel_id: int) -> None:
@@ -18,7 +19,8 @@ def clear_vc_rename_log(channel_id: int) -> None:
 
 
 def try_store_vc_rename(
-        channel_id: int, max_rename_limit: int = 2
+        channel_id: int,
+        max_rename_limit: int = VOICE_CHANNEL_RENAME_RATELIMIT
 ) -> None | int:
     """
     Store a new voice channel rename in the storage dictionary.
@@ -51,9 +53,10 @@ def try_store_vc_rename(
                 return int(recently_renamed_vcs[channel_id][0].timestamp())
             # clear rename queue log and continue command
             # (discord allows 2 renames in 10 minutes but can queue
-            #  rename events, hence '[2:]')
+            #  rename events, hence the voice channel rename ratelimit)
             recently_renamed_vcs[channel_id] = \
-                recently_renamed_vcs[channel_id][2:]
+                recently_renamed_vcs[channel_id][
+                VOICE_CHANNEL_RENAME_RATELIMIT:]
     else:
         # create and continue command
         recently_renamed_vcs[channel_id] = []

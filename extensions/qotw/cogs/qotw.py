@@ -5,14 +5,18 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
+from extensions.settings.objects import (
+    ModuleKeys,
+    AttributeKeys,
+    MessageableGuildChannel,
+)
 from resources.checks import (
     not_in_dms_check,
     module_enabled_check,
     MissingAttributesCheckFailure
 )
 from resources.utils.utils import get_mod_ticket_channel
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 
 class QOTW(commands.Cog):
@@ -24,25 +28,26 @@ class QOTW(commands.Cog):
         description="Suggest a question for the weekly queue!"
     )
     @app_commands.describe(question="What question would you like to add?")
-    @app_commands.check(not_in_dms_check)
     @module_enabled_check(ModuleKeys.qotw)
-    async def qotw(self, itx: discord.Interaction[Bot], question: str):
+    @not_in_dms_check
+    async def qotw(self, itx: GuildInteraction[Bot], question: str):
         if len(question) > 400:
-            ticket_channel: discord.abc.Messageable | None \
+            ticket_channel: MessageableGuildChannel | None \
                 = get_mod_ticket_channel(itx.client, guild_id=itx.guild.id)
-            if ticket_channel:
+            if ticket_channel is not None:
                 special_request_string = (f"make a ticket (in "
                                           f"<#{ticket_channel.id}>).")
             else:
                 special_request_string = "contact staff directly."
             await itx.response.send_message(
                 "Please make your question shorter! (400 characters). "
-                "If you have a special request, please " +
-                special_request_string, ephemeral=True)
+                "If you have a special request, please "
+                + special_request_string, ephemeral=True)
             await itx.followup.send("-# " + question, ephemeral=True)
             return
 
         # get channel of where this message has to be sent
+        qotw_channel: MessageableGuildChannel | None
         qotw_channel = itx.client.get_guild_attribute(
             itx.guild,
             AttributeKeys.qotw_suggestions_channel

@@ -13,7 +13,7 @@ from extensions.tags.local_tag_list import (
 from extensions.tags.modals.create_tag import CreateTagModal
 from extensions.tags.tag_manage_modes import TagMode
 from resources.checks import module_enabled_check, is_admin_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 from resources.utils import replace_string_command_mentions
 from resources.utils.utils import get_mod_ticket_channel
 # ^ for ticket channel id in Report tag
@@ -35,6 +35,7 @@ def _get_enabled_tag_ids(itx) -> set[str]:
     return set(default_tags + custom_tags)
 
 
+@module_enabled_check(ModuleKeys.tags)
 async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /tag command."""
     if current == "":
@@ -51,7 +52,8 @@ async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
 @module_enabled_check(ModuleKeys.tags)
 async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /tag-manage command."""
-    if itx.namespace.mode == TagMode.delete.value:
+    if (itx.namespace.mode == TagMode.delete.value
+            and itx.guild is not None):
         tag_objects = get_tags(itx.guild)
         return [
             app_commands.Choice(name=key, value=key)
@@ -61,7 +63,7 @@ async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
     return []
 
 
-async def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
+def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
     """
     Helper for parsing r,g,b input for embed colors.
 
@@ -103,6 +105,8 @@ class TagFunctions(commands.Cog):
         global report_message_reminder
         if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
             return
+        assert message.guild is not None
+
         if message.author.bot:
             return
 
@@ -136,7 +140,7 @@ class TagFunctions(commands.Cog):
     @module_enabled_check(ModuleKeys.tags)
     async def tag(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             tag: str,
             public: bool = True,
             anonymous: bool = True
@@ -160,8 +164,8 @@ class TagFunctions(commands.Cog):
                 await custom_tag.send(itx, public, anonymous)
         elif tag == "help":
             await itx.response.send_message(
-                "List of tags currently available to send:\n" +
-                '\n'.join(["- " + i for i in tag_info_dict]),
+                "List of tags currently available to send:\n"
+                + '\n'.join(["- " + i for i in tag_info_dict]),
                 ephemeral=True
             )
         else:
@@ -180,12 +184,12 @@ class TagFunctions(commands.Cog):
         discord.app_commands.Choice(name=TagMode.delete.value,
                                     value=TagMode.delete.value),
     ])
-    @app_commands.check(is_admin_check)
     @app_commands.autocomplete(tag_name=_tag_name_autocomplete)
+    @is_admin_check
     @module_enabled_check(ModuleKeys.tags)
     async def tag_manage(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: str,
             tag_name: str,
     ):
@@ -207,38 +211,13 @@ class TagFunctions(commands.Cog):
                 # interaction aborted
                 return
             itx = create_tag_modal.return_interaction
-
-            title = create_tag_modal.embed_title.value
-            description = create_tag_modal.description.value
-            description = replace_string_command_mentions(
-                description, itx.client)
-            color = create_tag_modal.color.value
-            report_to_staff = create_tag_modal.report_to_staff.value
-
-            if color is None:
-                color = "0,0,0"  # #000000 is default embed color.
+            assert itx.guild is not None
             try:
-                color_tuple = await _parse_embed_color_input(color)
+                color_tuple, description, report_to_staff, title = \
+                    self._parse_tag_information(create_tag_modal, itx)
             except ValueError as ex:
-                cmd_help = itx.client.get_command_mention_with_args(
-                    'help', page="901")
-                await itx.response.send_message(
-                    f"Invalid color:\n"
-                    f"> {ex}\n"
-                    f"For more help, run {cmd_help}.",
-                    ephemeral=True
-                )
+                await itx.response.send_message(ex, ephemeral=True)
                 return
-            if report_to_staff.lower() not in ["true", "false"]:
-                await itx.response.send_message(
-                    f"Invalid boolean for `report_to_staff`:"
-                    f"Expected either `True`, `true`, `False`, or `false`\n"
-                    f"but received `{report_to_staff}`.`",
-                    ephemeral=True
-                )
-                return
-            report_to_staff = report_to_staff.lower() == "true"
-
             await create_tag(
                 itx.client.async_rina_db, itx.guild, tag_name,
                 title, description, color_tuple, report_to_staff
@@ -257,5 +236,34 @@ class TagFunctions(commands.Cog):
                     f"There was no custom tag named '{tag_name}'.",
                     ephemeral=True)
         else:
-            await itx.response.send_message(f"'{mode}' is not a valid mode.",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                f"'{mode}' is not a valid mode.", ephemeral=True)
+
+    @staticmethod
+    def _parse_tag_information(create_tag_modal, itx):
+        title = create_tag_modal.embed_title.value
+        description = create_tag_modal.description.value
+        description = replace_string_command_mentions(
+            description, itx.client)
+        color = create_tag_modal.color.value
+        report_to_staff = create_tag_modal.report_to_staff.value
+        try:
+            color_tuple = _parse_embed_color_input(
+                color or "0,0,0"  # #000000 is default embed color.
+            )  # raises ValueError
+        except ValueError as ex:
+            cmd_help = itx.client.get_command_mention_with_args(
+                'help', page="901")
+            raise ValueError(
+                f"Invalid color:\n"
+                f"> {ex}\n"
+                f"For more help, run {cmd_help}.",
+            )
+        if report_to_staff.lower() not in ["true", "false"]:
+            raise ValueError(
+                f"Invalid boolean for `report_to_staff`:"
+                f"Expected either `True`, `true`, `False`, or `false`\n"
+                f"but received `{report_to_staff}`.`",
+            )
+        report_to_staff = report_to_staff.lower() == "true"
+        return color_tuple, description, report_to_staff, title

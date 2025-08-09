@@ -1,19 +1,37 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 import discord
 import discord.app_commands as app_commands
+from typing import TYPE_CHECKING, Any, Callable
 
 from resources.checks.errors import (
     ModuleNotEnabledCheckFailure,
     CommandDoesNotSupportDMsCheckFailure
 )
 
+
 if TYPE_CHECKING:
     from resources.customs import Bot
 
+    from discord.app_commands.commands import (
+        CommandCallback, GroupT, P, T,
+    )
 
-def module_enabled_check(module_key):
+
+def is_in_dms(guild: discord.Guild | int | None) -> bool:
+    """
+    A simple function to check if a command was run in a DM.
+    :param guild: The guild or guild id to check...... This function is
+     just a one-liner...
+    :return: Whether the command was run in DMs.
+    """
+    return guild is None
+
+
+def module_enabled_check(
+        module_key
+) -> Callable[[CommandCallback[Any, ..., Any]],
+              CommandCallback[GroupT, P, T]]:
     """
     A check to check if a module is enabled.
 
@@ -34,37 +52,40 @@ def module_enabled_check(module_key):
         :raise CommandDoesNotSupportDMsCheckFailure: If the command was
          run outside a server (-> no modules = no attributes).
         """
-        if itx.guild is None:
+        if is_in_dms(itx.guild):
             raise CommandDoesNotSupportDMsCheckFailure()
         if itx.client.is_module_enabled(itx.guild, module_key):
             return True
         raise ModuleNotEnabledCheckFailure(module_key)
-    return app_commands.check(decor_check)
+
+    def decor_check1(
+            func: CommandCallback[Any, ..., Any]
+    ) -> CommandCallback[GroupT, P, T]:
+        app_commands.check(decor_check)(func)
+        return func
+
+    return decor_check1
 
 
-def not_in_dms_check(itx: discord.Interaction[Bot]) -> bool:
-    """
-    A check to check if the command/interaction was run in DMs.
+def not_in_dms_check(
+        func: CommandCallback[Any, ..., Any]
+) -> CommandCallback[GroupT, P, T]:
+    def decor_check(itx: discord.Interaction[Bot]) -> bool:
+        """
+        A check to check if the command/interaction was run in DMs.
 
-    :param itx: The interaction to check.
-    :return: ``True`` if the interaction was not in a DM, else an
-     exception.
-    :raise CommandDoesNotSupportDMsCheckFailure: If the command was run
-     outside a server.
-    """
-    if is_in_dms(itx.guild):
-        raise CommandDoesNotSupportDMsCheckFailure()
-    return True
+        :param itx: The interaction to check.
+        :return: ``True`` if the interaction was not in a DM, else an
+         exception.
+        :raise CommandDoesNotSupportDMsCheckFailure: If the command was run
+         outside a server.
+        """
+        if is_in_dms(itx.guild):
+            raise CommandDoesNotSupportDMsCheckFailure()
+        return True
 
-
-def is_in_dms(guild: discord.Guild | int | None) -> bool:
-    """
-    A simple function to check if a command was run in a DM.
-    :param guild: The guild or guild id to check...... This function is
-     just a one-liner...
-    :return: Whether the command was run in DMs.
-    """
-    return guild is None
+    app_commands.check(decor_check)(func)
+    return func
 
 
 def module_not_disabled_check(module_key: str):
@@ -73,7 +94,8 @@ def module_not_disabled_check(module_key: str):
 
     :param module_key: The key of the module to check.
     :return: A decorator that checks if the given module is disabled
-     in the interaction's guild.
+     in the interaction's guild. ``True`` if the module is enabled or
+     if the command was run in DMs, else ``False``.
     """
     async def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """

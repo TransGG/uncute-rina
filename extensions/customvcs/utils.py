@@ -28,10 +28,10 @@ def is_vc_custom(
     if voice_channel.category is None:
         return False
     return (
-        voice_channel.category == customvc_category and
-        voice_channel != customvc_hub and  # avoid deleting the hub channel
-        voice_channel not in customvc_channel_blacklist and
-        not voice_channel.name.startswith(customvc_blacklist_prefix)
+        voice_channel.category == customvc_category
+        and voice_channel != customvc_hub  # avoid deleting the hub channel
+        and voice_channel not in customvc_channel_blacklist
+        and not voice_channel.name.startswith(customvc_blacklist_prefix)
     )
 
 

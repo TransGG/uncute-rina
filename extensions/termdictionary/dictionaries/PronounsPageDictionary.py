@@ -31,8 +31,7 @@ class PronounsPageDictionary(DictionaryBase):
     """
 
     def __init__(self, session: aiohttp.ClientSession) -> None:
-        super().__init__()
-        self._session = session
+        super().__init__(session)
         self._result_str: str | None = None
         self._result_count = 0
         self._character_overflow = False

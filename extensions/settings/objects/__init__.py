@@ -11,6 +11,8 @@ __all__ = [
 
     'AttributeKeys',
     'ServerAttributes',
+    'MessageableGuildChannel',
+    'GuildAttributeType',
     'ServerAttributeIds',
 ]
 
@@ -22,5 +24,9 @@ from .server_settings import (
     parse_attribute,
 )
 from .attribute_keys import AttributeKeys
-from .server_attributes import ServerAttributes
+from .server_attributes import (
+    ServerAttributes,
+    MessageableGuildChannel,
+    GuildAttributeType,
+)
 from .server_attribute_ids import ServerAttributeIds

@@ -5,7 +5,11 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
+from extensions.settings.objects import (
+    ModuleKeys,
+    AttributeKeys,
+    MessageableGuildChannel,
+)
 from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
 from resources.checks.command_checks import is_in_dms
 from resources.customs import Bot
@@ -27,9 +31,10 @@ currency_options = {
         "IRR,ISK,JEP,JMD,JOD,JPY,KES,KGS,KHR,KMF,KPW,KRW,KWD,KYD,KZT,LAK,LBP,"
         "LKR,LRD,LSL,LYD,MAD,MDL,MGA,MKD,MMK,MNT,MOP,MRU,MUR,MVR,MWK,MXN,MYR,"
         "MZN,NAD,NGN,NIO,NOK,NPR,NZD,OMR,PAB,PEN,PGK,PHP,PKR,PLN,PYG,QAR,RON,"
-        "RSD,RUB,RWF,SAR,SBD,SCR,SDG,SEK,SGD,SHP,SLL,SOS,SRD,SSP,STD,STN,SVC,"
-        "SYP,SZL,THB,TJS,TMT,TND,TOP,TRY,TTD,TWD,TZS,UAH,UGX,USD,UYU,UZS,VES,"
-        "VND,VUV,WST,XAF,XAG,XAU,XCD,XDR,XOF,XPD,XPF,XPT,YER,ZAR,ZMW,ZWL"
+        "RSD,RUB,RWF,SAR,SBD,SCR,SDG,SEK,SGD,SHP,SLE,SLL,SOS,SRD,SSP,STD,STN,"
+        "SVC,SYP,SZL,THB,TJS,TMT,TND,TOP,TRY,TTD,TWD,TZS,UAH,UGX,USD,UYU,UZS,"
+        "VEF,VES,VND,VUV,WST,XAF,XAG,XAU,XCD,XCG,XDR,XOF,XPD,XPF,XPT,YER,ZAR,"
+        "ZMW,ZWG,ZWL"
         .split(",")
     )
 }
@@ -157,7 +162,12 @@ def _get_emoji_from_str(
         return client.get_emoji(int(emoji_str))  # returns None if not found
     else:
         emoji_partial = discord.PartialEmoji.from_str(emoji_str)
-        if emoji_partial is None or emoji_partial.is_unicode_emoji():
+        if (
+                emoji_partial is None
+                or emoji_partial.is_unicode_emoji()
+                or emoji_partial.id is None  # <- for type checking.
+                # ^ Technically already done by is_unicode_emoji.
+        ):
             # see docstring note
             return emoji_partial
         emoji = client.get_emoji(emoji_partial.id)
@@ -187,15 +197,18 @@ async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
 
 async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):
     """Autocomplete for /remove-role command."""
+    if isinstance(itx.user, discord.User):
+        return []
     role_options = {
         1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
         1126160612620243044: ("Hide Venting channel role", "NVA")  # NVA
     }
     options = []
+
     for role in itx.user.roles:
         if role.id in role_options:
-            if (current.lower() in role_options[role.id][0].lower() or
-                    current.lower() in role_options[role.id][1].lower()):
+            if (current.lower() in role_options[role.id][0].lower()
+                    or current.lower() in role_options[role.id][1].lower()):
                 options.append(role.id)
     if options:
         return [app_commands.Choice(name=role_options[role_id][0],
@@ -257,6 +270,10 @@ class OtherAddons(commands.Cog):
     @app_commands.autocomplete(from_unit=_unit_autocomplete)
     @app_commands.rename(from_unit='to')
     @app_commands.autocomplete(to_unit=_unit_autocomplete)
+    @app_commands.allowed_installs(
+        guilds=True, users=True)
+    @app_commands.allowed_contexts(
+        guilds=True, private_channels=True, dms=True)
     async def convert_unit(
             self,
             itx: discord.Interaction[Bot],
@@ -288,7 +305,7 @@ class OtherAddons(commands.Cog):
             if data.get("error", 0):
                 await itx.response.send_message(
                     "I'm sorry, something went wrong while trying to get "
-                    "the latest currency exchange rates",
+                    "the latest currency exchange rates.",
                     ephemeral=True
                 )
                 return
@@ -312,16 +329,17 @@ class OtherAddons(commands.Cog):
         # result = x * 1.8 - 459.67
         result = (base_value * options[to_unit][1]) - options[to_unit][0]
         result = round(result, 12)
+        formatted_value = int(value) if value.is_integer() else value
         if mode == "currency":
             await itx.response.send_message(
-                f"Converting {mode} from {value} {from_unit} to "
-                f"{result} {options[to_unit][2]}",
+                f"Converted {mode} from {formatted_value} {from_unit} to "
+                f"{result} {options[to_unit][2]}.",
                 ephemeral=not public
             )
         else:
             await itx.response.send_message(
-                f"Converting {mode} from {value} {from_unit} to "
-                f"{to_unit}: {result} {options[to_unit][2]}",
+                f"Converted {mode} from {formatted_value} {from_unit} to "
+                f"{to_unit}: {result} {options[to_unit][2]}.",
                 ephemeral=not public
             )
 
@@ -329,29 +347,54 @@ class OtherAddons(commands.Cog):
         name="add_poll_reactions",
         description="Make rina add an upvote/downvote emoji to a message"
     )
+    @app_commands.rename(
+        message_id_str="message_id",
+        upvote_emoji_str="upvote_emoji",
+        downvote_emoji_str="downvote_emoji",
+        neutral_emoji_str="neutral_emoji",
+    )
     @app_commands.describe(
-        message_id="What message do you want to add the votes to?",
-        upvote_emoji="What emoji do you want to react first?",
-        downvote_emoji="What emoji do you want to react second?",
-        neutral_emoji="Neutral emoji option (placed between the up/downvote)"
+        message_id_str="What message do you want to add the votes to?",
+        upvote_emoji_str="What emoji do you want to react first?",
+        downvote_emoji_str="What emoji do you want to react second?",
+        neutral_emoji_str="Neutral emoji option (placed between the "
+                          "up/downvote)"
     )
     async def add_poll_reactions(
             self,
             itx: discord.Interaction[Bot],
-            message_id: str,
-            upvote_emoji: str,
-            downvote_emoji: str,
-            neutral_emoji: str | None = None
+            message_id_str: str,
+            upvote_emoji_str: str,
+            downvote_emoji_str: str,
+            neutral_emoji_str: str | None = None
     ):
         if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(
                 itx.guild, ModuleKeys.poll_reactions):
             # Server specifically disabled this feature.
             raise ModuleNotEnabledCheckFailure(ModuleKeys.poll_reactions)
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I don't know what channel you're sending this in, so I "
+                "can't find the message you're referring to either. Make "
+                "sure you're in a channel I can see!",
+                ephemeral=True
+            )
+            return
+        if isinstance(itx.channel, (discord.ForumChannel, discord.StageChannel,
+                                    discord.CategoryChannel)):
+            await itx.response.send_message(
+                "I can't add emojis to messages in this channel, because "
+                "these channels typically don't contain any messages in the "
+                "first place. Make sure you're running this command in the "
+                "correct channel!",
+                ephemeral=True
+            )
+            return
 
         errors = []
         message: None | discord.Message = None  # happy IDE
-        if message_id.isdecimal():
-            message_id = int(message_id)
+        if message_id_str.isdecimal():
+            message_id = int(message_id_str)
             try:
                 message = await itx.channel.fetch_message(message_id)
             except discord.errors.NotFound:
@@ -365,29 +408,33 @@ class OtherAddons(commands.Cog):
             errors.append("- The message ID needs to be a number!")
 
         upvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, upvote_emoji)
+            itx.client, upvote_emoji_str)
         if upvote_emoji is None:
             errors.append("- I can't use this upvote emoji! "
                           "(perhaps it's a nitro emoji)")
 
         downvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, downvote_emoji)
+            itx.client, downvote_emoji_str)
         if downvote_emoji is None:
             errors.append("- I can't use this downvote emoji! "
                           "(perhaps it's a nitro emoji)")
 
-        if neutral_emoji is None:
+        if neutral_emoji_str is not None:
             neutral_emoji: MaybeEmoji = _get_emoji_from_str(
-                itx.client, neutral_emoji)
+                itx.client, neutral_emoji_str)
             if neutral_emoji is None:
                 errors.append("- I can't use this neutral emoji! "
                               "(perhaps it's a nitro emoji)")
+        else:
+            neutral_emoji = None
 
-        blacklisted_channels = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.poll_reaction_blacklisted_channels)
+        blacklisted_channels: list[MessageableGuildChannel] = []
+        if itx.guild is not None:
+            blacklisted_channels = itx.client.get_guild_attribute(
+                itx.guild, AttributeKeys.poll_reaction_blacklisted_channels) \
 
-        if (blacklisted_channels is not None and
-                itx.channel.id in blacklisted_channels):
+        if (blacklisted_channels is not None
+                and itx.channel.id in blacklisted_channels):
             errors.append("- :no_entry: You are not allowed to use this "
                           "command in this channel!")
 
@@ -398,6 +445,9 @@ class OtherAddons(commands.Cog):
                 ephemeral=True
             )
             return
+        assert upvote_emoji is not None
+        assert downvote_emoji is not None
+        assert neutral_emoji is not None
 
         try:
             await itx.response.send_message("Adding emojis...", ephemeral=True)
@@ -440,10 +490,10 @@ class OtherAddons(commands.Cog):
                 f"on message {message.jump_url}"
             )
 
-    @app_commands.command(name="get_rina_command_mention",
-                          description="Sends a hidden command mention for "
-                                      "your command"
-                          )
+    @app_commands.command(
+        name="get_rina_command_mention",
+        description="Sends a hidden command mention for your command"
+    )
     @app_commands.describe(
         command="Command to get a mention for (with/out slash)"
     )
@@ -454,7 +504,10 @@ class OtherAddons(commands.Cog):
     ):
         command = command.removeprefix("/").lower()
         try:
-            app_commands.commands.validate_name(command)
+            for section in command.split(" "):
+                # "/vctable create" would be invalidated because spaces
+                # aren't allowed, but it's still a valid command mention.
+                app_commands.commands.validate_name(section)
         except ValueError:
             await itx.response.send_message(
                 "Heads up: your command contains unavailable characters. "
@@ -465,7 +518,11 @@ class OtherAddons(commands.Cog):
             )
             return
 
-        cmd_mention = itx.client.get_command_mention(command)
+        try:
+            cmd_mention = itx.client.get_command_mention(command)
+        except ValueError as ex:
+            await itx.response.send_message(str(ex), ephemeral=True)
+            return
         await itx.response.send_message(
             f"Your input: `{command}`.\n"
             f"Command mention: {cmd_mention}.\n"
@@ -480,9 +537,16 @@ class OtherAddons(commands.Cog):
     @app_commands.autocomplete(role_name=_role_autocomplete)
     @module_enabled_check(ModuleKeys.remove_role_command)
     async def remove_role(self, itx: discord.Interaction[Bot], role_name: str):
-        itx.user: discord.Member  # noqa
-        # It shouldn't be a discord.User cause the app_command check
-        #  prevents DMs.
+        if isinstance(itx.user, discord.User):
+            # It shouldn't be a discord.User cause the app_command check
+            #  prevents DMs. But to make the type checker happy, here you go.
+            await itx.response.send_message(
+                "The bot did not see you as Member of a server, so I couldn't "
+                "remove any roles from you! Make sure you're running this in "
+                "the channel of a server.",
+                ephemeral=True
+            )
+            return
 
         role_options = {
             "npa": ["NPA", 1126160553145020460],

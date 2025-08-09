@@ -14,7 +14,12 @@ from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
 
 from extensions.settings.objects import (
-    AttributeKeys, EnabledModules, ServerAttributes)
+    AttributeKeys,
+    EnabledModules,
+    ServerAttributes,
+    MessageableGuildChannel,
+    GuildAttributeType,
+)
 from .api_token_dict import ApiTokenDict
 
 if TYPE_CHECKING:
@@ -30,7 +35,7 @@ class Bot(commands.Bot):
     startup_time = datetime.now().astimezone()
 
     commandList: list[discord.app_commands.AppCommand]
-    log_channel: discord.TextChannel | discord.Thread
+    log_channel: MessageableGuildChannel
     bot_owner: discord.User  # for AllowedMentions in on_appcommand_error()
     sched: AsyncIOScheduler  # for Reminders
 
@@ -75,8 +80,13 @@ class Bot(commands.Bot):
             for subgroup in command.options:
                 if subgroup.name != subcommand:
                     continue
+                if isinstance(subgroup, app_commands.Argument):
+                    raise ValueError(
+                        f"You can't mention command arguments! (Interpreted "
+                        f"{subgroup.name} as argument of {command.name} "
+                        f"instead of subcommand or subcommand group!)"
+                    )
                 if subcommand_group is None:
-                    assert type(subgroup) is app_commands.AppCommandGroup
                     return subgroup.mention
 
                 # now it technically searches subcommand in
@@ -84,6 +94,13 @@ class Bot(commands.Bot):
                 #  renaming of variables, it stays as is.
                 # subcmdgroup = subgroup  # hm
                 for subcmdgroup in subgroup.options:
+                    if isinstance(subcmdgroup, app_commands.Argument):
+                        raise ValueError(
+                            f"You can't mention command arguments! "
+                            f"(Interpreted {subcmdgroup.name} as an argument "
+                            f"of `/{command.name} {subgroup.name}` instead of "
+                            f"a subcommand!)"
+                        )
                     if subcmdgroup.name == subcommand_group:
                         return subcmdgroup.mention
         # no command found.
@@ -113,7 +130,7 @@ class Bot(commands.Bot):
             guild: discord.Guild | int,
             *args: str,
             default: T = None
-    ) -> object | list[object] | T:
+    ) -> GuildAttributeType | T | list[GuildAttributeType | T]:
         """
         Get ServerSettings attributes for the given guild.
 
@@ -142,16 +159,12 @@ class Bot(commands.Bot):
             #  doesn't have any settings (perhaps the bot was recently
             #  added).
             if len(args) > 1:
-                return [default] * len(args)
+                return [default for _ in args]
             return default
 
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[discord.Guild | T | list[discord.Guild] |
-                     discord.abc.Messageable | discord.CategoryChannel |
-                     discord.User | discord.Role | list[discord.Role] |
-                     str | discord.VoiceChannel | int |
-                     list[discord.abc.Messageable] | discord.Emoji] = []
+        output: list[GuildAttributeType | T] = []
 
         parent_server = attributes[AttributeKeys.parent_server]  # type: ignore
 

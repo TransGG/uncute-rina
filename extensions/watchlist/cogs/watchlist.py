@@ -7,7 +7,7 @@ import discord.ext.commands as commands
 from discord import RawThreadDeleteEvent
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 from resources.checks.permissions import is_staff
 # ^ to check role in _add_to_watchlist, as backup
 from resources.checks import (
@@ -30,7 +30,7 @@ def _parse_watchlist_string_message_id(
     """
     Parse a given message_id from a /watchlist command
 
-    :param message_id: The message id to parse to an int (or ``None``)
+    :param message_id: The message id to parse to an int (or ``None``).
     :return: A tuple of the parsed message id (or ``None`` if ``None``
      given), and whether the message_id ended with " | overwrite", to
      allow the user to link someone else's message with the watchlist
@@ -43,19 +43,19 @@ def _parse_watchlist_string_message_id(
     if message_id.isdecimal():
         # required cuz discord client doesn't let you fill in message
         # IDs as ints; too large
-        message_id = int(message_id)
+        msg_id = int(message_id)
     else:
         if message_id.endswith(" | overwrite"):
             message_id = message_id.split(" | ")[0]
 
-        message_id = int(message_id)  # raises ValueError
+        msg_id = int(message_id)  # raises ValueError
         allow_different_report_author = True
-    return message_id, allow_different_report_author
+    return msg_id, allow_different_report_author
 
 
 async def _create_uncool_watchlist_thread(
         client: Bot,
-        user: discord.Member,
+        user: discord.Member | discord.User,
         watch_channel: discord.TextChannel
 ) -> tuple[discord.Message, discord.Thread]:
     """
@@ -86,9 +86,11 @@ async def _create_uncool_watchlist_thread(
                                      auto_archive_duration=10080)
     await thread.join()
     joiner_msg = await thread.send("user-mention placeholder")
-    active_staff_role: discord.Guild | None = client.get_guild_attribute(
-        watch_channel.guild, AttributeKeys.watchlist_reaction_role)
-    if active_staff_role is None:
+    watchlist_reaction_role: discord.Guild | None = client.get_guild_attribute(
+        watch_channel.guild,
+        AttributeKeys.watchlist_reaction_role
+    )
+    if watchlist_reaction_role is None:
         cmd_settings = client.get_command_mention_with_args(
             "settings",
             type="Attribute",
@@ -101,7 +103,7 @@ async def _create_uncool_watchlist_thread(
                     f"is created. Use {cmd_settings} to add one."
         )
     else:
-        await joiner_msg.edit(content=f"<@&{active_staff_role.id}>")
+        await joiner_msg.edit(content=f"<@&{watchlist_reaction_role.id}>")
         await joiner_msg.delete()
     return msg, thread
 
@@ -130,9 +132,9 @@ async def _update_uncool_watchlist_embed(
 
 async def _add_to_watchlist(
         itx: discord.Interaction[Bot],
-        user: discord.Member,
+        user: discord.Member | discord.User,
         reason: str = "",
-        message_id: str | None = None,
+        message_id_str: str | None = None,
         warning=""
 ):
     if not is_staff(itx, itx.user):
@@ -155,7 +157,7 @@ async def _add_to_watchlist(
     #  reported user, used in case you want to report someone but want
     #  to use someone else's message as evidence or context.
     message_id, allow_different_report_author = \
-        _parse_watchlist_string_message_id(message_id)
+        _parse_watchlist_string_message_id(message_id_str)
 
     if len(reason) > 4000:
         # embeds have 4096 description length limit (and 6000 total
@@ -253,7 +255,9 @@ async def _add_to_watchlist(
 
     if already_on_watchlist:
         # fetch thread, in case the thread was archived (not in cache)
-        thread = await watch_channel.guild.fetch_channel(watchlist_thread_id)
+        thread: discord.Thread = await watch_channel.guild.fetch_channel(
+            watchlist_thread_id)  # type: ignore
+
         # fetch message the thread is attached to (fetch, in case msg
         #  is not in cache)
         msg = await watch_channel.fetch_message(watchlist_thread_id)
@@ -336,12 +340,12 @@ async def _add_to_watchlist(
         )
 
 
-@app_commands.check(is_staff_check)
-@module_enabled_check(ModuleKeys.watchlist)
 @app_commands.context_menu(name="Add user to watchlist")
+@is_staff_check
+@module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_user(
-        itx: discord.Interaction[Bot],
-        user: discord.User
+        itx: GuildInteraction[Bot],
+        user: discord.User,
 ):
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
@@ -353,9 +357,9 @@ async def watchlist_ctx_user(
     await itx.response.send_modal(watchlist_reason_modal)
 
 
-@app_commands.check(is_staff_check)
-@module_enabled_check(ModuleKeys.watchlist)
 @app_commands.context_menu(name="Add msg to watchlist")
+@module_enabled_check(ModuleKeys.watchlist)
+@is_staff_check
 async def watchlist_ctx_message(
         itx: discord.Interaction[Bot],
         message: discord.Message
@@ -381,14 +385,14 @@ class WatchList(commands.Cog):
     @app_commands.describe(user="User to add",
                            reason="Reason for adding",
                            message_id="Message to add to reason")
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     @module_enabled_check(ModuleKeys.watchlist)
     async def watchlist(
             self,
             itx: discord.Interaction[Bot],
-            user: discord.User,
+            user: discord.User | discord.Member,
             reason: str = "",
-            message_id: str = None
+            message_id: str | None = None
     ):
         try:
             user = await (app_commands.transformers
@@ -409,7 +413,7 @@ class WatchList(commands.Cog):
     @app_commands.command(name="check_watchlist",
                           description="Check if a user is on the watchlist.")
     @app_commands.describe(user="User to check")
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     @module_enabled_check(ModuleKeys.watchlist)
     async def check_watchlist(
             self,
@@ -463,7 +467,9 @@ class WatchList(commands.Cog):
                 AttributeKeys.badeline_bot,
                 AttributeKeys.watchlist_channel
             )
-        if None in (staff_logs_category, badeline_bot, watchlist_channel):
+        if (staff_logs_category is None
+                or badeline_bot is None
+                or watchlist_channel is None):
             missing = [key for key, value in {
                 AttributeKeys.staff_logs_category: staff_logs_category,
                 AttributeKeys.badeline_bot: badeline_bot,
@@ -476,7 +482,7 @@ class WatchList(commands.Cog):
             #  a discord.Member, whereas badeline_bot would be a discord.User
             return
 
-        if message.channel.category != staff_logs_category:
+        if getattr(message.channel, "category", None) != staff_logs_category:
             return
         if type(message.channel) is discord.Thread:
             # ignore the #rules channel with its threads
@@ -526,6 +532,9 @@ class WatchList(commands.Cog):
             user_id = get_user_id_from_watchlist(
                 event.guild_id, event.thread_id)
         except WatchlistNotLoadedException:
+            return
+
+        if user_id is None:
             return
 
         await remove_watchlist(self.client.async_rina_db,

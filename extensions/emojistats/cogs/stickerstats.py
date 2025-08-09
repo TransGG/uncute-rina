@@ -8,7 +8,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.checks import not_in_dms_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 
 async def _add_to_sticker_data(
@@ -78,10 +78,10 @@ class StickerStats(commands.Cog):
                           description="Get sticker usage data from an ID!")
     @app_commands.rename(sticker_name="sticker")
     @app_commands.describe(sticker_name="Sticker you want to get data of")
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def get_sticker_data(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             sticker_name: str
     ):
         if ":" in sticker_name:
@@ -135,10 +135,10 @@ class StickerStats(commands.Cog):
                     "(may return fewer)",
         used_max="Up to how many times may the sticker have been used? "
                  "(default: 10)")
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def get_unused_stickers(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             public: bool = False,
             max_results: int = 10,
             used_max: int = sys.maxsize,
@@ -191,7 +191,7 @@ class StickerStats(commands.Cog):
                 continue
 
             unused_stickers.append(
-                f"<{sticker.name}\\:{sticker.id}>" +
+                f"<{sticker.name}\\:{sticker.id}>"
                 f"({sticker_stat.get('messageUsedCount', 0)})"
             )
 
@@ -207,8 +207,8 @@ class StickerStats(commands.Cog):
 
     @stickerstats.command(name="getstickertop10",
                           description="Get top 10 most used stickers")
-    @app_commands.check(not_in_dms_check)
-    async def get_sticker_top_10(self, itx: discord.Interaction[Bot]):
+    @not_in_dms_check
+    async def get_sticker_top_10(self, itx: GuildInteraction[Bot]):
         collection = itx.client.async_rina_db["stickerstats"]
         output = ""
         for source_type in ["messageUsedCount"]:

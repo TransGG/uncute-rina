@@ -25,7 +25,7 @@ def replace_string_command_mentions(text: str, client: Bot) -> str:
         if command_string.startswith("/"):
             command_string = command_string[1:]
 
-        text = (text[:command_start_index] +
-                client.get_command_mention(command_string) +
-                text[command_end_index + 2:])
+        text = (text[:command_start_index]
+                + client.get_command_mention(command_string)
+                + text[command_end_index + 2:])
     return text

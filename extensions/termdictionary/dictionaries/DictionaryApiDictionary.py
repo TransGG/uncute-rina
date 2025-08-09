@@ -53,8 +53,7 @@ def _extract_api_data(result):
 
 class DictionaryApiDictionary(DictionaryBase):
     def __init__(self, session: aiohttp.ClientSession):
-        super().__init__()
-        self._session = session
+        super().__init__(session)
         self._embed: discord.Embed | None = None
         self._view: DictionaryapiPageview | None = None
 

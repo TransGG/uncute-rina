@@ -5,10 +5,11 @@ import warnings
 
 import motor.core
 from typing import TypedDict, Any, TypeVar, Callable
+from types import UnionType
 
 import discord
 
-from .server_attributes import ServerAttributes
+from .server_attributes import ServerAttributes, GuildAttributeType
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
 
@@ -47,79 +48,7 @@ def parse_id_generic(
     return parsed_obj
 
 
-# def convert_old_settings_to_new(
-#         old_settings: dict[str, int | list[int]]
-# ) -> tuple[int, ServerAttributeIds]:
-#     """
-#     Migrate server settings from old settings to new ones.
-#
-#     :param old_settings: A dictionary of the old server settings.
-#
-#     :return A tuple of the guild_id and extracted server attribute ids.
-#     """
-#     guild_id: GuildId = old_settings.get("guild_id")
-#     if guild_id is None:
-#         # this one shouldn't ever be None
-#         raise ValueError("guild_id in this object was not found!")
-#
-#     # Retrieve all previously-saved values
-#     custom_vc_create_channel_id: VoiceChannelId | None = \
-#         old_settings.get("vcHub", None)
-#     log_channel_id: MessageableChannelId | None = \
-#         old_settings.get("vcLog", None)
-#     custom_vc_category_id: CategoryChannelId | None = \
-#         old_settings.get("vcCategory", None)
-#     starboard_channel_id: TextChannelId | None = \
-#         old_settings.get("starboardChannel", None)
-#     starboard_minimum_upvote_count: int | None = \
-#         old_settings.get("starboardCountMinimum", None)
-#     bump_reminder_channel_id: MessageableChannelId | None = \
-#         old_settings.get("bumpChannel", None)
-#     bump_reminder_role_id: RoleId | None = \
-#         old_settings.get("bumpRole", None)
-#     poll_reaction_blacklisted_channel_ids: list[int] = \
-#         old_settings.get("pollReactionsBlacklist", None)
-#     bump_reminder_bot_id: UserId | None = \
-#         old_settings.get("bumpBot", None)
-#     starboard_blacklisted_channel_ids: list[int] = \
-#         old_settings.get("starboardBlacklistedChannels", None)
-#     starboard_upvote_emoji_id: EmojiId | None = \
-#         old_settings.get("starboardEmoji", None)
-#     starboard_minimum_vote_count_for_downvote_delete: int | None = \
-#         old_settings.get("starboardDownvoteInitValue", None)
-#     voice_channel_logs_channel_id: MessageableChannelId | None = \
-#         old_settings.get("vcActivityLogChannel", None)
-#
-#     # Format attributes in the new ServerAttributeIds format
-#     converted_settings = {
-#         AttributeKeys.custom_vc_create_channel: custom_vc_create_channel_id,
-#         AttributeKeys.log_channel: log_channel_id,
-#         AttributeKeys.custom_vc_category: custom_vc_category_id,
-#         AttributeKeys.starboard_channel: starboard_channel_id,
-#         AttributeKeys.starboard_minimum_upvote_count:
-#             starboard_minimum_upvote_count,
-#         AttributeKeys.bump_reminder_channel: bump_reminder_channel_id,
-#         AttributeKeys.bump_reminder_role: bump_reminder_role_id,
-#         AttributeKeys.poll_reaction_blacklisted_channels:
-#             poll_reaction_blacklisted_channel_ids,
-#         AttributeKeys.bump_reminder_bot: bump_reminder_bot_id,
-#         AttributeKeys.starboard_blacklisted_channels:
-#             starboard_blacklisted_channel_ids,
-#         AttributeKeys.starboard_upvote_emoji: starboard_upvote_emoji_id,
-#         AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
-#             starboard_minimum_vote_count_for_downvote_delete,
-#         AttributeKeys.voice_channel_activity_logs_channel:
-#             voice_channel_logs_channel_id,
-#     }
-#
-#     # remove all Nones
-#     new_settings = {k: v for k, v in converted_settings.items()
-#                     if v is not None}
-#
-#     return guild_id, ServerAttributeIds(**new_settings)
-
-
-def get_attribute_type(attribute_key: str) -> tuple[type | None, bool]:
+def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
     """
     Get the type of a given attribute.
 
@@ -129,20 +58,28 @@ def get_attribute_type(attribute_key: str) -> tuple[type | None, bool]:
      attribute wasn't found) and whether the attribute was in a list.
     """
     attribute_types = typing.get_type_hints(ServerAttributes)
-    attribute_type = None
+    attribute_type: list[type] | None = None
     attribute_in_list = False
     if attribute_key in ServerAttributes.__annotations__:
         attribute_type = attribute_types[attribute_key]
-        if typing.get_origin(attribute_type) is typing.types.UnionType:
-            # typing.Union != typing.types.UnionType :/
-            # original was: `list[T] | None` (`Union[list[T], None]`).
-            #   get_origin returns `<class 'types.UnionType'>`
-            #   get_args   returns `(list[T], <class 'NoneType'>)`.
-            attribute_type = typing.get_args(attribute_type)[0]
-        if typing.get_origin(attribute_type) is list:
+        # typing.Union != types.UnionType :/
+        #  typing.Union is for `Union[int, str]`
+        #  types.UnionType is for `int | str`
+        if typing.get_origin(attribute_type) is UnionType:
+            # The original was: `type1 | type2 | None`.
+            #   get_origin returns `<class 'UnionType'>`
+            #   get_args returns `(<class 'type1'>, <class 'type2'>,
+            #    <class 'NoneType'>)`.
+            attribute_type = [t for t in typing.get_args(attribute_type)
+                              if t is not type(None)]
+        elif typing.get_origin(attribute_type) is list:
             # original was `list[T]`. get_args returns `T`
-            attribute_type = typing.get_args(attribute_type)[0]
+            attribute_type = [t for t in typing.get_args(attribute_type)]
+            # should not have any None's
             attribute_in_list = True
+        else:
+            raise NotImplementedError(
+                f"Type of {attribute_key} is not supported")
     return attribute_type, attribute_in_list
 
 
@@ -150,10 +87,10 @@ def parse_attribute(
         client: discord.Client,
         guild: discord.Guild,
         attribute_key: str,
-        attribute_value: str,
+        attribute_value: str | int | None,
         *,
-        invalid_arguments: dict[str, str | list[str]] | None = None
-) -> object | None:
+        invalid_arguments: dict[str, str] | None = None
+) -> GuildAttributeType | None:
     """
     Parse the attribute value as ServerAttribute based on the given
     attribute key.
@@ -168,12 +105,15 @@ def parse_attribute(
     :raise ParseError: If the attribute could not be parsed or is of the
      wrong type.
     """
-    if invalid_arguments is None:
-        invalid_arguments = {}
     attribute_type, _ = get_attribute_type(attribute_key)
 
     if attribute_type is discord.Guild:
         func = client.get_guild
+    elif (attribute_type is discord.abc.GuildChannel
+          or attribute_type is discord.Thread):
+        # Could use isinstance(), but I feel like it should only
+        #  parse if the type matches exactly.
+        func = guild.get_channel_or_thread
     elif attribute_type is discord.abc.Messageable:
         func = client.get_channel
     elif attribute_type is discord.TextChannel:
@@ -217,7 +157,10 @@ def parse_attribute(
         return None
 
     parsed_attribute = parse_id_generic(
-        invalid_arguments, attribute_key, func, attribute_value_id
+        invalid_arguments or {},  # discard output
+        attribute_key,
+        func,
+        attribute_value_id,
     )
     return parsed_attribute
 
@@ -250,18 +193,14 @@ class ServerSettings:
             If both name and id are none, it will return the given
             object.
             """
-            name = None
-            a_id = None
-            if hasattr(attribute1, "name"):
-                name = attribute1.name
-            if hasattr(attribute1, "id"):
-                a_id = attribute1.id
+            name = getattr(attribute1, "name", None)
+            a_id = getattr(attribute1, "id", None)
             if name or a_id:
                 return name, a_id
             else:
                 return attribute1
 
-        if type(attribute) is list:
+        if isinstance(attribute, list):
             output = []
             for att in attribute:
                 output.append(get_name_or_id_maybe(att))
@@ -504,7 +443,7 @@ class ServerSettings:
          ids that can't be converted to their corresponding
          ServerAttributes object.
         """
-        invalid_arguments: dict[str, str | list[str]] = {}
+        invalid_arguments: dict[str, str] = {}
         guild = client.get_guild(guild_id)
         if guild is None:
             invalid_arguments["guild_id"] = str(guild_id)
@@ -531,6 +470,7 @@ class ServerSettings:
                         parsed_values.append(parsed_value)
                 new_settings[attribute] = parsed_values
             else:
+                assert isinstance(attribute_value, (str, int))
                 new_settings[attribute] = parse_attribute(
                     client, guild, attribute, attribute_value,
                     invalid_arguments=invalid_arguments)

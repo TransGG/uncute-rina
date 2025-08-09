@@ -10,10 +10,10 @@ import discord.ext.commands as commands
 
 from extensions.emojistats.database_dicts import EmojiStatsData
 from extensions.reminders.objects.emoji_animate_type import EmojiAnimateType
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
+from resources.checks import not_in_dms_check
 
 from extensions.emojistats.emojisendsource import EmojiSendSource
-from resources.checks import not_in_dms_check
 
 
 async def _add_to_emoji_data(
@@ -38,9 +38,9 @@ async def _add_to_emoji_data(
         await collection.insert_one(query)
 
     if location == EmojiSendSource.MESSAGE:
-        location = "messageUsedCount"
+        location_str = "messageUsedCount"
     elif location == EmojiSendSource.REACTION:
-        location = "reactionUsedCount"
+        location_str = "reactionUsedCount"
     else:
         raise ValueError("Cannot add to database since the location of "
                          "the reaction isn't defined correctly.")
@@ -48,7 +48,7 @@ async def _add_to_emoji_data(
     # Increment the usage of the emoji in the dictionary, depending
     #  on where it was used (see $location above).
     await collection.update_one(
-        query, {"$inc": {location: 1}}, upsert=True)
+        query, {"$inc": {location_str: 1}}, upsert=True)
     await collection.update_one(
         query,
         {"$set": {"lastUsed": datetime.now().timestamp(),
@@ -134,10 +134,10 @@ class EmojiStats(commands.Cog):
                         description="Get emoji usage data from an ID!")
     @app_commands.rename(emoji_name="emoji")
     @app_commands.describe(emoji_name="Emoji you want to get data of")
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def get_emoji_data(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             emoji_name: str
     ):
         if ":" in emoji_name:
@@ -179,11 +179,12 @@ class EmojiStats(commands.Cog):
         last_used_time_string = last_used_time.strftime(
             '%Y-%m-%d (yyyy-mm-dd) at %H:%M:%S (UTC)')
         await itx.response.send_message(
-            f"Data for {emote}" + f"  ({emote})\n".replace(':', '\\:') +
-            f"messageUsedCount: {msg_used}\n"
-            f"reactionUsedCount: {reaction_used}\n"
-            f"Animated: {animated}\n"
-            f"Last used: {last_used_time_string}",
+            f"Data for {emote}"
+            + f"  ({emote})\n".replace(':', '\\:')
+            + f"messageUsedCount: {msg_used}\n"
+              f"reactionUsedCount: {reaction_used}\n"
+              f"Animated: {animated}\n"
+              f"Last used: {last_used_time_string}",
             ephemeral=True)
 
     @emojistats.command(name="get_unused_emojis",
@@ -209,10 +210,10 @@ class EmojiStats(commands.Cog):
         discord.app_commands.Choice(name='Both',
                                     value=EmojiAnimateType.both.value),
     ])
-    @app_commands.check(not_in_dms_check)
+    @not_in_dms_check
     async def get_unused_emojis(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             public: bool = False,
             max_results: int = 10,
             used_max: int = sys.maxsize,
@@ -233,7 +234,7 @@ class EmojiStats(commands.Cog):
         # Can also be written as:
         #  [x for x in collection if x.get(messageUsedCount,0)
         #   + x.get(reactionUsedCount,0) <= used_max]
-        query = {
+        query: dict = {
             "$expr": {
                 "$lte": [
                     {"$add": [
@@ -311,8 +312,8 @@ class EmojiStats(commands.Cog):
 
     @emojistats.command(name="getemojitop10",
                         description="Get top 10 most used emojis")
-    @app_commands.check(not_in_dms_check)
-    async def get_emoji_top_10(self, itx: discord.Interaction[Bot]):
+    @not_in_dms_check
+    async def get_emoji_top_10(self, itx: GuildInteraction[Bot]):
         collection = itx.client.async_rina_db["emojistats"]
         output = ""
         for source_type in ["messageUsedCount", "reactionUsedCount"]:
