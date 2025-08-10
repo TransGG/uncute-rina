@@ -41,7 +41,8 @@ def is_staff_check(
             return True
         raise InsufficientPermissionsCheckFailure("User is not staff")
 
-    return app_commands.check(decor_check)(func)
+    app_commands.check(decor_check)  # (func)
+    return func
 
 
 def is_admin_check(
@@ -66,5 +67,5 @@ def is_admin_check(
             return True
         raise InsufficientPermissionsCheckFailure("User is not admin")
 
-    app_commands.check(decor_check)(func)
+    app_commands.check(decor_check)  # (func)
     return func
