@@ -83,8 +83,10 @@ async def log_to_guild(
         if guild is None:
             attribute_raw = "<server was None>"
         else:
-            guild_id = getattr(guild, "id", guild)
-            assert type(guild_id) is int
+            if isinstance(guild, discord.Guild):
+                guild_id = guild.id
+            else:
+                guild_id = guild
 
             entry = await ServerSettings.get_entry(
                 client.async_rina_db, guild_id)
@@ -94,16 +96,30 @@ async def log_to_guild(
                 attribute_raw = str(entry["attribute_ids"].get(
                     AttributeKeys.log_channel, "<no attribute data>"))  # noqa
 
-        debug(
-            "Exception in log_channel (log_channel could not be loaded):\n"
-            "    guild: " + repr(guild)
-            + "\n    log_channel_id: "
-            + attribute_raw
-            + "\n    log message: "
-            + msg,
-            color=DebugColor.red
-        )
-        return False
+            if attribute_raw.isdecimal():
+                guild = client.get_guild(guild_id)
+                attribute_id = int(attribute_raw)
+                if guild is not None:
+                    try:
+                       log_channel_maybe = await guild.fetch_channel(
+                           attribute_id)
+                    except discord.DiscordException as ex:
+                        log_channel_maybe = None
+                    if not isinstance(log_channel_maybe,
+                                      discord.abc.Messageable):
+                        log_channel_maybe = None
+                    log_channel = log_channel_maybe
+        if log_channel is None:
+            debug(
+                "Exception in log_channel (log_channel could not be loaded):\n"
+                "    guild: " + repr(guild)
+                + "\n    log_channel_id: "
+                + attribute_raw
+                + "\n    log message: "
+                + msg,
+                color=DebugColor.red
+            )
+            return False
 
     await log_channel.send(
         content=msg,

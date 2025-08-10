@@ -32,10 +32,10 @@ T = TypeVar('T')
 
 
 def parse_id_generic(
-        get_object_function: Callable[[int], T | None],
+        get_object_function: Callable[[int], GuildAttributeType | None],
         object_id: int | None
-) -> T | None:
-    parsed_obj: T | None = None
+) -> GuildAttributeType | None:
+    parsed_obj: GuildAttributeType | None = None
     if object_id is not None:
         parsed_obj = get_object_function(object_id)
     return parsed_obj
@@ -111,7 +111,7 @@ def parse_attribute(
         )
         return f
 
-    funcs = set()
+    funcs: set[Callable[[int], GuildAttributeType | None]] = set()
 
     if is_attribute_type(discord.Guild):
         funcs.add(client.get_guild)
@@ -146,6 +146,8 @@ def parse_attribute(
         # the value should already be an int anyway
         funcs.add(get_int)
     if is_attribute_type(str):
+        if attribute_value is None:
+            return attribute_value
         return str(attribute_value)
 
     if len(funcs) == 0:
@@ -368,7 +370,7 @@ class ServerSettings:
         async for setting in settings_data:
             setting: ServerSettingData
             try:
-                server_setting = ServerSettings.load(client, setting)
+                server_setting = await ServerSettings.load(client, setting)
                 server_settings[server_setting.guild.id] = server_setting
             except ParseError as ex:
                 debug(
@@ -401,16 +403,21 @@ class ServerSettings:
         if result is None:
             raise KeyError(f"Guild '{guild_id}' has no data yet!")
 
-        return ServerSettings.load(client, result)
+        return await ServerSettings.load(client, result)
 
     @staticmethod
-    def load(
-            client: discord.Client,
+    async def load(
+            client: Bot,
             settings: ServerSettingData
     ) -> ServerSettings:
         """
         Load all server settings from database and format into a
         ServerSettings object.
+
+        .. note::
+
+            This function is async only to send a crash log to the server
+            in question.
 
         :param client: The client to use to retrieve matching attribute
          objects from ids.
@@ -425,7 +432,7 @@ class ServerSettings:
         guild_id = settings["guild_id"]
         enabled_modules = settings["enabled_modules"]
         attribute_ids = ServerAttributeIds(**settings["attribute_ids"])
-        guild, attributes = ServerSettings.get_attributes(
+        guild, attributes = await ServerSettings.get_attributes(
             client, guild_id, attribute_ids
         )
         return ServerSettings(
@@ -438,14 +445,19 @@ class ServerSettings:
     #  from the database?
 
     @staticmethod
-    def get_attributes(
-            client: discord.Client,
+    async def get_attributes(
+            client: Bot,
             guild_id: int,
             attributes: ServerAttributeIds
     ) -> tuple[discord.Guild, ServerAttributes]:
         """
         Load the guild and all attributes from the given ids, using
         the given client.
+
+        .. note::
+
+            This function is async only to send a crash log to the server
+            in question.
 
         :param client: The client to use to retrieve matching attribute
          objects from ids.

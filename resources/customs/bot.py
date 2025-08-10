@@ -189,19 +189,23 @@ class Bot(commands.Bot):
         return output
 
     def is_module_enabled(
-            self, guild_id: discord.Guild | int | None, *args: str
+            self, guild: discord.Guild | int | None, *args: str
     ) -> bool | list[bool]:
         """
         Check if a module is enabled for the given server.
 
-        :param guild_id: The server to check the module state for.
+        :param guild: The server to check the module state for.
         :param args: The module key(s) to get the state for.
 
         :return: The enabled/disabled state of the module as boolean, or
          a list of booleans matching the list of module keys given.
         """
-        if type(guild_id) is discord.Guild:
-            guild_id: int = guild_id.id
+        if type(guild) is discord.Guild:
+            guild_id: int = guild.id
+        elif type(guild) is int:
+            guild_id: int = guild
+        else:  # guild is None
+            return False
 
         if (
                 self.server_settings is None

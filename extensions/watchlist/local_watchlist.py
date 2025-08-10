@@ -240,6 +240,10 @@ async def _import_thread_to_local_list(
      watchlist to the database.
     """
     try:
+        if (thread.parent is None
+                or isinstance(thread.parent, discord.ForumChannel)):
+            failed_fetches.append(thread)
+            return
         starter_message = await thread.parent.fetch_message(thread.id)
     except (discord.HTTPException, discord.NotFound, discord.Forbidden):
         failed_fetches.append(thread)

@@ -37,7 +37,8 @@ class ProgressBar:
         # [###+ = 5 chars. Max complete may be 4. Pad 0 characters. [###+]:
         pad_chars = self._max_completes - len(out) + 1
         if pad_chars < 0:
-            raise OverflowError("Progress exceeded size of progress bar!")
+            debug("Progress exceeded size of progress bar!",
+                  DebugColor.red)
         out += self._empty_char * pad_chars
         out += "]: "
         return out

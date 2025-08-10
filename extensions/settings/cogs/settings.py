@@ -163,13 +163,14 @@ async def _value_autocomplete(
             return [app_commands.Choice(name="Invalid setting given.",
                                         value="-")]
 
-        results: list[app_commands.Choice] = []
+        results: set[app_commands.Choice] = set()
+
         if discord.Guild in attribute_type:
             # iterate all guilds
             for guild in itx.client.guilds:
                 if (current.lower() in guild.name.lower()
                         or str(guild.id).startswith(current)):
-                    results.append(app_commands.Choice(
+                    results.add(app_commands.Choice(
                         name=guild.name, value=str(guild.id)))
         if discord.User in attribute_type:
             # Note: discord.User is a subclass of discord.abc.Messageable,
@@ -178,7 +179,7 @@ async def _value_autocomplete(
             for member in itx.guild.members:
                 if (current.lower() in member.name.lower()
                         or str(member.id).startswith(current)):
-                    results.append(app_commands.Choice(
+                    results.add(app_commands.Choice(
                         name=member.name, value=str(member.id)))
                 if len(results) > 20:
                     break
@@ -186,7 +187,7 @@ async def _value_autocomplete(
             if current.isdecimal():
                 potential_user = itx.client.get_user(int(current))
                 if potential_user is not None:
-                    results.append(app_commands.Choice(
+                    results.add(app_commands.Choice(
                         name=potential_user.name, value=str(potential_user.id))
                     )
         if any(issubclass(channel_type, discord.abc.GuildChannel)
@@ -195,7 +196,7 @@ async def _value_autocomplete(
                 if (type(channel) in attribute_type
                         and (current in channel.name
                              or str(channel.id).startswith(current))):
-                    results.append(app_commands.Choice(
+                    results.add(app_commands.Choice(
                         name=channel.name, value=str(channel.id)))
         if any(issubclass(channel_type, discord.abc.Messageable)
                for channel_type in attribute_type):
@@ -207,7 +208,7 @@ async def _value_autocomplete(
                         and not isinstance(potential_channel,
                                            discord.abc.PrivateChannel)
                 ):
-                    results.append(app_commands.Choice(
+                    results.add(app_commands.Choice(
                         name=potential_channel.name,
                         value=str(potential_channel.id))
                     )
@@ -216,48 +217,41 @@ async def _value_autocomplete(
                 if type(channel) in attribute_type:
                     if (current.lower() in channel.name.lower()
                             or str(channel.id).startswith(current)):
-                        results.append(app_commands.Choice(
+                        results.add(app_commands.Choice(
                             name=channel.name, value=str(channel.id)))
         if discord.Role in attribute_type:
             # iterate guild roles
             for role in itx.guild.roles:
                 if (current.lower() in role.name.lower()
                         or str(role.id).startswith(current)):
-                    results.append(app_commands.Choice(
+                    results.add(app_commands.Choice(
                         name=role.name, value=str(role.id)))
         if discord.Emoji in attribute_type:
             # iterate guild emojis
             for emoji in itx.guild.emojis:
                 if (current.lower() in emoji.name.lower()
                         or str(emoji.id).startswith(current)):
-                    results.append(app_commands.Choice(
+                    results.add(app_commands.Choice(
                         name=emoji.name, value=str(emoji.id)))
         if str in attribute_type:
             # leave as is
-            results.append(app_commands.Choice(name=current, value=current))
+            results.add(app_commands.Choice(name=current, value=current))
         if str in attribute_type:
             # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
-                results.append(app_commands.Choice(
+                results.add(app_commands.Choice(
                     name=current, value=current))
         if len(results) == 0:
             attribute_type_names = ','.join(
                 i.__name__ for i in attribute_type)
-            results.append(
+            results.add(
                 app_commands.Choice(
                     name=f"No autocompletes for: "
                          f"{attribute_type_names}"[:100],
                     value="-")
             )
 
-        # deduplicate
-        unique_results = set()
-        for result in results:
-            unique_results.add((result.name, result.value))
-        results = [app_commands.Choice(name=name, value=val)
-                   for name, val in unique_results]
-
-        return results[:10]
+        return list(results)[:10]
 
     elif itx.namespace.type == TypeAutocomplete.module.value:
         return [
@@ -370,34 +364,6 @@ async def _handle_settings_attribute(
             itx.client, itx.guild, setting, value,
             invalid_arguments=invalid_arguments
         )
-        if attribute is None:
-            await itx.followup.send(
-                f"Couldn't parse value '{value}' for attribute '{setting}'.",
-                ephemeral=True,
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
-            return
-
-        # raises ParseError if the ServerAttribute has a type that
-        #  has no parsing function yet.
-        if (attribute is None
-                or invalid_arguments and modify_mode not in [
-                    ModeAutocomplete.remove, ModeAutocomplete.remove
-                ]):
-            # allow removal of malformed data
-            attribute_type, _ = get_attribute_type(setting)
-            assert attribute_type is not None
-            attribute_type_names = ', '.join(
-                i.__name__ for i in attribute_type)
-            await itx.followup.send(
-                (f"Could not parse `{value}` as value for "
-                 f"'{setting}' (expected one of {attribute_type_names}.\n"
-                 f"(Notes: {[(k, v) for k, v in invalid_arguments.items()]})"
-                 )[:1999]
-                + ")",
-                ephemeral=True
-            )
-            return
 
         # [guild, channel, emoji, role, user] if it has an id
         # else [int, str], for example
@@ -503,11 +469,11 @@ async def _handle_settings_attribute(
         await _reload_or_store_server_settings(itx.client, itx.guild)
     except ParseError as ex:
         await itx.followup.send(
-            ("Successfully set the module state!\n"
+            ("Successfully changed the attribute!\n"
              "Just one tiny problem... Reloading the server settings "
              "failed...\n"
              "You should message Mia about this, or Cleo, to look into the "
-             "database and get more information about the problem:"
+             "database and get more information about the problem.\n"
              + ex.message
              )[:2000],
             ephemeral=True,

@@ -13,6 +13,7 @@ import os  # for creating outputs/ directory
 from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
 from pymongo import MongoClient
+import traceback
 
 import discord  # for main discord bot functionality
 
@@ -238,7 +239,8 @@ def start_app():
         except Exception as ex:
             debug(
                 f"Loading tags failed!\n"
-                f"Reason: {ex}",
+                f"Reason: " + repr(ex)
+                + traceback.format_exc(),
                 color=DebugColor.red
             )
         else:
@@ -250,7 +252,8 @@ def start_app():
         except Exception as ex:
             debug(
                 f"Loading watchlists failed!\n"
-                f"Reason: {ex}",
+                f"Reason: " + repr(ex)
+                + traceback.format_exc(),
                 color=DebugColor.red
             )
         else:
@@ -262,7 +265,8 @@ def start_app():
         except Exception as ex:
             debug(
                 f"Loading starboard failed!\n"
-                f"Reason: {ex}",
+                f"Reason: " + repr(ex)
+                + traceback.format_exc(),
                 color=DebugColor.red
             )
         else:
