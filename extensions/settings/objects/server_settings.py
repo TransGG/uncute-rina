@@ -58,7 +58,8 @@ def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
         # typing.Union != types.UnionType :/
         #  typing.Union is for `Union[int, str]`
         #  types.UnionType is for `int | str`
-        if typing.get_origin(attribute_type) is UnionType:
+        if (typing.get_origin(attribute_type) is UnionType or
+                typing.get_origin(attribute_type) is TypeAliasType):
             # The original was: `type1 | type2 | None`.
             #   get_origin returns `<class 'UnionType'>`
             #   get_args returns `(<class 'type1'>, <class 'type2'>,
@@ -67,7 +68,16 @@ def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
                               if t is not type(None)]
         elif typing.get_origin(attribute_type) is list:
             # original was `list[T]`. get_args returns `T`
-            attribute_type = [t for t in typing.get_args(attribute_type)]
+            attribute_type_list = [
+                typing.get_args(attribute_type)
+                if type(t) is UnionType
+                else typing.get_args(t.__value__)
+                    if type(t) is TypeAliasType
+                    else [t]
+                for t in typing.get_args(attribute_type)
+            ]
+            attribute_type = [i for l in attribute_type_list
+                              for i in l]
             # should not have any None's
             attribute_in_list = True
         else:
@@ -503,19 +513,59 @@ class ServerSettings:
                     f"or int, but `{attribute_value}` was of type "
                     f"`{type(attribute_value)}`"
                 )
-                new_settings[attribute] = parse_attribute(
+                parsed_value = parse_attribute(
                     client, guild, attribute, attribute_value,
                     invalid_arguments=invalid_arguments)
+                if parsed_value is not None:
+                    new_settings[attribute] = parsed_value
 
         if invalid_arguments:
-            raise ParseError(
-                "Some server settings could not be parsed:\n- "
-                + '\n- '.join(
-                    [f"{k}: {v}" for k, v in invalid_arguments.items()]
+            if "log_channel" in invalid_arguments:
+                raise ParseError(
+                    "Some server settings could not be parsed:\n- "
+                    + '\n- '.join(
+                        [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                    )
                 )
-            )
+            else:
+                from resources.utils.utils import log_to_guild
+                await log_to_guild(
+                    client,
+                    guild_id,
+                    msg=
+                    "Some server settings could not be parsed:\n- "
+                    + '\n- '.join(
+                        [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                    ),
+                )
+                debug(
+                    f"ParseError for {guild_id}:\n"
+                    "Some server settings could not be parsed:\n- "
+                    + '\n- '.join(
+                        [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                    ),
+                    DebugColor.lightred
+                )
 
-        return guild, ServerAttributes(**new_settings)
+        # Mostly validation before casting it.
+        for key, value in new_settings.items():
+            assert isinstance(key, str), f"Key `{key}` was not a string!"
+            expected_type = ServerAttributes.__annotations__[key]
+            if (type(expected_type) is list or
+                    typing.get_origin(expected_type) is list):
+                assert type(value) is list and value is not None, (
+                    f"Value for `{key}` should be a list, but it was "
+                    f"{type(value)} instead!"
+                )
+            else:
+                assert type(value) is not list, (
+                    f"Value for `{key}` should be `{expected_type}`, but it "
+                    f"was `{type(value)}` instead: {value}!"
+                )
+        attribute_dict: ServerAttributes = typing.cast(
+            ServerAttributes, new_settings)
+
+        return guild, ServerAttributes(**attribute_dict)
 
     def __init__(
             self, *,
