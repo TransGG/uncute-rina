@@ -689,8 +689,8 @@ class SettingsCog(commands.Cog):
         name="migrate-watchlist",
         description="Fetch all watchlist threads for this server."
     )
-    @module_enabled_check(ModuleKeys.watchlist)
     @is_admin_check
+    @module_enabled_check(ModuleKeys.watchlist)
     async def migrate_watchlist(self, itx: GuildInteraction[Bot]):
         watchlist_channel: discord.TextChannel | None = \
             itx.client.get_guild_attribute(
