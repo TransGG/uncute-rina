@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any
 
 import discord
 from discord import app_commands
+from typing import TYPE_CHECKING, Any
 
 from .permissions import is_staff, is_admin
 from .errors import (
@@ -41,7 +41,7 @@ def is_staff_check(
             return True
         raise InsufficientPermissionsCheckFailure("User is not staff")
 
-    app_commands.check(decor_check)  # (func)
+    app_commands.check(decor_check)(func)
     return func
 
 
@@ -67,5 +67,5 @@ def is_admin_check(
             return True
         raise InsufficientPermissionsCheckFailure("User is not admin")
 
-    app_commands.check(decor_check)  # (func)
+    app_commands.check(decor_check)(func)
     return func
