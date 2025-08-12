@@ -58,8 +58,8 @@ def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
         # typing.Union != types.UnionType :/
         #  typing.Union is for `Union[int, str]`
         #  types.UnionType is for `int | str`
-        if (typing.get_origin(attribute_type) is UnionType or
-                typing.get_origin(attribute_type) is TypeAliasType):
+        if (typing.get_origin(attribute_type) is UnionType
+                or typing.get_origin(attribute_type) is TypeAliasType):
             # The original was: `type1 | type2 | None`.
             #   get_origin returns `<class 'UnionType'>`
             #   get_args returns `(<class 'type1'>, <class 'type2'>,
@@ -71,13 +71,14 @@ def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
             attribute_type_list = [
                 typing.get_args(attribute_type)
                 if type(t) is UnionType
-                else typing.get_args(t.__value__)
-                    if type(t) is TypeAliasType
-                    else [t]
+                else (typing.get_args(t.__value__)
+                      if type(t) is TypeAliasType
+                      else [t])
                 for t in typing.get_args(attribute_type)
             ]
-            attribute_type = [i for l in attribute_type_list
-                              for i in l]
+            attribute_type = [attribute
+                              for type_list in attribute_type_list
+                              for attribute in type_list]
             # should not have any None's
             attribute_in_list = True
         else:
@@ -532,8 +533,7 @@ class ServerSettings:
                 await log_to_guild(
                     client,
                     guild_id,
-                    msg=
-                    "Some server settings could not be parsed:\n- "
+                    msg="Some server settings could not be parsed:\n- "
                     + '\n- '.join(
                         [f"{k}: {v}" for k, v in invalid_arguments.items()]
                     ),
@@ -551,8 +551,8 @@ class ServerSettings:
         for key, value in new_settings.items():
             assert isinstance(key, str), f"Key `{key}` was not a string!"
             expected_type = ServerAttributes.__annotations__[key]
-            if (type(expected_type) is list or
-                    typing.get_origin(expected_type) is list):
+            if (type(expected_type) is list
+                    or typing.get_origin(expected_type) is list):
                 assert type(value) is list and value is not None, (
                     f"Value for `{key}` should be a list, but it was "
                     f"{type(value)} instead!"

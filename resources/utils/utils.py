@@ -4,17 +4,16 @@ from typing import TYPE_CHECKING
 
 import discord
 
-from extensions.settings.objects import (
-    AttributeKeys,
-    ServerSettings,
-    MessageableGuildChannel,
-)
+from extensions.settings.objects.attribute_keys import AttributeKeys
+import extensions.settings.objects.server_settings as server_settings
+
 from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
 from .debug import debug, DebugColor
 
 if TYPE_CHECKING:
     from resources.customs import Bot, GuildInteraction
+    from extensions.settings.objects import MessageableGuildChannel
 
 
 def get_mod_ticket_channel(
@@ -88,7 +87,7 @@ async def log_to_guild(
             else:
                 guild_id = guild
 
-            entry = await ServerSettings.get_entry(
+            entry = await server_settings.ServerSettings.get_entry(
                 client.async_rina_db, guild_id)
             if entry is None:
                 attribute_raw = "<no server data>"
@@ -101,9 +100,9 @@ async def log_to_guild(
                 attribute_id = int(attribute_raw)
                 if guild is not None:
                     try:
-                       log_channel_maybe = await guild.fetch_channel(
-                           attribute_id)
-                    except discord.DiscordException as ex:
+                        log_channel_maybe = await guild.fetch_channel(
+                            attribute_id)
+                    except discord.DiscordException:
                         log_channel_maybe = None
                     if not isinstance(log_channel_maybe,
                                       discord.abc.Messageable):

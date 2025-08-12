@@ -238,8 +238,8 @@ def start_app():
             _ = await fetch_all_tags(client.async_rina_db)
         except Exception as ex:
             debug(
-                f"Loading tags failed!\n"
-                f"Reason: " + repr(ex)
+                "Loading tags failed!\n"
+                "Reason: " + repr(ex)
                 + traceback.format_exc(),
                 color=DebugColor.red
             )
@@ -251,8 +251,8 @@ def start_app():
             _ = await fetch_all_watchlists(client.async_rina_db)
         except Exception as ex:
             debug(
-                f"Loading watchlists failed!\n"
-                f"Reason: " + repr(ex)
+                "Loading watchlists failed!\n"
+                "Reason: " + repr(ex)
                 + traceback.format_exc(),
                 color=DebugColor.red
             )
@@ -264,8 +264,8 @@ def start_app():
             _ = await fetch_all_starboard_messages(client.async_rina_db)
         except Exception as ex:
             debug(
-                f"Loading starboard failed!\n"
-                f"Reason: " + repr(ex)
+                "Loading starboard failed!\n"
+                "Reason: " + repr(ex)
                 + traceback.format_exc(),
                 color=DebugColor.red
             )
