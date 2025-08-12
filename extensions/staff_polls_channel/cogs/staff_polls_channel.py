@@ -7,7 +7,6 @@ from resources.customs.bot import Bot
 
 
 async def _handle_forward_poll_result(
-        poll_result_message: discord.Message,
         poll_message: discord.Message
 ):
     """
@@ -16,10 +15,6 @@ async def _handle_forward_poll_result(
     Sends and pins a formatted poll result message into the thread on
     the original poll. It then deletes the original result message.
 
-    :param poll_result_message: A system message signifying the end
-     of the original poll. It should have a reference to the original
-     poll. It will be deleted after the poll message information
-     has been forwarded.
     :param poll_message: A message containing the poll, and a thread
      created by Rina.
 
@@ -32,49 +27,39 @@ async def _handle_forward_poll_result(
             + str(poll_message.id)
         )
 
-    poll_result_embed: discord.Embed = poll_result_message.embeds[0]
-    poll_data: dict[str, str | int | bool] = {
-        field.name: field.value
-        for field in poll_result_embed.fields
-    }
+    poll = poll_message.poll
+    if poll is None:
+        raise ValueError(
+            "Tried forwarding poll result but the original had no poll data."
+        )
 
     result_info_message = (
         f"**This poll closed with a total of "
-        f"{poll_data.get('total_votes', 'NaN')} votes!**\n"
+        f"{poll.total_votes} votes!**\n"
     )
 
-    if poll_data.get("victor_answer_id") is None:
+    if poll.victor_answer is None:
         result_info_message += (
             "There was no winner."
         )
     else:
-        if poll_data.get("victor_answer_emoji_name") is None:
+        answer_emoji = poll.victor_answer.emoji
+        if answer_emoji is None:
             victor_emoji_str = ""
         else:
-            emoji_anim = poll_data.get("victor_answer_emoji_animated", False)
-            if emoji_anim is not False:
-                # todo: check if emoji_anim is `true` or `"True"` or something
-                print(emoji_anim)
-            emoji_name = poll_data.get("victor_answer_emoji_name")
-            # ^ required for PartialEmoji
-            emoji_id = poll_data.get("victor_answer_emoji_id")
-            victor_emoji = discord.PartialEmoji(
-                name=emoji_name, id=emoji_id, animated=emoji_anim
-            )
-            victor_emoji_str = f"{victor_emoji} "  # with space after it
+            victor_emoji_str = str(answer_emoji)
 
         result_info_message += (
-            f"Answer {poll_data.get('victor_answer_id')} won with "
-            f"{poll_data.get('victor_answer_votes')} votes:\n"
-            f"> {victor_emoji_str}{poll_data.get('victor_answer_text')}"
+            f"Answer {poll.victor_answer.id} won with "
+            f"{poll.victor_answer.vote_count} votes:\n"
+            f"> {victor_emoji_str}{poll.victor_answer.text}"
         )
+
     msg = await poll_message.thread.send(
         result_info_message,
         allowed_mentions=discord.AllowedMentions.none()
     )
     await msg.pin()
-    await poll_result_message.delete()
-    # ^ remove poll result message from poll-only channel.
 
 
 async def _get_original_poll_message(
@@ -92,7 +77,13 @@ async def _get_original_poll_message(
     # The message is a poll result.
     # Get the thread under the message reference. Note:
     #  thread IDs are the same as their parent message
+    if (message.reference is None
+            or message.reference.message_id is None):
+        return None
     original_message = message.reference.resolved
+    if isinstance(original_message, discord.DeletedReferencedMessage):
+        return None
+
     if original_message is None:
         # message not in cache
         try:
@@ -130,7 +121,8 @@ class StaffPollsChannelAddon(commands.Cog):
                 AttributeKeys.polls_only_channel,
                 AttributeKeys.polls_channel_reaction_role,
             )
-        if None in (polls_channel, polls_channel_reaction_role):
+        if (polls_channel is None
+                or polls_channel_reaction_role is None):
             missing = [key for key, value in {
                 AttributeKeys.polls_only_channel: polls_channel,
                 AttributeKeys.polls_channel_reaction_role:
@@ -150,7 +142,9 @@ class StaffPollsChannelAddon(commands.Cog):
                 if original_message is None:
                     return
 
-                await _handle_forward_poll_result(message, original_message)
+                await _handle_forward_poll_result(original_message)
+                await message.delete()
+                # ^ remove poll result message from poll-only channel.
                 return
 
             # Note: Poll questions can have a length of 300 characters,
