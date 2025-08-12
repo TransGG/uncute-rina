@@ -167,7 +167,8 @@ async def get_all_data(
     data = {}
     async for result in results:
         guild_id = result["guild_id"]
-        decoded_data = {decode_field(k): v for k, v in result["data"].items()}
+        data = result.get("data", {})
+        decoded_data = {decode_field(k): v for k, v in data.items()}
         data[guild_id] = decoded_data
 
     return data

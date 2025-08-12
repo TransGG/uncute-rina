@@ -194,6 +194,7 @@ async def refetch_watchlist_threads(
         guild: discord.Guild,
         watch_channel: discord.TextChannel
 ) -> list[discord.Thread]:
+    global watchlist_loaded
     """
     Delete and re-import watchlists into the database and cache.
 
@@ -223,6 +224,7 @@ async def refetch_watchlist_threads(
         await _import_thread_to_local_list(
             async_rina_db, failed_fetches, thread)
 
+    watchlist_loaded = True
     return failed_fetches
 
 
@@ -256,7 +258,7 @@ async def _import_thread_to_local_list(
     if starter_message.embeds[0].author.url is None:
         return
     user_id = int(starter_message.embeds[0].author.url.split("/")[3])
-    if user_id in local_watchlist:
+    if user_id in local_watchlist[thread.guild.id]:
         return
     # Only use the user's most recent watchlist thread
     #  (if ever there is a second thread).
