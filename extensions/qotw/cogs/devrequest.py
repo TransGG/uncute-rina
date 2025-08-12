@@ -4,6 +4,7 @@ import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
+from extensions.qotw.utils import create_thread, ping_open_threads
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
     module_enabled_check  # for dev request thread ping
@@ -50,81 +51,18 @@ class DevRequest(commands.Cog):
                 "ticket too (in #contact-staff)",
                 ephemeral=True)
             return
+
         await itx.response.defer(ephemeral=True)
 
-        # Make uncool embed for the loading period while it sends the
-        #  copyable version
-        embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=33, g=33, b=33),
-            description="Loading request...",
+        title = "BotRQ-" + suggestion.replace("\\n", "\n")[:48]
+        await create_thread(
+            itx.client,
+            (itx.user, developer_request_channel, suggestion),
+            AttributeKeys.developer_request_channel,
+            title,
+            emojis=[discord.PartialEmoji.from_str(emoji)
+                    for emoji in ("⬆️", "⬇️")]
         )
-        # send the uncool embed
-        msg = await developer_request_channel.send(
-            "",
-            embed=embed,
-            allowed_mentions=discord.AllowedMentions.none(),
-        )
-        # make and join a thread under the question
-        thread = await msg.create_thread(
-            name=f"BotRQ-{suggestion[:48]}",
-            auto_archive_duration=10080
-        )
-        await thread.join()
-        suggestion = suggestion.replace("\\n", "\n")
-        # send a plaintext version of the question, and copy a link to it
-        copyable_version = await thread.send(
-            f"{suggestion}",
-            allowed_mentions=discord.AllowedMentions.none()
-        )
-
-        # Mention developers in a message edit, adding them all to the thread
-        # without mentioning them and do the same for the requester, though
-        # this will only work if they're in the staff server..
-        joiner_msg = await thread.send("role mention placeholder")
-        developer_role: discord.Role | None
-        developer_role = itx.client.get_guild_attribute(
-            itx.user.guild,
-            AttributeKeys.developer_request_reaction_role
-        )
-        if developer_role is None:
-            cmd_settings = itx.client.get_command_mention_with_args(
-                "settings",
-                type="Attribute",
-                setting=AttributeKeys.developer_request_reaction_role,
-                mode="Set",
-                value=" ",
-            )
-            await joiner_msg.edit(
-                content=f"No role has been set up to be pinged after a "
-                        f"developer request is created. Use {cmd_settings} "
-                        f"to add one."
-            )
-        else:
-            await joiner_msg.edit(
-                content=f"<@&{developer_role.id}> <@{itx.user.id}>")
-            await joiner_msg.delete()
-
-        # edit the uncool embed to make it cool: Show question, link to
-        #  plaintext, and upvotes/downvotes
-        embed = discord.Embed(
-            color=discord.Colour.from_rgb(r=255, g=255, b=172),
-            title='',
-            description=f"{suggestion}\n"
-                        f"[Jump to plain version]"
-                        f"({copyable_version.jump_url})",
-            timestamp=datetime.now()
-        )
-        username = getattr(itx.user, 'nick', None) or itx.user.name
-        embed.set_author(
-            name=f"{username}",
-            url=f"https://original.poster/{itx.user.id}/",
-            icon_url=itx.user.display_avatar.url
-        )
-        embed.set_footer(text="")
-
-        await msg.edit(embed=embed)
-        await msg.add_reaction("⬆️")
-        await msg.add_reaction("⬇️")
         await itx.followup.send(
             "Successfully added your suggestion! The developers will review "
             "your idea, and perhaps inform you when it gets added :D",
@@ -151,68 +89,26 @@ class DevRequest(commands.Cog):
                 ModuleKeys.dev_requests,
                 [AttributeKeys.developer_request_channel])
 
-        threads: list[discord.Thread] = []
-        pinged_thread_count = 0
-        async for thread in watchlist_channel.archived_threads(limit=None):
-            threads.append(thread)
+        def is_dev_thread_open(_: discord.Thread, msg: discord.Message):
+            return msg.embeds[0].color in [
+                emoji_color_options["🟡"],
+                emoji_color_options["🔵"]
+            ]
 
-        await itx.edit_original_response(
-            content="`[#+ ]`: Fetching archived threads...")
-        archived_thread_ids = [t.id for t in threads]
-        for thread in watchlist_channel.threads:
-            if thread.archived and thread.id not in archived_thread_ids:
-                threads.append(thread)
-
-        await itx.edit_original_response(
-            content="`[##+]`: Sending messages in threads...")
-
-        not_found_count = 0
-        ignored_count = 0
-        failed_threads = []
-
-        for thread in threads:
-            try:
-                starter_message = \
-                    await watchlist_channel.fetch_message(thread.id)
-            except discord.errors.NotFound:
-                not_found_count += 1
-                continue  # thread starter message was removed.
-
-            if (starter_message is None
-                    or not itx.client.is_me(starter_message.author)
-                    or len(starter_message.embeds) == 0):
-                ignored_count += 1
-                continue
-            if starter_message.embeds[0].color in [emoji_color_options["🟡"],
-                                                   emoji_color_options["🔵"]]:
-                try:
-                    cmd_ping = itx.client.get_command_mention(
-                        "ping_open_dev_requests")
-                    await thread.send(
-                        itx.user.mention
-                        + f" poked this thread with {cmd_ping}.\n"
-                          f"This channel got a message because it was "
-                          f"archived and the request wasn't marked as "
-                          f"completed or rejected.",
-                        allowed_mentions=discord.AllowedMentions.none()
-                    )
-                    pinged_thread_count += 1
-                except discord.Forbidden:
-                    failed_threads.append(thread.id)
-
-        await itx.edit_original_response(
-            content=(f"`[###]`: Pinged {pinged_thread_count} archived "
-                     f"channel{'' if pinged_thread_count == 1 else 's'} "
-                     f"successfully!\n"
-                     f"\n"
-                     f"Ignored `{ignored_count}` threads (not by bot or no "
-                     f"embeds, etc.)\n"
-                     f"Could not find `{not_found_count}` starter messages.\n"
-                     f"Could not send a message in the following "
-                     f"{len(failed_threads)} threads:\n"
-                     f"- {', '.join(['<#' + str(t_id) + '>'
-                                     for t_id in failed_threads])}"
-                     )[:2000]
+        cmd_ping = itx.client.get_command_mention(
+            "ping_open_dev_requests")
+        ping_msg = (
+            itx.user.mention
+            + f" poked this thread with {cmd_ping}.\n"
+              f"This channel got a message because it was "
+              f"archived and the request wasn't marked as "
+              f"completed or rejected."
+        )
+        await ping_open_threads(
+            itx,
+            watchlist_channel,
+            is_dev_thread_open,
+            ping_msg,
         )
 
     @commands.Cog.listener()
