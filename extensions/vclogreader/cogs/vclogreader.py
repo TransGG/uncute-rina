@@ -13,7 +13,7 @@ import discord.ext.commands as commands
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
     module_enabled_check  # cuz it's a staff command
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
@@ -433,11 +433,11 @@ class VCLogReader(commands.Cog):
         user_ids="Specific user ids to filter the graph for "
                  "(separate with comma)"
     )
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     @module_enabled_check(ModuleKeys.vc_log_reader)
     async def get_voice_channel_data(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             requested_channel: str,
             lower_bound: str,
             upper_bound: str = None,

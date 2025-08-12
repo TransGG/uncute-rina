@@ -7,6 +7,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.emojistats.database_dicts import StickerStatsData
 from resources.checks import not_in_dms_check
 from resources.customs import Bot, GuildInteraction
 
@@ -169,7 +170,7 @@ class StickerStats(commands.Cog):
             #  it, so don't search for a "0" then.
             query["messageUsedCount"] = {"$lte": used_max}
 
-        sticker_stats: list[dict[str, str | int | bool]] = \
+        sticker_stats: list[StickerStatsData] = \
             [x async for x in collection.find(query)]
         sticker_stat_ids: list[str] = await collection.distinct("id")
 

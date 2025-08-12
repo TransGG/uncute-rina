@@ -16,6 +16,13 @@ class SendPublicButtonMath(discord.ui.View):
             _button: discord.ui.Button
     ):
         self.value = 1
+        if itx.message is None:
+            await itx.response.send_message(
+                "I can't find that message so can't send it publicly!",
+                ephemeral=True
+            )
+            return
+
         await itx.response.edit_message(content="Sent successfully!")
         cmd_math = itx.client.get_command_mention("math")
         await itx.followup.send(

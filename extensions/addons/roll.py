@@ -5,11 +5,10 @@ import random
 def _parse_dice_roll(query: str) -> tuple[int, int | None]:
     """Split the query into dice and faces components."""
     # print(query)
-    parts: list[str | int] = query.split("d")
+    parts: list[str] = query.split("d")
+    # 4 = ['4'] (huh?)
     # 2d4 = ["2","4"]
     # 2d3d4 = ["2","3","4"] (huh?)
-    # 4 = 4
-    # [] (huh?)
     if len(parts) > 2:
         raise ValueError("Can't have more than 1 'd' in the "
                          "query of your die!")

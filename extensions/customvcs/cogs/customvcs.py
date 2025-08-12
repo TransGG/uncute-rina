@@ -40,47 +40,49 @@ async def _reset_voice_channel_permissions_if_vctable(
         "Couldn't reset voice channel permissions of custom VC because "
         "the channel was not in a category."
     )
-    if len(voice_channel.overwrites) > len(  # todo: invert if-statement
+    # if VcTable, reset ownership; and all owners leave:
+    #  reset all perms
+    if len(voice_channel.overwrites) <= len(
             voice_channel.category.overwrites):
-        # if VcTable, reset ownership; and all owners leave:
-        #  reset all perms
-        reset_vctable = True
-        # check if no owners left --> all members in the voice channel
-        #  aren't owner.
-        for target in voice_channel.overwrites:
-            if target not in voice_channel.members:
-                continue
-            if voice_channel.overwrites[target].connect:
-                reset_vctable = False
-                break
-        if not reset_vctable:
-            return
+        return
 
-        try:
-            # reset overrides; error caught in try-except
-            await voice_channel.edit(
-                overwrites=voice_channel.category.overwrites)
-            # update every user's permissions
-            for user in voice_channel.members:
-                await user.move_to(voice_channel)
-            await voice_channel.send(
-                "This channel was converted from a VcTable back to a normal"
-                " CustomVC because all the owners left"
-            )
-            # remove channel's name prefix (seperately from the
-            #  overwrites due to things like ratelimiting)
-            if voice_channel.name.startswith(vctable_prefix):
-                new_channel_name = voice_channel.name[len(vctable_prefix):]
-                try_store_vc_rename(voice_channel.id, max_rename_limit=3)
-                # same as `/vctable disband`
-                # allow max 3 renamed: if a staff queued a rename due
-                #  to rules, it'd be queued at 3. It would be bad to
-                #  have it be renamed back to the bad name right after.
-                await voice_channel.edit(name=new_channel_name)
-                # ^ error caught in try-except
-        except discord.errors.NotFound:
-            # catches two possible voice_channel.edit() exceptions
-            pass  # event triggers after vc could be deleted already
+    reset_vctable = True
+    # check if no owners left --> all members in the voice channel
+    #  aren't owner.
+    for target in voice_channel.overwrites:
+        if target not in voice_channel.members:
+            continue
+        if voice_channel.overwrites[target].connect:
+            reset_vctable = False
+            break
+    if not reset_vctable:
+        return
+
+    try:
+        # reset overrides; error caught in try-except
+        await voice_channel.edit(
+            overwrites=voice_channel.category.overwrites)
+        # update every user's permissions
+        for user in voice_channel.members:
+            await user.move_to(voice_channel)
+        await voice_channel.send(
+            "This channel was converted from a VcTable back to a normal"
+            " CustomVC because all the owners left"
+        )
+        # remove channel's name prefix (seperately from the
+        #  overwrites due to things like ratelimiting)
+        if voice_channel.name.startswith(vctable_prefix):
+            new_channel_name = voice_channel.name[len(vctable_prefix):]
+            try_store_vc_rename(voice_channel.id, max_rename_limit=3)
+            # same as `/vctable disband`
+            # allow max 3 renamed: if a staff queued a rename due
+            #  to rules, it'd be queued at 3. It would be bad to
+            #  have it be renamed back to the bad name right after.
+            await voice_channel.edit(name=new_channel_name)
+            # ^ error caught in try-except
+    except discord.errors.NotFound:
+        # catches two possible voice_channel.edit() exceptions
+        pass  # event triggers after vc could be deleted already
 
 
 async def _create_new_custom_vc(

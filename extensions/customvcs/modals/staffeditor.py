@@ -41,7 +41,10 @@ class CustomVcStaffEditorModal(
         self.add_item(self.name)
         self.add_item(self.limit)
 
-    async def on_submit(self, itx: discord.Interaction[Bot]):
+    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+            self,
+            itx: discord.Interaction[Bot]
+    ):
         if itx.guild is None:
             await itx.response.send_message(
                 "Your interaction was not connected to a server, so I also "
@@ -194,7 +197,7 @@ class CustomVcStaffEditorModal(
                 await log_to_guild(
                     itx.client,
                     itx.guild,
-                    f"Staff: {itx.user.nick or itx.user.name} "
+                    f"Staff: {getattr(itx.user, 'nick', itx.user.name)} "
                     f"({itx.user.id}) changed VC ({channel.id}) name "
                     f"\"{old_name}\" to \"{name}\" and user limit from "
                     f"\"{old_limit}\" to \"{limit}\"{limit_info}"

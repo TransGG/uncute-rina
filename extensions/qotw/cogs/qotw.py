@@ -11,7 +11,6 @@ from extensions.settings.objects import (
     MessageableGuildChannel,
 )
 from resources.checks import (
-    not_in_dms_check,
     module_enabled_check,
     MissingAttributesCheckFailure
 )
@@ -29,7 +28,6 @@ class QOTW(commands.Cog):
     )
     @app_commands.describe(question="What question would you like to add?")
     @module_enabled_check(ModuleKeys.qotw)
-    @not_in_dms_check
     async def qotw(self, itx: GuildInteraction[Bot], question: str):
         if len(question) > 400:
             ticket_channel: MessageableGuildChannel | None \

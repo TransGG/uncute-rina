@@ -53,7 +53,7 @@ class GetTopPageView(PageView):
     async def find_name(
             self,
             itx: discord.Interaction[Bot],
-            _button: discord.ui.Button
+            _: discord.ui.Button
     ):
         send_one = GetNameModal(self.pages)
         await itx.response.send_modal(send_one)

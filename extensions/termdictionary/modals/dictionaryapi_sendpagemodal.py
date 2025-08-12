@@ -21,7 +21,7 @@ class DictionaryAPISendPageModal(
         )
         self.add_item(self.question_text)
 
-    async def on_submit(  # type: ignore
+    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
             self,
             itx: discord.Interaction[Bot]
     ):

@@ -289,22 +289,20 @@ class CrashHandling(commands.Cog):
     ):
         global appcommanderror_cooldown
 
-        error_type = type(error)
-        if error_type is InsufficientPermissionsCheckFailure:
+        if type(error) is InsufficientPermissionsCheckFailure:
             await itx.response.send_message(
                 "You do not have the permissions to run this command!",
                 ephemeral=True
             )
             return
-        elif error_type is CommandDoesNotSupportDMsCheckFailure:
+        elif type(error) is CommandDoesNotSupportDMsCheckFailure:
             await itx.response.send_message(
                 "This command does not work in DMs. Please run this in"
                 " a server instead.",
                 ephemeral=True
             )
             return
-        elif error_type is ModuleNotEnabledCheckFailure:
-            error: ModuleNotEnabledCheckFailure
+        elif type(error) is ModuleNotEnabledCheckFailure:
             if itx.client.server_settings is None:
                 cmd_settings = itx.client.get_command_mention("settings")
                 await itx.response.send_message(
@@ -339,8 +337,7 @@ class CrashHandling(commands.Cog):
                 ephemeral=True
             )
             return
-        elif error_type is MissingAttributesCheckFailure:
-            error: MissingAttributesCheckFailure
+        elif type(error) is MissingAttributesCheckFailure:
             cmd_settings = itx.client.get_command_mention_with_args(
                 "settings",
                 type="Attribute",
@@ -437,20 +434,27 @@ class CrashHandling(commands.Cog):
                    f"details: {repr(ex)}\n")
             #   f"    command: {error.command}\n" + \
             #   f"    arguments: {error.args}\n"
-        if hasattr(error, 'original'):
-            if hasattr(error.original, 'code'):
-                msg += f"    code: {error.original.code}\n"
-            if hasattr(error.original, 'status'):
-                msg += (f"    original error: {error.original.status}: "
-                        f"{error.original.text}\n\n")
+        original_error = getattr(error, 'original', None)
+        if original_error is not None:
+            code = getattr(original_error, 'code', None)
+            if code is not None:
+                msg += f"    code: {code}\n"
+            status = getattr(original_error, 'status', None)
+            if status is not None:
+                msg += (f"    original error: {status}: "
+                        f"{original_error.text}\n\n")
                 #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
         # details: /help `page:1` `param2:hey`
-        command_details = (
-            f"</{itx.command.name}:{itx.data.get('id')}> "
-            + ' '.join([f"`{k}:{v}`"
-                        for k, v in itx.namespace.__dict__.items()])
-        )
+        if itx.data is not None and itx.command is not None:
+            command_details = (
+                f"</{itx.command.name}:{itx.data.get('id', 0)}> "
+                + ' '.join([f"`{k}:{v}`"
+                            for k, v in itx.namespace.__dict__.items()])
+            )
+        else:
+            command_details = ""
+
         await _send_crash_message(
             itx.client,
             "AppCommand Error",

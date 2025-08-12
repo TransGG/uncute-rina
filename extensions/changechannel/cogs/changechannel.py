@@ -3,7 +3,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from resources.checks import module_enabled_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 from extensions.settings.objects import ModuleKeys
 
@@ -16,11 +16,19 @@ class ChangeChannel(commands.Cog):
     @module_enabled_check(ModuleKeys.change_channel)
     async def changechannel(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             destination: discord.TextChannel
     ):
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
+
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I don't know what channel you're currently in, so I "
+                "also can't send any forwarding message!",
+                ephemeral=True
+            )
+            return
 
         if destination.id == itx.channel.id:
             await itx.response.send_message(
@@ -29,22 +37,42 @@ class ChangeChannel(commands.Cog):
             )
             return
 
-        if not destination.permissions_for(itx.user).send_messages:
+        if isinstance(itx.user, discord.User):
             await itx.response.send_message(
-                "You must have permission to send messages in the "
-                "destination channel.",
+                "I don't know if you are member of this guild, so I "
+                "also can't check if you have permissions to send messages in "
+                "any channels. Try again later or contact staff if you think "
+                "this is a mistake.",
                 ephemeral=True
             )
             return
 
-        if not destination.permissions_for(itx.guild.me).send_messages:
-            await itx.response.send_message(
-                "I cannot send messages in the destination channel.",
-                ephemeral=True
-            )
-            return
+        for channel, channel_string in [(itx.channel, "current"),
+                                        (destination, "destination")]:
+            for user, user_string in [(itx.user, "You must"),
+                                      (itx.guild.me, "I do not")]:
+                if not channel.permissions_for(user).send_messages:
+                    await itx.response.send_message(
+                        f"{user_string} have permission to send "
+                        f"messages in the {channel_string} channel.",
+                        ephemeral=True,
+                    )
+                    return
 
         response = await itx.response.defer(ephemeral=False)
+        if response is None or response.resource is None:
+            await itx.followup.send(
+                "Something went wrong! I couldn't retrieve the jump url "
+                "for this message!\n"
+                + ("`response` was None!" if response is None
+                   else "response.resource was None!")
+            )
+            return
+
+        assert isinstance(response.resource, discord.InteractionMessage), (
+            "The response resource wasn't an InteractionMessage (but instead "
+            "an InteractionCallbackActivityInstance, probably)!"
+        )
 
         target = await destination.send(
             f"Conversation was moved from {response.resource.jump_url} "

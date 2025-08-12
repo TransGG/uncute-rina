@@ -15,7 +15,7 @@ class ConfirmPronounsView(discord.ui.View):
     async def feminine(
             self,
             itx: discord.Interaction[Bot],
-            _button: discord.ui.Button
+            _: discord.ui.Button
     ):
         self.value = "she/her"
         await itx.response.edit_message(
@@ -28,7 +28,7 @@ class ConfirmPronounsView(discord.ui.View):
     async def masculine(
             self,
             itx: discord.Interaction[Bot],
-            _button: discord.ui.Button
+            _: discord.ui.Button
     ):
         self.value = "he/him"
         await itx.response.edit_message(
@@ -41,7 +41,7 @@ class ConfirmPronounsView(discord.ui.View):
     async def enby_them(
             self,
             itx: discord.Interaction[Bot],
-            _button: discord.ui.Button
+            _: discord.ui.Button
     ):
         self.value = "they/them"
         await itx.response.edit_message(
@@ -54,7 +54,7 @@ class ConfirmPronounsView(discord.ui.View):
     async def enby_its(
             self,
             itx: discord.Interaction[Bot],
-            _button: discord.ui.Button
+            _: discord.ui.Button
     ):
         self.value = "it/its"
         await itx.response.edit_message(
@@ -67,7 +67,7 @@ class ConfirmPronounsView(discord.ui.View):
     async def unisex(
             self,
             itx: discord.Interaction[Bot],
-            _button: discord.ui.Button
+            _: discord.ui.Button
     ):
         self.value = "unisex"
         await itx.response.edit_message(

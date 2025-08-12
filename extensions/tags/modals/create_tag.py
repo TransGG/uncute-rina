@@ -42,7 +42,10 @@ class CreateTagModal(discord.ui.Modal):
 
         self.return_interaction: GuildInteraction[Bot] | None = None
 
-    async def on_submit(self, itx: discord.Interaction[Bot]):  # pyright: ignore [reportIncompatibleMethodOverride] # noqa
+    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+            self,
+            itx: discord.Interaction[Bot]
+    ):
         itx.response: discord.InteractionResponse  # type: ignore
         if itx.guild is None:
             await itx.response.send_message(

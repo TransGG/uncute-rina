@@ -708,13 +708,13 @@ class SettingsCog(commands.Cog):
         await itx.followup.send("Successfully imported watchlist threads.",
                                 ephemeral=True)
     #
-    # @app_commands.check(is_admin_check)
-    # @module_enabled_check(ModuleKeys.starboard)
     # @migrate_group.command(
     #     name="migrate-starboard",
     #     description="Fetch all starboard messages for this server."
     # )
-    # async def migrate_starboard(self, itx: discord.Interaction[Bot]):
+    # @is_admin_check
+    # @module_enabled_check(ModuleKeys.starboard)
+    # async def migrate_starboard(self, itx: GuildInteraction[Bot]):
     #     starboard_channel: discord.abc.Messageable | None = \
     #         itx.client.get_guild_attribute(
     #             itx.guild, AttributeKeys.starboard_channel)

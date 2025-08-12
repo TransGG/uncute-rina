@@ -14,6 +14,9 @@ class SingleLineModal(discord.ui.Modal):
         self.add_item(self.question_text)
         self.itx = None
 
-    async def on_submit(self, itx: discord.Interaction[Bot]) -> None:
+    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+            self,
+            itx: discord.Interaction[Bot]
+    ) -> None:
         self.itx = itx
         self.stop()

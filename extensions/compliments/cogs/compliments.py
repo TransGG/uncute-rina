@@ -110,7 +110,7 @@ async def _choose_and_send_compliment(
 
     collection = async_rina_db["complimentblacklist"]  # todo: use DatabaseKeys
     query = {"user": user.id}
-    search: dict[str, int | list] = await collection.find_one(query)
+    search: dict[str, int | list] | None = await collection.find_one(query)
     blacklist: list = []
     if search is not None:
         try:
@@ -173,9 +173,10 @@ async def _choose_and_send_compliment(
             )
     else:
         await itx.response.send_message(
-            base + random.choice(quotes[compliment_type]) + suffix,
+            content=base + random.choice(quotes[compliment_type]) + suffix,
             allowed_mentions=discord.AllowedMentions(
-                everyone=False, users=[user], roles=False, replied_user=False)
+                everyone=False, users=[user], roles=False,
+                replied_user=False)
         )
 
 
@@ -242,7 +243,8 @@ async def _rina_used_deflect_and_it_was_very_effective(
         "Hey my lie detector said you are lying.",
         "No I am not cute",
         "k",
-        (message.author.nick or message.author.name) + ", stop lying >:C",
+        (getattr(message.author, 'nick', message.author.name)
+         + ", stop lying >:C"),
         "BAD!",
         ("https://cdn.discordapp.com/emojis/920918513969950750.webp"
          "?size=4096&quality=lossless"),
@@ -256,12 +258,12 @@ async def _rina_used_deflect_and_it_was_very_effective(
         "No, you are <3",
         "Nope. I doubt it. There's no way I can be as cute as you",
         ("You gotta praise those around you as well. "
-         + (message.author.nick or message.author.name)
+         + getattr(message.author, 'nick', message.author.name)
          + ", for example, is very cute."),
         ("Oh by the way, did I say "
-         + (message.author.nick or message.author.name)
+         + getattr(message.author, 'nick', message.author.name)
          + " was cute yet? I probably didn't. "
-         + (message.author.nick or message.author.name)
+         + getattr(message.author, 'nick', message.author.name)
          + "? You're very cute"),
         "You know I'm not a mirror, right?",
         "*And the oscar for cutest responses goes to..  YOU!!*",
@@ -270,7 +272,8 @@ async def _rina_used_deflect_and_it_was_very_effective(
          "you keep up with being such a cutie all the time?")
     ]
     # check if user would like femme responses telling them they're cute
-    for role in message.author.roles:
+    roles = getattr(message.author, 'roles', [])
+    for role in roles:
         if role.name.lower() == "she/her":
             responses += femme_responses
     respond = random.choice(responses)
@@ -315,7 +318,7 @@ class Compliments(commands.Cog):
         self.client = client
 
     @staticmethod
-    def _contains_cuteness_assignment(msg: str):
+    def _contains_cuteness_assignment(msg: str) -> bool | None:
         # todo: upgrade cute-call detection hardware
         return (
             ((("cute" or "cutie" or "adorable" in msg)
@@ -326,14 +329,13 @@ class Compliments(commands.Cog):
 
     @commands.Cog.listener()  # Rina reflecting cuteness compliments
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
+        if message.author.bot or self.client.user is None:
             return
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
-            called_cute: bool | None = self._contains_cuteness_assignment(
-                msg)
-            if called_cute is True:
+            called_cute: bool | None = self._contains_cuteness_assignment(msg)
+            if called_cute:
                 try:
                     await message.add_reaction("<:this:960916817801535528>")
                 except (discord.HTTPException or discord.NotFound):

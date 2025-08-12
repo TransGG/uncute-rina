@@ -1,9 +1,11 @@
+import typing
+
 import discord
 import discord.ext.commands as commands
 
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from resources.customs import Bot, GuildMessage
 
 
 class BanAppealReactionsAddon(commands.Cog):
@@ -15,6 +17,7 @@ class BanAppealReactionsAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.ban_appeal_reactions):
             return
+        message = typing.cast(GuildMessage, message)
         ban_appeal_webhook_id: discord.User | None = \
             self.client.get_guild_attribute(
                 message.guild, AttributeKeys.ban_appeal_webhook_id
@@ -68,7 +71,7 @@ class BanAppealReactionsAddon(commands.Cog):
                 f"instead!"
             )
 
-        username: str = field_value
+        username: str = field_value or "Empty username"
         try:
             thread = await message.create_thread(
                 name=f"App-{platform[0]}-{username[:80]}",
@@ -87,7 +90,7 @@ class BanAppealReactionsAddon(commands.Cog):
         await thread.join()
         joiner_msg = await thread.send("user-mention placeholder")
 
-        ban_appeal_role = self.client.get_guild_attribute(
+        ban_appeal_role: discord.Role | None = self.client.get_guild_attribute(
             message.guild, AttributeKeys.ban_appeal_reaction_role)
         if ban_appeal_role is None:
             cmd_settings = self.client.get_command_mention_with_args(
