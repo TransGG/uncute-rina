@@ -52,7 +52,7 @@ async def _fetch_starboard_original_message(
     """
     # find original message
     try:
-        guild_id, channel_id, message_id = \
+        _, channel_id, message_id = \
             parse_starboard_message(starboard_message)
     except (ValueError, IndexError) as ex:
         await log_to_guild(
@@ -105,7 +105,7 @@ async def _fetch_starboard_original_message(
 async def _send_starboard_message(
         client: Bot,
         message: GuildMessage,
-        starboard_channel: discord.abc.Messageable,
+        starboard_channel: MessageableGuildChannel,
         reaction: discord.Reaction
 ):
     embed = discord.Embed(
@@ -118,11 +118,7 @@ async def _send_starboard_message(
     msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"  # noqa
     embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
     embed.set_footer(text=f"{message.id}")
-    if isinstance(message.author, discord.Member):
-        name = message.author.nick or message.author.name
-    else:
-        # discord.User has no `nick` attribute.
-        name = message.author.name
+    name = getattr(message.author, "nick", message.author.name)
     embed.set_author(
         name=f"{name}",
         url=f"https://original.poster/{message.author.id}/",
@@ -291,10 +287,7 @@ async def _update_starboard_message_score(
     new_content = '**'.join(parts)
     # update embed message to keep most accurate nickname
     embeds = star_msg.embeds
-    if isinstance(orig_msg.author, discord.Member):
-        name = orig_msg.author.nick or orig_msg.author.name
-    else:
-        name = orig_msg.author.name
+    name = getattr(orig_msg.author, "nick", orig_msg.author.name)
     embeds[0].set_author(
         name=f"{name}",
         url=f"https://original.poster/{orig_msg.author.id}/",
@@ -495,9 +488,9 @@ async def _handle_starboard_create_or_update(
         client: Bot,
         reaction: discord.Reaction,
         message: GuildMessage,
-        starboard_channel: discord.abc.Messageable,
+        starboard_channel: MessageableGuildChannel,
         starboard_emoji: discord.PartialEmoji | discord.Emoji,
-        channel_blacklist: list[discord.abc.Messageable],
+        channel_blacklist: list[MessageableGuildChannel],
         star_minimum: int,
         downvote_init_value: int,
 ):
@@ -581,7 +574,7 @@ class Starboard(commands.Cog):
 
         star_channel: MessageableGuildChannel | None
         star_minimum: int | None
-        channel_blacklist: list[discord.abc.Messageable] | None
+        channel_blacklist: list[MessageableGuildChannel] | None
         starboard_emoji: discord.Emoji | None
         downvote_init_value: int | None
         (star_channel, star_minimum, channel_blacklist,

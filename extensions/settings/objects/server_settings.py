@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+from enum import Enum
 import motor.core
 from typing import TypedDict, Any, TypeVar, Callable, TypeAliasType
 from types import UnionType
@@ -207,6 +208,47 @@ class ServerSettingData(TypedDict):
 NameAndIdData = tuple[str | None, int | None]
 
 
+class SettingType(Enum):
+    enabled_modules = 0
+    attribute_ids = 1
+
+
+async def unset_query(
+        async_rina_db: motor.core.AgnosticDatabase,
+        guild_id: int,
+        setting: SettingType,
+        key: str,
+):
+    return await update_query(
+        async_rina_db,
+        guild_id,
+        setting,
+        key,
+        "",
+        # ^ value ("") is not used by MongoDB when unsetting.
+        unset=True,
+    )
+
+
+async def update_query(
+        async_rina_db: motor.core.AgnosticDatabase,
+        guild_id: int,
+        setting: SettingType,
+        key: str,
+        value: object,
+        unset: bool = False,
+):
+    collection = async_rina_db[ServerSettings.DATABASE_KEY]
+    query = {"guild_id": guild_id}
+    action = "$unset" if unset else "$set"
+    update = {action: {f"{setting.value}.{key}": value}}
+
+    result = await collection.update_one(query, update, upsert=True)
+    # result.did_upsert -> if yes, make new ServerSettings?
+    # result.raw_result
+    return result.modified_count > 0, result.did_upsert
+
+
 class ServerSettings:
     DATABASE_KEY = "server_settings"
 
@@ -255,33 +297,6 @@ class ServerSettings:
         result: ServerSettingData | None = await collection.find_one(query)
         return result
 
-    # @staticmethod
-    # async def migrate(async_rina_db: motor.core.AgnosticDatabase):
-    #     """
-    #     Migrate all data from the old guildInfo database to the new
-    #     server_settings database.
-    #
-    #     :param async_rina_db: The database to reference to look up the
-    #      old and store the new database.
-    #     :raise IndexError: No online database of the old version
-    #      was found.
-    #     """
-    #     old_collection = async_rina_db["guildInfo"]
-    #     new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
-    #     new_settings = []
-    #     async for old_setting in old_collection.find():
-    #         guild_id, attributes = convert_old_settings_to_new(
-    #             old_setting)
-    #         new_setting = ServerSettingData(
-    #             guild_id=guild_id,
-    #             attribute_ids=attributes,
-    #             enabled_modules=EnabledModules(),
-    #         )
-    #         new_settings.append(new_setting)
-    #
-    #     if new_settings:
-    #         await new_collection.insert_many(new_settings)
-
     @staticmethod
     async def set_attribute(
             async_rina_db: motor.core.AgnosticDatabase,
@@ -297,14 +312,13 @@ class ServerSettings:
         if parameter not in ServerAttributeIds.__annotations__:
             raise KeyError(f"'{parameter}' is not a valid Server Attribute.")
 
-        collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": guild_id}
-        update = {"$set": {f"attribute_ids.{parameter}": value}}
-
-        result = await collection.update_one(query, update, upsert=True)
-        # result.did_upsert -> if yes, make new ServerSettings?
-        # result.raw_result
-        return result.modified_count > 0, result.did_upsert
+        return await update_query(
+            async_rina_db,
+            guild_id,
+            SettingType.attribute_ids,
+            parameter,
+            value,
+        )
 
     @staticmethod
     async def remove_attribute(
@@ -317,13 +331,13 @@ class ServerSettings:
                 f"Parameters are not allowed to contain '.' or "
                 f"start with '$'! (parameter: '{parameter}')"
             )  # todo: check if i sanitize the input when responding.
-        collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": guild_id}
-        update = {"$unset": {f"attribute_ids.{parameter}": ""}}
-        # value ("") is not used by MongoDB when unsetting.
 
-        result = await collection.update_one(query, update, upsert=True)
-        return result.modified_count > 0, result.did_upsert
+        return await unset_query(
+            async_rina_db,
+            guild_id,
+            SettingType.attribute_ids,
+            parameter,
+        )
 
     @staticmethod
     async def set_module_state(
@@ -354,14 +368,13 @@ class ServerSettings:
                 f"'{type(value).__name__}'."
             )
 
-        collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": guild_id}
-        update = {"$set": {f"enabled_modules.{module}": value}}
-
-        result = await collection.update_one(query, update, upsert=True)
-        # result.did_upsert -> if yes, make new ServerSettings?
-        # result.raw_result
-        return result.modified_count > 0, result.did_upsert
+        return await update_query(
+            async_rina_db,
+            guild_id,
+            SettingType.enabled_modules,
+            module,
+            value,
+        )
 
     @staticmethod
     async def fetch_all(client: Bot) -> dict[int, ServerSettings]:
