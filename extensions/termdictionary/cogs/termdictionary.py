@@ -149,7 +149,8 @@ class TermDictionary(commands.Cog):
                 source = itx.namespace.source
 
             sources = [
-                dictionary for dictionary in self._dictionary_sources[:]
+                (dictionary[0], dictionary[1](self._session))
+                for dictionary in self._dictionary_sources[:]
                 if dictionary[0] == source
             ]
 

@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import asyncio
 # to create new reminder task that runs immediately (from a
 #  not-async ReminderObject __init__ function)
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
 import discord
 
-from resources.customs import Bot
 from resources.utils import TimeParser
 
 from extensions.reminders.exceptions import (
@@ -20,6 +22,9 @@ from extensions.reminders.utils import get_user_reminders
 from extensions.reminders.views import (
     CopyReminder, ShareReminder, TimeOfDaySelection
 )
+
+if TYPE_CHECKING:
+    from resources.customs import Bot
 
 
 async def relaunch_ongoing_reminders(
@@ -325,7 +330,10 @@ async def _parse_reminder_time(
     """  # todo: update docstring exceptions
     # Parse reminder input to get a datetime for the reminder scheduler
     creation_time = itx.created_at  # utc
-    assert creation_time.tzinfo == timezone.utc
+    assert creation_time.tzinfo == timezone.utc, (
+        "Expected discord to provide a timezone of UTC, but it was "
+        f"`{creation_time.tzinfo}` instead!"
+    )
     # ^ it is timezone-aware, in utc
     distance: datetime
     try:

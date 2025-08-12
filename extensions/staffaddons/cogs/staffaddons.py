@@ -71,12 +71,12 @@ class StaffAddons(commands.Cog):
         #  on_app_command_error() event in the main file.
         await itx.response.send_message("Successfully sent!", ephemeral=True)
 
-    @app_commands.check(is_staff_check)
-    @module_enabled_check(ModuleKeys.selfies_channel_deletion)
     @app_commands.command(
         name="delete_week_selfies",
         description="Remove selfies and messages older than 7 days"
     )
+    @is_staff_check
+    @module_enabled_check(ModuleKeys.selfies_channel_deletion)
     async def delete_week_selfies(self, itx: discord.Interaction[Bot]):
         # This function largely copies the built-in channel.purge()
         #  function with a check, but is more fancy by offering a

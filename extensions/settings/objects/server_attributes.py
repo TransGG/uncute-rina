@@ -8,13 +8,13 @@ type MessageableGuildChannel = (
     | discord.VoiceChannel
     | discord.StageChannel
     | discord.Thread
-    | discord.PartialMessageable
 )
 
 type GuildAttributeType = (
     str | int
     | discord.Guild
     | MessageableGuildChannel | list[MessageableGuildChannel]
+    | discord.TextChannel
     | discord.CategoryChannel
     | discord.Emoji
     | discord.Role | list[discord.Role]

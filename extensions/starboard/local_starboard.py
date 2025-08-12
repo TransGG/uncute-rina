@@ -1,5 +1,7 @@
 import discord
 from motor.core import AgnosticDatabase
+
+from extensions.settings.objects import MessageableGuildChannel
 from resources.customs import Bot, GuildMessage
 
 from resources.pymongo import (
@@ -26,7 +28,7 @@ class StarboardNotLoadedException(Exception):
 async def import_starboard_messages(
         client: Bot,
         async_rina_db: AgnosticDatabase,
-        starboard_channel: discord.abc.Messageable
+        starboard_channel: MessageableGuildChannel,
 ) -> dict[GuildId, dict[StarboardMessageId, OriginalMessageData]]:
     """
     A helper function to retrieve all starboard messages in a channel.
@@ -59,7 +61,7 @@ async def import_starboard_messages(
         # Json keys can't be integers, so starboard_msg.id will turn
         # into a string.
         await add_data(
-            async_rina_db, starboard_msg.guild.id, DatabaseKeys.starboard,
+            async_rina_db, starboard_channel.guild.id, DatabaseKeys.starboard,
             str(starboard_msg.id), database_data
         )
 
@@ -78,7 +80,7 @@ async def fetch_starboard_messages(
     :return: A dictionary mapping starboard message ids a tuple of its
      original message's channel id and message id.
     """
-    data: dict[str, DatabaseData]
+    data: dict[str, DatabaseData] | None
     data = await get_data(async_rina_db, guild_id, DatabaseKeys.starboard)
     if data is None:
         return {}
@@ -109,8 +111,6 @@ async def fetch_all_starboard_messages(
     data: dict[GuildId, dict[str, DatabaseData]]
     # starboard msg id turns into a string because json keys can't be integers
     data = await get_all_data(async_rina_db, DatabaseKeys.starboard)
-    if data is None:
-        return {}
 
     starboard_loaded = False
     local_starboard_index = {}
@@ -211,6 +211,8 @@ def parse_starboard_message(
     if len(starboard_msg.embeds[0].fields) == 0:
         raise ValueError("Message embed has no fields.")
     text = starboard_msg.embeds[0].fields[0].value
+    if text is None:
+        raise ValueError("Message embed's first field has no value.")
     # "[Jump!](https:/ /4/5/6/)" -> "https:/ /4/5/6/)"
     link = text.split("(")[1]
     # Initial attempt to use [:-1] to remove the final ")" character

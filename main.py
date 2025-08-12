@@ -13,6 +13,7 @@ import os  # for creating outputs/ directory
 from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
 from pymongo import MongoClient
+import traceback
 
 import discord  # for main discord bot functionality
 
@@ -29,7 +30,7 @@ from resources.customs import ApiTokenDict
 from resources.utils import debug, codec_options, DebugColor
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.0.3.4"
+BOT_VERSION = "2.0.4.0"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
@@ -237,8 +238,9 @@ def start_app():
             _ = await fetch_all_tags(client.async_rina_db)
         except Exception as ex:
             debug(
-                f"Loading tags failed!\n"
-                f"Reason: {ex}",
+                "Loading tags failed!\n"
+                "Reason: " + repr(ex)
+                + traceback.format_exc(),
                 color=DebugColor.red
             )
         else:
@@ -249,8 +251,9 @@ def start_app():
             _ = await fetch_all_watchlists(client.async_rina_db)
         except Exception as ex:
             debug(
-                f"Loading watchlists failed!\n"
-                f"Reason: {ex}",
+                "Loading watchlists failed!\n"
+                "Reason: " + repr(ex)
+                + traceback.format_exc(),
                 color=DebugColor.red
             )
         else:
@@ -261,8 +264,9 @@ def start_app():
             _ = await fetch_all_starboard_messages(client.async_rina_db)
         except Exception as ex:
             debug(
-                f"Loading starboard failed!\n"
-                f"Reason: {ex}",
+                "Loading starboard failed!\n"
+                "Reason: " + repr(ex)
+                + traceback.format_exc(),
                 color=DebugColor.red
             )
         else:

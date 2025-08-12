@@ -447,12 +447,11 @@ class OtherAddons(commands.Cog):
             return
         assert upvote_emoji is not None
         assert downvote_emoji is not None
-        assert neutral_emoji is not None
 
         try:
             await itx.response.send_message("Adding emojis...", ephemeral=True)
             await message.add_reaction(upvote_emoji)
-            if neutral_emoji:
+            if neutral_emoji is not None:
                 await message.add_reaction(neutral_emoji)
             await message.add_reaction(downvote_emoji)
             await itx.edit_original_response(

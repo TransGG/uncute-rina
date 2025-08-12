@@ -6,7 +6,11 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
-from extensions.addons.wolframresult import WolframResult, WolframQueryResult, WolframPod
+from extensions.addons.wolframresult import (
+    WolframResult,
+    WolframQueryResult,
+    WolframPod,
+)
 from resources.customs import Bot
 
 from extensions.addons.equaldexregion import EqualDexRegion
@@ -22,7 +26,9 @@ STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
 
-def format_wolfram_success_output(data: WolframQueryResult) -> tuple[bool, str]:
+def format_wolfram_success_output(
+        data: WolframQueryResult
+) -> tuple[bool, str]:
     """
     Helper function to parse api response data into a user-friendly string.
 
@@ -34,7 +40,7 @@ def format_wolfram_success_output(data: WolframQueryResult) -> tuple[bool, str]:
         return False, "The output had no pods with data."
 
     if len(data["pods"]) != data["numpods"]:
-        debug(repr(data), DebugColor.orange)
+        debug(repr(data), DebugColor.lightred)
         return (
             False,
             f"The response `numpods` did not match the actual returned number "
@@ -252,10 +258,10 @@ def _format_wolfram_assumptions(data: WolframQueryResult) -> str:
             assumptions.append(template + "?")
         else:
             template: str = (
-                    assumption["type"]
-                    + " - "
-                    + assumption["word"]
-                    + " (todo)"
+                assumption["type"]
+                + " - "
+                + assumption["word"]
+                + " (todo)"
             )
             assumptions.append(template)
 
@@ -422,11 +428,11 @@ class SearchAddons(commands.Cog):
 
         embed = discord.Embed(color=7829503, title=region.name)
         for issue in region.issues:
-            if type(region.issues[issue]) is list:
+            issue_details = region.issues[issue]
+            if isinstance(issue_details, list):
                 value = "No data"
             else:
-                assert type(region.issues[issue]) is not list
-                status = region.issues[issue]['current_status']
+                status = issue_details['current_status']
                 value = status['value_formatted']
                 # if status['value'] in [
                 #     'Legal',
@@ -446,7 +452,7 @@ class SearchAddons(commands.Cog):
                 #     value = "➖ " + value
                 status_description = \
                     status['description']
-                description = region.issues[issue]['description']
+                description = issue_details['description']
                 if len(status_description) > 0:
                     if len(status_description) > 200:
                         value += f" ({status_description[:200]}..."
@@ -460,7 +466,8 @@ class SearchAddons(commands.Cog):
                 if len(value) > 1024:
                     value = value[:1020] + "..."
             embed.add_field(
-                name=region.issues[issue]['label'],
+                name="" if isinstance(issue_details, list)
+                     else issue_details['label'],
                 value=value,
                 inline=False,
             )

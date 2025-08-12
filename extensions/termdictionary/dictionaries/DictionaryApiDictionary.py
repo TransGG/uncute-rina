@@ -90,7 +90,11 @@ class DictionaryApiDictionary(DictionaryBase):
                 # should be a list of entries
                 return None
 
-            assert type(data) is list
+            assert type(data) is list, (
+                f"Expected the response data to be of type `list` but it was "
+                f"{type(data)} instead!\n"
+                f"Data: {data}"
+            )
             return data
         except json.decoder.JSONDecodeError:
             return None

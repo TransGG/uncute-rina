@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import typing
-import warnings
 
+from enum import Enum
 import motor.core
-from typing import TypedDict, Any, TypeVar, Callable
+from typing import TypedDict, Any, TypeVar, Callable, TypeAliasType
 from types import UnionType
 
 import discord
 
+from resources.utils.debug import debug, DebugColor
 from .server_attributes import ServerAttributes, GuildAttributeType
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
@@ -32,19 +33,12 @@ T = TypeVar('T')
 
 
 def parse_id_generic(
-        invalid_arguments: dict[str, str],
-        invalid_argument_name: str,
-        get_object_function: Callable[[int], T | None],
+        get_object_function: Callable[[int], GuildAttributeType | None],
         object_id: int | None
-) -> T | None:
-    parsed_obj: T | None = None
+) -> GuildAttributeType | None:
+    parsed_obj: GuildAttributeType | None = None
     if object_id is not None:
         parsed_obj = get_object_function(object_id)
-        if parsed_obj is None:
-            invalid_arguments[invalid_argument_name] = f"{object_id}"
-        else:
-            if parsed_obj is None:
-                invalid_arguments[invalid_argument_name] = str(object_id)
     return parsed_obj
 
 
@@ -65,7 +59,8 @@ def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
         # typing.Union != types.UnionType :/
         #  typing.Union is for `Union[int, str]`
         #  types.UnionType is for `int | str`
-        if typing.get_origin(attribute_type) is UnionType:
+        if (typing.get_origin(attribute_type) is UnionType
+                or typing.get_origin(attribute_type) is TypeAliasType):
             # The original was: `type1 | type2 | None`.
             #   get_origin returns `<class 'UnionType'>`
             #   get_args returns `(<class 'type1'>, <class 'type2'>,
@@ -74,7 +69,17 @@ def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
                               if t is not type(None)]
         elif typing.get_origin(attribute_type) is list:
             # original was `list[T]`. get_args returns `T`
-            attribute_type = [t for t in typing.get_args(attribute_type)]
+            attribute_type_list = [
+                typing.get_args(attribute_type)
+                if type(t) is UnionType
+                else (typing.get_args(t.__value__)
+                      if type(t) is TypeAliasType
+                      else [t])
+                for t in typing.get_args(attribute_type)
+            ]
+            attribute_type = [attribute
+                              for type_list in attribute_type_list
+                              for attribute in type_list]
             # should not have any None's
             attribute_in_list = True
         else:
@@ -106,45 +111,63 @@ def parse_attribute(
      wrong type.
     """
     attribute_type, _ = get_attribute_type(attribute_key)
+    if attribute_type is None:
+        raise ParseError(f"No type found for attribute key {attribute_key}")
 
-    if attribute_type is discord.Guild:
-        func = client.get_guild
-    elif (attribute_type is discord.abc.GuildChannel
-          or attribute_type is discord.Thread):
+    def is_attribute_type(val: type):
+        f = any(
+            val in typing.get_args(i.__value__)
+            if type(i) is TypeAliasType
+            else val is i
+            for i in attribute_type
+        )
+        return f
+
+    funcs: set[Callable[[int], GuildAttributeType | None]] = set()
+
+    if is_attribute_type(discord.Guild):
+        funcs.add(client.get_guild)
+    if (is_attribute_type(discord.abc.GuildChannel)
+            or is_attribute_type(discord.Thread)):
         # Could use isinstance(), but I feel like it should only
         #  parse if the type matches exactly.
-        func = guild.get_channel_or_thread
-    elif attribute_type is discord.abc.Messageable:
-        func = client.get_channel
-    elif attribute_type is discord.TextChannel:
-        func = client.get_channel
-    elif attribute_type is discord.User:
-        func = client.get_user
-    elif attribute_type is discord.Role:
-        func = guild.get_role
-    elif attribute_type is discord.CategoryChannel:
+        funcs.add(guild.get_channel_or_thread)
+    if is_attribute_type(discord.abc.Messageable):
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.TextChannel):
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.User):
+        funcs.add(client.get_user)
+    if is_attribute_type(discord.Role):
+        funcs.add(guild.get_role)
+    if is_attribute_type(discord.CategoryChannel):
         # I think it's safe to assume the stored value was an object of
         #  the correct type in the first place. As in, it's a
         #  CategoryChannel id, not a VoiceChannel id.
-        func = client.get_channel
-    elif attribute_type is discord.VoiceChannel:
-        func = client.get_channel
-    elif attribute_type is discord.Emoji:
-        func = guild.get_emoji
-    elif attribute_type is int:
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.channel.VoiceChannel):
+        funcs.add(client.get_channel)
+    if is_attribute_type(discord.Emoji):
+        funcs.add(guild.get_emoji)
+    if is_attribute_type(int):
         def get_int(x: int) -> int:
             """Helper to just return the already-parsed int object."""
             # this function exists because apparently `lambda x: x` is
             #  bad for tracebacks or something.
             return x
         # the value should already be an int anyway
-        func = get_int
-    elif attribute_type is str:
+        funcs.add(get_int)
+    if is_attribute_type(str):
+        if attribute_value is None:
+            return attribute_value
         return str(attribute_value)
-    else:
-        raise ParseError(f"Type '{attribute_type}' of attribute "
-                         f"{attribute_key} could not be parsed. "
-                         f"(Attribute value: '{attribute_value}')")
+
+    if len(funcs) == 0:
+        raise ParseError(
+            f"Type '{attribute_type}' of attribute "
+            f"{attribute_key} could not be parsed. "
+            f"(Attribute value: '{attribute_value}')"
+        )
 
     if attribute_value is None:
         # to prevent TypeError from int(None) later.
@@ -156,12 +179,18 @@ def parse_attribute(
     except ValueError:
         return None
 
-    parsed_attribute = parse_id_generic(
-        invalid_arguments or {},  # discard output
-        attribute_key,
-        func,
-        attribute_value_id,
-    )
+    parsed_attribute = None
+    for func in funcs:
+        parsed_attribute = parse_id_generic(
+            func,
+            attribute_value_id,
+        )
+        if parsed_attribute is not None:
+            break
+
+    if parsed_attribute is None and invalid_arguments is not None:
+        invalid_arguments[attribute_key] = str(attribute_value_id)
+
     return parsed_attribute
 
 
@@ -177,6 +206,47 @@ class ServerSettingData(TypedDict):
 
 
 NameAndIdData = tuple[str | None, int | None]
+
+
+class SettingType(Enum):
+    enabled_modules = 0
+    attribute_ids = 1
+
+
+async def unset_query(
+        async_rina_db: motor.core.AgnosticDatabase,
+        guild_id: int,
+        setting: SettingType,
+        key: str,
+):
+    return await update_query(
+        async_rina_db,
+        guild_id,
+        setting,
+        key,
+        "",
+        # ^ value ("") is not used by MongoDB when unsetting.
+        unset=True,
+    )
+
+
+async def update_query(
+        async_rina_db: motor.core.AgnosticDatabase,
+        guild_id: int,
+        setting: SettingType,
+        key: str,
+        value: object,
+        unset: bool = False,
+):
+    collection = async_rina_db[ServerSettings.DATABASE_KEY]
+    query = {"guild_id": guild_id}
+    action = "$unset" if unset else "$set"
+    update = {action: {f"{setting.value}.{key}": value}}
+
+    result = await collection.update_one(query, update, upsert=True)
+    # result.did_upsert -> if yes, make new ServerSettings?
+    # result.raw_result
+    return result.modified_count > 0, result.did_upsert
 
 
 class ServerSettings:
@@ -227,33 +297,6 @@ class ServerSettings:
         result: ServerSettingData | None = await collection.find_one(query)
         return result
 
-    # @staticmethod
-    # async def migrate(async_rina_db: motor.core.AgnosticDatabase):
-    #     """
-    #     Migrate all data from the old guildInfo database to the new
-    #     server_settings database.
-    #
-    #     :param async_rina_db: The database to reference to look up the
-    #      old and store the new database.
-    #     :raise IndexError: No online database of the old version
-    #      was found.
-    #     """
-    #     old_collection = async_rina_db["guildInfo"]
-    #     new_collection = async_rina_db[ServerSettings.DATABASE_KEY]
-    #     new_settings = []
-    #     async for old_setting in old_collection.find():
-    #         guild_id, attributes = convert_old_settings_to_new(
-    #             old_setting)
-    #         new_setting = ServerSettingData(
-    #             guild_id=guild_id,
-    #             attribute_ids=attributes,
-    #             enabled_modules=EnabledModules(),
-    #         )
-    #         new_settings.append(new_setting)
-    #
-    #     if new_settings:
-    #         await new_collection.insert_many(new_settings)
-
     @staticmethod
     async def set_attribute(
             async_rina_db: motor.core.AgnosticDatabase,
@@ -269,14 +312,13 @@ class ServerSettings:
         if parameter not in ServerAttributeIds.__annotations__:
             raise KeyError(f"'{parameter}' is not a valid Server Attribute.")
 
-        collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": guild_id}
-        update = {"$set": {f"attribute_ids.{parameter}": value}}
-
-        result = await collection.update_one(query, update, upsert=True)
-        # result.did_upsert -> if yes, make new ServerSettings?
-        # result.raw_result
-        return result.modified_count > 0, result.did_upsert
+        return await update_query(
+            async_rina_db,
+            guild_id,
+            SettingType.attribute_ids,
+            parameter,
+            value,
+        )
 
     @staticmethod
     async def remove_attribute(
@@ -289,13 +331,13 @@ class ServerSettings:
                 f"Parameters are not allowed to contain '.' or "
                 f"start with '$'! (parameter: '{parameter}')"
             )  # todo: check if i sanitize the input when responding.
-        collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": guild_id}
-        update = {"$unset": {f"attribute_ids.{parameter}": ""}}
-        # value ("") is not used by MongoDB when unsetting.
 
-        result = await collection.update_one(query, update, upsert=True)
-        return result.modified_count > 0, result.did_upsert
+        return await unset_query(
+            async_rina_db,
+            guild_id,
+            SettingType.attribute_ids,
+            parameter,
+        )
 
     @staticmethod
     async def set_module_state(
@@ -326,14 +368,13 @@ class ServerSettings:
                 f"'{type(value).__name__}'."
             )
 
-        collection = async_rina_db[ServerSettings.DATABASE_KEY]
-        query = {"guild_id": guild_id}
-        update = {"$set": {f"enabled_modules.{module}": value}}
-
-        result = await collection.update_one(query, update, upsert=True)
-        # result.did_upsert -> if yes, make new ServerSettings?
-        # result.raw_result
-        return result.modified_count > 0, result.did_upsert
+        return await update_query(
+            async_rina_db,
+            guild_id,
+            SettingType.enabled_modules,
+            module,
+            value,
+        )
 
     @staticmethod
     async def fetch_all(client: Bot) -> dict[int, ServerSettings]:
@@ -353,12 +394,14 @@ class ServerSettings:
         async for setting in settings_data:
             setting: ServerSettingData
             try:
-                server_setting = ServerSettings.load(client, setting)
+                server_setting = await ServerSettings.load(client, setting)
                 server_settings[server_setting.guild.id] = server_setting
             except ParseError as ex:
-                warnings.warn(
-                    f"ParseError for {setting["guild_id"]}: "
+                debug(
+                    f"ParseError for {setting["guild_id"]}:\n"
                     + ex.message
+                    + "\n",
+                    DebugColor.lightred,
                 )
 
         return server_settings
@@ -384,16 +427,21 @@ class ServerSettings:
         if result is None:
             raise KeyError(f"Guild '{guild_id}' has no data yet!")
 
-        return ServerSettings.load(client, result)
+        return await ServerSettings.load(client, result)
 
     @staticmethod
-    def load(
-            client: discord.Client,
+    async def load(
+            client: Bot,
             settings: ServerSettingData
     ) -> ServerSettings:
         """
         Load all server settings from database and format into a
         ServerSettings object.
+
+        .. note::
+
+            This function is async only to send a crash log to the server
+            in question.
 
         :param client: The client to use to retrieve matching attribute
          objects from ids.
@@ -408,7 +456,7 @@ class ServerSettings:
         guild_id = settings["guild_id"]
         enabled_modules = settings["enabled_modules"]
         attribute_ids = ServerAttributeIds(**settings["attribute_ids"])
-        guild, attributes = ServerSettings.get_attributes(
+        guild, attributes = await ServerSettings.get_attributes(
             client, guild_id, attribute_ids
         )
         return ServerSettings(
@@ -421,14 +469,19 @@ class ServerSettings:
     #  from the database?
 
     @staticmethod
-    def get_attributes(
-            client: discord.Client,
+    async def get_attributes(
+            client: Bot,
             guild_id: int,
             attributes: ServerAttributeIds
     ) -> tuple[discord.Guild, ServerAttributes]:
         """
         Load the guild and all attributes from the given ids, using
         the given client.
+
+        .. note::
+
+            This function is async only to send a crash log to the server
+            in question.
 
         :param client: The client to use to retrieve matching attribute
          objects from ids.
@@ -446,10 +499,9 @@ class ServerSettings:
         invalid_arguments: dict[str, str] = {}
         guild = client.get_guild(guild_id)
         if guild is None:
-            invalid_arguments["guild_id"] = str(guild_id)
             raise ParseError(
-                "Some server settings could not be parsed: "
-                + ', '.join([f"{k}:{v}" for k, v in invalid_arguments.items()])
+                f"Guild id could not be parsed:\n"
+                f"- guild_id: {guild_id}"
             )
 
         new_settings: dict[str, Any | None] = {
@@ -470,20 +522,63 @@ class ServerSettings:
                         parsed_values.append(parsed_value)
                 new_settings[attribute] = parsed_values
             else:
-                assert isinstance(attribute_value, (str, int))
-                new_settings[attribute] = parse_attribute(
+                assert isinstance(attribute_value, (str, int, type(None))), (
+                    f"Expected attribute {attribute} to have value type str "
+                    f"or int, but `{attribute_value}` was of type "
+                    f"`{type(attribute_value)}`"
+                )
+                parsed_value = parse_attribute(
                     client, guild, attribute, attribute_value,
                     invalid_arguments=invalid_arguments)
+                if parsed_value is not None:
+                    new_settings[attribute] = parsed_value
 
         if invalid_arguments:
-            raise ParseError(
-                "Some server settings could not be parsed: \n- "
-                + '\n- '.join(
-                    [f"{k}: {v}" for k, v in invalid_arguments.items()]
+            if "log_channel" in invalid_arguments:
+                raise ParseError(
+                    "Some server settings could not be parsed:\n- "
+                    + '\n- '.join(
+                        [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                    )
                 )
-            )
+            else:
+                from resources.utils.utils import log_to_guild
+                await log_to_guild(
+                    client,
+                    guild_id,
+                    msg="Some server settings could not be parsed:\n- "
+                    + '\n- '.join(
+                        [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                    ),
+                )
+                debug(
+                    f"ParseError for {guild_id}:\n"
+                    "Some server settings could not be parsed:\n- "
+                    + '\n- '.join(
+                        [f"{k}: {v}" for k, v in invalid_arguments.items()]
+                    ),
+                    DebugColor.lightred
+                )
 
-        return guild, ServerAttributes(**new_settings)
+        # Mostly validation before casting it.
+        for key, value in new_settings.items():
+            assert isinstance(key, str), f"Key `{key}` was not a string!"
+            expected_type = ServerAttributes.__annotations__[key]
+            if (type(expected_type) is list
+                    or typing.get_origin(expected_type) is list):
+                assert type(value) is list and value is not None, (
+                    f"Value for `{key}` should be a list, but it was "
+                    f"{type(value)} instead!"
+                )
+            else:
+                assert type(value) is not list, (
+                    f"Value for `{key}` should be `{expected_type}`, but it "
+                    f"was `{type(value)}` instead: {value}!"
+                )
+        attribute_dict: ServerAttributes = typing.cast(
+            ServerAttributes, new_settings)
+
+        return guild, ServerAttributes(**attribute_dict)
 
     def __init__(
             self, *,

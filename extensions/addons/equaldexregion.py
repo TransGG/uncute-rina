@@ -1,3 +1,17 @@
+from typing import TypedDict
+
+
+class EqualDexStatus(TypedDict):
+    description: str
+    value_formatted: str
+
+
+class EqualDexIssueDetails(TypedDict):
+    label: str
+    description: str
+    current_status: EqualDexStatus
+
+
 class EqualDexRegion:
     # noinspection LongLine
     """
@@ -28,5 +42,5 @@ class EqualDexRegion:
         self.url: str = data['url']
         self.issues: dict[
             str,
-            list[str] | dict[str, dict[str, str]]
+            list[str] | EqualDexIssueDetails
         ] = data['issues']

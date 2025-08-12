@@ -358,10 +358,10 @@ async def watchlist_ctx_user(
 
 
 @app_commands.context_menu(name="Add msg to watchlist")
-@module_enabled_check(ModuleKeys.watchlist)
 @is_staff_check
+@module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_message(
-        itx: discord.Interaction[Bot],
+        itx: GuildInteraction[Bot],
         message: discord.Message
 ):
     watchlist_reason_modal = WatchlistReasonModal(

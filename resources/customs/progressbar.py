@@ -1,5 +1,4 @@
-from resources.utils import DebugColor
-from resources.utils.utils import debug
+from resources.utils import DebugColor, debug
 
 
 class ProgressBar:
@@ -38,7 +37,9 @@ class ProgressBar:
         # [###+ = 5 chars. Max complete may be 4. Pad 0 characters. [###+]:
         pad_chars = self._max_completes - len(out) + 1
         if pad_chars < 0:
-            raise OverflowError("Progress exceeded size of progress bar!")
+            raise OverflowError(
+                "Progress exceeded size of progress bar!",
+            )
         out += self._empty_char * pad_chars
         out += "]: "
         return out
