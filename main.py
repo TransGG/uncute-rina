@@ -30,7 +30,7 @@ from resources.customs import ApiTokenDict
 from resources.utils import debug, codec_options, DebugColor
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.0.3.4"
+BOT_VERSION = "2.0.4.0"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
