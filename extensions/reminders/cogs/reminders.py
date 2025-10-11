@@ -139,7 +139,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
     async def reminders(
             self,
             itx: discord.Interaction[Bot],
-            item: int = None
+            item: int | None = None
     ):
         collection = itx.client.rina_db["reminders"]
         query = {"userID": itx.user.id}

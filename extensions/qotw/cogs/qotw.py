@@ -1,6 +1,3 @@
-from datetime import datetime
-# to get embed send time for embed because cool (serves no real purpose)
-
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands

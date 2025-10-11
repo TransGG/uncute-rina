@@ -57,7 +57,7 @@ class DictionaryapiPageview(PageView):
             f"{itx.user.mention} shared a dictionary entry!",
             embed=embed,
             ephemeral=False,
-            allowed_mentions=discord.AllowedMentions.none()
+            allowed_mentions=discord.AllowedMentions.none(),
         )
         await itx.response.edit_message(
             content="Sent successfully!", embed=None)

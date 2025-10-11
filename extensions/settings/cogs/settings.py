@@ -666,7 +666,7 @@ class SettingsCog(commands.Cog):
         description="A grouping of migrate commands.",
     )
     #
-    # @app_commands.check(is_admin_check)
+    # @is_admin_check
     # @migrate_group.command(
     #     name="database",
     #     description="Migrate bot settings to new database."

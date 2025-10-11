@@ -41,20 +41,20 @@ async def relaunch_ongoing_reminders(
     db_data = collection.find(query)
     async for entry in db_data:
         entry: DatabaseData
-        try:
-            for reminder in entry["reminders"]:
-                creation_time = datetime.fromtimestamp(
-                    reminder['creationtime'], timezone.utc)
-                reminder_time = datetime.fromtimestamp(
-                    reminder['remindertime'], timezone.utc)
-                ReminderObject(
-                    client, creation_time, reminder_time,
-                    entry['userID'],
-                    reminder['reminder'], entry["reminders"],
-                    continued=True
-                )
-        except KeyError:
-            pass
+        if "reminders" not in entry:
+            continue
+
+        for reminder in entry["reminders"]:
+            creation_time = datetime.fromtimestamp(
+                reminder['creationtime'], timezone.utc)
+            reminder_time = datetime.fromtimestamp(
+                reminder['remindertime'], timezone.utc)
+            ReminderObject(
+                client, creation_time, reminder_time,
+                entry['userID'],
+                reminder['reminder'], entry["reminders"],
+                continued=True
+            )
 
 
 class ReminderObject:
@@ -148,7 +148,7 @@ class ReminderObject:
         for reminder_index in range(len(reminders)):
             current_index = reminder_index - index_subtraction
             reminder_time = reminders[current_index]["remindertime"]
-            if (reminder_time <= int(datetime.now().timestamp())):
+            if reminder_time <= int(datetime.now().timestamp()):
                 del reminders[current_index]
                 index_subtraction += 1
                 # See... If more than 1 reminder is placed at the same time,
@@ -176,6 +176,26 @@ async def _handle_reminder_timestamp_parsing(
         itx: discord.Interaction[Bot],
         reminder_datetime: str
 ) -> tuple[datetime, discord.Interaction[Bot]]:  # todo: docstring
+    """
+    Helper to parse the user's string into a datetime object.
+
+    .. note::
+
+        If the provided datetime string isn't accurate enough, the interaction
+        will be used to send a follow-up question. The click of the button
+        registers a second interaction that can then be used to follow-up
+        further. If the user never continues, an error is raised.
+
+    :param itx: The interaction to ask followups for, in case the user
+     wasn't specific enough.
+    :param reminder_datetime: The string to parse.
+    :return: A tuple of the parsed datetime object, and the interaction that
+     should be used to continue the command.
+    :raise ValueError: If the input string does not match a format or is out
+     of range.
+    :raise ReminderTimeSelectionMenuTimeout: if the TimeOfDaySelection button
+     view times out.
+    """
     mode: TimestampFormats = _validate_timestamp_format(reminder_datetime)
 
     # convert given time string to valid datetime
@@ -400,7 +420,7 @@ async def _create_reminder(
             f"Successfully created a reminder for you on <t:{_distance}:F> "
             f"for \"{reminder}\"!\n"
             f"Use {cmd_reminders} to see your list of reminders",
-            ephemeral=True
+            ephemeral=True,
         )
         return
     else:
@@ -408,7 +428,8 @@ async def _create_reminder(
             f"Successfully created a reminder for you on <t:{_distance}:F> "
             f"for \"{reminder}\"!\n"
             f"Use {cmd_reminders} to see your list of reminders",
-            view=view, ephemeral=True
+            view=view,
+            ephemeral=True,
         )
 
     await view.wait()
@@ -418,18 +439,19 @@ async def _create_reminder(
         copy_view = CopyReminder(
             _create_reminder,
             reminder_object,
-            timeout=300
+            timeout=300,
         )
         try:
             await itx.channel.send(
                 content=msg,
                 view=copy_view,
-                allowed_mentions=discord.AllowedMentions.none()
+                allowed_mentions=discord.AllowedMentions.none(),
             )
         except discord.errors.Forbidden:
             await view.return_interaction.response.send_message(
-                msg, view=copy_view,
-                allowed_mentions=discord.AllowedMentions.none()
+                msg,
+                view=copy_view,
+                allowed_mentions=discord.AllowedMentions.none(),
             )
     await itx.edit_original_response(view=None)
 

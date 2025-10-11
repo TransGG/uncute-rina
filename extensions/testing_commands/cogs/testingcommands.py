@@ -7,7 +7,7 @@ import discord.app_commands as app_commands
 
 from extensions.settings.objects import AttributeKeys
 from resources.checks import MissingAttributesCheckFailure, is_staff_check
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 from resources.views.generics import PageView, create_simple_button
 
 
@@ -93,10 +93,10 @@ class TestingCog(commands.GroupCog, name="testing"):
         private_notes="private notes to include",
         role_changes="role changes ([[\\n]] converts to newline)"
     )
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     async def send_fake_watchlist_mod_log(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             target: discord.User,
             reason: str = "",
             rule: str = None,
@@ -144,10 +144,10 @@ class TestingCog(commands.GroupCog, name="testing"):
     @app_commands.command(name="send_pageview_test",
                           description="Send a test embed with page buttons")
     @app_commands.describe(page_count="The amount of pages to send/test")
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     async def send_pageview_test_embed(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             page_count: app_commands.Range[int, 1, 10000] = 40
     ):
         def get_chars(length: int):
@@ -208,10 +208,10 @@ class TestingCog(commands.GroupCog, name="testing"):
     @app_commands.command(name="send_srmod_appeal_test",
                           description="Send a test embed of a ban appeal")
     @app_commands.describe(username="The username you want to fill in")
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     async def send_srmod_appeal_test(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             username: str
     ):
         embed: discord.Embed = discord.Embed(title="New Ban Appeal")
@@ -237,7 +237,7 @@ class TestingCog(commands.GroupCog, name="testing"):
         app_commands.Choice(name="Leave", value="Leave"),
         app_commands.Choice(name="Move", value="Move"),
     ])
-    @app_commands.check(is_staff_check)
+    @is_staff_check
     async def send_vc_log_test(
             self,
             itx: discord.Interaction[Bot],

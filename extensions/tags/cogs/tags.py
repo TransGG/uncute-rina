@@ -6,7 +6,9 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.help.cogs import send_help_menu
-from extensions.settings.objects import AttributeKeys, ModuleKeys
+from extensions.settings.objects import (
+    AttributeKeys, ModuleKeys, MessageableGuildChannel
+)
 from extensions.tags.local_tag_list import (
     create_tag, remove_tag, get_tags, get_tag
 )
@@ -121,7 +123,7 @@ class TagFunctions(commands.Cog):
         staff_role_mentions = [f"<@&{role.id}>" for role in staff_roles
                                if staff_roles is not None]
 
-        ticket_channel: discord.abc.Messageable | None
+        ticket_channel: MessageableGuildChannel | None
         ticket_channel = get_mod_ticket_channel(self.client, message.guild)
 
         if any(staff_role_mentions in message.content
@@ -145,7 +147,7 @@ class TagFunctions(commands.Cog):
             itx: GuildInteraction[Bot],
             tag: str,
             public: bool = True,
-            anonymous: bool = True
+            anonymous: bool = True,
     ):
         tag_ids = _get_enabled_tag_ids(itx)
         tag = tag.lower()
@@ -161,18 +163,20 @@ class TagFunctions(commands.Cog):
                     tag_data["title"],
                     tag_data["description"],
                     tag_data["color"],
-                    tag_data["report_to_staff"]
+                    tag_data["report_to_staff"],
                 )
                 await custom_tag.send(itx, public, anonymous)
         elif tag == "help":
             await itx.response.send_message(
                 "List of tags currently available to send:\n"
                 + '\n'.join(["- " + i for i in tag_info_dict]),
-                ephemeral=True
+                ephemeral=True,
             )
         else:
-            await itx.response.send_message("No tag found with this name!",
-                                            ephemeral=True)
+            await itx.response.send_message(
+                "No tag found with this name!",
+                ephemeral=True,
+            )
 
     @app_commands.command(name="tag-manage",
                           description="Add and remove custom tags")

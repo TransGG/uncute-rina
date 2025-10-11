@@ -350,8 +350,7 @@ class CrashHandling(commands.Cog):
                 f"Your command failed to completely execute because it relied "
                 f"on certain server attributes that were not defined! An "
                 f"admin will have to run {cmd_settings} "
-                f"`type:Attribute` `setting: ` for the following "
-                f"attribute(s):\n"
+                f"for the following attribute(s):\n"
                 f"> " + ', '.join(error.attributes)
             )
             return

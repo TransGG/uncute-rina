@@ -146,19 +146,12 @@ async def create_thread(
     :param starter_msg_data: The message to add the thread to, or a
      tuple of the creating user, the channel to create the thread in, and
      the description to put in the thread and embed.
-    :param user: The author of the thread embed. This is only necessary if
-     you don't provide a starter message.
-    :param channel: The channel to create the thread in. This is only
-     necessary if you don't provide a starter message.
-    :param reaction_role_key: The reaction role to mention after the thread
-     is created, or None to not add anyone to the thread.
     :param thread_title: The thread title, a string between 1 and 100
      characters.
-    :param description: The description to put in the embed.
+    :param reaction_role_key: The reaction role to mention after the thread
+     is created, or None to not add anyone to the thread.
     :param emojis: Emojis to add to the main thread embed. Typically for
      voting.
-    :param starter_msg: An optional starter message to add a thread to.
-     Otherwise, it will create a new starter message. If you provide this, you don't need to provide *user*
     """
     if not isinstance(starter_msg_data, tuple):
         starter_msg = starter_msg_data
@@ -176,7 +169,6 @@ async def create_thread(
 
         embed = await _create_main_embed(copyable_version, description, user)
         await starter_msg.edit(embed=embed)
-
 
     if reaction_role_key is not None:
         await _ping_reaction_role(client, reaction_role_key, thread)

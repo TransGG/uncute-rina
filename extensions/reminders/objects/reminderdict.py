@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Required
 
 
 # noinspection SpellCheckingInspection
@@ -8,6 +8,6 @@ class ReminderDict(TypedDict):
     reminder: str
 
 
-class DatabaseData(TypedDict):
-    userID: int
+class DatabaseData(TypedDict, total=False):
+    userID: Required[int]
     reminders: list[ReminderDict]

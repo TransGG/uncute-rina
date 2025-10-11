@@ -17,7 +17,7 @@ from extensions.termdictionary.dictionary_sources import DictionarySources
 from extensions.termdictionary.utils import simplify
 
 from resources.checks import is_staff_check  # for staff dictionary commands
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 # For logging custom dictionary changes, or when a search query returns
 #  nothing or >2000 characters
 from resources.utils.utils import log_to_guild
@@ -183,7 +183,6 @@ class TermDictionary(commands.Cog):
         description='Change custom entries in the dictionary'
     )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="define",
                    description="Add a dictionary entry for a word!")
     @app_commands.describe(
@@ -192,9 +191,10 @@ class TermDictionary(commands.Cog):
         definition="Give this term a definition",
         synonyms="Add synonyms (SEPARATE WITH \", \")"
     )
+    @is_staff_check
     async def define(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             term: str,
             definition: str,
             synonyms: str = ""
@@ -252,7 +252,6 @@ class TermDictionary(commands.Cog):
             ephemeral=True,
         )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="redefine",
                    description="Edit a dictionary entry for a word!")
     @app_commands.describe(
@@ -260,9 +259,10 @@ class TermDictionary(commands.Cog):
              "Example: Egg, Hormone Replacement Therapy (HRT), etc.",
         definition="Redefine this definition"
     )
+    @is_staff_check
     async def redefine(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             term: str,
             definition: str
     ):
@@ -292,14 +292,14 @@ class TermDictionary(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="undefine",
                    description="Remove a dictionary entry for a word!")
     @app_commands.describe(
         term="What word do you need to undefine (case sensitive). Example: "
              "Egg, Hormone Replacement Therapy (HRT), etc",
     )
-    async def undefine(self, itx: discord.Interaction[Bot], term: str):
+    @is_staff_check
+    async def undefine(self, itx: GuildInteraction[Bot], term: str):
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -325,7 +325,6 @@ class TermDictionary(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="editsynonym",
                    description="Add a synonym to a previously defined word")
     @app_commands.describe(
@@ -338,9 +337,10 @@ class TermDictionary(commands.Cog):
         discord.app_commands.Choice(name='Add a synonym', value=1),
         discord.app_commands.Choice(name='Remove a synonym', value=2),
     ])
+    @is_staff_check
     async def edit_synonym(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             term: str,
             mode: int,
             synonym: str

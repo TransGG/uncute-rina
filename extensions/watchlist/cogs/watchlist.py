@@ -66,6 +66,7 @@ async def _create_uncool_watchlist_thread(
     :param watch_channel: The channel to create the thread in.
     :return: A tuple of the created watchlist message and thread.
     """
+
     # make and send uncool embed for the loading period while it sends
     # the copyable version (we want the jump url)
     embed = discord.Embed(
@@ -389,7 +390,7 @@ class WatchList(commands.Cog):
     @module_enabled_check(ModuleKeys.watchlist)
     async def watchlist(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             user: discord.User | discord.Member,
             reason: str = "",
             message_id: str | None = None
@@ -417,7 +418,7 @@ class WatchList(commands.Cog):
     @module_enabled_check(ModuleKeys.watchlist)
     async def check_watchlist(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             user: discord.User
     ):
         if not is_staff(itx, itx.user):
@@ -427,8 +428,9 @@ class WatchList(commands.Cog):
             )
             return
 
-        watch_channel = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.watchlist_channel)
+        watch_channel: discord.TextChannel | None = \
+            itx.client.get_guild_attribute(
+                itx.guild, AttributeKeys.watchlist_channel)
         if watch_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.watchlist, [AttributeKeys.watchlist_channel])

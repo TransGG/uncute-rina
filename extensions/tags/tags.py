@@ -2,9 +2,11 @@ from typing import Callable
 
 import discord
 
-from extensions.settings.objects import AttributeKeys, ModuleKeys
+from extensions.settings.objects import (
+    AttributeKeys, ModuleKeys, MessageableGuildChannel
+)
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 from resources.utils.utils import get_mod_ticket_channel
 # ^ for ticket channel id in Report tag
 from resources.utils.utils import log_to_guild
@@ -23,11 +25,11 @@ class CustomTag:
         color: tuple[int, int, int],
         report_to_staff: bool
     ):
-        color = discord.Color.from_rgb(*color)
+        embed_color = discord.Color.from_rgb(color[0], color[1], color[2])
         embed = discord.Embed(
             title=title,
             description=description,
-            color=color,
+            color=embed_color,
         )
 
         self.id = tag_id
@@ -37,7 +39,10 @@ class CustomTag:
         self.command_mention: str | None = None
         self.send_user: discord.User | discord.Member | None = None
         self.public_message: discord.Message | None = None
-        self.send_channel: discord.TextChannel | None = None
+        self.send_channel: (
+                discord.TextChannel | discord.VoiceChannel
+                | discord.Thread | discord.StageChannel | None
+        ) = None
 
     @property
     def log_message(self) -> str:
@@ -55,7 +60,7 @@ class CustomTag:
 
         return (
             f"{username} (`{user_id}`) used {self.command_mention} anonymously"
-            + (f", in {self.send_channel.mention} (`{self.send_channel.id}`)"
+            + (f", in {self.send_channel.jump_url} (`{self.send_channel.id}`)"
                if self.send_channel is not None
                else "")
             + (f"\n[Jump to the tag message]({self.public_message.jump_url})"
@@ -69,7 +74,7 @@ class CustomTag:
 
     async def send(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             public: bool,
             anonymous: bool,
             report_to_staff: bool = False,
@@ -98,7 +103,7 @@ class CustomTag:
 
     async def _handle_send_publicly(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             anonymous: bool,
             report_to_staff: bool
     ) -> None:
@@ -129,6 +134,7 @@ class CustomTag:
 
         if itx.client.is_module_enabled(
                 itx.guild, ModuleKeys.report_tags_to_staff):
+            log_channel: MessageableGuildChannel | None
             log_channel = itx.client.get_guild_attribute(
                 itx.guild, AttributeKeys.staff_reports_channel)
             if log_channel is None:
@@ -140,7 +146,7 @@ class CustomTag:
 
     async def _handle_send_privately(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             anonymous: bool,
             report_to_staff: bool
     ) -> None:
@@ -168,7 +174,7 @@ class CustomTag:
 
 # region Tags
 def create_report_info_tag(
-        mod_ticket_channel: discord.abc.Messageable | None
+        mod_ticket_channel: MessageableGuildChannel | None
 ) -> CustomTag:
     ticket_string = f"create a mod ticket in <#{mod_ticket_channel.id}> or " \
         if mod_ticket_channel else ""
@@ -189,20 +195,20 @@ def create_report_info_tag(
 
 
 async def send_report_info(
-        itx: discord.Interaction[Bot], public: bool, anonymous: bool,
+        itx: GuildInteraction[Bot], public: bool, anonymous: bool,
 ) -> None:
     """Helper to send report tag."""
-    ticket_channel: discord.abc.Messageable | None = get_mod_ticket_channel(
+    ticket_channel: MessageableGuildChannel | None = get_mod_ticket_channel(
         itx.client, itx.guild)
     tag = create_report_info_tag(ticket_channel)
     await tag.send(itx, public, anonymous, False)
 
 
 async def send_enabling_embeds_info(
-        itx: discord.Interaction[Bot], public: bool, anonymous: bool,
+        itx: GuildInteraction[Bot], public: bool, anonymous: bool,
 ) -> None:
     """Helper to send enabling embeds tag."""
-    itx.followup: discord.Webhook  # noqa
+    itx.followup: discord.Webhook  # type: ignore
     txt = ("**Enabling Embeds**\n"
            "Embeds are a neat feature in discord that let you preview "
            "websites and show certain messages in a nicer format. Many bots "
@@ -235,7 +241,11 @@ async def _send_tag_log_message(itx, tag_name) -> None:
     await log_to_guild(itx.client, itx.guild, log_msg)
 
 
-tag_info_dict: dict[str, Callable] = {
+tag_info_dict: dict[
+        str,
+        Callable[[GuildInteraction[Bot], bool, bool],
+                 typing.Coroutine[typing.Any, typing.Any, None]]
+] = {
     # sorted alphabetically
     "enabling embeds": send_enabling_embeds_info,
     "report": send_report_info,

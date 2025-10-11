@@ -499,7 +499,7 @@ class Compliments(commands.Cog):
                     ephemeral=True)
                 return
             try:
-                string = int(string)
+                index = int(string)
             except ValueError:
                 await itx.response.send_message(
                     "To remove a string from your blacklist, you must give "
@@ -511,7 +511,8 @@ class Compliments(commands.Cog):
             query = {"user": itx.user.id}
             search0: dict[
                 typing.Literal["personal_list", "list"],
-                list[str]] = await collection.find_one(query)
+                list[str]
+            ] | None = await collection.find_one(query)
             if search0 is None:
                 await itx.response.send_message(
                     "There are no items on your blacklist, so you can't "
@@ -522,7 +523,7 @@ class Compliments(commands.Cog):
             blacklist = search0.get(db_location, [])
 
             try:
-                del blacklist[string]
+                del blacklist[index]
             except IndexError:
                 cmd_blacklist = itx.client.get_command_mention(
                     "complimentblacklist")
@@ -531,7 +532,8 @@ class Compliments(commands.Cog):
                     f"on your list with that ID. Use {cmd_blacklist} "
                     f"`mode:Check` to see the IDs assigned to each item on "
                     f"your list",
-                    ephemeral=True)
+                    ephemeral=True
+                )
                 return
             await collection.update_one(
                 query,
@@ -539,7 +541,7 @@ class Compliments(commands.Cog):
                 upsert=True
             )
             await itx.response.send_message(
-                f"Successfully removed `{string}` from your blacklist. Your "
+                f"Successfully removed `{index}` from your blacklist. Your "
                 f"blacklist now contains {len(blacklist)} "
                 f"string{'s' * (len(blacklist) != 1)}.",
                 ephemeral=True)
@@ -547,12 +549,13 @@ class Compliments(commands.Cog):
         elif mode == 3:  # check
             collection = itx.client.async_rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
-            search1: dict[str, int | list] = await collection.find_one(query)  # type: ignore # noqa
+            search1: dict[str, int | list] | None = \
+                await collection.find_one(query)
             if search1 is None:
                 await itx.response.send_message(
                     "There are no strings in your blacklist, so... nothing "
                     "to list here...",
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
             blacklist = search1.get(db_location, [])

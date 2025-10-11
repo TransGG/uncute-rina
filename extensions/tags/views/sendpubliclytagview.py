@@ -3,7 +3,7 @@ import discord
 
 from resources.utils.utils import log_to_guild
 from resources.customs import Bot
-from extensions.settings.objects import AttributeKeys
+from extensions.settings.objects import AttributeKeys, MessageableGuildChannel
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ class SendPubliclyTagView(discord.ui.View):
             self,
             tag: CustomTag,
             report_to_staff: bool,
-            timeout: int = None,
+            timeout: int | None = None,
             log_msg=None,
     ):
         super().__init__()
@@ -29,9 +29,9 @@ class SendPubliclyTagView(discord.ui.View):
     @discord.ui.button(label='Send publicly',
                        style=discord.ButtonStyle.primary)
     async def send_publicly(
-            self, itx: discord.Interaction[Bot], _button: discord.ui.Button
+            self, itx: discord.Interaction[Bot], _: discord.ui.Button
     ):
-        itx.followup: discord.Webhook  # noqa
+        itx.followup: discord.Webhook  # type: ignore
 
         if self.tag.report_to_staff:
             public_footer = (
@@ -64,7 +64,8 @@ class SendPubliclyTagView(discord.ui.View):
                 "",
                 embed=embed,
                 ephemeral=False,
-                allowed_mentions=discord.AllowedMentions.none()
+                wait=True,
+                allowed_mentions=discord.AllowedMentions.none(),
             )
         if self.log_msg:
             self.log_msg += (f", in {itx.channel.mention} "
@@ -72,6 +73,7 @@ class SendPubliclyTagView(discord.ui.View):
                              f"[Jump to the tag message]({msg.jump_url})")
             if self.report_to_staff:
                 await log_to_guild(itx.client, itx.guild, self.log_msg)
+                staff_message_reports_channel: MessageableGuildChannel | None
                 staff_message_reports_channel = itx.client.get_guild_attribute(
                     AttributeKeys.staff_reports_channel)
                 if staff_message_reports_channel is not None:

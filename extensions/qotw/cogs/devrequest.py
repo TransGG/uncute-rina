@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
