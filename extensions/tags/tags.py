@@ -1,3 +1,4 @@
+import typing
 from typing import Callable
 
 import discord
@@ -107,6 +108,16 @@ class CustomTag:
             anonymous: bool,
             report_to_staff: bool
     ) -> None:
+        assert isinstance(itx.channel, discord.abc.Messageable), \
+            type(itx.channel)
+        if not isinstance(itx.channel, discord.abc.GuildChannel):
+            # Necessary for using itx.channel.mention when trying to log
+            #  the anonymous tag usage.
+            await itx.response.send_message(
+                "This channel is not in a server!",
+                ephemeral=True,
+            )
+            return
         self.send_channel = itx.channel
         if not anonymous:
             await itx.response.send_message(embed=self.embed)
@@ -209,6 +220,8 @@ async def send_enabling_embeds_info(
 ) -> None:
     """Helper to send enabling embeds tag."""
     itx.followup: discord.Webhook  # type: ignore
+    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
+
     txt = ("**Enabling Embeds**\n"
            "Embeds are a neat feature in discord that let you preview "
            "websites and show certain messages in a nicer format. Many bots "

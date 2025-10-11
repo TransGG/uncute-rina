@@ -195,6 +195,21 @@ async def _add_to_watchlist(
     if message_id is None:
         reported_message_info = ""
     else:
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I don't think you sent this in a channel, so I can't "
+                "find the message id either!",
+                ephemeral=True,
+            )
+            return
+        elif not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.followup.send(
+                "This channel does not contain any messages, so I can't find "
+                "your mentioned message in here either!",
+                ephemeral=True,
+            )
+            return
+
         try:
             reported_message = await itx.channel.fetch_message(message_id)
         except discord.Forbidden:
@@ -495,36 +510,47 @@ class WatchList(commands.Cog):
             #  response in this channel)
             return
 
-        reported_user_id = None
+        reported_user_id: int | None = None
         for embed in message.embeds:
             for field in embed.fields:
+                if field.name is None or field.value is None:
+                    continue
                 if field.name.lower() == "user":
-                    reported_user_id = field.value.split("`")[1]
-                    if reported_user_id.isdecimal():
-                        reported_user_id = int(reported_user_id)
+                    reported_user_str = field.value.split("`")[1]
+                    if reported_user_str.isdecimal():
+                        reported_user_id = int(reported_user_str)
+                        break
+
+                    if field.value.startswith("> "):
+                        # remove the `> quote` markdown
+                        field.value = field.value[2:]
+                    # from "%<@x>%", take "x"
+                    reported_user_str = (field
+                                         .value
+                                         .split(">", 1)[0]
+                                         .split("@")[1])
+                    if reported_user_str.isdecimal():
+                        reported_user_id = int(reported_user_str)
+                        break
                     else:
-                        if field.value.startswith("> "):
-                            # remove the `> quote` markdown
-                            field.value = field.value[2:]
-                        # from "%<@x>%", take "x"
-                        reported_user_id = (field
-                                            .value
-                                            .split(">", 1)[0]
-                                            .split("@")[1])
-                        if reported_user_id.isdecimal():
-                            reported_user_id = int(reported_user_id)
-                        else:
-                            raise Exception("User id was not an id!")
+                        raise Exception("User id was not an id!")
+        if reported_user_id is None:
+            raise Exception(
+                "Badeline sent an embed in the staff logs category but it "
+                "didn't contain any \"user\" field!"
+            )
 
         watchlist_thread_id = get_watchlist(
             watchlist_channel.guild.id, reported_user_id)
         on_watchlist: bool = watchlist_thread_id is not None
 
         if on_watchlist:
-            thread: discord.Thread = \
+            thread = \
                 await watchlist_channel.guild.fetch_channel(
                     watchlist_thread_id
                 )
+            assert isinstance(thread, discord.Thread), \
+                f"Watchlist was not a thread! {type(thread)}"
             # ^ fetch, to retrieve (archived) thread.
             await message.forward(thread)
 

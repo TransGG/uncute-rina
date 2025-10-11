@@ -43,11 +43,23 @@ class StaffAddons(commands.Cog):
                 allowed_mentions=discord.AllowedMentions.none()
             )
             return
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I can't see the channel you're trying to send in.",
+                ephemeral=False,
+            )
+            return
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message(
+                "This channel does not let me send messages.",
+                ephemeral=False,
+            )
+            return
 
         await log_to_guild(
             itx.client,
             itx.guild,
-            (f"{itx.user.nick or itx.user.name} ({itx.user.id})"
+            (f"{getattr(itx.user, 'nick', itx.user.name)} ({itx.user.id})"
              f" said a message using Rina: {text}"),
             crash_if_not_found=True,
             ignore_dms=True
@@ -87,6 +99,18 @@ class StaffAddons(commands.Cog):
             raise MissingAttributesCheckFailure(
                 ModuleKeys.selfies_channel_deletion,
                 [AttributeKeys.selfies_channel])
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I can't see the channel you're trying to send in.",
+            )
+            return
+        if (not isinstance(itx.channel, discord.abc.Messageable)
+                or not isinstance(itx.channel, discord.abc.GuildChannel)):
+            await itx.response.send_message(
+                "This channel does not let me send messages.",
+                ephemeral=False,
+            )
+            return
 
         time_now = int(datetime.now().timestamp())  # get time in unix
 

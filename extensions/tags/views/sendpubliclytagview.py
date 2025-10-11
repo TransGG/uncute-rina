@@ -47,6 +47,25 @@ class SendPubliclyTagView(discord.ui.View):
             footer = ""
         else:
             footer = embed.footer.text + "\n"
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I don't know what channel you're sending this in!",
+                ephemeral=True,
+            )
+            return
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message(
+                "Messages can't be sent in this channel!",
+                ephemeral=True,
+            )
+            return
+        if (itx.guild is None
+                or not isinstance(itx.channel, discord.abc.GuildChannel)):
+            await itx.response.send_message(
+                "You can only send tags in servers!",
+                ephemeral=True,
+            )
+            return
 
         embed.set_footer(text=footer + public_footer)
         await itx.response.edit_message(
@@ -75,6 +94,7 @@ class SendPubliclyTagView(discord.ui.View):
                 await log_to_guild(itx.client, itx.guild, self.log_msg)
                 staff_message_reports_channel: MessageableGuildChannel | None
                 staff_message_reports_channel = itx.client.get_guild_attribute(
+                    itx.guild,
                     AttributeKeys.staff_reports_channel)
                 if staff_message_reports_channel is not None:
                     await staff_message_reports_channel.send(self.log_msg)

@@ -143,6 +143,14 @@ class ReminderObject:
         collection = self.client.rina_db["reminders"]
         query = {"userID": self.userID}
         db_data: DatabaseData | None = collection.find_one(query)
+        if db_data is None:
+            await user.send(
+                "When trying to delete the reminder, it appeared as if you "
+                "didn't have any reminders running in the first place. If any "
+                "weird effects occur, feel free to contact staff about it "
+                ":)... hmm"
+            )
+            return
         reminders = db_data["reminders"]
         index_subtraction = 0
         for reminder_index in range(len(reminders)):
@@ -434,6 +442,22 @@ async def _create_reminder(
 
     await view.wait()
     if view.value == 1:
+        if view.return_interaction is None:
+            await itx.followup.send(
+                "Your button click was not recognized? The interaction was "
+                "not refreshed...",
+                ephemeral=True,
+            )
+            return
+        if (itx.channel is None
+                or not isinstance(itx.channel, discord.abc.Messageable)):
+            await view.return_interaction.response.send_message(
+                "You didn't run this command in a messageable channel, so I "
+                "can't share any reminders in chat either!",
+                ephemeral=True,
+            )
+            return
+
         msg = (f"{itx.user.mention} shared a reminder on <t:{_distance}:F> "
                f"for \"{reminder}\"")
         copy_view = CopyReminder(

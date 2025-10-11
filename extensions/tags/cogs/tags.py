@@ -149,6 +149,17 @@ class TagFunctions(commands.Cog):
             public: bool = True,
             anonymous: bool = True,
     ):
+        if (
+                not isinstance(itx.channel, discord.abc.Messageable)
+                and public
+                and anonymous
+        ):
+            await itx.response.send_message(
+                "Messages can't be sent in this channel!",
+                ephemeral=True,
+            )
+            return
+
         tag_ids = _get_enabled_tag_ids(itx)
         tag = tag.lower()
         if tag in tag_ids:

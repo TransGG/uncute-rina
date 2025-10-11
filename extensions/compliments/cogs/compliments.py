@@ -26,6 +26,7 @@ async def _choose_and_send_compliment(
         compliment_type: str,
         async_rina_db: motor.core.AgnosticDatabase
 ):
+    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
     # todo: split function into multiple functions
     quotes = {
         "fem_quotes": [
@@ -185,6 +186,7 @@ async def _send_confirm_gender_modal(
         itx: discord.Interaction[Bot],
         user: discord.User | discord.Member
 ) -> None:
+    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(
@@ -406,6 +408,12 @@ class Compliments(commands.Cog):
             itx: discord.Interaction[Bot],
             user: discord.User
     ):
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message(
+                "Messages can't be sent in this channel!",
+                ephemeral=True,
+            )
+            return
         # discord.User because discord.Member gets
         #  errors.TransformerError in DMs.
         user_roles = getattr(user, "roles", [])[:]
@@ -455,12 +463,19 @@ class Compliments(commands.Cog):
     ):  # todo: split function into multiple smaller functions
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
+        db_location: typing.Literal["personal_list", "list"]
         if location == 1:
             db_location = "personal_list"
         elif location == 2:
             db_location = "list"
         else:
-            raise NotImplementedError("This shouldn't happen.")
+            await itx.response.send_message(
+                "This shouldn't happen...; "
+                "but you provided an incorrect location for "
+                "the compliment blacklist.",
+                ephemeral=True,
+            )
+            return
 
         if mode == 1:  # add an item to the blacklist
             if string is None:
