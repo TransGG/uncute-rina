@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 # ^ for /delete_week_selfies (within 7 days), and /version startup
 #  time parsing to discord unix <t:1234:F>
-import requests
-# to fetch from GitHub and see Rina is running the latest version
+import aiohttp  # to fetch from GitHub and see Rina is running latest version
 
 import discord
 import discord.app_commands as app_commands
@@ -194,10 +193,10 @@ class StaffAddons(commands.Cog):
     @app_commands.command(name="version", description="Get bot version")
     async def get_bot_version(self, itx: discord.Interaction[Bot]):
         # get most recently pushed bot version
-        # noinspection LongLine
-        latest_rina = requests.get(
-            "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa
-        ).text
+        async with aiohttp.ClientSession() as client:
+            source_url = "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa
+            async with client.get(source_url) as response:
+                latest_rina = await response.text()
         latest_version = (latest_rina
                           .split("BOT_VERSION = \"", 1)[1]
                           .split("\"", 1)[0])
