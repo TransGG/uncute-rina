@@ -1,6 +1,7 @@
 import json  # to read API json responses
 
-import requests  # to read api calls
+import aiohttp # to read api calls
+import aiohttp.client_exceptions
 
 import discord
 import discord.app_commands as app_commands
@@ -375,11 +376,9 @@ class SearchAddons(commands.Cog):
             "apiKey": equaldex_key,
             # "formatted": "true",
         }
-        response = requests.get(
-            "https://www.equaldex.com/api/region",
-            params=querystring
-        )
-        response_api = response.text
+        async with aiohttp.ClientSession() as client:
+            async with client.get("https://www.equaldex.com/api/region", params=querystring) as response:
+                response_api = await response.text()
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to
         #  remove the <pre> and </pre> parts. It also has some
         #  <br \/>\r\n strings in there for some reason...? so uh
@@ -505,11 +504,10 @@ class SearchAddons(commands.Cog):
             "output": "json",
         }
         try:
-            api_response: WolframResult = requests.get(
-                "https://api.wolframalpha.com/v2/query",
-                params=params
-            ).json()
-        except requests.exceptions.JSONDecodeError:
+            async with aiohttp.ClientSession() as client:
+                async with client.get("https://api.wolframalpha.com/v2/query", params=params) as response:
+                    api_response: WolframResult = await response.json()
+        except (aiohttp.client_exceptions.ContentTypeError, json.JSONDecodeError):
             await itx.followup.send(
                 "Your input gave a malformed result! Perhaps it took "
                 "too long to calculate...",

@@ -1,6 +1,6 @@
 import json  # to read API json responses
-import requests  # to read api calls
 
+import aiohttp
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
@@ -297,11 +297,9 @@ class OtherAddons(commands.Cog):
                 "appid": itx.client.api_tokens['Open Exchange Rates'],
                 "show_alternative": "true",
             }
-            response_api = requests.get(
-                "https://openexchangerates.org/api/latest.json",
-                params=params
-            ).text
-            data = json.loads(response_api)
+            async with aiohttp.ClientSession() as client:
+                async with client.get("https://openexchangerates.org/api/latest.json", params=params) as response:
+                    data = await response.json()
             if data.get("error", 0):
                 await itx.response.send_message(
                     "I'm sorry, something went wrong while trying to get "
