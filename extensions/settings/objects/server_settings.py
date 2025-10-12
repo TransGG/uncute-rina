@@ -10,7 +10,7 @@ from types import UnionType
 import discord
 
 from resources.utils.debug import debug, DebugColor
-from .server_attributes import ServerAttributes, GuildAttributeType
+from .server_attributes import ServerAttributes, GuildAttributeType, MessageableGuildChannel
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
 
@@ -123,7 +123,7 @@ def parse_attribute(
         )
         return f
 
-    funcs: set[Callable[[int], GuildAttributeType | discord.abc.PrivateChannel | None]] = set()
+    funcs: set[Callable[[int], GuildAttributeType| None]] = set()
 
     if is_attribute_type(discord.Guild):
         funcs.add(client.get_guild)
@@ -133,9 +133,10 @@ def parse_attribute(
         #  parse if the type matches exactly.
         funcs.add(guild.get_channel_or_thread)
     if is_attribute_type(discord.abc.Messageable):
-        funcs.add(client.get_channel)
+        # There is no attribute that gives a PrivateChannel
+        funcs.add(typing.cast(Callable[[int], MessageableGuildChannel|None], client.get_channel))
     if is_attribute_type(discord.TextChannel):
-        funcs.add(client.get_channel)
+        funcs.add(typing.cast(Callable[[int], discord.TextChannel|None], client.get_channel))
     if is_attribute_type(discord.User):
         funcs.add(client.get_user)
     if is_attribute_type(discord.Role):
@@ -144,9 +145,9 @@ def parse_attribute(
         # I think it's safe to assume the stored value was an object of
         #  the correct type in the first place. As in, it's a
         #  CategoryChannel id, not a VoiceChannel id.
-        funcs.add(client.get_channel)
+        funcs.add(typing.cast(Callable[[int], discord.CategoryChannel|None], client.get_channel))
     if is_attribute_type(discord.channel.VoiceChannel):
-        funcs.add(client.get_channel)
+        funcs.add(typing.cast(Callable[[int], discord.VoiceChannel|None], client.get_channel))
     if is_attribute_type(discord.Emoji):
         funcs.add(guild.get_emoji)
     if is_attribute_type(int):

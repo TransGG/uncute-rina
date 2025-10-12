@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ^ for scheduling Reminders
 from datetime import datetime
 # ^ for startup and crash logging, and Reminders
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 T = TypeVar('T')
 G = TypeVar('G')
-
+type GetGuildAttributeReturn[T] = GuildAttributeType | T | None | list["GetGuildAttributeReturn"[T]]
 
 class Bot(commands.Bot):
     # bot uptime start, used in /version in cmd_staffaddons
@@ -132,7 +132,7 @@ class Bot(commands.Bot):
             guild: discord.Guild | int,
             *args: str,
             default: T | None = None
-    ) -> GuildAttributeType | T | None | list[GuildAttributeType | T | None]:
+    ) -> GetGuildAttributeReturn[T]:
         """
         Get ServerSettings attributes for the given guild.
 
@@ -161,12 +161,12 @@ class Bot(commands.Bot):
             #  doesn't have any settings (perhaps the bot was recently
             #  added).
             if len(args) > 1:
-                return [default for _ in args]
+                return [cast(GetGuildAttributeReturn[T], default) for _ in args]
             return default
 
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[GuildAttributeType | T] = []
+        output: list[GetGuildAttributeReturn[T]] = []
 
         parent_server = attributes[AttributeKeys.parent_server]  # type: ignore[literal-required]
 
