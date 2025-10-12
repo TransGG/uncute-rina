@@ -10,8 +10,7 @@ select = [
     "EXE", # Checks that executable files are set up properly
     "FIX", # Grabs TODOs
     "ICN", # Catches weird imports
-    # "LOG", # Catches logging issues
-    # "G", # Catches more weird logging issues
+    "LOG", # Catches logging issues
     "SLF", # Catches reading private members
     # Catches redundant code
     #"SIM101", "SIM102", "SIM103", "SIM110", "SIM113", "SIM114", "SIM116", "SIM117", "SIM118", "SIM2", "SIM401", "SIM9",
@@ -24,26 +23,47 @@ select = [
     "F", # Generic non-style mistakes
     "PLE", # Pylint errors
     "PLW", # Pylint warnings
-    #"RUF", # Inbuilt lints
+    # Ruff-specific
+    "RUF",
+    # "RUF006", # asyncio tasks can be GC'd and killed
+    # "RUF013", # Explicit Optional
+    # "RUF015", # Turning something into a list to get the first element is slow
+    # "RUF016", # Invalid index type
+    # "RUF017", # Bizarre list merge
+    # "RUF018", "RUF030", "RUF040",  # Assert issues
+    # "RUF019", # Bizarre dict element access
+    # "RUF021", # and/or bracketing
+    # "RUF024", # Bad dict construction
+    # "RUF026", # Defaultdict misuse
+    # "RUF027", # Something looks like an f-string, but is missing the `f`
+    # "RUF028", # Invalid supression comments
+    # "RUF043", # pytest issues
 ]
 
 ignore = [
-    # Ignoring these to get errors to be readable rn
-    "ANN", # Type annotations would take wayyy to long
+    # Things we should probably do
+    "ANN", # Type annotations would take wayyy too long to do properly
     "S101", # We should not use asserts, as some environments disable them
-    "C4", # Too many to fix
-    "FIX002", # Too much TODO
-    "PLW0603", # We seem to be using globals
+    "C4", # We should probably move to list comprehensions, but that's a lot of work
+    "RUF013", # Optional types should be properly marked
+    "PGH004", "RUF100", # Blanket disabling lints isn't great
 
     # Style stuff that's bad, but won't cause issues
     "PTH", # pathlib still technically works
-    "SIM101",
-    "G",
-    "RUF022", # Unsorted exports
+    "RUF022", "RUF023", "I001", # Sorted inputs are nice, but not *needed*
     "PERF", # ._.
+    "RUF059", # We are explicitly allowing unused variables
 
-    # Ignoring these because they're dumb
+    # Ignoring these more permanently
     "S311", # We don't need a CSPRNG anywhere, right?
-    "SIM300", "SIM108", "SIM105", # Style faff
-    "E5", # More style faff
+    "SIM300", "SIM108", "SIM105", # Allow yoda conditions, choosing not to use ternary operator, and explicit `catch: pass`
+    "E501", # Allow long lines
+    "PLW2901", # Allow reassigning in loops
+    "PLW0127", # Allow self-assingment to indicate type
+    "PLW0603", # We seem to be choosing to use globals
+    "FIX002", # Too much TODO
+    "SIM101", # We can use tuples in isInstance, but we don't need to
+    "RUF005", # [*a, *b] is apparently faster than a + b, but it's not *that* important
+    "RUF010", # Explicit f-string conversion is fine and readable
+    "RUF001", "RUF003", # Weird tests for characters that look similar
 ]
