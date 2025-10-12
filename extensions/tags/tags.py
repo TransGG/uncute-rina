@@ -41,8 +41,8 @@ class CustomTag:
         self.send_user: discord.User | discord.Member | None = None
         self.public_message: discord.Message | None = None
         self.send_channel: (
-                discord.TextChannel | discord.VoiceChannel
-                | discord.Thread | discord.StageChannel | None
+            discord.TextChannel | discord.VoiceChannel
+            | discord.Thread | discord.StageChannel | None
         ) = None
 
     @property
@@ -255,9 +255,9 @@ async def _send_tag_log_message(itx, tag_name) -> None:
 
 
 tag_info_dict: dict[
-        str,
-        Callable[[GuildInteraction[Bot], bool, bool],
-                 typing.Coroutine[typing.Any, typing.Any, None]]
+    str,
+    Callable[[GuildInteraction[Bot], bool, bool],
+             typing.Coroutine[typing.Any, typing.Any, None]]
 ] = {
     # sorted alphabetically
     "enabling embeds": send_enabling_embeds_info,

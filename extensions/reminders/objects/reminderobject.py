@@ -491,7 +491,7 @@ async def parse_and_create_reminder(
 
     # Check if user has too many reminders (max 50 allowed
     #  (internally chosen limit))
-    user_reminders = get_user_reminders(itx.client, itx.user)
+    user_reminders = await get_user_reminders(itx.client, itx.user)
     if len(user_reminders) > 50:
         cmd_reminders = itx.client.get_command_mention("reminder reminders")
         cmd_remove = itx.client.get_command_mention_with_args(
