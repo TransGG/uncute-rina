@@ -1,5 +1,7 @@
 import discord
 
+from typing import cast
+
 from resources.customs import Bot
 
 from extensions.reminders.objects import (
@@ -14,7 +16,8 @@ def get_user_reminders(
     # Check if user has an entry in database yet.
     collection = client.rina_db["reminders"]
     query = {"userID": user.id}
-    db_data: DatabaseData = collection.find_one(query)
+    # We're getting this straight from the DB, so it should be fine
+    db_data = cast(DatabaseData, collection.find_one(query))
     if db_data is None:
         collection.insert_one(query)
         db_data = collection.find_one(query)

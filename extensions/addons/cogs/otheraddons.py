@@ -1,4 +1,3 @@
-import json  # to read API json responses
 
 import aiohttp
 import discord

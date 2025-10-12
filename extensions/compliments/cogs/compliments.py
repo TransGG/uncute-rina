@@ -336,7 +336,7 @@ class Compliments(commands.Cog):
             if called_cute is True:
                 try:
                     await message.add_reaction("<:this:960916817801535528>")
-                except (discord.HTTPException or discord.NotFound):
+                except (discord.HTTPException, discord.NotFound):
                     await log_to_guild(
                         self.client,
                         message.guild,

@@ -12,5 +12,5 @@ class Int64ToIntDecoder(TypeDecoder):
         return int(value)
 
 
-codec_options = CodecOptions(
+codec_options: CodecOptions = CodecOptions(
     type_registry=TypeRegistry([Int64ToIntDecoder()]))

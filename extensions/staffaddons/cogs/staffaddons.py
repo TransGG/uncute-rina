@@ -185,11 +185,10 @@ class StaffAddons(commands.Cog):
                     f"(started <t:{unix}:D> at <t:{unix}:T>)",
                     ephemeral=False)
                 return
-        else:
-            await itx.response.send_message(
-                f"Bot is currently running on v{itx.client.version} (latest)\n"
-                f"(started <t:{unix}:D> at <t:{unix}:T>)",
-                ephemeral=False)
+        await itx.response.send_message(
+            f"Bot is currently running on v{itx.client.version} (latest)\n"
+            f"(started <t:{unix}:D> at <t:{unix}:T>)",
+            ephemeral=False)
 
     @app_commands.check(is_staff_check)
     @app_commands.command(name="update", description="Update slash-commands")

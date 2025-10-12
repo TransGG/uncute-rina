@@ -213,7 +213,7 @@ async def refetch_watchlist_threads(
 
     # store reference to dict into a shorter variable
 
-    failed_fetches = []
+    failed_fetches: list[discord.Thread] = []
     # iterate non-archived threads
     for thread in watch_channel.threads:
         await _import_thread_to_local_list(

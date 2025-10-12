@@ -846,7 +846,7 @@ help_pages: dict[int, HelpPage] = {
 }
 
 
-FIRST_PAGE: int = list(help_pages)[0]
+FIRST_PAGE: int = next(iter(help_pages))
 
 
 aliases: dict[int, list[str]] = {

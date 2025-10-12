@@ -140,7 +140,8 @@ async def fetch_tags(
     if data is None:
         return {}
 
-    local_tag_list[guild.id] = {name: DatabaseTagObject(**tag_data)
+    # This should be good, since it comes directly from the DB
+    local_tag_list[guild.id] = {name: DatabaseTagObject(**tag_data) # type: ignore[typeddict-item]
                                 for name, tag_data in data.items()}
     return local_tag_list[guild.id]
 
@@ -163,7 +164,8 @@ async def fetch_all_tags(
     for guild_id, tag_objects in data.items():
         tags = {}
         for tag_name, tag_data in tag_objects.items():
-            tag_object = DatabaseTagObject(**tag_data)
+            # This should be good, since it comes directly from the DB
+            tag_object = DatabaseTagObject(**tag_data) # type: ignore[typeddict-item]
             tags[tag_name] = tag_object
         local_tag_list[guild_id] = tags
 

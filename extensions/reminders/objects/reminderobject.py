@@ -37,8 +37,7 @@ async def relaunch_ongoing_reminders(
      store new scheduler events.
     """
     collection = client.async_rina_db["reminders"]
-    query = {}
-    db_data = collection.find(query)
+    db_data = collection.find({})
     async for entry in db_data:
         entry: DatabaseData
         try:
@@ -128,7 +127,7 @@ class ReminderObject:
                 run_date=self.remindertime
             )
 
-    async def send_reminder(self):
+    async def send_reminder(self) -> None:
         user = await self.client.fetch_user(self.userID)
         creationtime = int(self.creationtime.timestamp())
         try:
@@ -143,6 +142,12 @@ class ReminderObject:
         collection = self.client.rina_db["reminders"]
         query = {"userID": self.userID}
         db_data: DatabaseData | None = collection.find_one(query)
+        # If the user isn't in the database, despite a reminder object existing, something has gone *bad*.
+        #
+        # But probably not bad enough to crash over, but...
+        # TODO: should log this
+        if db_data is None:
+            return
         reminders = db_data["reminders"]
         index_subtraction = 0
         for reminder_index in range(len(reminders)):
@@ -412,7 +417,7 @@ async def _create_reminder(
         )
 
     await view.wait()
-    if view.value == 1:
+    if view.return_interaction is not None:
         msg = (f"{itx.user.mention} shared a reminder on <t:{_distance}:F> "
                f"for \"{reminder}\"")
         copy_view = CopyReminder(
@@ -421,11 +426,17 @@ async def _create_reminder(
             timeout=300
         )
         try:
-            await itx.channel.send(
-                content=msg,
-                view=copy_view,
-                allowed_mentions=discord.AllowedMentions.none()
-            )
+            if isinstance(itx.channel, discord.abc.Messageable):
+                await itx.channel.send(
+                    content=msg,
+                    view=copy_view,
+                    allowed_mentions=discord.AllowedMentions.none()
+                )
+            else:
+                await view.return_interaction.response.send_message(
+                    msg, view=copy_view,
+                    allowed_mentions=discord.AllowedMentions.none()
+                )
         except discord.errors.Forbidden:
             await view.return_interaction.response.send_message(
                 msg, view=copy_view,

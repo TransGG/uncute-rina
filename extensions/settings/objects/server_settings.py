@@ -123,7 +123,7 @@ def parse_attribute(
         )
         return f
 
-    funcs: set[Callable[[int], GuildAttributeType | None]] = set()
+    funcs: set[Callable[[int], GuildAttributeType | discord.abc.PrivateChannel | None]] = set()
 
     if is_attribute_type(discord.Guild):
         funcs.add(client.get_guild)
@@ -251,6 +251,8 @@ async def update_query(
 
 class ServerSettings:
     DATABASE_KEY = "server_settings"
+
+    attributes: ServerAttributes
 
     @staticmethod
     def get_original(

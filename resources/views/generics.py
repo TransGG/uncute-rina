@@ -29,11 +29,15 @@ def create_simple_button(
 
     :return: A button with the given properties.
     """
+    button: discord.ui.Button
     if label_is_emoji:
         button = discord.ui.Button(emoji=label, style=style, disabled=disabled)
     else:
         button = discord.ui.Button(label=label, style=style, disabled=disabled)
-    button.callback = callback
+    # evil kludge that makes mypy angery
+    #
+    # We need to assign the method, and we're not getting a callback for something that isn't a bot
+    button.callback = callback # type: ignore[method-assign, assignment]
     return button
 
 

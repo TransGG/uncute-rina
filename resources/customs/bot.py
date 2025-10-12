@@ -125,12 +125,14 @@ class Bot(commands.Bot):
 
         return command_mention
 
+    # Type checking with the class is effectively impossible, as the key dictates the type,
+    # and any union we would emit would then need to be explicitly ignored in a type check
     def get_guild_attribute(
             self,
             guild: discord.Guild | int,
             *args: str,
-            default: T = None
-    ) -> GuildAttributeType | T | list[GuildAttributeType | T]:
+            default: T | None = None
+    ) -> GuildAttributeType | T | None | list[GuildAttributeType | T | None]:
         """
         Get ServerSettings attributes for the given guild.
 
@@ -166,7 +168,7 @@ class Bot(commands.Bot):
 
         output: list[GuildAttributeType | T] = []
 
-        parent_server = attributes[AttributeKeys.parent_server]  # type: ignore
+        parent_server = attributes[AttributeKeys.parent_server]  # type: ignore[literal-required]
 
         for arg in args:
             if arg not in attributes:
@@ -243,4 +245,4 @@ class Bot(commands.Bot):
             user_id = user_id.id
         # Could also use hasattr(user_id, "id") for a more generic approach...
         #  But this should work fine enough.
-        return self.user.id == user_id
+        return self.user is not None and self.user.id == user_id

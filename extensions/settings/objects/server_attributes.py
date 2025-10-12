@@ -20,6 +20,7 @@ type GuildAttributeType = (
     | discord.Role | list[discord.Role]
     | discord.User
     | discord.VoiceChannel
+    | discord.ForumChannel
 )
 
 
