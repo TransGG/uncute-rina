@@ -5,7 +5,7 @@ import typing
 from enum import Enum
 import motor.core
 from typing import TypedDict, Any, TypeVar, Callable, TypeAliasType
-from types import UnionType
+from types import UnionType, GenericAlias
 
 import discord
 
@@ -42,7 +42,10 @@ def parse_id_generic(
     return parsed_obj
 
 
-def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
+def get_attribute_type(attribute_key: str) -> tuple[
+        set[type],
+        bool
+]:
     """
     Get the type of a given attribute.
 
@@ -51,41 +54,41 @@ def get_attribute_type(attribute_key: str) -> tuple[list[type] | None, bool]:
     :return A tuple of the type of the attribute (or None if the
      attribute wasn't found) and whether the attribute was in a list.
     """
-    attribute_types = typing.get_type_hints(ServerAttributes)
-    attribute_type: list[type] | None = None
+    attribute_types: dict[str, type] = \
+        typing.get_type_hints(ServerAttributes)
     attribute_in_list = False
-    if attribute_key in ServerAttributes.__annotations__:
-        attribute_type = attribute_types[attribute_key]
-        # typing.Union != types.UnionType :/
-        #  typing.Union is for `Union[int, str]`
-        #  types.UnionType is for `int | str`
-        if (typing.get_origin(attribute_type) is UnionType
-                or typing.get_origin(attribute_type) is TypeAliasType):
-            # The original was: `type1 | type2 | None`.
-            #   get_origin returns `<class 'UnionType'>`
-            #   get_args returns `(<class 'type1'>, <class 'type2'>,
-            #    <class 'NoneType'>)`.
-            attribute_type = [t for t in typing.get_args(attribute_type)
-                              if t is not type(None)]
-        elif typing.get_origin(attribute_type) is list:
-            # original was `list[T]`. get_args returns `T`
-            attribute_type_list = [
-                typing.get_args(attribute_type)
-                if type(t) is UnionType
-                else (typing.get_args(t.__value__)
-                      if type(t) is TypeAliasType
-                      else [t])
-                for t in typing.get_args(attribute_type)
-            ]
-            attribute_type = [attribute
-                              for type_list in attribute_type_list
-                              for attribute in type_list]
-            # should not have any None's
-            attribute_in_list = True
+    type_queue = []
+    if attribute_key not in ServerAttributes.__annotations__:
+        return set(), False
+
+    attribute_type: type | None = attribute_types[attribute_key]
+
+    if isinstance(attribute_type, list):
+        attribute_in_list = True
+        type_queue.extend(attribute_type)
+    elif isinstance(attribute_type, GenericAlias):
+        attribute_in_list = True
+        type_queue.extend(attribute_type.__args__)
+    else:
+        type_queue.append(attribute_type)
+
+    types = set()
+    while len(type_queue) > 0:
+        element = type_queue.pop(0)
+
+        if isinstance(element, TypeAliasType):
+            type_queue.append(element.__value__)
+            continue
+        elif isinstance(element, UnionType):
+            # typing.Union != types.UnionType :/
+            #  typing.Union is for `Union[int, str]`
+            #  types.UnionType is for `int | str`
+            type_queue.extend(element.__args__)
+            continue
         else:
-            raise NotImplementedError(
-                f"Type of {attribute_key} is not supported")
-    return attribute_type, attribute_in_list
+            types.add(element)
+
+    return types, attribute_in_list
 
 
 def parse_attribute(
@@ -111,14 +114,12 @@ def parse_attribute(
      wrong type.
     """
     attribute_type, _ = get_attribute_type(attribute_key)
-    if attribute_type is None:
+    if len(attribute_type) == 0:
         raise ParseError(f"No type found for attribute key {attribute_key}")
 
     def is_attribute_type(val: type):
         f = any(
-            val in typing.get_args(i.__value__)
-            if type(i) is TypeAliasType
-            else val is i
+            val is i
             for i in attribute_type
         )
         return f
@@ -241,7 +242,7 @@ async def update_query(
     collection = async_rina_db[ServerSettings.DATABASE_KEY]
     query = {"guild_id": guild_id}
     action = "$unset" if unset else "$set"
-    update = {action: {f"{setting.value}.{key}": value}}
+    update = {action: {f"{setting.name}.{key}": value}}
 
     result = await collection.update_one(query, update, upsert=True)
     # result.did_upsert -> if yes, make new ServerSettings?
@@ -454,8 +455,10 @@ class ServerSettings:
          be parsed.
         """
         guild_id = settings["guild_id"]
-        enabled_modules = settings["enabled_modules"]
-        attribute_ids = ServerAttributeIds(**settings["attribute_ids"])
+        enabled_modules = settings.get("enabled_modules", {})
+        attribute_ids = ServerAttributeIds(
+            **settings.get("attribute_ids", {})
+        )
         guild, attributes = await ServerSettings.get_attributes(
             client, guild_id, attribute_ids
         )

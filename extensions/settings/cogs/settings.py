@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing  # for typing.cast and TYPE_CHECKING
+from types import UnionType
 
 import discord
 import discord.ext.commands as commands
@@ -123,6 +124,70 @@ async def _mode_autocomplete(
         return []
 
 
+def _subclass_in_list(
+        value: type,
+        types: set[type]
+) -> bool:
+    return any(
+        issubclass(value, t)
+        for t in types
+    )
+
+
+def _list_has_subclass(
+        values: set[type],
+        subclass: type
+) -> bool:
+    return any(
+        issubclass(value, subclass)
+        for value in values
+    )
+
+
+def _has_name_or_id(
+        obj: object, current: str
+) -> bool:
+    assert hasattr(obj, "id") and hasattr(obj, "name")
+    return (current.lower() in getattr(obj, "name").lower() or
+            str(getattr(obj, "id")).startswith(current))
+
+
+def _update_results_from_iterable(
+        results: set[object],
+        iterable: typing.Sequence[object],
+        current: str,
+        pred: typing.Callable[[object], bool] = lambda _: True
+) -> None:
+    max_iterations = 20
+    for obj in iterable:
+        if _has_name_or_id(obj, current) and pred(obj):
+            results.add(
+                app_commands.Choice(
+                    name=getattr(obj, "name"),
+                    value=str(getattr(obj, "id")),
+                )
+            )
+
+        max_iterations -= 1
+        if max_iterations <= 0:
+            break
+
+
+def _update_results_from_id(
+        results: set[object],
+        id_func: typing.Callable[[int], object | None],
+        current: str,
+        pred: typing.Callable[[object], bool] = lambda _: True
+):
+    if current.isdecimal():
+        potential_obj = id_func(int(current))
+        if potential_obj is not None and pred(potential_obj):
+            results.add(app_commands.Choice(
+                name=potential_obj.name,
+                value=str(potential_obj.id))
+            )
+
+
 @is_admin_check
 async def _value_autocomplete(
         itx: discord.Interaction[Bot], current: str
@@ -159,88 +224,51 @@ async def _value_autocomplete(
                      "'setting' parameter.",
                 value="-")]
         attribute_type, _ = get_attribute_type(itx.namespace.setting)
-        if attribute_type is None:
+        if len(attribute_type) == 0:
             return [app_commands.Choice(name="Invalid setting given.",
                                         value="-")]
 
         results: set[app_commands.Choice] = set()
 
-        if discord.Guild in attribute_type:
-            # iterate all guilds
-            for guild in itx.client.guilds:
-                if (current.lower() in guild.name.lower()
-                        or str(guild.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=guild.name, value=str(guild.id)))
         if discord.User in attribute_type:
             # Note: discord.User is a subclass of discord.abc.Messageable,
             #  so should be tested before that too.
-            # iterate guild members
-            for member in itx.guild.members:
-                if (current.lower() in member.name.lower()
-                        or str(member.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=member.name, value=str(member.id)))
-                if len(results) > 20:
-                    break
-            # from user id
-            if current.isdecimal():
-                potential_user = itx.client.get_user(int(current))
-                if potential_user is not None:
-                    results.add(app_commands.Choice(
-                        name=potential_user.name, value=str(potential_user.id))
-                    )
-        if any(issubclass(channel_type, discord.abc.GuildChannel)
-               for channel_type in attribute_type):
-            for channel in itx.guild.channels:
-                if (type(channel) in attribute_type
-                        and (current in channel.name
-                             or str(channel.id).startswith(current))):
-                    results.add(app_commands.Choice(
-                        name=channel.name, value=str(channel.id)))
-        if any(issubclass(channel_type, discord.abc.Messageable)
-               for channel_type in attribute_type):
-            # from channel id
-            if current.isdecimal():
-                potential_channel = itx.client.get_channel(int(current))
-                if (
-                        potential_channel is not None
-                        and not isinstance(potential_channel,
-                                           discord.abc.PrivateChannel)
-                ):
-                    results.add(app_commands.Choice(
-                        name=potential_channel.name,
-                        value=str(potential_channel.id))
-                    )
-            # iterate messageable guild channels
-            for channel in itx.guild.channels:
-                if type(channel) in attribute_type:
-                    if (current.lower() in channel.name.lower()
-                            or str(channel.id).startswith(current)):
-                        results.add(app_commands.Choice(
-                            name=channel.name, value=str(channel.id)))
+            _update_results_from_iterable(results, itx.client.users, current)
+            _update_results_from_id(results, itx.client.get_user, current)
+        if _list_has_subclass(attribute_type, discord.abc.GuildChannel):
+            _update_results_from_iterable(
+                results, itx.guild.channels, current,
+                lambda chan: _subclass_in_list(type(chan), attribute_type)
+            )
+        if _list_has_subclass(attribute_type, discord.abc.Messageable):
+            _update_results_from_iterable(
+                results, itx.guild.channels, current,
+                lambda chan: _subclass_in_list(type(chan), attribute_type)
+            )
+            _update_results_from_id(
+                results, itx.client.get_channel, current,
+                lambda chan: not isinstance(chan, discord.abc.PrivateChannel)
+            )
+        if discord.Thread in attribute_type:
+            # Threads are discord.Messageable but aren't listed in
+            #  itx.client.get_channel, so you need to fetch threads separately.
+            _update_results_from_iterable(results, itx.guild.threads, current)
+        if discord.Guild in attribute_type:
+            _update_results_from_iterable(results, itx.client.guilds, current)
         if discord.Role in attribute_type:
-            # iterate guild roles
-            for role in itx.guild.roles:
-                if (current.lower() in role.name.lower()
-                        or str(role.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=role.name, value=str(role.id)))
+            _update_results_from_iterable(results, itx.guild.roles, current)
         if discord.Emoji in attribute_type:
-            # iterate guild emojis
-            for emoji in itx.guild.emojis:
-                if (current.lower() in emoji.name.lower()
-                        or str(emoji.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=emoji.name, value=str(emoji.id)))
+            _update_results_from_iterable(results, itx.guild.emojis, current)
         if str in attribute_type:
             # leave as is
             results.add(app_commands.Choice(name=current, value=current))
         if str in attribute_type:
             # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
-                results.add(app_commands.Choice(
-                    name=current, value=current))
+                results.add(
+                    app_commands.Choice(name=current, value=current)
+                )
+
         if len(results) == 0:
             attribute_type_names = ','.join(
                 i.__name__ for i in attribute_type)
