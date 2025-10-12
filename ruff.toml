@@ -1,0 +1,49 @@
+exclude = [".venv", "unit_tests"]
+
+[lint]
+select = [
+    "ANN", # Type annotations
+    "ASYNC", # Async bugs
+    "S", # Security bugs
+    "A", # Built-in shadowing bugs
+    "C4", # Generator expression lints
+    "EXE", # Checks that executable files are set up properly
+    "FIX", # Grabs TODOs
+    "ICN", # Catches weird imports
+    # "LOG", # Catches logging issues
+    # "G", # Catches more weird logging issues
+    "SLF", # Catches reading private members
+    # Catches redundant code
+    #"SIM101", "SIM102", "SIM103", "SIM110", "SIM113", "SIM114", "SIM116", "SIM117", "SIM118", "SIM2", "SIM401", "SIM9",
+    "TID", # More weird imports
+    "PTH", # Pathlib
+    "NPY", # NumPy
+    "PD", # Pandas
+    "PERF", # Performance lints
+    "E", "W", # Standard warnings and errors
+    "F", # Generic non-style mistakes
+    "PLE", # Pylint errors
+    "PLW", # Pylint warnings
+    #"RUF", # Inbuilt lints
+]
+
+ignore = [
+    # Ignoring these to get errors to be readable rn
+    "ANN", # Type annotations would take wayyy to long
+    "S101", # We should not use asserts, as some environments disable them
+    "C4", # Too many to fix
+    "FIX002", # Too much TODO
+    "PLW0603", # We seem to be using globals
+
+    # Style stuff that's bad, but won't cause issues
+    "PTH", # pathlib still technically works
+    "SIM101",
+    "G",
+    "RUF022", # Unsorted exports
+    "PERF", # ._.
+
+    # Ignoring these because they're dumb
+    "S311", # We don't need a CSPRNG anywhere, right?
+    "SIM300", "SIM108", "SIM105", # Style faff
+    "E5", # More style faff
+]

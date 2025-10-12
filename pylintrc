@@ -1,0 +1,3 @@
+[MAIN]
+disable=C,R,fixme,logging-fstring-interpolation,broad-exception-raised,unnecessary-lambda,broad-exception-caught,unspecified-encoding,logging-not-lazy
+ignore=.venv
