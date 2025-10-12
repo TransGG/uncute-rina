@@ -170,10 +170,8 @@ class StaffAddons(commands.Cog):
     async def get_bot_version(self, itx: discord.Interaction[Bot]):
         # get most recently pushed bot version
         # noinspection LongLine
-        async with aiohttp.ClientSession() as client:
-            # noqa
-            async with client.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py") as response:
-                latest_rina = await response.text()
+        async with aiohttp.ClientSession() as client, client.get("https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py") as response:
+            latest_rina = await response.text()
         latest_version = (latest_rina
                           .split("BOT_VERSION = \"", 1)[1]
                           .split("\"", 1)[0])

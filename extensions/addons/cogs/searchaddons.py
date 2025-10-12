@@ -376,9 +376,8 @@ class SearchAddons(commands.Cog):
             "apiKey": equaldex_key,
             # "formatted": "true",
         }
-        async with aiohttp.ClientSession() as client:
-            async with client.get("https://www.equaldex.com/api/region", params=querystring) as response:
-                response_api = await response.text()
+        async with aiohttp.ClientSession() as client, client.get("https://www.equaldex.com/api/region", params=querystring) as response:
+            response_api = await response.text()
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to
         #  remove the <pre> and </pre> parts. It also has some
         #  <br \/>\r\n strings in there for some reason...? so uh
@@ -504,9 +503,8 @@ class SearchAddons(commands.Cog):
             "output": "json",
         }
         try:
-            async with aiohttp.ClientSession() as client:
-                async with client.get("https://api.wolframalpha.com/v2/query", params=params) as response:
-                    api_response: WolframResult = await response.json()
+            async with aiohttp.ClientSession() as client, client.get("https://api.wolframalpha.com/v2/query", params=params) as response:
+                api_response: WolframResult = await response.json()
         except (aiohttp.client_exceptions.ContentTypeError, json.JSONDecodeError):
             await itx.followup.send(
                 "Your input gave a malformed result! Perhaps it took "

@@ -297,9 +297,8 @@ class OtherAddons(commands.Cog):
                 "appid": itx.client.api_tokens['Open Exchange Rates'],
                 "show_alternative": "true",
             }
-            async with aiohttp.ClientSession() as client:
-                async with client.get("https://openexchangerates.org/api/latest.json", params=params) as response:
-                    data = await response.json()
+            async with aiohttp.ClientSession() as client, client.get("https://openexchangerates.org/api/latest.json", params=params) as response:
+                data = await response.json()
             if data.get("error", 0):
                 await itx.response.send_message(
                     "I'm sorry, something went wrong while trying to get "
