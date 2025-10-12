@@ -23,6 +23,16 @@ from resources.customs import Bot, GuildInteraction
 from resources.utils.utils import log_to_guild
 
 
+def instantiate_sources(
+        sources: list[tuple[DictionarySources, type[DictionaryBase]]],
+        session: aiohttp.ClientSession,
+) -> list[tuple[DictionarySources, DictionaryBase]]:
+    return [
+        (dictionary[0], dictionary[1](session))
+        for dictionary in sources
+    ]
+
+
 class TermDictionary(commands.Cog):
     def __init__(self):
         self._session = aiohttp.ClientSession()
@@ -94,11 +104,7 @@ class TermDictionary(commands.Cog):
                 if dictionary[0] == source
             ]
 
-        # instantiate classes
-        sources = [
-            (dictionary[0], dictionary[1](self._session))
-            for dictionary in sources
-        ]
+        sources = instantiate_sources(sources, self._session)
 
         await asyncio.gather(*[
             source.construct_response(term)
@@ -149,10 +155,11 @@ class TermDictionary(commands.Cog):
                 source = itx.namespace.source
 
             sources = [
-                (dictionary[0], dictionary[1](self._session))
+                dictionary
                 for dictionary in self._dictionary_sources[:]
                 if dictionary[0] == source
             ]
+        sources = instantiate_sources(sources, self._session)
 
         # fetch autocompletion results
         async def fetch_with_timeout(dictionary: DictionaryBase):

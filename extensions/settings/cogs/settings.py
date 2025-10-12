@@ -1,6 +1,5 @@
 from __future__ import annotations
 import typing  # for typing.cast and TYPE_CHECKING
-from types import UnionType
 
 import discord
 import discord.ext.commands as commands
@@ -148,8 +147,8 @@ def _has_name_or_id(
         obj: object, current: str
 ) -> bool:
     assert hasattr(obj, "id") and hasattr(obj, "name")
-    return (current.lower() in getattr(obj, "name").lower() or
-            str(getattr(obj, "id")).startswith(current))
+    return (current.lower() in getattr(obj, "name").lower()
+            or str(getattr(obj, "id")).startswith(current))
 
 
 def _update_results_from_iterable(
