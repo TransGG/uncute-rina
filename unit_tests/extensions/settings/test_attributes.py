@@ -67,16 +67,19 @@ def test_attribute_types(attribute: str):
 
 
 @pytest.mark.parametrize("attribute, expected_output", [
-    (AttributeKeys.parent_server, ([discord.Guild], False)),
+    (AttributeKeys.parent_server, ({discord.Guild}, False)),
     (AttributeKeys.developer_request_channel,
-     ([discord.TextChannel], False)),
-    (AttributeKeys.log_channel, ([MessageableGuildChannel], False)),
-    (AttributeKeys.vctable_prefix, ([str], False)),
-    (AttributeKeys.admin_roles, ([discord.Role], True)),  # list
+     ({discord.TextChannel}, False)),
+    (AttributeKeys.log_channel, (
+            {*MessageableGuildChannel.__value__.__args__},
+            False,
+    )),
+    (AttributeKeys.vctable_prefix, ({str}, False)),
+    (AttributeKeys.admin_roles, ({discord.Role}, True)),  # list
 ])
 def test_get_attribute_types(
         attribute: str,
-        expected_output: tuple[list[type] | None, bool]
+        expected_output: tuple[set[type] | None, bool]
 ):
     assert get_attribute_type(attribute) == expected_output
 

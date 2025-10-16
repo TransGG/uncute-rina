@@ -37,8 +37,7 @@ async def relaunch_ongoing_reminders(
      store new scheduler events.
     """
     collection = client.async_rina_db["reminders"]
-    query = {}
-    db_data = collection.find(query)
+    db_data = collection.find({})
     async for entry in db_data:
         entry: DatabaseData
         if "reminders" not in entry:
@@ -128,7 +127,7 @@ class ReminderObject:
                 run_date=self.remindertime
             )
 
-    async def send_reminder(self):
+    async def send_reminder(self) -> None:
         user = await self.client.fetch_user(self.userID)
         creationtime = int(self.creationtime.timestamp())
         try:
@@ -144,11 +143,15 @@ class ReminderObject:
         query = {"userID": self.userID}
         db_data: DatabaseData | None = collection.find_one(query)
         if db_data is None:
+            # If the user isn't in the database despite a
+            #  reminder object existing, something has gone *bad*.
+            # But probably not bad enough to crash over, but...
+            # TODO: should log this
             await user.send(
                 "When trying to delete the reminder, it appeared as if you "
                 "didn't have any reminders running in the first place. If any "
                 "weird effects occur, feel free to contact staff about it "
-                ":)... hmm"
+                ":)... hmm",
             )
             return
         reminders = db_data["reminders"]
@@ -210,7 +213,7 @@ async def _handle_reminder_timestamp_parsing(
     timestamp_format = [
         "%Y-%m-%dt%H:%M:%S%z",
         "%Y-%m-%dt%H:%M%z",
-        "%Y-%m-%d"
+        "%Y-%m-%d",
     ][mode.value]
     try:
         timestamp = datetime.strptime(reminder_datetime, timestamp_format)
@@ -441,23 +444,7 @@ async def _create_reminder(
         )
 
     await view.wait()
-    if view.value == 1:
-        if view.return_interaction is None:
-            await itx.followup.send(
-                "Your button click was not recognized? The interaction was "
-                "not refreshed...",
-                ephemeral=True,
-            )
-            return
-        if (itx.channel is None
-                or not isinstance(itx.channel, discord.abc.Messageable)):
-            await view.return_interaction.response.send_message(
-                "You didn't run this command in a messageable channel, so I "
-                "can't share any reminders in chat either!",
-                ephemeral=True,
-            )
-            return
-
+    if view.return_interaction is not None:
         msg = (f"{itx.user.mention} shared a reminder on <t:{_distance}:F> "
                f"for \"{reminder}\"")
         copy_view = CopyReminder(
@@ -466,11 +453,18 @@ async def _create_reminder(
             timeout=300,
         )
         try:
-            await itx.channel.send(
-                content=msg,
-                view=copy_view,
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
+            if (isinstance(itx.channel, discord.abc.Messageable)
+                    or itx.channel is None):
+                await itx.channel.send(
+                    content=msg,
+                    view=copy_view,
+                    allowed_mentions=discord.AllowedMentions.none(),
+                )
+            else:
+                await view.return_interaction.response.send_message(
+                    msg, view=copy_view,
+                    allowed_mentions=discord.AllowedMentions.none(),
+                )
         except discord.errors.Forbidden:
             await view.return_interaction.response.send_message(
                 msg,
@@ -483,7 +477,7 @@ async def _create_reminder(
 async def parse_and_create_reminder(
         itx: discord.Interaction[Bot],
         reminder_datetime: str,
-        reminder: str
+        reminder: str,
 ):
     # Can't put this function reminders.utils because it calls
     #  _create_reminder, which creates a ReminderObject, so it would be

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar('T')
-G = TypeVar('G')
+TN = T | None
 
 
 class Bot(commands.Bot):
@@ -125,12 +125,15 @@ class Bot(commands.Bot):
 
         return command_mention
 
+    # Type checking with the class is effectively impossible,
+    #  as the key dictates the type, and any union we would emit
+    #  would then need to be explicitly ignored in a type check.
     def get_guild_attribute(
             self,
             guild: discord.Guild | int,
             *args: str,
-            default: T = None
-    ) -> GuildAttributeType | T | list[GuildAttributeType | T]:
+            default: TN = None
+    ) -> GuildAttributeType | TN | list[GuildAttributeType | TN]:
         """
         Get ServerSettings attributes for the given guild.
 
@@ -164,9 +167,9 @@ class Bot(commands.Bot):
 
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[GuildAttributeType | T] = []
+        output: list[GuildAttributeType | TN] = []
 
-        parent_server = attributes[AttributeKeys.parent_server]  # type: ignore
+        parent_server = attributes[AttributeKeys.parent_server]  # type: ignore[literal-required] # noqa: E501
 
         for arg in args:
             if arg not in attributes:
@@ -231,16 +234,19 @@ class Bot(commands.Bot):
             return output[0]
         return output
 
-    def is_me(self, user_id: discord.Member | discord.User | int) -> bool:
+    def is_me(self, user: discord.Member | discord.User | int) -> bool:
         """
         Check whether the given user is the bot.
 
-        :param user_id: The user or user id to check.
+        :param user: The user or user id to check.
         :return: ``True`` if the given user is the bot, otherwise ``False``.
         """
-        if (isinstance(user_id, discord.User)
-                or isinstance(user_id, discord.Member)):
-            user_id = user_id.id
+        user_id: int
+        if (isinstance(user, discord.User)
+                or isinstance(user, discord.Member)):
+            user_id = user.id
+        else:
+            user_id = user
         # Could also use hasattr(user_id, "id") for a more generic approach...
         #  But this should work fine enough.
-        return self.user.id == user_id
+        return self.user is not None and self.user.id == user_id

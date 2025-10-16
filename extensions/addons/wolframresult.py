@@ -122,10 +122,10 @@ class WolframPodInfo(TypedDict):
 
 
 class WolframPod(TypedDict, total=False):
-    title: Required[WolframTitleName]  # "Input", "Result", "Number Line", "Number Name" # noqa
-    scanner: Required[WolframScannerName]  # "Identity", "Simplification", "NumberLine" # noqa
-    id: Required[WolframIdName]  # "Input", "Result", "NumberLine", "NumberName" # noqa
-    position: Required[int]  # 1 or 11, "typically multiples of 100" (that's a lie) # noqa
+    title: Required[WolframTitleName]  # "Input", "Result", "Number Line", "Number Name" # noqa: E501
+    scanner: Required[WolframScannerName]  # "Identity", "Simplification", "NumberLine" # noqa: E501
+    id: Required[WolframIdName]  # "Input", "Result", "NumberLine", "NumberName" # noqa: E501
+    position: Required[int]  # 1 or 11, "typically multiples of 100" (that's a lie) # noqa: E501
     error: Required[bool | WolframErrorInfo]
     primary: bool
     numsubpods: Required[int]  # len(subpods) presumably.
@@ -247,7 +247,7 @@ class WolframQueryResult(TypedDict, total=False):
     relatedqueries: WolframRelatedQueries
     timing: Required[float]  # typically up to 20.001
     timedout: Required[str]  # list of strings separated by comma, or ""
-    # ^ think "Data,Percent,Unity,AtmosphericProperties,UnitInformation,Music,Geometry"  # noqa
+    # ^ think "Data,Percent,Unity,AtmosphericProperties,UnitInformation,Music,Geometry"  # noqa: E501
     timedoutpods: Required[str]  # list of pods that timed out during format
     # ^ think "Weather history & forecast,Weather station information"
     sources: list[WolframSource]

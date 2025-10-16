@@ -150,8 +150,8 @@ class StaffPollsChannelAddon(commands.Cog):
             # Note: Poll questions can have a length of 300 characters,
             #  see [1], whereas thread names can only be up to 100
             #  characters, see [2] (inherited from channel names).
-            # [1]: https://discord.com/developers/docs/resources/poll#poll-media-object-poll-media-object-structure # noqa
-            # [2]: https://discord.com/developers/docs/topics/threads#thread-fields # noqa
+            # [1]: https://discord.com/developers/docs/resources/poll#poll-media-object-poll-media-object-structure # noqa: E501
+            # [2]: https://discord.com/developers/docs/topics/threads#thread-fields # noqa: E501
             thread = await message.create_thread(
                 name=f"Poll-{message.poll.question}"[:50],
                 auto_archive_duration=10080

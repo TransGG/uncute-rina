@@ -282,7 +282,7 @@ async def _rina_used_deflect_and_it_was_very_effective(
     if respond == "BAD!":
         # noinspection LongLine
         await message.channel.send(
-            "https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless",  # noqa
+            "https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless",  # noqa: E501
             allowed_mentions=discord.AllowedMentions.none()
         )
     await message.channel.send(
@@ -340,7 +340,7 @@ class Compliments(commands.Cog):
             if called_cute:
                 try:
                     await message.add_reaction("<:this:960916817801535528>")
-                except (discord.HTTPException or discord.NotFound):
+                except (discord.HTTPException, discord.NotFound):
                     await log_to_guild(
                         self.client,
                         message.guild,

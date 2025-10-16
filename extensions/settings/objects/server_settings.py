@@ -10,7 +10,11 @@ from types import UnionType, GenericAlias
 import discord
 
 from resources.utils.debug import debug, DebugColor
-from .server_attributes import ServerAttributes, GuildAttributeType
+from .server_attributes import (
+    ServerAttributes,
+    GuildAttributeType,
+    MessageableGuildChannel,
+)
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
 
@@ -85,7 +89,7 @@ def get_attribute_type(attribute_key: str) -> tuple[
             #  types.UnionType is for `int | str`
             type_queue.extend(element.__args__)
             continue
-        else:
+        elif element is not type(None):
             types.add(element)
 
     return types, attribute_in_list
@@ -124,7 +128,10 @@ def parse_attribute(
         )
         return f
 
-    funcs: set[Callable[[int], GuildAttributeType | None]] = set()
+    funcs: set[Callable[
+        [int],
+        GuildAttributeType | discord.abc.PrivateChannel | None
+    ]] = set()
 
     if is_attribute_type(discord.Guild):
         funcs.add(client.get_guild)
@@ -134,9 +141,16 @@ def parse_attribute(
         #  parse if the type matches exactly.
         funcs.add(guild.get_channel_or_thread)
     if is_attribute_type(discord.abc.Messageable):
-        funcs.add(client.get_channel)
+        # There is no attribute that gives a PrivateChannel
+        funcs.add(typing.cast(
+            Callable[[int], MessageableGuildChannel | None],
+            client.get_channel
+        ))
     if is_attribute_type(discord.TextChannel):
-        funcs.add(client.get_channel)
+        funcs.add(typing.cast(
+            Callable[[int], discord.TextChannel | None],
+            client.get_channel
+        ))
     if is_attribute_type(discord.User):
         funcs.add(client.get_user)
     if is_attribute_type(discord.Role):
@@ -145,9 +159,15 @@ def parse_attribute(
         # I think it's safe to assume the stored value was an object of
         #  the correct type in the first place. As in, it's a
         #  CategoryChannel id, not a VoiceChannel id.
-        funcs.add(client.get_channel)
+        funcs.add(typing.cast(
+            Callable[[int], discord.CategoryChannel | None],
+            client.get_channel
+        ))
     if is_attribute_type(discord.channel.VoiceChannel):
-        funcs.add(client.get_channel)
+        funcs.add(typing.cast(
+            Callable[[int], discord.VoiceChannel | None],
+            client.get_channel
+        ))
     if is_attribute_type(discord.Emoji):
         funcs.add(guild.get_emoji)
     if is_attribute_type(int):
@@ -252,6 +272,10 @@ async def update_query(
 
 class ServerSettings:
     DATABASE_KEY = "server_settings"
+
+    guild: discord.Guild
+    enabled_modules: EnabledModules
+    attributes: ServerAttributes
 
     @staticmethod
     def get_original(
@@ -578,9 +602,7 @@ class ServerSettings:
                     f"Value for `{key}` should be `{expected_type}`, but it "
                     f"was `{type(value)}` instead: {value}!"
                 )
-        attribute_dict: ServerAttributes = typing.cast(
-            ServerAttributes, new_settings)
-
+        attribute_dict: ServerAttributes = ServerAttributes(**new_settings)  # type: ignore[typeddict-item] # noqa: E501
         return guild, ServerAttributes(**attribute_dict)
 
     def __init__(

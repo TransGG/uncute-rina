@@ -345,9 +345,9 @@ async def _make_bar_graph(
     # When more users are shown (e.g., 30), that would bring the font
     #  size to 144 / 30 = 4.8,
     #
-    # [1]: https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html # noqa
-    # [2]: https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size # noqa
-    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx # noqa
+    # [1]: https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html # noqa: E501
+    # [2]: https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size # noqa: E501
+    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx # noqa: E501
 
     scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)
     # ^ clamp to 4 <= size <= 12 (default)

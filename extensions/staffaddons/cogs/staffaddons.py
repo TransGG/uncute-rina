@@ -193,10 +193,10 @@ class StaffAddons(commands.Cog):
     @app_commands.command(name="version", description="Get bot version")
     async def get_bot_version(self, itx: discord.Interaction[Bot]):
         # get most recently pushed bot version
-        async with aiohttp.ClientSession() as client:
-            source_url = "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa
-            async with client.get(source_url) as response:
-                latest_rina = await response.text()
+        async with aiohttp.ClientSession() as client, client.get(
+                "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa: E501
+        ) as response:
+            latest_rina = await response.text()
         latest_version = (latest_rina
                           .split("BOT_VERSION = \"", 1)[1]
                           .split("\"", 1)[0])
@@ -208,15 +208,14 @@ class StaffAddons(commands.Cog):
                     f"Bot is currently running on v{itx.client.version} "
                     f"(latest: v{latest_version})\n"
                     f"(started <t:{unix}:D> at <t:{unix}:T>)",
-                    ephemeral=False
+                    ephemeral=False,
                 )
                 return
-        else:
-            await itx.response.send_message(
-                f"Bot is currently running on v{itx.client.version} (latest)\n"
-                f"(started <t:{unix}:D> at <t:{unix}:T>)",
-                ephemeral=False
-            )
+        await itx.response.send_message(
+            f"Bot is currently running on v{itx.client.version} (latest)\n"
+            f"(started <t:{unix}:D> at <t:{unix}:T>)",
+            ephemeral=False,
+        )
 
     @app_commands.command(name="update", description="Update slash-commands")
     @is_staff_check

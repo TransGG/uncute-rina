@@ -1,6 +1,5 @@
-import typing
-
 import discord
+from typing import cast
 
 from resources.customs import Bot
 
@@ -16,8 +15,12 @@ async def get_user_reminders(
     # Check if user has an entry in database yet.
     collection = client.async_rina_db["reminders"]
     query = {"userID": user.id}
-    db_data: DatabaseData | None = await collection.find_one(query)
-    if db_data is None:
+    # We're getting this straight from the DB, so it should be fine
+    api_response = cast(DatabaseData | None, await collection.find_one(query))
+    db_data: DatabaseData
+    if api_response is None:
         await collection.insert_one(query)
-        db_data = typing.cast(DatabaseData, query)
+        db_data = DatabaseData(**query)
+    else:
+        db_data = api_response
     return db_data.get('reminders', [])
