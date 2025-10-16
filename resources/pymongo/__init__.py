@@ -1,14 +1,12 @@
 __all__ = [
+    'DatabaseKeys',
+    # 'decode_field',
     # 'encode_field',
-    # 'decode_field'
-    #
     'add_data',
+    'get_all_data',
+    'get_data',
     'remove_data',
     'update_data',
-    'get_data',
-    'get_all_data',
-
-    'DatabaseKeys'
 ]
 
 # from resources.pymongo.utils import decode_field, encode_field

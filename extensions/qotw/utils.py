@@ -202,16 +202,19 @@ async def ping_open_threads(
         "`[+  ]`: Fetching cached threads.",
         ephemeral=True
     )
-    threads: list[discord.Thread] = []
-    async for thread in channel.archived_threads(limit=None):
-        threads.append(thread)
+    threads: list[discord.Thread] = [
+        thread
+        async for thread in channel.archived_threads(limit=None)
+    ]
 
     await itx.edit_original_response(
         content="`[#+ ]`: Fetching archived threads...")
     archived_thread_ids = [t.id for t in threads]
-    for thread in channel.threads:
-        if thread.archived and thread.id not in archived_thread_ids:
-            threads.append(thread)
+    threads.extend([
+        thread
+        for thread in channel.threads
+        if thread.archived and thread.id in archived_thread_ids
+    ])
 
     await itx.edit_original_response(
         content="`[##+]`: Sending messages in threads...")

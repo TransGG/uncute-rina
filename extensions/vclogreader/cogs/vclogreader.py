@@ -445,12 +445,15 @@ class VCLogReader(commands.Cog):
         user_ids="Specific user ids to filter the graph for "
                  "(separate with comma)"
     )
+    @app_commands.rename(
+        requested_channel_input="requested_channel"
+    )
     @is_staff_check
     @module_enabled_check(ModuleKeys.vc_log_reader)
     async def get_voice_channel_data(
             self,
             itx: GuildInteraction[Bot],
-            requested_channel: str,
+            requested_channel_input: str,
             lower_bound: str,
             upper_bound: str | None = None,
             timezone_offset: float | None = None,
@@ -462,7 +465,7 @@ class VCLogReader(commands.Cog):
             select_user_ids: list[str] = user_ids.replace(" ", "").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str \
-            = requested_channel
+            = requested_channel_input
         warning = ""
         if type(requested_channel) is discord.app_commands.AppCommandChannel:
             voice_channel = itx.client.get_channel(requested_channel.id)

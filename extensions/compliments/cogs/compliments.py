@@ -33,7 +33,7 @@ async def _choose_and_send_compliment(
     quotes = {
         "fem_quotes": [
             # "Was the sun always this hot? or is it because of you?",
-            # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
+            # "Hey baby, are you an angel? Cuz I'm allergic to feathers.",
             # "I bet you sweat glitter.",
             "Your hair looks stunning!",
             "Being around you is like being on a happy little vacation.",
@@ -79,7 +79,7 @@ async def _choose_and_send_compliment(
             "morb",
             "You look great today!",
             "You light up the room!",
-            "On a scale from 1 to 10, you’re an 11!",
+            "On a scale from 1 to 10, you're an 11!",
             'When you say, “I meant to do that,” I totally believe you.',
             "You should be thanked more often. So thank you!",
             "You are so easy to have a conversation with!",
@@ -582,9 +582,8 @@ class Compliments(commands.Cog):
             blacklist = search1.get(db_location, [])
             length = len(blacklist)
 
-            ans = []
-            for blackboard_id in range(length):
-                ans.append(f"`{blackboard_id}`: {blacklist[blackboard_id]}")
+            ans = [f"`{blackboard_id}`: {blacklist[blackboard_id]}"
+                   for blackboard_id in range(length)]
             ans = '\n'.join(ans)
             await itx.response.send_message(
                 f"Found {length} string{'s' * (length != 1)}:\n{ans}"[:2000],

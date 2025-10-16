@@ -87,16 +87,18 @@ def _is_vctable_locked(
 
 
 def _get_vctable_members_with_predicate(
-        channel: discord.VoiceChannel,
-        predicate: Callable[
-            [discord.VoiceChannel, discord.Member | discord.Role
-             | discord.Object], bool]
-) -> None:
-    outputs = []
-    for target in channel.overwrites:
-        if predicate(channel, target) and isinstance(target, discord.Member):
-            outputs.append(target.mention)
-    return outputs
+    channel: discord.VoiceChannel,
+    predicate: Callable[
+        [discord.VoiceChannel, discord.Member | discord.Role | discord.Object],
+        bool,
+    ],
+) -> list[str]:
+    return [
+        target.mention
+        for target in channel.overwrites
+        if (predicate(channel, target)
+            and isinstance(target.id, discord.Member))
+    ]
 
 
 async def _get_current_voice_channel(

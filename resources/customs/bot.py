@@ -65,7 +65,7 @@ class Bot(commands.Bot):
         :return: The command mention, or the input (*command_string*)
          if no command with the name was found.
         """
-        args = command_string.split(" ") + [None, None]
+        args = [*command_string.split(" "), None, None]
         command_name, subcommand, subcommand_group = args[0:3]
         # returns one of the following:
         # </COMMAND:COMMAND_ID>
@@ -243,8 +243,7 @@ class Bot(commands.Bot):
         :return: ``True`` if the given user is the bot, otherwise ``False``.
         """
         user_id: int
-        if (isinstance(user, discord.User)
-                or isinstance(user, discord.Member)):
+        if isinstance(user, (discord.User, discord.Member)):
             user_id = user.id
         else:
             user_id = user

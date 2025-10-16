@@ -15,35 +15,51 @@ from resources.checks import not_in_dms_check
 from resources.customs import Bot, GuildInteraction
 
 
-type JoinType = typing.Literal[
+type MemberDataType = typing.Literal[
     "joined",
+    "left",
     "left unverified",
     "left verified",
     "verified"
 ]
 
+# key = user id, val = list of unix times
+# The key is a string because json (MongoDB) can't have integer keys.
+type MemberEventType = dict[str, list[float]]
+
+MemberDataEntry = typing.TypedDict(
+    "MemberDataEntry",
+    {
+        "guild_id": typing.Required[int],
+        "joined": MemberEventType,
+        "left": MemberEventType,
+        "left verified": MemberEventType,
+        "left unverified": MemberEventType,
+        "verified": MemberEventType,
+    },
+    total=False
+)
+
 
 async def _add_to_data(
         member: discord.Member,
-        event_type: JoinType,
+        event_type: MemberDataType,
         async_rina_db: AgnosticDatabase
 ) -> None:
     collection = async_rina_db["data"]
     query = {"guild_id": member.guild.id}
-    data = await collection.find_one(query)
+    data: MemberDataEntry | None = await collection.find_one(query)
     if data is None:
         await collection.insert_one(query)
-        data = query
+        data = MemberDataEntry(**query)
 
-    try:
-        # see if this user already has data, if so, add a new joining
-        #  time to the list
+    if str(member.id) not in data[event_type]:
+        data[event_type] = {
+            str(member.id): [datetime.now().timestamp()]
+        }
+    else:
         data[event_type][str(member.id)].append(datetime.now().timestamp())
-    except IndexError:
-        data[event_type][str(member.id)] = [datetime.now().timestamp()]
-    except KeyError:
-        data[event_type] = {}
-        data[event_type][str(member.id)] = [datetime.now().timestamp()]
+
     await collection.update_one(
         query,
         {"$set": {
@@ -164,8 +180,10 @@ class MemberData(commands.Cog):
         #  times. Maybe round these to a certain factor (don't
         #  overstress the x-axis). These certain times are in a period
         #  of "now" and "[period] seconds ago".
-        totals = {}
-        results = {}
+        totals: dict[MemberDataType, int] = {}
+        # Map (rounded) unix timestamp with how often that
+        #  (rounded) timestamp occurs.
+        results: dict[MemberDataType, dict[float, int | None]] = {}
         warning = ""
         current_time = datetime.now(timezone.utc).timestamp()
         min_time = int((current_time - lower_bound) / accuracy) * accuracy
@@ -173,7 +191,7 @@ class MemberData(commands.Cog):
 
         collection = itx.client.async_rina_db["data"]
         query = {"guild_id": itx.guild_id}
-        data = await collection.find_one(query)
+        data: MemberDataEntry | None = await collection.find_one(query)
         if data is None:
             await itx.response.send_message(
                 "Not enough data is configured to do this action! Please "
@@ -185,9 +203,12 @@ class MemberData(commands.Cog):
         # gather timestamps in timeframe, as well as the lowest and
         # highest timestamps
         for y in data:
-            if type(data[y]) is not dict:
+            y: typing.Literal["guild_id"] | MemberDataType
+            if not isinstance(data[y], dict) or y == "guild_id":
+                # y == "guild_id" is redundant, because guild_id has type int,
+                #  so it's not a `dict` anyway.
                 continue
-            column = []
+            column: list[float] = []
             results[y] = {}
             for member in data[y]:
                 for time in data[y][member]:
@@ -202,12 +223,13 @@ class MemberData(commands.Cog):
             # allow heartbeat or recognising other commands
             await asyncio.sleep(0.1)
             totals[y] = len(column)
-            for time in range(len(column)):
-                column[time] = int(column[time] / accuracy) * accuracy
-                if column[time] in results[y]:
-                    results[y][column[time]] += 1
+            for i in range(len(column)):
+                # ^ use index so you can modify the list while iterating.
+                column[i] = int(column[i] / accuracy) * accuracy
+                if column[i] in results[y]:
+                    results[y][column[i]] += 1
                 else:
-                    results[y][column[time]] = 1
+                    results[y][column[i]] = 1
             # allow heartbeat or recognising other commands
             await asyncio.sleep(0.10)
             if len(column) == 0:
@@ -225,7 +247,7 @@ class MemberData(commands.Cog):
         # then set all missing data to 0 (up until the graph has data)
         min_time_db = min_time
         for y in data:
-            if type(data[y]) is not dict:
+            if not isinstance(data[y], dict) or y == "guild_id":
                 continue
             min_time = min_time_db
             while min_time <= max_time:
@@ -256,19 +278,15 @@ class MemberData(commands.Cog):
 
         # make graph
         try:
-            d = {
-                "time": i for i in results["joined"]
+            d: dict[
+                typing.Literal["time"] | MemberDataType,
+                list[float | int]
+            ] = {
+                "time": list(results["joined"])
             }
             for y in results:
-                try:
-                    d[y] = [results[y][i] for i in results[y]]
-                except KeyError:
-                    # await itx.followup.send(
-                    #     f"{ex} did not have data, thus could not make "
-                    #     f"the graph."
-                    # )
-                    # return
-                    continue
+                y: MemberDataType
+                d[y] = [results[y][i] for i in results[y]]
             df = pd.DataFrame(data=d)
             fig, (ax1) = plt.subplots()
             fig.suptitle(f"Member data from {lower_bound / 86400} to "

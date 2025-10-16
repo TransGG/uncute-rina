@@ -161,7 +161,7 @@ def get_version() -> str:
     # 1: private dev server; 2: public dev server (TransPlace [Copy])
     for v in range(len(file_version)):
         if int(file_version[v]) > int(rina_version[v]):
-            rina_version = file_version + ["0"]
+            rina_version = [*file_version, "0"]
             break
     else:
         rina_version[-1] = str(int(rina_version[-1]) + 1)

@@ -55,10 +55,11 @@ class NameUsage(
 
             pronoun_part1 = {"she", "he", "they", "it"}
             pronoun_part2 = {"her", "him", "them", "its"}
-            pronouns: list[str] = []
-            for pronoun_x in pronoun_part1:
-                for pronoun_y in pronoun_part2:
-                    pronouns.append(pronoun_x + " " + pronoun_y)
+            pronouns: list[str] = [
+                pronoun_x + " " + pronoun_y
+                for pronoun_x in pronoun_part1
+                for pronoun_y in pronoun_part2
+            ]
 
             for index in range(len(names)):
                 new_name = ""

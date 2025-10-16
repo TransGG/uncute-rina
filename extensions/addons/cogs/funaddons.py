@@ -78,10 +78,8 @@ def _get_dice_roll_output(
         mod: int | float
 ) -> tuple[str, bool]:
     """Helper to get the text output for a simple /roll."""
-    rolls = []
     message_too_long = False
-    for _ in range(dice):
-        rolls.append(random.randint(1, faces))
+    rolls = [random.randint(1, faces) for _ in range(dice)]
     dice_info = (f"I rolled {dice:,} di{'c' * (dice != 1)}e with "
                  f"{faces:,} face{'s' * (faces > 1)}")
     modifier_info = ""
@@ -117,10 +115,9 @@ def _simplify_roll_output(rolls: list[int]) -> str:
     """Helper to represent dice rolls into (eyes, count) entries."""
     roll_db = {}
     for roll in rolls:
-        try:
-            roll_db[roll] += 1
-        except KeyError:
+        if roll not in roll_db:
             roll_db[roll] = 1
+        roll_db[roll] += 1
     # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
     # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)]
     #  that is then sorted by the first item in the tuple.
@@ -291,9 +288,7 @@ class FunAddons(commands.Cog):
                    for add_section in add_list
                    if len(add_section) > 0]
             # print("add:       ",add)
-            multiply = []
-            for add_section in add:
-                multiply.append(add_section.split('*'))
+            multiply = [add_section.split('*') for add_section in add]
             # print("multiply:  ",multiply)
             try:
                 result = [[sum(generate_roll(query))

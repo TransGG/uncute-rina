@@ -296,10 +296,10 @@ class ServerSettings:
                 return attribute1
 
         if isinstance(attribute, list):
-            output = []
-            for att in attribute:
-                output.append(get_name_or_id_maybe(att))
-            return output
+            return [
+                get_name_or_id_maybe(att)
+                for att in attribute
+            ]
         return get_name_or_id_maybe(attribute)
 
     @staticmethod

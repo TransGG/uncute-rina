@@ -121,11 +121,11 @@ class PronounsPageDictionary(DictionaryBase):
         """
         # If one of the search results matches exactly with the
         #  search, give that definition.
-        results: list[PronounsPageEntry] = []
-        for item in search:
-            if simplify(term) in simplify(item['term'].split('|')):
-                results.append(item)
-        return results
+        return [
+            item
+            for item in search
+            if simplify(term) in simplify(item['term'].split("|"))
+        ]
 
     @staticmethod
     def _get_result_string(
