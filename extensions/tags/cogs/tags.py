@@ -33,7 +33,7 @@ report_message_reminder = datetime.min
 def _get_enabled_tag_ids(itx: discord.Interaction[Bot]) -> set[str]:
     """Helper function to get all enabled tags in a guild."""
     default_tags = [i.lower() for i in tag_info_dict]
-    custom_tags = [i for i in get_tags(itx.guild)]
+    custom_tags = list(get_tags(itx.guild))
     return set(default_tags + custom_tags)
 
 
@@ -265,7 +265,12 @@ class TagFunctions(commands.Cog):
     def _parse_tag_information(
             create_tag_modal: CreateTagModal,
             itx: GuildInteraction[Bot]
-    ) -> None:
+    ) -> tuple[
+            tuple[int, int, int],
+            str,
+            bool,
+            str,
+    ]:
         title = create_tag_modal.embed_title.value
         description = create_tag_modal.description.value
         description = replace_string_command_mentions(

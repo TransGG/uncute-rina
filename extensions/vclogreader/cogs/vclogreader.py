@@ -452,8 +452,8 @@ class VCLogReader(commands.Cog):
             itx: GuildInteraction[Bot],
             requested_channel: str,
             lower_bound: str,
-            upper_bound: str = None,
-            timezone_offset: float = None,
+            upper_bound: str | None = None,
+            timezone_offset: float | None = None,
             msg_log_limit: int = 5000,
             user_ids: str | None = None
     ) -> None:

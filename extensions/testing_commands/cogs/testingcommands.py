@@ -99,7 +99,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             itx: GuildInteraction[Bot],
             target: discord.User,
             reason: str = "",
-            rule: str = None,
+            rule: str | None = None,
             private_notes: str = "",
             role_changes: str = ""
     ) -> None:

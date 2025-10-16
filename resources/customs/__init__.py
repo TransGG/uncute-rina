@@ -1,9 +1,9 @@
 __all__ = [
-    'Bot',
-    'ProgressBar',
     'ApiTokenDict',
+    'Bot',
     'GuildInteraction',
-    'GuildMessage'
+    'GuildMessage',
+    'ProgressBar'
 ]
 
 from .bot import Bot

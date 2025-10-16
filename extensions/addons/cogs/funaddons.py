@@ -124,7 +124,7 @@ def _simplify_roll_output(rolls: list[int]) -> str:
     # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
     # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)]
     #  that is then sorted by the first item in the tuple.
-    roll_db = sorted([x for x in roll_db.items()])
+    roll_db = sorted(roll_db.items())
     details = "You rolled "
     for roll, count in roll_db:
         details += f"'{roll}'x{count}, "
@@ -317,8 +317,8 @@ class FunAddons(commands.Cog):
             if "+" in advanced or '-' in advanced:
                 out += [' + '.join([str(_product_of_list(section))
                                     for section in result])]
-            out += [str(sum([_product_of_list(section)
-                             for section in result]))]
+            out += [str(sum(_product_of_list(section)
+                            for section in result))]
             output = discord.utils.escape_markdown('\n= '.join(out))
             if len(output) >= 1950:
                 output = ("Your result was too long! I couldn't send it. "

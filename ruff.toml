@@ -40,18 +40,18 @@ select = [
     "RUF043", # pytest issues
     "E261",
     "ANN", # Type annotations would take wayyy too long to do properly  # HA YOU THOUGHT (I only spent 2 hours TwT)
+    "C4", # list comprehensions
+    "RUF013", # Optional types should be properly marked
 ]
 
 ignore = [
     # Things we should probably do
-    "S101", # We should not use asserts, as some environments disable them
-    "C4", # We should probably move to list comprehensions, but that's a lot of work
-    "RUF013", # Optional types should be properly marked
+    "S101", # We should not use asserts, as some environments disable them  # IMO pretty silly idea
     "PGH004", "RUF100", # Blanket disabling lints isn't great
 
     # Style stuff that's bad, but won't cause issues
     "PTH", # pathlib still technically works
-    "RUF022", "RUF023", "I001", # Sorted inputs are nice, but not *needed*
+#    "RUF022", "RUF023", "I001", # Sorted inputs are nice, but not *needed*
     "PERF", # ._.
     "RUF059", # We are explicitly allowing unused variables
 

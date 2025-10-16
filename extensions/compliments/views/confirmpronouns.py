@@ -4,7 +4,7 @@ from resources.customs import Bot
 
 
 class ConfirmPronounsView(discord.ui.View):
-    def __init__(self, timeout: float = None) -> None:
+    def __init__(self, timeout: float | None = None) -> None:
         super().__init__()
         # Use the value to track which button was pressed
         # todo: make self.value (pronouns: she/her, he/him, ...) an enum.

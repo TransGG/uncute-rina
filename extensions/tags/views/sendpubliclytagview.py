@@ -16,7 +16,7 @@ class SendPubliclyTagView(discord.ui.View):
             tag: CustomTag,
             report_to_staff: bool,
             timeout: float | None = None,
-            log_msg: str = None,
+            log_msg: str | None = None,
     ) -> None:
         super().__init__()
 

@@ -39,7 +39,7 @@ class CustomDictionary(DictionaryBase):
         results = await self._get_api_response(current)
         if not results:
             return set()
-        return set(current for current, _ in results)
+        return {current for current, _ in results}
 
     @override
     async def construct_response(self, term: str) -> None:

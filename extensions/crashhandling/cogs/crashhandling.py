@@ -192,8 +192,8 @@ class CrashHandling(commands.Cog):
                 ":sudo shutdown",
             ]
             if message.content == ":kill now please stop" or any(
-                    [message.content.startswith(item)
-                     for item in cool_keys]
+                    message.content.startswith(item)
+                    for item in cool_keys
             ):
                 await message.add_reaction("🔄")
                 sys.exit(0)

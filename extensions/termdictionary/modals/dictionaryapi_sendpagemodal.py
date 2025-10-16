@@ -10,7 +10,7 @@ class DictionaryAPISendPageModal(
     def __init__(
             self,
             max_page: int,
-            timeout: list | float = None
+            timeout: float | None = None
     ) -> None:
         super().__init__()
         self.succeeded: bool = False

@@ -356,7 +356,7 @@ class Compliments(commands.Cog):
                     raise
             elif called_cute is False:
                 await _rina_used_deflect_and_it_was_very_effective(message)
-            elif any([x in msg for x in [
+            elif any(x in msg for x in [
                 "can i have a pat",
                 "can i have a headpat",
                 "can i have pat",
@@ -381,7 +381,7 @@ class Compliments(commands.Cog):
                 "headpat pls",
                 "pat please",
                 "headpat please"
-            ]]):
+            ]):
                 try:
                     # todo: make server settings emoji
                     # todo: make server module toggleable

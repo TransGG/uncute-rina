@@ -577,7 +577,7 @@ async def _handle_settings_module(
     module_keys = EnabledModules.__annotations__
 
     if setting is None:
-        disabled_modules = set([i for i in module_keys])
+        disabled_modules = set(module_keys)
         enabled_modules = set()
 
         if itx.client.server_settings is None:

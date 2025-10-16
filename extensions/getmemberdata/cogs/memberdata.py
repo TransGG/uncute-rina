@@ -257,7 +257,7 @@ class MemberData(commands.Cog):
         # make graph
         try:
             d = {
-                "time": [i for i in results["joined"]],
+                "time": i for i in results["joined"]
             }
             for y in results:
                 try:
@@ -292,7 +292,7 @@ class MemberData(commands.Cog):
                 re_text = "exc"
             ax1.set_ylabel(f"# of members ({re_text}. rejoins/-leaves/etc)")
 
-            tick_loc = [i for i in df['time'][::3]]
+            tick_loc = list(df['time'][::3])
             if (lower_bound - upper_bound) / 86400 <= 1:
                 tick_disp = [datetime
                              .fromtimestamp(i, timezone.utc)

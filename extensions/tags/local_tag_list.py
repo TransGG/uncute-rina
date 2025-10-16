@@ -68,7 +68,7 @@ async def create_tag(
         raise ValueError("Embed title too long.")
     if len(embed_description) > 4096:
         raise ValueError("Embed description too long.")
-    if not all([0 <= c <= 255 for c in embed_color]):
+    if not all(0 <= c <= 255 for c in embed_color):
         raise ValueError("Embed colors must be RGB values between 0 and 255.")
 
     embed_object = DatabaseTagObject(

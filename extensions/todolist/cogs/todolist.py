@@ -26,7 +26,7 @@ class TodoList(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             mode: int,
-            todo: str = None,
+            todo: str | None = None,
     ) -> None:
         # todo: use Enum for mode
         if mode == 1:  # Add item to to-do list
