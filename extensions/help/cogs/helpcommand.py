@@ -61,7 +61,7 @@ async def send_help_menu(
     )
 
 
-async def _help_page_autocomplete(
+async def _help_page_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot],
         current: str
 ) -> list[app_commands.Choice[int]]:

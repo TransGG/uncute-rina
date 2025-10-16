@@ -53,16 +53,12 @@ class NameUsage(
             else:
                 continue
 
-            _pronouns = [
-                "she", "her",
-                "he", "him",
-                "they", "them",
-                "it", "its",
-            ]
+            pronoun_part1 = {"she", "he", "they", "it"}
+            pronoun_part2 = {"her", "him", "them", "its"}
             pronouns = []
-            for pronounx in _pronouns:
-                for pronouny in _pronouns:
-                    pronouns.append(pronounx + " " + pronouny)
+            for pronoun_x in pronoun_part1:
+                for pronoun_y in pronoun_part2:
+                    pronouns.append(pronoun_x + " " + pronoun_y)
 
             for index in range(len(names)):
                 new_name = ""
@@ -73,9 +69,9 @@ class NameUsage(
                         new_name += " "
 
                 for pronoun in pronouns:
-                    _name_backup = new_name + " "
-                    while new_name != _name_backup:
-                        _name_backup = new_name
+                    name_tmp = new_name + " "
+                    while new_name != name_tmp:
+                        name_tmp = new_name
                         new_name = re.sub(
                             pronoun,
                             "",
@@ -98,7 +94,7 @@ class NameUsage(
                         match = 1
                         while match:
                             match = re.search(
-                                "[A-Z][a-z]*[A-Z]",
+                                r"[A-Z][a-z]*[A-Z]",
                                 section,
                                 re.MULTILINE
                             )

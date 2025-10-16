@@ -422,22 +422,22 @@ async def _create_reminder(
         reminder,
         db_data
     )
-    _distance = int(distance.timestamp())
+    distance_unix = int(distance.timestamp())
     cmd_reminders = itx.client.get_command_mention("reminder reminders")
     view = ShareReminder()
     if from_copy:
         # send message without view.
         await itx.response.send_message(
-            f"Successfully created a reminder for you on <t:{_distance}:F> "
-            f"for \"{reminder}\"!\n"
+            f"Successfully created a reminder for you "
+            f"on <t:{distance_unix}:F> for \"{reminder}\"!\n"
             f"Use {cmd_reminders} to see your list of reminders",
             ephemeral=True,
         )
         return
     else:
         await itx.response.send_message(
-            f"Successfully created a reminder for you on <t:{_distance}:F> "
-            f"for \"{reminder}\"!\n"
+            f"Successfully created a reminder for you "
+            f"on <t:{distance_unix}:F> for \"{reminder}\"!\n"
             f"Use {cmd_reminders} to see your list of reminders",
             view=view,
             ephemeral=True,
@@ -445,8 +445,8 @@ async def _create_reminder(
 
     await view.wait()
     if view.return_interaction is not None:
-        msg = (f"{itx.user.mention} shared a reminder on <t:{_distance}:F> "
-               f"for \"{reminder}\"")
+        msg = (f"{itx.user.mention} shared a reminder "
+               f"on <t:{distance_unix}:F> for \"{reminder}\"")
         copy_view = CopyReminder(
             _create_reminder,
             reminder_object,

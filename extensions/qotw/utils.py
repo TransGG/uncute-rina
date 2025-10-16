@@ -95,7 +95,7 @@ async def _ping_reaction_role(
         await joiner_msg.delete()
 
 
-async def _create_main_embed(
+def _create_main_embed(
         copyable_version: discord.Message,
         description: str,
         user: discord.User | discord.Member,
@@ -167,7 +167,7 @@ async def create_thread(
             allowed_mentions=discord.AllowedMentions.none()
         )
 
-        embed = await _create_main_embed(copyable_version, description, user)
+        embed = _create_main_embed(copyable_version, description, user)
         await starter_msg.edit(embed=embed)
 
     if reaction_role_key is not None:

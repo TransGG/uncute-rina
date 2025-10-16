@@ -337,9 +337,9 @@ def _format_wolfram_error_output(data: WolframQueryResult) -> str:
             "It appears you filled in something for which I can't "
             "get extra feedback..\n"
             "Feel free to report the situation to MysticMia#7612"
-            + "\n\n"
-              "Interpreted input:\n"
-              "> {input_string}"
+            + f"\n\n"
+              f"Interpreted input:\n"
+              f"> {input_string}"
               if input_string is not None
               else ""
         )

@@ -97,7 +97,7 @@ async def _get_dice_roll_output(dice, faces, mod):
         out = (f":\n"
                f"With this many numbers, I've simplified it a little. "
                f"You rolled `{sum(rolls) + (mod or 0):,}`.")
-        details = await _simplify_roll_output(rolls)
+        details = _simplify_roll_output(rolls)
         if len(details) > 1500:
             details = ""
         elif len(details) > 300:
@@ -109,7 +109,7 @@ async def _get_dice_roll_output(dice, faces, mod):
     return output_string, message_too_long
 
 
-async def _simplify_roll_output(rolls: list[int]) -> str:
+def _simplify_roll_output(rolls: list[int]) -> str:
     """Helper to represent dice rolls into (eyes, count) entries."""
     roll_db = {}
     for roll in rolls:
@@ -256,8 +256,7 @@ class FunAddons(commands.Cog):
 
         if advanced is None:
             await itx.response.defer(ephemeral=not public)
-            out, too_long = await _get_dice_roll_output(
-                dice, faces, mod)
+            out, too_long = _get_dice_roll_output(dice, faces, mod)
             if too_long:
                 await itx.delete_original_response()
             await itx.followup.send(out, ephemeral=too_long)
@@ -283,8 +282,10 @@ class FunAddons(commands.Cog):
                         ephemeral=True,
                     )
                     return
-            _add = advanced.replace('-', '+-').split('+')
-            add = [add_section for add_section in _add if len(add_section) > 0]
+            add_list = advanced.replace('-', '+-').split('+')
+            add = [add_section
+                   for add_section in add_list
+                   if len(add_section) > 0]
             # print("add:       ",add)
             multiply = []
             for add_section in add:

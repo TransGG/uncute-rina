@@ -50,7 +50,7 @@ class UrbanDictionary(DictionaryBase):
     def _get_urban_dictionary_pages(data) -> list[discord.Embed]:
         data = sorted(
             data,
-            key=lambda r: UrbanDictionary._calculate_post_score(r),
+            key=UrbanDictionary._calculate_post_score,
             reverse=True  # sort from highest to lowest
         )
 

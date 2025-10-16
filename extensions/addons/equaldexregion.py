@@ -13,7 +13,6 @@ class EqualDexIssueDetails(TypedDict):
 
 
 class EqualDexRegion:
-    # noinspection LongLine
     """
     A class containing an EqualDex API response.
 
@@ -27,8 +26,8 @@ class EqualDexRegion:
     :ivar issues: A list or dictionary of issues related to the laws of
      the country.
 
-    .. ISO Code: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements # noqa: E501
-    """
+    .. ISO Code: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements
+    """  # noqa: E501
     def __init__(self, data: dict):
         """
         Create a region shell to neatly encapsulate and separate api data.

@@ -92,13 +92,13 @@ def debug(
     if advanced:
         for _detColor in detail_color:
             while "&" + _detColor in text:
-                _text = text
+                text_tmp = text
                 text = text.replace(
                     "m&" + _detColor,
                     ";" + detail_color[_detColor] + "m",
                     1
                 )
-                if _text == text:
+                if text_tmp == text:
                     # No previous coloring found to replace, so add a
                     #  new one instead. (no m&)
                     text = text.replace(

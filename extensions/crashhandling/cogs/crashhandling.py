@@ -46,13 +46,13 @@ async def _send_crash_message(
     :param itx: Interaction with a potential guild. This might allow
      Rina to send the crash log to that guild instead.
     """
-    log_channel = await _get_crash_logging_message(
+    log_channel = _get_crash_logging_message(
         client, error_source, error_type, itx, traceback_text
     )
     if log_channel is None:
         return
 
-    embeds = await _create_crash_embed(
+    embeds = _create_crash_embed(
         color,
         error_source,
         error_type,
@@ -65,7 +65,7 @@ async def _send_crash_message(
     )
 
 
-async def _create_crash_embed(
+def _create_crash_embed(
         color: discord.Colour,
         error_source: str,
         error_type: str,
@@ -102,7 +102,7 @@ async def _create_crash_embed(
     return embeds
 
 
-async def _get_crash_logging_message(
+def _get_crash_logging_message(
         client: Bot,
         error_source: str,
         error_type: str,

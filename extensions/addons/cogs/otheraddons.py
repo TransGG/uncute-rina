@@ -176,7 +176,7 @@ def _get_emoji_from_str(
         return emoji
 
 
-async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
+async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
@@ -193,7 +193,7 @@ async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
                 ][:25]
 
 
-async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):
+async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
     """Autocomplete for /remove-role command."""
     if isinstance(itx.user, discord.User):
         return []
@@ -390,7 +390,7 @@ class OtherAddons(commands.Cog):
             return
 
         errors = []
-        message: None | discord.Message = None  # happy IDE
+        message: discord.Message | None = None  # happy IDE
         if message_id_str.isdecimal():
             message_id = int(message_id_str)
             try:

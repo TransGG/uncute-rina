@@ -285,7 +285,7 @@ async def _get_vc_activity(
     return output
 
 
-async def _make_bar_graph(
+def _make_bar_graph(
         df,
         lower_bound: float,
         sorted_usernames: list[int],
@@ -359,12 +359,12 @@ async def _make_bar_graph(
     plt.savefig('outputs/vcLogs.png', dpi=300)
 
 
-async def _format_data_for_graph(
+def _format_data_for_graph(
         events, max_time, min_time, select_user_ids, voice_channel
 ):
     intermediate_data: dict[int, dict[
         typing.Literal["name", "join_time", "timestamps"],
-        str | None | float | list[tuple[float, float]]
+        list[tuple[float, float]] | str | float | None
     ]] = {}
     for event in events:
         unix, user, from_channel, to_channel = event
@@ -550,12 +550,12 @@ class VCLogReader(commands.Cog):
                     None
                 ))
 
-        data, sorted_usernames = await _format_data_for_graph(
+        data, sorted_usernames = _format_data_for_graph(
             events, max_time, min_time, select_user_ids, voice_channel)
 
         df = pd.DataFrame(data=data)
-        await _make_bar_graph(df, lower_bound, sorted_usernames,
-                              upper_bound, voice_channel, timezone_offset)
+        _make_bar_graph(df, lower_bound, sorted_usernames,
+                        upper_bound, voice_channel, timezone_offset)
 
         await itx.followup.send(
             warning

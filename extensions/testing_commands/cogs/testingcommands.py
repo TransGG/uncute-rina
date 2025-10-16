@@ -11,7 +11,7 @@ from resources.customs import Bot, GuildInteraction
 from resources.views.generics import PageView, create_simple_button
 
 
-async def _make_vclog_embed(
+def _make_vclog_embed(
         mode: str,
         from_channel: discord.VoiceChannel | discord.StageChannel,
         to_channel: discord.VoiceChannel | discord.StageChannel,
@@ -268,7 +268,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             )
             return
 
-        embed = await _make_vclog_embed(mode, from_channel, to_channel, user)
+        embed = _make_vclog_embed(mode, from_channel, to_channel, user)
         await itx.channel.send(embed=embed)
 
         await itx.response.send_message("Sent.", ephemeral=True)

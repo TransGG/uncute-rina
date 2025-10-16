@@ -75,7 +75,7 @@ def test_attribute_types(attribute: str):
             False,
     )),
     (AttributeKeys.vctable_prefix, ({str}, False)),
-    (AttributeKeys.admin_roles, ({discord.Role}, True)),  # list
+    (AttributeKeys.admin_roles, ({discord.Role}, True)),  # set
 ])
 def test_get_attribute_types(
         attribute: str,

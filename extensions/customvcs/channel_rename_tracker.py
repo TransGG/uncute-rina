@@ -21,7 +21,7 @@ def clear_vc_rename_log(channel_id: int) -> None:
 def try_store_vc_rename(
         channel_id: int,
         max_rename_limit: int = VOICE_CHANNEL_RENAME_RATELIMIT
-) -> None | int:
+) -> int | None:
     """
     Store a new voice channel rename in the storage dictionary.
 

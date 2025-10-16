@@ -84,7 +84,7 @@ class EmojiStats(commands.Cog):
             #  or any non-backslash character in front of it), with this
             #  format: <a:Name_1:0123456789> or <:Name_2:0123456789>
             #  (a = animated)
-            emoji = re.search("(?:[^\\\\]|^)<a?:[a-zA-Z_0-9]+:[0-9]+>",
+            emoji = re.search(r"[^\\]|^<a?:[a-zA-Z_0-9]+:[0-9]+>",
                               message.content[start_index:])
             # get first instance of an emoji in the message slice (to
             #  get a list of all emojis)

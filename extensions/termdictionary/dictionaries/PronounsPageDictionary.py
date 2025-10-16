@@ -51,20 +51,20 @@ class PronounsPageDictionary(DictionaryBase):
         for item in data:
             item_db = item['definition']
             while item['definition'] == item_db:
-                replacement = re.search("(?<==).+?(?=})",
+                replacement = re.search(r"(?<==).+?(?=})",
                                         item['definition'])
                 if replacement is not None:
-                    item['definition'] = re.sub("{(#.+?=).+?}",
+                    item['definition'] = re.sub(r"{(#.+?=).+?}",
                                                 replacement.group(),
                                                 item['definition'], 1)
                 if item['definition'] == item_db:  # if nothing changed:
                     break
                 item_db = item['definition']
             while item['definition'] == item_db:
-                replacement = re.search("(?<={).+?(?=})",
+                replacement = re.search(r"(?<={).+?(?=})",
                                         item['definition'])
                 if replacement is not None:
-                    item['definition'] = re.sub("{.+?}",
+                    item['definition'] = re.sub(r"{.+?}",
                                                 replacement.group(),
                                                 item['definition'], 1)
                 if item['definition'] == item_db:  # if nothing changed:

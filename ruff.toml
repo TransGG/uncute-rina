@@ -1,5 +1,5 @@
 exclude = [".venv", "unit_tests"]
-
+line-length=79
 [lint]
 select = [
     "ANN", # Type annotations
@@ -25,19 +25,20 @@ select = [
     "PLW", # Pylint warnings
     # Ruff-specific
     "RUF",
-    # "RUF006", # asyncio tasks can be GC'd and killed
-    # "RUF013", # Explicit Optional
-    # "RUF015", # Turning something into a list to get the first element is slow
-    # "RUF016", # Invalid index type
-    # "RUF017", # Bizarre list merge
-    # "RUF018", "RUF030", "RUF040",  # Assert issues
-    # "RUF019", # Bizarre dict element access
-    # "RUF021", # and/or bracketing
-    # "RUF024", # Bad dict construction
-    # "RUF026", # Defaultdict misuse
-    # "RUF027", # Something looks like an f-string, but is missing the `f`
-    # "RUF028", # Invalid supression comments
-    # "RUF043", # pytest issues
+     "RUF006", # asyncio tasks can be GC'd and killed
+     "RUF013", # Explicit Optional
+     "RUF015", # Turning something into a list to get the first element is slow
+     "RUF016", # Invalid index type
+     "RUF017", # Bizarre list merge
+     "RUF018", "RUF030", "RUF040",  # Assert issues
+     "RUF019", # Bizarre dict element access
+     "RUF021", # and/or bracketing
+     "RUF024", # Bad dict construction
+     "RUF026", # Defaultdict misuse
+     "RUF027", # Something looks like an f-string, but is missing the `f`
+     "RUF028", # Invalid supression comments
+     "RUF043", # pytest issues
+    "E261",
 ]
 
 ignore = [
@@ -57,7 +58,7 @@ ignore = [
     # Ignoring these more permanently
     "S311", # We don't need a CSPRNG anywhere, right?
     "SIM300", "SIM108", "SIM105", # Allow yoda conditions, choosing not to use ternary operator, and explicit `catch: pass`
-    "E501", # Allow long lines
+#    "E501", # Allow long lines
     "PLW2901", # Allow reassigning in loops
     "PLW0127", # Allow self-assingment to indicate type
     "PLW0603", # We seem to be choosing to use globals

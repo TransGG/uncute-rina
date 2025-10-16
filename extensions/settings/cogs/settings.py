@@ -48,7 +48,7 @@ def get_attribute_autocomplete_mode(
 
 
 @is_admin_check
-async def _setting_autocomplete(
+async def _setting_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
@@ -79,7 +79,7 @@ async def _setting_autocomplete(
 
 
 @is_admin_check
-async def _mode_autocomplete(
+async def _mode_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
@@ -188,7 +188,7 @@ def _update_results_from_id(
 
 
 @is_admin_check
-async def _value_autocomplete(
+async def _value_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     if itx.guild is None:
@@ -403,7 +403,7 @@ async def _handle_settings_attribute(
                 f"Expected the database value to be of type `int` but it was "
                 f"{type(database_value)} instead: {database_value}"
             )
-            has_current_server, parent_server_id = await _has_guild_as_parent(
+            has_current_server, parent_server_id = _has_guild_as_parent(
                 itx.client, itx.guild, database_value)
             if has_current_server:
                 # parent_server should not be None if has_current_server
@@ -533,7 +533,7 @@ async def _reload_or_store_server_settings(
             await ServerSettings.fetch(client, guild.id)
 
 
-async def _has_guild_as_parent(
+def _has_guild_as_parent(
         client: Bot, guild: discord.Guild, parent_server_id: int
 ) -> tuple[bool, int | None]:
     """

@@ -38,7 +38,7 @@ def _get_enabled_tag_ids(itx) -> set[str]:
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
+async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
     """Autocomplete for /tag command."""
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
@@ -52,8 +52,7 @@ async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
-    """Autocomplete for /tag-manage command."""
+async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
     if (itx.namespace.mode == TagMode.delete.value
             and itx.guild is not None):
         tag_objects = get_tags(itx.guild)

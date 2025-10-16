@@ -104,7 +104,7 @@ def get_token_data() -> tuple[
     tokens = {}
     missing_tokens: list[str] = []
     try:
-        with open("api_keys.json", "r") as f:
+        with open("api_keys.json", "r", encoding="utf-8") as f:
             api_keys = json.loads(f.read())
         bot_token: str = api_keys['Discord']
         for key in ApiTokenDict.__annotations__:
@@ -153,7 +153,7 @@ def get_version() -> str:
     file_version = BOT_VERSION.split(".")
     try:
         os.makedirs("outputs", exist_ok=True)
-        with open("outputs/version.txt", "r") as f:
+        with open("outputs/version.txt", "r", encoding="utf-8") as f:
             rina_version = f.read().split(".")
     except FileNotFoundError:
         rina_version = ["0"] * len(file_version)
@@ -166,7 +166,7 @@ def get_version() -> str:
     else:
         rina_version[-1] = str(int(rina_version[-1]) + 1)
     rina_version = '.'.join(rina_version)
-    with open("outputs/version.txt", "w") as f:
+    with open("outputs/version.txt", "w", encoding="utf-8") as f:
         f.write(f"{rina_version}")
     load_progress.complete("Loaded version", newline=False)
     return rina_version
