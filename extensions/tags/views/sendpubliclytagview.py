@@ -15,9 +15,9 @@ class SendPubliclyTagView(discord.ui.View):
             self,
             tag: CustomTag,
             report_to_staff: bool,
-            timeout: int | None = None,
-            log_msg=None,
-    ):
+            timeout: float | None = None,
+            log_msg: str = None,
+    ) -> None:
         super().__init__()
 
         self.value = None
@@ -29,8 +29,10 @@ class SendPubliclyTagView(discord.ui.View):
     @discord.ui.button(label='Send publicly',
                        style=discord.ButtonStyle.primary)
     async def send_publicly(
-            self, itx: discord.Interaction[Bot], _: discord.ui.Button
-    ):
+            self,
+            itx: discord.Interaction[Bot],
+            _: discord.ui.Button,
+    ) -> None:
         itx.followup: discord.Webhook  # type: ignore
 
         if self.tag.report_to_staff:
@@ -100,6 +102,6 @@ class SendPubliclyTagView(discord.ui.View):
                     await staff_message_reports_channel.send(self.log_msg)
         self.stop()
 
-    async def on_timeout(self):
+    async def on_timeout(self) -> None:
         self.send_publicly.disabled = True
         self.send_publicly.style = discord.ButtonStyle.gray

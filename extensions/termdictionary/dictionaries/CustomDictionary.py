@@ -1,5 +1,6 @@
 from typing import override
 
+import aiohttp
 import discord
 
 from resources.checks.permissions import is_staff
@@ -11,9 +12,8 @@ from extensions.termdictionary.utils import simplify
 
 
 class CustomDictionary(DictionaryBase):
-    def __init__(self, client):
-        super().__init__()
-        self.client = client
+    def __init__(self, client: aiohttp.ClientSession) -> None:
+        super().__init__(client)
         self._result_str: str | None = None
         self._long_line: bool = False
         self._character_overflow: bool = False

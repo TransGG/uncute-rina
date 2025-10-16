@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import matplotlib.pyplot as plt
 import pandas as pd  # for graphing member joins/leaves/verifications
 from motor.core import AgnosticDatabase
+import typing
 
 import discord
 import discord.app_commands as app_commands
@@ -14,7 +15,19 @@ from resources.checks import not_in_dms_check
 from resources.customs import Bot, GuildInteraction
 
 
-async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
+type JoinType = typing.Literal[
+    "joined",
+    "left unverified",
+    "left verified",
+    "verified"
+]
+
+
+async def _add_to_data(
+        member: discord.Member,
+        event_type: JoinType,
+        async_rina_db: AgnosticDatabase
+) -> None:
     collection = async_rina_db["data"]
     query = {"guild_id": member.guild.id}
     data = await collection.find_one(query)
@@ -41,15 +54,15 @@ async def _add_to_data(member, event_type, async_rina_db: AgnosticDatabase):
 
 
 class MemberData(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member) -> None:
         await _add_to_data(member, "joined", self.client.async_rina_db)
 
     @commands.Cog.listener()
-    async def on_member_remove(self, member):
+    async def on_member_remove(self, member: discord.Member) -> None:
         role = discord.utils.find(lambda r: r.name == 'Verified',
                                   member.guild.roles)
         if role in member.roles:
@@ -66,7 +79,11 @@ class MemberData(commands.Cog):
             )
 
     @commands.Cog.listener()
-    async def on_member_update(self, before, after):
+    async def on_member_update(
+            self,
+            before: discord.Member,
+            after: discord.Member
+    ) -> None:
         role = discord.utils.find(lambda r: r.name == 'Verified',
                                   before.guild.roles)
         if role not in before.roles and role in after.roles:
@@ -97,7 +114,7 @@ class MemberData(commands.Cog):
             upper_bound_str: str | None = None,
             doubles: bool = False,
             public: bool = False
-    ):
+    ) -> None:
         # todo: split function into multiple subfunctions.
         try:
             lower_bound = float(lower_bound_str)

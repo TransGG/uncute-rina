@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ^ for scheduling Reminders
 from datetime import datetime
 # ^ for startup and crash logging, and Reminders
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, Any
 import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
@@ -45,8 +45,9 @@ class Bot(commands.Bot):
             version: str,
             rina_db: PyMongoDatabase,
             async_rina_db: motorcore.AgnosticDatabase,
-            *args, **kwargs
-    ):
+            *args: Any,  # noqa: ANN401
+            **kwargs: Any,  # noqa: ANN401
+    ) -> None:
         self.api_tokens: ApiTokenDict = api_tokens
         self.version: str = version
         self.rina_db: PyMongoDatabase = rina_db

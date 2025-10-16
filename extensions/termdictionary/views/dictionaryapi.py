@@ -18,8 +18,8 @@ class DictionaryapiPageview(PageView):
     def __init__(
             self,
             pages: list[DetailedTermPage],
-            timeout=90
-    ):
+            timeout: float = 90
+    ) -> None:
         super().__init__(
             starting_page=0,
             max_page_index=len(pages) - 1,
@@ -29,7 +29,7 @@ class DictionaryapiPageview(PageView):
         self.pages = pages
         self._children.append(self._children.pop(1))
 
-    def delete_extra_buttons(self):
+    def delete_extra_buttons(self) -> None:
         self._children.pop(3)  # remove last button: send one
         self._children.pop(0)  # remove first button: public
 
@@ -51,7 +51,7 @@ class DictionaryapiPageview(PageView):
             self,
             itx: discord.Interaction[Bot],
             _button: discord.ui.Button
-    ):
+    ) -> None:
         embed = term_page_to_embed(self.pages[self.page])
         await itx.followup.send(
             f"{itx.user.mention} shared a dictionary entry!",
@@ -68,7 +68,7 @@ class DictionaryapiPageview(PageView):
             self,
             itx: discord.Interaction[Bot],
             _button: discord.ui.Button
-    ):
+    ) -> None:
         term_lines = get_term_lines(self.pages[self.page])
 
         max_page_index = len(term_lines) - 1

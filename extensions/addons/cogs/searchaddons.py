@@ -346,7 +346,7 @@ def _format_wolfram_error_output(data: WolframQueryResult) -> str:
 
 
 class SearchAddons(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(
@@ -357,7 +357,11 @@ class SearchAddons(commands.Cog):
         country_id="What country do you want to know more about? "
                    "(GB, US, AU, etc.)"
     )
-    async def equaldex(self, itx: discord.Interaction[Bot], country_id: str):
+    async def equaldex(
+            self,
+            itx: discord.Interaction[Bot],
+            country_id: str,
+    ) -> None:
         illegal_characters = ""
         for char in country_id.lower():
             if char not in "abcdefghijklmnopqrstuvwxyz":
@@ -482,7 +486,7 @@ class SearchAddons(commands.Cog):
 
     @app_commands.command(name="math",
                           description="Ask Wolfram Alpha a question")
-    async def math(self, itx: discord.Interaction[Bot], query: str):
+    async def math(self, itx: discord.Interaction[Bot], query: str) -> None:
         # todo: shorten function / split, and re-investigate the API
         #  docs to see if I can parse stuff better
         await itx.response.defer(ephemeral=True)

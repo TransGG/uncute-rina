@@ -18,7 +18,7 @@ class ChangeChannel(commands.Cog):
             self,
             itx: GuildInteraction[Bot],
             destination: discord.TextChannel
-    ):
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
 

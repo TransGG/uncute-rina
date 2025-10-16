@@ -121,7 +121,7 @@ def parse_attribute(
     if len(attribute_type) == 0:
         raise ParseError(f"No type found for attribute key {attribute_key}")
 
-    def is_attribute_type(val: type):
+    def is_attribute_type(val: type) -> bool:
         f = any(
             val is i
             for i in attribute_type
@@ -216,7 +216,7 @@ def parse_attribute(
 
 
 class ParseError(ValueError):
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.message = message
 
 
@@ -239,7 +239,7 @@ async def unset_query(
         guild_id: int,
         setting: SettingType,
         key: str,
-):
+) -> tuple[bool, bool]:
     return await update_query(
         async_rina_db,
         guild_id,
@@ -258,7 +258,7 @@ async def update_query(
         key: str,
         value: object,
         unset: bool = False,
-):
+) -> tuple[bool, bool]:
     collection = async_rina_db[ServerSettings.DATABASE_KEY]
     query = {"guild_id": guild_id}
     action = "$unset" if unset else "$set"
@@ -327,7 +327,7 @@ class ServerSettings:
             async_rina_db: motor.core.AgnosticDatabase,
             guild_id: int,
             parameter: str,
-            value: Any
+            value: Any,  # noqa: ANN401
     ) -> tuple[bool, bool]:
         if "." in parameter or parameter.startswith("$"):
             raise ValueError(
@@ -610,7 +610,7 @@ class ServerSettings:
             guild: discord.Guild,
             enabled_modules: EnabledModules,
             attributes: ServerAttributes
-    ):
+    ) -> None:
         self.guild = guild
         self.enabled_modules = enabled_modules
         self.attributes = attributes

@@ -29,7 +29,7 @@ def is_in_dms(guild: discord.Guild | int | None) -> bool:
 
 
 def module_enabled_check(
-        module_key
+        module_key: str
 ) -> Callable[[CommandCallback[Any, ..., Any]],
               CommandCallback[GroupT, P, T]]:
     """
@@ -39,7 +39,7 @@ def module_enabled_check(
     :return: A decorator that checks if the given module is enabled in
      the interaction's guild.
     """
-    def decor_check(itx: discord.Interaction[Bot]):
+    def decor_check(itx: discord.Interaction[Bot]) -> None:
         """
         A decorator that checks if the interaction's guild has a
         module enabled.
@@ -88,7 +88,12 @@ def not_in_dms_check(
     return func
 
 
-def module_not_disabled_check(module_key: str):
+def module_not_disabled_check(
+        module_key: str
+) -> Callable[
+        [CommandCallback[Any, ..., Any]],
+        CommandCallback[GroupT, P, T]
+]:
     """
     A check to check if a module is not disabled.
 

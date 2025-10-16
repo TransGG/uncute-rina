@@ -176,7 +176,10 @@ def _get_emoji_from_str(
         return emoji
 
 
-async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
+async def _unit_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str,
+) -> None:
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
@@ -193,7 +196,10 @@ async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):  # no
                 ][:25]
 
 
-async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
+async def _role_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str
+) -> None:
     """Autocomplete for /remove-role command."""
     if isinstance(itx.user, discord.User):
         return []
@@ -221,11 +227,11 @@ async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):  # no
 
 
 class OtherAddons(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
@@ -280,7 +286,7 @@ class OtherAddons(commands.Cog):
             value: float,
             to_unit: str,
             public: bool = False
-    ):
+    ) -> None:
         rates = conversion_rates.copy()
         if mode not in rates:
             await itx.response.send_message(
@@ -365,7 +371,7 @@ class OtherAddons(commands.Cog):
             upvote_emoji_str: str,
             downvote_emoji_str: str,
             neutral_emoji_str: str | None = None
-    ):
+    ) -> None:
         if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(
                 itx.guild, ModuleKeys.poll_reactions):
             # Server specifically disabled this feature.
@@ -498,7 +504,7 @@ class OtherAddons(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             command: str
-    ):
+    ) -> None:
         command = command.removeprefix("/").lower()
         try:
             for section in command.split(" "):
@@ -533,7 +539,11 @@ class OtherAddons(commands.Cog):
     @app_commands.describe(role_name="The name of the role to remove")
     @app_commands.autocomplete(role_name=_role_autocomplete)
     @module_enabled_check(ModuleKeys.remove_role_command)
-    async def remove_role(self, itx: discord.Interaction[Bot], role_name: str):
+    async def remove_role(
+            self,
+            itx: discord.Interaction[Bot],
+            role_name: str
+    ) -> None:
         if isinstance(itx.user, discord.User):
             # It shouldn't be a discord.User cause the app_command check
             #  prevents DMs. But to make the type checker happy, here you go.

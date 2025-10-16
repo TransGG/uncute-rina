@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 async def relaunch_ongoing_reminders(
         client: Bot,
-):
+) -> None:
     """
     Helper to start stored reminders after the bot restarts.
 
@@ -65,7 +65,7 @@ class ReminderObject:
             reminder: str,
             user_reminders: list[ReminderDict],
             continued: bool = False
-    ):
+    ) -> None:
         self.client = client
         self.creationtime = creationtime
         self.remindertime = remindertime
@@ -410,10 +410,11 @@ async def _parse_reminder_time(
 async def _create_reminder(
         itx: discord.Interaction[Bot],
         distance: datetime,
-        creation_time: datetime, reminder: str,
+        creation_time: datetime,
+        reminder: str,
         db_data: list[ReminderDict],
-        from_copy: bool = False
-):
+        from_copy: bool = False,
+) -> None:
     reminder_object = ReminderObject(
         itx.client,
         creation_time,
@@ -478,7 +479,7 @@ async def parse_and_create_reminder(
         itx: discord.Interaction[Bot],
         reminder_datetime: str,
         reminder: str,
-):
+) -> None:
     # Can't put this function reminders.utils because it calls
     #  _create_reminder, which creates a ReminderObject, so it would be
     #  better-fitting in this same file.

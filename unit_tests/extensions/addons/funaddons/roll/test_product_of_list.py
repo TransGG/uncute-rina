@@ -16,5 +16,5 @@ from extensions.addons.cogs.funaddons import _product_of_list
 ])
 def test_valid_cases(
         input_list: list[int | float], expected: int | float
-):
+) -> None:
     assert _product_of_list(input_list) == expected

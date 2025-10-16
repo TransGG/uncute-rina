@@ -4,7 +4,7 @@ from resources.customs import Bot
 
 
 class ConfirmPronounsView(discord.ui.View):
-    def __init__(self, timeout=None):
+    def __init__(self, timeout: float = None) -> None:
         super().__init__()
         # Use the value to track which button was pressed
         # todo: make self.value (pronouns: she/her, he/him, ...) an enum.
@@ -16,7 +16,7 @@ class ConfirmPronounsView(discord.ui.View):
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         self.value = "she/her"
         await itx.response.edit_message(
             content='Selected She/Her pronouns for compliment',
@@ -29,7 +29,7 @@ class ConfirmPronounsView(discord.ui.View):
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         self.value = "he/him"
         await itx.response.edit_message(
             content='Selected He/Him pronouns for the compliment',
@@ -42,7 +42,7 @@ class ConfirmPronounsView(discord.ui.View):
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         self.value = "they/them"
         await itx.response.edit_message(
             content='Selected They/Them pronouns for the compliment',
@@ -55,7 +55,7 @@ class ConfirmPronounsView(discord.ui.View):
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         self.value = "it/its"
         await itx.response.edit_message(
             content='Selected It/Its pronouns for the compliment',
@@ -68,7 +68,7 @@ class ConfirmPronounsView(discord.ui.View):
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         self.value = "unisex"
         await itx.response.edit_message(
             content='Selected Unisex/Unknown gender for the compliment',

@@ -19,13 +19,15 @@ from resources.utils.utils import log_to_guild
 
 from extensions.compliments.views import ConfirmPronounsView
 
+type ComplimentBlackboardType = typing.Literal["personal_list", "list"]
+
 
 async def _choose_and_send_compliment(
         itx: discord.Interaction[Bot],
         user: discord.User | discord.Member,
         compliment_type: str,
         async_rina_db: motor.core.AgnosticDatabase
-):
+) -> None:
     assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
     # todo: split function into multiple functions
     quotes = {
@@ -291,7 +293,11 @@ async def _rina_used_deflect_and_it_was_very_effective(
     )
 
 
-async def _add_to_blacklist(itx, db_location, string):
+async def _add_to_blacklist(
+        itx: discord.Interaction[Bot],
+        db_location: ComplimentBlackboardType,
+        string: str
+) -> list[str]:
     """
     Add a string to the command executor's blacklist.
     :param itx: The interaction with the user/executor, and itx.client.
@@ -316,7 +322,7 @@ async def _add_to_blacklist(itx, db_location, string):
 
 
 class Compliments(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @staticmethod
@@ -330,7 +336,7 @@ class Compliments(commands.Cog):
         )
 
     @commands.Cog.listener()  # Rina reflecting cuteness compliments
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot or self.client.user is None:
             return
 
@@ -407,7 +413,7 @@ class Compliments(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             user: discord.User
-    ):
+    ) -> None:
         if not isinstance(itx.channel, discord.abc.Messageable):
             await itx.response.send_message(
                 "Messages can't be sent in this channel!",
@@ -460,10 +466,10 @@ class Compliments(commands.Cog):
             location: int,
             mode: int,
             string: str | None = None
-    ):  # todo: split function into multiple smaller functions
+    ) -> None:  # todo: split function into multiple smaller functions
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
-        db_location: typing.Literal["personal_list", "list"]
+        db_location: ComplimentBlackboardType
         if location == 1:
             db_location = "personal_list"
         elif location == 2:
@@ -525,7 +531,7 @@ class Compliments(commands.Cog):
             collection = itx.client.async_rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search0: dict[
-                typing.Literal["personal_list", "list"],
+                ComplimentBlackboardType,
                 list[str]
             ] | None = await collection.find_one(query)
             if search0 is None:

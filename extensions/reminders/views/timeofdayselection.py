@@ -1,18 +1,23 @@
 import discord
 
+import typing
+
 from resources.views.generics import create_simple_button
 from resources.customs import Bot
 
 
 class TimeOfDaySelection(discord.ui.View):
-    def __init__(self, options: list[str], timeout=180):
+    def __init__(self, options: list[str], timeout: float = 180) -> None:
         super().__init__()
         self.value: str | None = None
         self.return_interaction: discord.Interaction[Bot] | None = None
         self.timeout = timeout
 
         for option in options:
-            def callback(itx, label=option):
+            def callback(
+                    itx: discord.Interaction[Bot],
+                    label: str = option
+            ) -> typing.Coroutine[typing.Any, typing.Any, None]:
                 """Helper to pass the button label to the callback"""
                 # Needs label= to create a copy of the `option` value,
                 #  otherwise the parameter is overwritten. (always
@@ -30,7 +35,7 @@ class TimeOfDaySelection(discord.ui.View):
             self,
             interaction: discord.Interaction[Bot],
             label: str,
-    ):
+    ) -> None:
         self.value = label
         self.return_interaction = interaction
         self.stop()

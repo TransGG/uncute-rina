@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import traceback  # for crash logging
+import typing  # for on_error type annotations .Any
 import sys
 # ^ to stop the program (and automatically restart, thanks to
 #  pterodactyl)
@@ -70,7 +71,7 @@ def _create_crash_embed(
         error_source: str,
         error_type: str,
         traceback_text: str
-):
+) -> None:
     error_caps = error_type.upper()
     time_prefix = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     debug_message = (f"\n\n\n\n[{time_prefix}]"
@@ -107,8 +108,8 @@ def _get_crash_logging_message(
         error_source: str,
         error_type: str,
         itx: discord.Interaction[Bot] | None,
-        traceback_text: str
-):
+        traceback_text: str,
+) -> None:
     log_channel: MessageableGuildChannel | None = None
     potential_guild = getattr(itx, "guild", None)
     if potential_guild is not None:
@@ -172,13 +173,13 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
 
 
 class CrashHandling(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
         client.on_error = self.on_error
         client.tree.on_error = self.on_app_command_error
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
         # kill switch, see cmd_addons for other on_message events.
@@ -208,7 +209,12 @@ class CrashHandling(commands.Cog):
         elif message.content.lower().startswith("i am a very cool kid"):
             await message.channel.send("Yes. Yes you are.")
 
-    async def on_error(self, event: str, *_args, **_kwargs):
+    async def on_error(
+            self,
+            event: str,
+            *_args: typing.Any,  # noqa: ANN401
+            **_kwargs: typing.Any,  # noqa: ANN401
+    ) -> None:
         global commanderror_cooldown
         if (
                 (datetime.now().astimezone()
@@ -286,7 +292,7 @@ class CrashHandling(commands.Cog):
     async def on_app_command_error(
             itx: discord.Interaction[Bot],
             error: app_commands.AppCommandError
-    ):
+    ) -> None:
         global appcommanderror_cooldown
 
         if type(error) is InsufficientPermissionsCheckFailure:

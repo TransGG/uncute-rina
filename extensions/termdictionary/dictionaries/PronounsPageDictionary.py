@@ -74,7 +74,10 @@ class PronounsPageDictionary(DictionaryBase):
         return search
 
     @staticmethod
-    def _get_expand_medium_search_string(result_str, search):
+    def _get_expand_medium_search_string(
+            result_str: str,
+            search: list[PronounsPageEntry],
+    ) -> str:
         result_str += "Here is a list to make your search more specific:\n"
         results: list[str] = []
         for item in search:
@@ -89,7 +92,10 @@ class PronounsPageDictionary(DictionaryBase):
         return result_str
 
     @staticmethod
-    def _get_expand_big_search_string(result_str, search):
+    def _get_expand_big_search_string(
+            result_str: str,
+            search: list[PronounsPageEntry],
+    ) -> str:
         result_str += "Here is a list to make your search more specific:\n"
         results: list[str] = []
         for item in search:
@@ -102,7 +108,8 @@ class PronounsPageDictionary(DictionaryBase):
 
     @staticmethod
     def _select_exact_items(
-            search: list[PronounsPageEntry], term
+            search: list[PronounsPageEntry],
+            term: str,
     ) -> list[PronounsPageEntry]:
         """
         Select search results whose key or synonyms exactly match the

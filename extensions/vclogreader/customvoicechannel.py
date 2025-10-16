@@ -7,7 +7,7 @@ class CustomVoiceChannel:
             channel_id: int,
             name: str,
             members: list[discord.Member]
-    ):
+    ) -> None:
         """
         Create a custom :py:type:`~discord.VoiceChannel` to reuse
         similar code.

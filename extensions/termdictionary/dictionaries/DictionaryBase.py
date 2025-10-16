@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 
 import aiohttp
 import discord
@@ -6,7 +6,7 @@ import discord
 from resources.customs import Bot
 
 
-class DictionaryBase:
+class DictionaryBase(metaclass=ABCMeta):
     """
     Base class for dictionary sources to handle making and sending responses.
 

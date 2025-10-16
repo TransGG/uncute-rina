@@ -17,7 +17,7 @@ from extensions.help.views.helppage import HelpPageView
 async def send_help_menu(
         itx: discord.Interaction[Bot],
         requested_page: int = FIRST_PAGE
-):
+) -> None:
     if requested_page not in help_pages:
         min_index, max_index = get_nearest_help_pages_from_page(
             requested_page, list(help_pages))
@@ -122,7 +122,7 @@ async def _help_page_autocomplete(  # noqa: RUF029
 
 
 class HelpCommand(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(name="help",
@@ -134,7 +134,7 @@ class HelpCommand(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             page: int = FIRST_PAGE
-    ):
+    ) -> None:
         await send_help_menu(itx, page)
 
     @app_commands.command(name="commands",
@@ -142,6 +142,9 @@ class HelpCommand(commands.Cog):
     @app_commands.describe(page="What page do you want to jump to? "
                                 "(useful if sharing commands)")
     @app_commands.autocomplete(page=_help_page_autocomplete)
-    async def commands(self, itx: discord.Interaction[Bot],
-                       page: int = FIRST_PAGE):
+    async def commands(
+            self,
+            itx: discord.Interaction[Bot],
+            page: int = FIRST_PAGE
+    ) -> None:
         await send_help_menu(itx, page)

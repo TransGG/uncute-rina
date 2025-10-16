@@ -286,13 +286,13 @@ async def _get_vc_activity(
 
 
 def _make_bar_graph(
-        df,
+        df: pd.DataFrame,
         lower_bound: float,
         sorted_usernames: list[int],
         upper_bound: float,
         voice_channel: discord.VoiceChannel | discord.StageChannel,
         timezone_offset: float | None
-):
+) -> None:
     df["Diff"] = df.Finish - df.Start
     color = "crimson"
     fig, ax = plt.subplots(figsize=(6, 3))
@@ -360,8 +360,20 @@ def _make_bar_graph(
 
 
 def _format_data_for_graph(
-        events, max_time, min_time, select_user_ids, voice_channel
-):
+        events: list[tuple[
+            float,
+            tuple[int, str],
+            tuple[int, str] | None,
+            tuple[int, str] | None
+        ]],  # todo: make type variable
+        max_time: float,
+        min_time: float,
+        select_user_ids: list[str],
+        voice_channel: discord.guild.GuildChannel
+                       | discord.Thread
+                       | discord.abc.PrivateChannel
+                       | CustomVoiceChannel,  # todo: narrow down type
+) -> tuple[VcLogGraphData, list[int]]:
     intermediate_data: dict[int, dict[
         typing.Literal["name", "join_time", "timestamps"],
         list[tuple[float, float]] | str | float | None
@@ -419,7 +431,7 @@ def _format_data_for_graph(
 
 
 class VCLogReader(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(name="getvcdata",
@@ -444,7 +456,7 @@ class VCLogReader(commands.Cog):
             timezone_offset: float = None,
             msg_log_limit: int = 5000,
             user_ids: str | None = None
-    ):
+    ) -> None:
         select_user_ids = []
         if user_ids is not None:
             select_user_ids: list[str] = user_ids.replace(" ", "").split(",")

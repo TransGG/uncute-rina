@@ -177,7 +177,7 @@ def _update_results_from_id(
         id_func: typing.Callable[[int], object | None],
         current: str,
         pred: typing.Callable[[object], bool] = lambda _: True
-):
+) -> None:
     if current.isdecimal():
         potential_obj = id_func(int(current))
         if potential_obj is not None and pred(potential_obj):
@@ -227,7 +227,7 @@ async def _value_autocomplete(  # noqa: RUF029
             return [app_commands.Choice(name="Invalid setting given.",
                                         value="-")]
 
-        results: set[app_commands.Choice] = set()
+        results: set[app_commands.Choice[str]] = set()
 
         if discord.User in attribute_type:
             # Note: discord.User is a subclass of discord.abc.Messageable,
@@ -298,7 +298,7 @@ async def _handle_settings_attribute(
         setting: str | None,
         modify_mode: ModeAutocomplete | None,
         value: str | None,
-):
+) -> None:
     """
     A helper function to handle setting server attributes.
 
@@ -565,7 +565,7 @@ async def _handle_settings_module(
         help_str: str,
         setting: str | None,
         modify_mode: ModeAutocomplete | None
-):
+) -> None:
     """
     A helper function to handle setting server attributes.
     :param itx: The interaction with which to respond to messages, and
@@ -685,7 +685,7 @@ async def _handle_settings_module(
 
 
 class SettingsCog(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     migrate_group = app_commands.Group(
@@ -701,7 +701,7 @@ class SettingsCog(commands.Cog):
     # async def database(
     #         self,
     #         itx: discord.Interaction[Bot]
-    # ):
+    # ) -> None:
     #     itx.response: discord.InteractionResponse[Bot]  # type: ignore
     #     await ServerSettings.migrate(itx.client.async_rina_db)
     #     await itx.response.send_message(
@@ -718,7 +718,7 @@ class SettingsCog(commands.Cog):
     )
     @is_admin_check
     @module_enabled_check(ModuleKeys.watchlist)
-    async def migrate_watchlist(self, itx: GuildInteraction[Bot]):
+    async def migrate_watchlist(self, itx: GuildInteraction[Bot]) -> None:
         watchlist_channel: discord.TextChannel | None = \
             itx.client.get_guild_attribute(
                 itx.guild, AttributeKeys.watchlist_channel)
@@ -741,7 +741,7 @@ class SettingsCog(commands.Cog):
     # )
     # @is_admin_check
     # @module_enabled_check(ModuleKeys.starboard)
-    # async def migrate_starboard(self, itx: GuildInteraction[Bot]):
+    # async def migrate_starboard(self, itx: GuildInteraction[Bot]) -> None:
     #     starboard_channel: discord.abc.Messageable | None = \
     #         itx.client.get_guild_attribute(
     #             itx.guild, AttributeKeys.starboard_channel)
@@ -777,8 +777,8 @@ class SettingsCog(commands.Cog):
             setting_type: str,
             setting: str | None = None,
             mode: str | None = None,
-            value: str | None = None
-    ):
+            value: str | None = None,
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
         cmd_help = itx.client.get_command_mention_with_args(

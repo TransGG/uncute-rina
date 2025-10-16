@@ -30,7 +30,7 @@ from extensions.tags.tags import (
 report_message_reminder = datetime.min
 
 
-def _get_enabled_tag_ids(itx) -> set[str]:
+def _get_enabled_tag_ids(itx: discord.Interaction[Bot]) -> set[str]:
     """Helper function to get all enabled tags in a guild."""
     default_tags = [i.lower() for i in tag_info_dict]
     custom_tags = [i for i in get_tags(itx.guild)]
@@ -38,7 +38,10 @@ def _get_enabled_tag_ids(itx) -> set[str]:
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
+async def _tag_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str,
+) -> list[discord.app_commands.Choice[str]]:
     """Autocomplete for /tag command."""
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
@@ -52,7 +55,10 @@ async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):  # noq
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):  # noqa: RUF029, E501
+async def _tag_name_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str,
+) -> list[discord.app_commands.Choice[str]]:
     if (itx.namespace.mode == TagMode.delete.value
             and itx.guild is not None):
         tag_objects = get_tags(itx.guild)
@@ -100,11 +106,11 @@ def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
 
 
 class TagFunctions(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         global report_message_reminder
         if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
             return
@@ -147,7 +153,7 @@ class TagFunctions(commands.Cog):
             tag: str,
             public: bool = True,
             anonymous: bool = True,
-    ):
+    ) -> None:
         if (
                 not isinstance(itx.channel, discord.abc.Messageable)
                 and public
@@ -208,7 +214,7 @@ class TagFunctions(commands.Cog):
             itx: GuildInteraction[Bot],
             mode: str,
             tag_name: str,
-    ):
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if mode == TagMode.help.value:
             await send_help_menu(itx, 901)
@@ -256,7 +262,10 @@ class TagFunctions(commands.Cog):
                 f"'{mode}' is not a valid mode.", ephemeral=True)
 
     @staticmethod
-    def _parse_tag_information(create_tag_modal, itx):
+    def _parse_tag_information(
+            create_tag_modal: CreateTagModal,
+            itx: GuildInteraction[Bot]
+    ) -> None:
         title = create_tag_modal.embed_title.value
         description = create_tag_modal.description.value
         description = replace_string_command_mentions(

@@ -6,7 +6,7 @@ from resources.customs import Bot
 
 
 class TodoList(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(name="todo", description="Add or remove a to-do!")
@@ -26,8 +26,8 @@ class TodoList(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             mode: int,
-            todo: str = None
-    ):
+            todo: str = None,
+    ) -> None:
         # todo: use Enum for mode
         if mode == 1:  # Add item to to-do list
             if todo is None:

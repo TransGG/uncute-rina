@@ -8,11 +8,11 @@ from extensions.settings.objects import AttributeKeys, ModuleKeys
 
 
 class AEGISPingReactionsAddon(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.aegis_ping_reactions):
             return

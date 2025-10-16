@@ -232,8 +232,8 @@ def parse_starboard_message(
 async def add_to_local_starboard(
         async_rina_db: AgnosticDatabase,
         starboard_msg: GuildMessage,
-        original_msg: GuildMessage
-):
+        original_msg: GuildMessage,
+) -> None:
     """
     Add a starboard message to the database and local cache.
 

@@ -110,8 +110,12 @@ async def _create_uncool_watchlist_thread(
 
 
 async def _update_uncool_watchlist_embed(
-        jump_url: str, reported_message_info,
-        msg, reason, user):
+        jump_url: str,
+        reported_message_info: str,
+        msg: discord.Message,
+        reason: str,
+        user: discord.Member | discord.User,
+) -> None:
     # edit the uncool embed to make it cool: Show reason, link to
     #  report message (if provided), link to plaintext
     embed = discord.Embed(
@@ -136,8 +140,8 @@ async def _add_to_watchlist(
         user: discord.Member | discord.User,
         reason: str = "",
         message_id_str: str | None = None,
-        warning=""
-):
+        warning: str = "",
+) -> None:
     if not is_staff(itx, itx.user):
         await itx.response.send_message(
             "You don't have the right permissions to do this.",
@@ -362,7 +366,7 @@ async def _add_to_watchlist(
 async def watchlist_ctx_user(
         itx: GuildInteraction[Bot],
         user: discord.User,
-):
+) -> None:
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
         title="Add user to watchlist",
@@ -378,8 +382,8 @@ async def watchlist_ctx_user(
 @module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_message(
         itx: GuildInteraction[Bot],
-        message: discord.Message
-):
+        message: discord.Message,
+) -> None:
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
         title="Add user to watchlist using message",
@@ -391,7 +395,7 @@ async def watchlist_ctx_message(
 
 
 class WatchList(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
         self.client.tree.add_command(watchlist_ctx_user)
         self.client.tree.add_command(watchlist_ctx_message)
@@ -409,7 +413,7 @@ class WatchList(commands.Cog):
             user: discord.User | discord.Member,
             reason: str = "",
             message_id: str | None = None
-    ):
+    ) -> None:
         try:
             user = await (app_commands.transformers
                           .MemberTransformer()
@@ -435,7 +439,7 @@ class WatchList(commands.Cog):
             self,
             itx: GuildInteraction[Bot],
             user: discord.User
-    ):
+    ) -> None:
         if not is_staff(itx, itx.user):
             await itx.response.send_message(
                 "You don't have the right permissions to do this.",
@@ -470,7 +474,7 @@ class WatchList(commands.Cog):
             )
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.watchlist):
             return
@@ -555,7 +559,7 @@ class WatchList(commands.Cog):
             await message.forward(thread)
 
     @commands.Cog.listener()
-    async def on_raw_thread_delete(self, event: RawThreadDeleteEvent):
+    async def on_raw_thread_delete(self, event: RawThreadDeleteEvent) -> None:
         try:
             user_id = get_user_id_from_watchlist(
                 event.guild_id, event.thread_id)

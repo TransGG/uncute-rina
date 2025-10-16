@@ -9,7 +9,7 @@ class ProgressBar:
             complete_char: str = '#',
             begin_char: str = '+',
             empty_char: str = ' '
-    ):
+    ) -> None:
         self._max_completes = max_completes
         self._completions = 0
         self._complete_char = complete_char
@@ -20,7 +20,7 @@ class ProgressBar:
         self._just_began = False
         self._previous_message_length = 0
 
-    def _get_progess_bar(self, *, busy) -> str:
+    def _get_progress_bar(self, *, busy: bool) -> str:
         """
         A helper function to construct a progress bar based on
         current progress.
@@ -44,7 +44,7 @@ class ProgressBar:
         out += "]: "
         return out
 
-    def _get_line_clear_padding(self, string) -> str:
+    def _get_line_clear_padding(self, string: str) -> str:
         """
         A helper function to get the amount of spaces necessary to
         overwrite the previous 'begin' message.
@@ -57,7 +57,7 @@ class ProgressBar:
         length = max(self._previous_message_length - length, 0)
         return " " * length
 
-    def begin(self, text, *, newline=False) -> None:
+    def begin(self, text: str, *, newline: bool = False) -> None:
         """
         Print a debug log, incrementing the progress bar with
         the :py:attr:`_begin_char`.
@@ -71,7 +71,7 @@ class ProgressBar:
         if self._just_began:
             # to prevent 2x begin_char in a row: "[#++ ]:"
             self._completions += 1
-        progress_bar = self._get_progess_bar(busy=True)
+        progress_bar = self._get_progress_bar(busy=True)
         padding = self._get_line_clear_padding(text)
         debug(
             progress_bar + text + padding,
@@ -81,7 +81,7 @@ class ProgressBar:
         self._previous_message_length = len(text) if not newline else 0
         self._just_began = True
 
-    def complete(self, text, *, newline=True):
+    def complete(self, text: str, *, newline: bool = True) -> None:
         """
         Print a debug log, incrementing the progress bar with
         the :py:attr:`_complete_char`.
@@ -93,7 +93,7 @@ class ProgressBar:
         """
         end = '\n' if newline else '\r'
         self._completions += 1
-        progress_bar = self._get_progess_bar(busy=False)
+        progress_bar = self._get_progress_bar(busy=False)
         padding = self._get_line_clear_padding(text)
         debug(progress_bar + text + padding, color=DebugColor.green, end=end)
         self._previous_message_length = len(text) if not newline else 0

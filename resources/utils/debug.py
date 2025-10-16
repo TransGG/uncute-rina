@@ -35,8 +35,8 @@ def debug(
         text: str = "",
         color: DebugColor = DebugColor.default,
         add_time: bool = True,
-        end="\n",
-        advanced=False
+        end: str = "\n",
+        advanced: bool = False
 ) -> None:
     """
     Log a message to the console.

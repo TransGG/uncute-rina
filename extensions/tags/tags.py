@@ -24,8 +24,8 @@ class CustomTag:
         title: str,
         description: str,
         color: tuple[int, int, int],
-        report_to_staff: bool
-    ):
+        report_to_staff: bool,
+    ) -> None:
         embed_color = discord.Color.from_rgb(color[0], color[1], color[2])
         embed = discord.Embed(
             title=title,
@@ -247,7 +247,10 @@ async def send_enabling_embeds_info(
 # endregion Tags
 
 
-async def _send_tag_log_message(itx, tag_name) -> None:
+async def _send_tag_log_message(
+        itx: discord.Interaction[Bot],
+        tag_name: str
+) -> None:
     cmd_tag = itx.client.get_command_mention_with_args(
         "tag", tag=tag_name)
     log_msg = f"{itx.user.name} ({itx.user.id}) used {cmd_tag} anonymously"

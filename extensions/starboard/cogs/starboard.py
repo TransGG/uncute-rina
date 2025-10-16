@@ -107,7 +107,7 @@ async def _send_starboard_message(
         message: GuildMessage,
         starboard_channel: MessageableGuildChannel,
         reaction: discord.Reaction
-):
+) -> None:
     embed = discord.Embed(
         color=discord.Colour.from_rgb(r=255, g=172, b=51),
         title='',
@@ -493,7 +493,7 @@ async def _handle_starboard_create_or_update(
         channel_blacklist: list[MessageableGuildChannel],
         star_minimum: int,
         downvote_init_value: int,
-):
+) -> None:
     # fetched from payload.guild_id.channel_id.message_id, so guild_id
     # must've had a value
     if reaction.me:
@@ -557,13 +557,13 @@ async def fetch_message_from_channel(
 
 
 class Starboard(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client: Bot = client
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(
             self, payload: discord.RawReactionActionEvent
-    ):
+    ) -> None:
         if payload.guild_id is None:
             return
         if payload.member is None:
@@ -696,7 +696,7 @@ class Starboard(commands.Cog):
     async def on_raw_reaction_remove(
             self,
             payload: discord.RawReactionActionEvent
-    ):
+    ) -> None:
         if payload.guild_id is None:
             return
         if not self.client.is_module_enabled(payload.guild_id,
@@ -758,7 +758,7 @@ class Starboard(commands.Cog):
     async def on_raw_message_delete(
             self,
             message_payload: discord.RawMessageDeleteEvent
-    ):
+    ) -> None:
         # can raise discord.NotFound and discord.Forbidden.
 
         if not self.client.is_module_enabled(message_payload.guild_id,

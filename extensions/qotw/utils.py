@@ -99,7 +99,7 @@ def _create_main_embed(
         copyable_version: discord.Message,
         description: str,
         user: discord.User | discord.Member,
-):
+) -> None:
     """
     Create an embed for a thread. It has a description and hyperlink to the
      first message in the thread.
@@ -187,7 +187,7 @@ async def ping_open_threads(
             bool
         ],
         ping_message: str
-):
+) -> None:
     """
     Helper to send a message to all threads Rina created in a channel.
 

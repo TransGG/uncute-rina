@@ -15,7 +15,7 @@ class CustomVcStaffEditorModal(
             vc_hub: discord.VoiceChannel,
             vc_category: discord.CategoryChannel,
             vctable_prefix: str,
-    ):
+    ) -> None:
         super().__init__()
         self.vc_hub = vc_hub
         self.vc_category = vc_category
@@ -44,7 +44,7 @@ class CustomVcStaffEditorModal(
     async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
             self,
             itx: discord.Interaction[Bot]
-    ):
+    ) -> None:
         if itx.guild is None:
             await itx.response.send_message(
                 "Your interaction was not connected to a server, so I also "

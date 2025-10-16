@@ -1,4 +1,4 @@
-def encode_field(field_name: str):
+def encode_field(field_name: str) -> str:
     """Replace disallowed MongoDB characters with allowed ones."""
     field_name = (field_name
                   .replace("%", "%0")
@@ -7,7 +7,7 @@ def encode_field(field_name: str):
     return field_name
 
 
-def decode_field(field_name: str):
+def decode_field(field_name: str) -> str:
     """Revert replacement of disallowed MongoDB characters."""
     field_name = (field_name
                   .replace("%1", ".")

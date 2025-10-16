@@ -28,7 +28,7 @@ def get_original_message(message: str) -> str:
     return message
 
 
-def test_begin(caplog):
+def test_begin(caplog: pytest.LogCaptureFixture) -> None:
     # Arrange
     progressbar = ProgressBar(4)
 
@@ -52,7 +52,9 @@ def test_begin(caplog):
     assert "[+   ]: a b c" == message
 
 
-def test_complete(caplog):
+def test_complete(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(5)
 
@@ -75,7 +77,9 @@ def test_complete(caplog):
     assert "[#    ]: b c d" == message
 
 
-def test_begin_newline(caplog):
+def test_begin_newline(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(4)
 
@@ -98,7 +102,9 @@ def test_begin_newline(caplog):
     assert "[+   ]: a b c" == message
 
 
-def test_complete_no_newline(caplog):
+def test_complete_no_newline(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(5)
 
@@ -122,7 +128,9 @@ def test_complete_no_newline(caplog):
     assert "[#    ]: b c d" == message
 
 
-def test_complete_complete(caplog):
+def test_complete_complete(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(5)
     progressbar.complete("")
@@ -147,7 +155,9 @@ def test_complete_complete(caplog):
 
 
 # noinspection DuplicatedCode
-def test_complete_begin(caplog):
+def test_complete_begin(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(5)
     progressbar.complete("")
@@ -173,7 +183,9 @@ def test_complete_begin(caplog):
 
 
 # noinspection DuplicatedCode
-def test_begin_begin(caplog):
+def test_begin_begin(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(5)
     progressbar.begin("")
@@ -198,7 +210,9 @@ def test_begin_begin(caplog):
     assert "[#+   ]: " == message
 
 
-def test_begin_complete(caplog):
+def test_begin_complete(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(5)
     progressbar.begin("")
@@ -222,7 +236,9 @@ def test_begin_complete(caplog):
     assert "[#    ]: " == message
 
 
-def test_padding_length(caplog):
+def test_padding_length(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(9)
     progressbar.begin("qwerty" * 3)
@@ -239,7 +255,9 @@ def test_padding_length(caplog):
     assert expected_output == message
 
 
-def test_short_bar_complete(caplog):
+def test_short_bar_complete(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(1)
 
@@ -253,7 +271,9 @@ def test_short_bar_complete(caplog):
     assert "[#]: " == message
 
 
-def test_short_bar_begin(caplog):
+def test_short_bar_begin(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(1)
 
@@ -267,7 +287,9 @@ def test_short_bar_begin(caplog):
     assert "[+]: " == message
 
 
-def test_short_bar_begin_complete(caplog):
+def test_short_bar_begin_complete(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(1)
     progressbar.begin("")
@@ -281,7 +303,9 @@ def test_short_bar_begin_complete(caplog):
     assert "[#]: " == message
 
 
-def test_progress_overflow(caplog):
+def test_progress_overflow(
+        caplog: pytest.LogCaptureFixture
+) -> None:
     # Arrange
     progressbar = ProgressBar(1)
     progressbar.complete("")

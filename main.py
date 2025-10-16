@@ -208,7 +208,7 @@ def create_client(
     return bot
 
 
-def start_app():
+def start_app() -> None:
     (token, tokens, rina_db, async_rina_db) = get_token_data()
     version = get_version()
     client = create_client(tokens, rina_db, async_rina_db, version)
@@ -217,7 +217,7 @@ def start_app():
     # this can probably be done better
     # region Client events
     @client.event
-    async def on_ready():
+    async def on_ready() -> None:
         text = (f"Logged in as {client.user}, in version {version} "
                 f"(in {datetime.now().astimezone() - program_start})")
         try:
@@ -274,7 +274,7 @@ def start_app():
             post_startup_progress.complete("Loaded starboard messages.")
 
     @client.event
-    async def setup_hook():
+    async def setup_hook() -> None:
         start_progress.complete("Started Bot")
         start_progress.begin("Caching bot's command names and their ids")
         client.commandList = await client.tree.fetch_commands()

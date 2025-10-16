@@ -4,7 +4,7 @@ from resources.customs import Bot
 
 
 class SingleLineModal(discord.ui.Modal):
-    def __init__(self, title: str, label: str, placeholder: str = ""):
+    def __init__(self, title: str, label: str, placeholder: str = "") -> None:
         super().__init__(title=title)
         self.question_text = discord.ui.TextInput(
             label=label,

@@ -20,7 +20,7 @@ async def _add_to_emoji_data(
         emoji: tuple[bool, str, str],
         async_rina_db: motorcore.AgnosticDatabase,
         location: EmojiSendSource,
-):
+) -> None:
     """
     Helper function to add emoji data to the mongo database when
      an emoji is sent/replied in chat.
@@ -59,7 +59,7 @@ async def _add_to_emoji_data(
 
 
 class EmojiStats(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
         # todo: Emojis are tracked by id, but not per guild. That means
         #  the leaderboard is the same in every guild. Perhaps somehow
@@ -74,7 +74,7 @@ class EmojiStats(commands.Cog):
     )
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
         emojis: list[tuple[bool, str, str]] = []
@@ -123,7 +123,7 @@ class EmojiStats(commands.Cog):
     async def on_raw_reaction_add(
             self,
             reaction: discord.RawReactionActionEvent
-    ):
+    ) -> None:
         if reaction.emoji.id is not None:
             emoji_data = (reaction.emoji.animated,
                           reaction.emoji.name,
@@ -141,7 +141,7 @@ class EmojiStats(commands.Cog):
             self,
             itx: GuildInteraction[Bot],
             emoji_name: str
-    ):
+    ) -> None:
         if ":" in emoji_name:
             emoji_name = emoji_name.strip().split(":")[2][:-1]
         emoji_id = emoji_name
@@ -222,7 +222,7 @@ class EmojiStats(commands.Cog):
             msg_max: int = sys.maxsize,
             react_max: int = sys.maxsize,
             animated: int = EmojiAnimateType.both.value,
-    ):
+    ) -> None:
         # todo: this command is so hard to follow. Maybe make a help
         #  command or something.
         await itx.response.defer(ephemeral=not public)
@@ -315,7 +315,7 @@ class EmojiStats(commands.Cog):
     @emojistats.command(name="getemojitop10",
                         description="Get top 10 most used emojis")
     @not_in_dms_check
-    async def get_emoji_top_10(self, itx: GuildInteraction[Bot]):
+    async def get_emoji_top_10(self, itx: GuildInteraction[Bot]) -> None:
         collection = itx.client.async_rina_db["emojistats"]
         output = ""
         for source_type in ["messageUsedCount", "reactionUsedCount"]:

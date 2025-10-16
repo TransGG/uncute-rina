@@ -16,7 +16,7 @@ class NameUsage(
         name="nameusage",
         description="Get data about which names are used in which server"
 ):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(
@@ -36,10 +36,10 @@ class NameUsage(
             self,
             itx: GuildInteraction[Bot],
             mode: int
-    ):
+    ) -> None:
         # todo: split this function into multiple smaller functions
         await itx.response.defer(ephemeral=True)
-        sections = {}
+        sections: dict[str, int] = {}
         for member in itx.guild.members:
             member_sections = []
             if mode == 1:  # most-used usernames
@@ -55,7 +55,7 @@ class NameUsage(
 
             pronoun_part1 = {"she", "he", "they", "it"}
             pronoun_part2 = {"her", "him", "them", "its"}
-            pronouns = []
+            pronouns: list[str] = []
             for pronoun_x in pronoun_part1:
                 for pronoun_y in pronoun_part2:
                     pronouns.append(pronoun_x + " " + pronoun_y)
@@ -81,7 +81,7 @@ class NameUsage(
 
                 names[index] = new_name
 
-            def add(member_name_part):
+            def add(member_name_part: str) -> None:
                 if member_name_part not in member_sections:
                     member_sections.append(member_name_part)
 
@@ -90,7 +90,7 @@ class NameUsage(
                     if section in member_sections:
                         pass
                     else:
-                        parts = []
+                        parts: list[str] = []
                         match = 1
                         while match:
                             match = re.search(
@@ -120,11 +120,12 @@ class NameUsage(
                 else:
                     sections[section] = 1
 
-        sections = sorted(sections.items(), key=lambda x: x[1], reverse=True)
+        section_tuples = sorted(
+            sections.items(), key=lambda x: x[1], reverse=True)
         pages = []
-        for i in range(int(len(sections) / 20 + 0.999) + 1):
+        for i in range(int(len(section_tuples) / 20 + 0.999) + 1):
             result_page = ""
-            for section in sections[0 + 20 * i:20 + 20 * i]:
+            for section in section_tuples[0 + 20 * i:20 + 20 * i]:
                 result_page += f"{section[1]} {section[0]}\n"
             if result_page == "":
                 result_page = "_"
@@ -159,8 +160,8 @@ class NameUsage(
             itx: GuildInteraction[Bot],
             name: str,
             search_type: int,
-            public: bool = False
-    ):
+            public: bool = False,
+    ) -> None:
         await itx.response.defer(ephemeral=not public)
         count = 0
         type_string = ""

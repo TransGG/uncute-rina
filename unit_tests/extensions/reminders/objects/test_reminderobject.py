@@ -13,14 +13,14 @@ from extensions.reminders.exceptions import (
 
 
 # region Helper functions
-def _get_current_time_formatted():
+def _get_current_time_formatted() -> datetime:
     start_time = datetime.now().astimezone(timezone.utc)
     # itx.created_at has no microseconds
     start_time = start_time.replace(microsecond=0)
     return start_time
 
 
-def _get_custom_time1():
+def _get_custom_time1() -> datetime:
     # Set a custom datetime. This is mainly done to make sure the tests
     #  for "%I" and "%H" are correctly different. These tests check
     #  whether hour = "4" vs "04" makes a difference. If hour >= 10,
@@ -38,7 +38,7 @@ def _get_custom_time1():
 
 
 # region Correct functionality
-def test_output_nochange_match():
+def test_output_nochange_match() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     itx = CustomObject(created_at=current_time)
@@ -53,7 +53,7 @@ def test_output_nochange_match():
     assert current_time == reminder_time
 
 
-def test_output_timezones_match():
+def test_output_timezones_match() -> None:
     # Arrange
     current_time = _get_current_time_formatted().replace(tzinfo=timezone.utc)
     itx = CustomObject(created_at=current_time)
@@ -69,7 +69,7 @@ def test_output_timezones_match():
     assert current_time == reminder_time
 
 
-def test_relative_offset():
+def test_relative_offset() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     itx = CustomObject(created_at=current_time)
@@ -86,7 +86,7 @@ def test_relative_offset():
     assert expected_time == reminder_time
 
 
-def test_offset_overflows():
+def test_offset_overflows() -> None:
     # Arrange
     current_time = datetime(
         year=2000, month=11, day=30, hour=23, minute=59, second=59,
@@ -109,7 +109,7 @@ def test_offset_overflows():
     assert expected_time == reminder_time
 
 
-def test_discord_timestamp():
+def test_discord_timestamp() -> None:
     # Arrange
     current_time = _get_custom_time1()
     new_time = current_time + timedelta(days=1)
@@ -128,7 +128,7 @@ def test_discord_timestamp():
     assert expected_time == reminder_time
 
 
-def test_iso_date_timeshort_timezone():
+def test_iso_date_timeshort_timezone() -> None:
     # Arrange
     current_time = _get_custom_time1()
     date_string1 = current_time.strftime('%Y-%m-%dT%I:%M:%S+0900')
@@ -154,7 +154,7 @@ def test_iso_date_timeshort_timezone():
            == reminder_time2.astimezone() + timedelta(hours=1)
 
 
-def test_iso_date_timelong_timezone():
+def test_iso_date_timelong_timezone() -> None:
     # Arrange
     current_time = _get_custom_time1()
     date_string1 = current_time.strftime('%Y-%m-%dT%H:%M:%S+0900')
@@ -178,7 +178,7 @@ def test_iso_date_timelong_timezone():
            == reminder_time2.astimezone() + timedelta(hours=1)
 
 
-def test_iso_date_matches_unix_timestamp():
+def test_iso_date_matches_unix_timestamp() -> None:
     # Arrange
     date_string1 = "2025-03-01T04:01:05+0000"
     date_string2 = "1740801665"
@@ -202,7 +202,7 @@ def test_iso_date_matches_unix_timestamp():
 
 
 # region Malformed input
-def test_exception_iso_time_timezone():
+def test_exception_iso_time_timezone() -> None:
     # Todo: make this a feature?
     # Arrange
     current_time = _get_custom_time1()
@@ -215,7 +215,7 @@ def test_exception_iso_time_timezone():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_american_format_ymd():
+def test_exception_american_format_ymd() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y/%m/%d %h:%M:%SPM')
@@ -227,7 +227,7 @@ def test_exception_american_format_ymd():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_american_format_dmy():
+def test_exception_american_format_dmy() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%d/%m/%Y %h:%M:%SPM')
@@ -239,7 +239,7 @@ def test_exception_american_format_dmy():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_american_format_with_t_ymd():
+def test_exception_american_format_with_t_ymd() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y/%m/%dT%h:%M:%SPM')
@@ -251,7 +251,7 @@ def test_exception_american_format_with_t_ymd():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_american_format_with_t_dmy():
+def test_exception_american_format_with_t_dmy() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%d/%m/%YT%h:%M:%SPM')
@@ -263,7 +263,7 @@ def test_exception_american_format_with_t_dmy():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_malformed_year():
+def test_malformed_year() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y')  # eg. 2025
@@ -275,7 +275,7 @@ def test_malformed_year():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_malformed_year_month():
+def test_malformed_year_month() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%M')  # eg. 2025-03
@@ -287,7 +287,7 @@ def test_malformed_year_month():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_iso_date_timeshort():  # no timezone
+def test_exception_iso_date_timeshort() -> None:  # no timezone
     # Arrange
     current_time = _get_custom_time1()
     datetime_string = current_time.strftime('%Y-%m-%dT%I:%M')
@@ -305,7 +305,7 @@ def test_exception_iso_date_timeshort():  # no timezone
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_iso_date_timelong():  # no timezone
+def test_exception_iso_date_timelong() -> None:  # no timezone
     # Arrange
     current_time = _get_custom_time1()
     datetime_string = current_time.strftime('%Y-%m-%dT%H:%M')
@@ -320,7 +320,7 @@ def test_exception_iso_date_timelong():  # no timezone
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_iso_date():
+def test_exception_iso_date() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%m-%d')  # eg. 2025-03-17
@@ -339,7 +339,7 @@ def test_exception_iso_date():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_12_hour_clock():
+def test_exception_12_hour_clock() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%m-%dT%h:%M:%SPM')
@@ -351,7 +351,7 @@ def test_exception_12_hour_clock():
         reminder_time, _, _ = asyncio.run(func)
 
 
-def test_exception_12_hour_clock_timezone():
+def test_exception_12_hour_clock_timezone() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%m-%dT%h:%M:%SPM%z')

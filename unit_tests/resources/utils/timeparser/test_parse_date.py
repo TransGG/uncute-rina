@@ -8,7 +8,7 @@ from resources.utils.timeparser import TimeParser
 
 
 # region Correct functionality
-def test_parse_simple():
+def test_parse_simple() -> None:
     # Arrange
     now = datetime.now()
 
@@ -20,7 +20,7 @@ def test_parse_simple():
     assert expected == output
 
 
-def test_parse_duplicates():
+def test_parse_duplicates() -> None:
     # Arrange
     now = datetime.now()
 
@@ -32,7 +32,7 @@ def test_parse_duplicates():
     assert expected == output
 
 
-def test_output_nochange_match():
+def test_output_nochange_match() -> None:
     # Arrange
     now = datetime.now()
 
@@ -43,7 +43,7 @@ def test_output_nochange_match():
     assert now == output
 
 
-def test_timezone():
+def test_timezone() -> None:
     # Arrange
     now = datetime.now(tzoffset("-", timedelta(seconds=60 * 60 * 9)))  # UTC+9
 

@@ -9,9 +9,9 @@ class GetTopPageView(PageView):
     def __init__(
             self,
             pages: list[str],
-            embed_title,
+            embed_title: str,
             timeout: float | None = None
-    ):
+    ) -> None:
         super().__init__(
             starting_page=0,
             max_page_index=int(len(pages) / 2) - 1,
@@ -37,8 +37,8 @@ class GetTopPageView(PageView):
     async def update_page(
             self,
             itx: discord.Interaction[Bot],
-            view: PageView
-    ):
+            view: PageView,
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         embed = self.make_page()
         await itx.response.edit_message(
@@ -54,7 +54,7 @@ class GetTopPageView(PageView):
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         send_one = GetNameModal(self.pages)
         await itx.response.send_modal(send_one)
         await send_one.wait()

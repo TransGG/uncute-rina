@@ -7,11 +7,11 @@ from resources.customs.bot import Bot
 
 
 class AnonReportsReactionsAddon(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.anonymous_report_reactions):
             return

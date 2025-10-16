@@ -3,6 +3,6 @@ from resources.customs.bot import Bot
 from extensions.reminders.cogs import RemindersCog, BumpReminder
 
 
-async def setup(client: Bot):
+async def setup(client: Bot) -> None:
     await client.add_cog(RemindersCog())
     await client.add_cog(BumpReminder(client))

@@ -8,7 +8,7 @@ from resources.utils.timeparser import (
 
 
 # region Correct functionality
-def test_parse_simple():
+def test_parse_simple() -> None:
     # Assign
     parse = TimeParser.parse_time_string("2d")
     expected = [(2, "d")]
@@ -17,7 +17,7 @@ def test_parse_simple():
     assert expected == parse
 
 
-def test_parse_longer():
+def test_parse_longer() -> None:
     # Assign
     parse = TimeParser.parse_time_string("2days21hours10minutes4seconds")
     expected = [(2.0, 'days'), (21.0, 'hours'),
@@ -27,7 +27,7 @@ def test_parse_longer():
     assert expected == parse
 
 
-def test_parse_decimal():
+def test_parse_decimal() -> None:
     # Assign
     parse = TimeParser.parse_time_string("4.3days")
     expected = [(4.3, 'days')]
@@ -36,7 +36,7 @@ def test_parse_decimal():
     assert expected == parse
 
 
-def test_parse_decimals_longer():
+def test_parse_decimals_longer() -> None:
     # Assign
     parse = TimeParser.parse_time_string(
         "2.123days"
@@ -51,7 +51,7 @@ def test_parse_decimals_longer():
     assert expected == parse
 
 
-def test_parse_overflow():
+def test_parse_overflow() -> None:
     # this function is not particularly interesting since it should
     #  just split them, but oh well.
     # Assign
@@ -66,22 +66,22 @@ def test_parse_overflow():
 
 
 # region Malformed input
-def test_parse_missing_quantity():
+def test_parse_missing_quantity() -> None:
     with pytest.raises(MissingQuantityException):
         TimeParser.parse_time_string("days")
 
 
-def test_parse_missing_quantity2():
+def test_parse_missing_quantity2() -> None:
     with pytest.raises(MissingQuantityException):
         TimeParser.parse_time_string("days30minutes")
 
 
-def test_parse_missing_unit():
+def test_parse_missing_unit() -> None:
     with pytest.raises(MissingUnitException):
         TimeParser.parse_time_string("20")
 
 
-def test_parse_missing_unit2():
+def test_parse_missing_unit2() -> None:
     with pytest.raises(MissingUnitException):
         TimeParser.parse_time_string("20days30")
 

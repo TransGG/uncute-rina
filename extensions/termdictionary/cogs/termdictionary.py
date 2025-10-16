@@ -34,7 +34,7 @@ def instantiate_sources(
 
 
 class TermDictionary(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         self._session = aiohttp.ClientSession()
         self._dictionary_sources: list[
             tuple[DictionarySources, type[DictionaryBase]]
@@ -48,7 +48,7 @@ class TermDictionary(commands.Cog):
              UrbanDictionary),
         ]
 
-    async def cog_unload(self):
+    async def cog_unload(self) -> None:
         await self._session.close()
 
     @app_commands.command(name="dictionary",
@@ -92,7 +92,7 @@ class TermDictionary(commands.Cog):
             term: str,
             public: bool = False,
             source: DictionarySources = DictionarySources.All,
-    ):
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         await itx.response.defer(ephemeral=not public)
 
@@ -142,7 +142,7 @@ class TermDictionary(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             current: str
-    ):
+    ) -> list[discord.app_commands.Choice[str]]:
         if current == '':
             return []
 
@@ -162,7 +162,7 @@ class TermDictionary(commands.Cog):
         sources = instantiate_sources(sources, self._session)
 
         # fetch autocompletion results
-        async def fetch_with_timeout(dictionary: DictionaryBase):
+        async def fetch_with_timeout(dictionary: DictionaryBase) -> set[str]:
             try:
                 return await asyncio.wait_for(
                     dictionary.get_autocomplete(current),
@@ -204,8 +204,8 @@ class TermDictionary(commands.Cog):
             itx: GuildInteraction[Bot],
             term: str,
             definition: str,
-            synonyms: str = ""
-    ):
+            synonyms: str = "",
+    ) -> None:
         # Test if this term is already defined in this dictionary.
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
@@ -272,7 +272,7 @@ class TermDictionary(commands.Cog):
             itx: GuildInteraction[Bot],
             term: str,
             definition: str
-    ):
+    ) -> None:
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -306,7 +306,7 @@ class TermDictionary(commands.Cog):
              "Egg, Hormone Replacement Therapy (HRT), etc",
     )
     @is_staff_check
-    async def undefine(self, itx: GuildInteraction[Bot], term: str):
+    async def undefine(self, itx: GuildInteraction[Bot], term: str) -> None:
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -350,8 +350,8 @@ class TermDictionary(commands.Cog):
             itx: GuildInteraction[Bot],
             term: str,
             mode: int,
-            synonym: str
-    ):
+            synonym: str,
+    ) -> None:
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)

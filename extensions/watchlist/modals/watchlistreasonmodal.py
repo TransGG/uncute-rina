@@ -31,8 +31,8 @@ class WatchlistReasonModal(discord.ui.Modal):
             title: str,
             reported_user: discord.Member | discord.User,
             message: discord.Message | None = None,
-            timeout=None
-    ):
+            timeout: float | None = None
+    ) -> None:
         super().__init__(title=title[:45], timeout=timeout)
         self.value = None
         # self.timeout = timeout
@@ -49,7 +49,7 @@ class WatchlistReasonModal(discord.ui.Modal):
         )
         self.add_item(self.reason_text)
 
-    async def on_submit(self, itx: discord.Interaction[Bot]):
+    async def on_submit(self, itx: discord.Interaction[Bot]) -> None:
         self.value = 1
         await self.add_to_watchlist_func(
             itx,

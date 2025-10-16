@@ -22,7 +22,7 @@ from extensions.customvcs.utils import is_vc_custom
 async def _reset_voice_channel_permissions_if_vctable(
         vctable_prefix: str,
         voice_channel: discord.VoiceChannel
-):
+) -> None:
     """
     Reset a voice channel's permission overrides if the 'owners' of the
     voice channel table are no longer present/connected to the channel.
@@ -91,7 +91,7 @@ async def _create_new_custom_vc(
         voice_channel: discord.VoiceChannel,
         customvc_category: discord.CategoryChannel,
         customvc_hub: discord.VoiceChannel,
-):
+) -> None:
     """
     A helper function to create a new custom voice channel
 
@@ -165,7 +165,7 @@ async def _handle_delete_custom_vc(
         client: Bot,
         member: discord.Member,
         voice_channel: discord.VoiceChannel
-):
+) -> None:
     """
     Handle the deletion of a custom voice channel (and error handling)
 
@@ -200,7 +200,7 @@ async def _handle_custom_voice_channel_leave_events(
         member: discord.Member,
         voice_channel: discord.VoiceChannel,
         vctable_prefix: str
-):
+) -> None:
     """
     A helper function to handle the custom voice channel events when
     a user leaves a channel. This includes: channel deletion,
@@ -222,7 +222,7 @@ async def _handle_custom_voice_channel_leave_events(
 
 
 class CustomVcs(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
@@ -231,7 +231,7 @@ class CustomVcs(commands.Cog):
             member: discord.Member,
             before: discord.VoiceState,
             after: discord.VoiceState
-    ):
+    ) -> None:
         if not self.client.is_module_enabled(
                 member.guild, ModuleKeys.custom_vcs):
             return
@@ -303,7 +303,7 @@ class CustomVcs(commands.Cog):
             self, itx: discord.Interaction[Bot],
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
-    ):
+    ) -> None:
         vc_hub: discord.VoiceChannel | None
         vc_category: discord.CategoryChannel | None
         vctable_prefix: str | None

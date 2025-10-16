@@ -17,7 +17,7 @@ emoji_color_options = {
 
 
 class DevRequest(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @app_commands.command(
@@ -29,8 +29,8 @@ class DevRequest(commands.Cog):
     async def developer_request(
             self,
             itx: GuildInteraction[Bot],
-            suggestion: app_commands.Range[str, 25, 1500]
-    ):
+            suggestion: app_commands.Range[str, 25, 1500],
+    ) -> None:
         developer_request_channel: discord.TextChannel | None = \
             itx.client.get_guild_attribute(
                 itx.guild,
@@ -76,7 +76,7 @@ class DevRequest(commands.Cog):
     async def ping_open_developer_requests(
             self,
             itx: GuildInteraction[Bot]
-    ):
+    ) -> None:
         await itx.response.send_message("`[+  ]`: Fetching cached threads.",
                                         ephemeral=True)
         watchlist_channel: discord.TextChannel | None
@@ -87,7 +87,10 @@ class DevRequest(commands.Cog):
                 ModuleKeys.dev_requests,
                 [AttributeKeys.developer_request_channel])
 
-        def is_dev_thread_open(_: discord.Thread, msg: discord.Message):
+        def is_dev_thread_open(
+                _: discord.Thread,
+                msg: discord.Message
+        ) -> bool:
             return msg.embeds[0].color in [
                 emoji_color_options["🟡"],
                 emoji_color_options["🔵"]
@@ -113,7 +116,7 @@ class DevRequest(commands.Cog):
     async def on_raw_reaction_add(
             self,
             payload: discord.RawReactionActionEvent
-    ):
+    ) -> None:
         if not self.client.is_module_enabled(
                 payload.guild_id, ModuleKeys.dev_requests):
             return

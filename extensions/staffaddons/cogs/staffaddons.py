@@ -21,7 +21,7 @@ from resources.utils.utils import log_to_guild
 
 
 class StaffAddons(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(name="say",
@@ -34,7 +34,7 @@ class StaffAddons(commands.Cog):
             itx: GuildInteraction[Bot],
             text: str,
             reply_to_interaction: bool = False
-    ):
+    ) -> None:
         if reply_to_interaction:
             await itx.response.send_message(
                 text,
@@ -88,7 +88,7 @@ class StaffAddons(commands.Cog):
     )
     @is_staff_check
     @module_enabled_check(ModuleKeys.selfies_channel_deletion)
-    async def delete_week_selfies(self, itx: GuildInteraction[Bot]):
+    async def delete_week_selfies(self, itx: GuildInteraction[Bot]) -> None:
         # This function largely copies the built-in channel.purge()
         #  function with a check, but is more fancy by offering a
         #  sort of progress update every 50-100 messages :D
@@ -191,7 +191,7 @@ class StaffAddons(commands.Cog):
             )
 
     @app_commands.command(name="version", description="Get bot version")
-    async def get_bot_version(self, itx: discord.Interaction[Bot]):
+    async def get_bot_version(self, itx: discord.Interaction[Bot]) -> None:
         # get most recently pushed bot version
         async with aiohttp.ClientSession() as client, client.get(
                 "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa: E501
@@ -219,7 +219,7 @@ class StaffAddons(commands.Cog):
 
     @app_commands.command(name="update", description="Update slash-commands")
     @is_staff_check
-    async def update_command_tree(self, itx: GuildInteraction[Bot]):
+    async def update_command_tree(self, itx: GuildInteraction[Bot]) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
         await itx.response.defer(ephemeral=True)

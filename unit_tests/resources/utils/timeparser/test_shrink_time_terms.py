@@ -4,7 +4,7 @@ from resources.utils.timeparser import TimeParser, TIMETERMS
 
 
 # region Correct functionality
-def test_parse_simple():
+def test_parse_simple() -> None:
     # Arrange
     terms = [
         (200, "days"),
@@ -21,7 +21,7 @@ def test_parse_simple():
     assert output == expected
 
 
-def test_parse_all():
+def test_parse_all() -> None:
     # Arrange
     expected_values = []
     terms = []
@@ -40,7 +40,7 @@ def test_parse_all():
 
 
 # region Malformed input
-def test_exception_invalid_time_term():
+def test_exception_invalid_time_term() -> None:
     # Arrange
     unknown_term = "NONEXISTENT TIME TERM"
     assert unknown_term not in [

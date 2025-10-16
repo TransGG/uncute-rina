@@ -1,6 +1,8 @@
 from __future__ import annotations
+
+import typing
 from typing import TYPE_CHECKING
-from datetime import timezone
+from datetime import timezone, datetime
 
 import discord
 
@@ -10,16 +12,26 @@ from resources.customs import Bot
 from extensions.reminders.utils import get_user_reminders
 
 if TYPE_CHECKING:
-    from extensions.reminders.objects import ReminderObject
+    from extensions.reminders.objects import ReminderObject, ReminderDict
 
 
 class CopyReminder(discord.ui.View):
     def __init__(
             self,
-            create_reminder_callback,  # todo: add type
+            create_reminder_callback: typing.Callable[
+                [
+                    discord.Interaction[Bot],  # itx
+                    datetime,  # distance
+                    datetime,  # creation_time
+                    str,  # reminder
+                    list[ReminderDict],  # db_data
+                    bool,  # from_copy
+                ],
+                typing.Coroutine[typing.Any, typing.Any, None],
+            ],
             reminder: ReminderObject,
-            timeout=300
-    ):
+            timeout: float = 300
+    ) -> None:
         super().__init__()
         self.timeout = timeout
         self.return_interaction: discord.Interaction[Bot] | None = None
@@ -36,7 +48,7 @@ class CopyReminder(discord.ui.View):
             self.button_callback
         ))
 
-    async def button_callback(self, itx: discord.Interaction[Bot]):
+    async def button_callback(self, itx: discord.Interaction[Bot]) -> None:
         # Check if user has too many reminders
         #  (max 50 allowed (internally chosen limit))
         user_reminders = await get_user_reminders(itx.client, itx.user)

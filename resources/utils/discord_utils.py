@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing
+
 import discord
 from typing import TYPE_CHECKING
 
@@ -8,7 +10,15 @@ if TYPE_CHECKING:
     from resources.customs import GuildInteraction, Bot
 
 
-async def get_or_fetch_channel(client: discord.Client, channel_id: int):
+async def get_or_fetch_channel(
+        client: discord.Client,
+        channel_id: int
+) -> (
+        discord.guild.GuildChannel
+        | discord.Thread
+        | discord.abc.PrivateChannel
+        | None
+):
     """
     Use client.get_channel or client.fetch_channel if None
 
@@ -31,7 +41,16 @@ async def get_or_fetch_channel(client: discord.Client, channel_id: int):
     return ch
 
 
-def send_channel_or_interaction(itx: discord.Interaction):
+def send_channel_or_interaction(
+        itx: discord.Interaction
+) -> typing.Callable[
+        [...],
+        typing.Coroutine[
+            typing.Any,
+            typing.Any,
+            discord.Message
+        ]
+]:
     itx.response: discord.InteractionResponse  # type: ignore
     itx.followup: discord.Webhook  # type: ignore
 
@@ -43,7 +62,10 @@ def send_channel_or_interaction(itx: discord.Interaction):
     ):
         return send_or_followup(itx)
 
-    async def try_send_message(*args, **kwargs):
+    async def try_send_message(
+            *args,    # noqa: ANN002
+            **kwargs,    # noqa: ANN003
+    ) -> discord.Message:
         assert itx.channel is not None
         assert isinstance(itx.channel, discord.abc.Messageable)
 
@@ -55,7 +77,16 @@ def send_channel_or_interaction(itx: discord.Interaction):
     return try_send_message
 
 
-def send_or_followup(itx: discord.Interaction):
+def send_or_followup(itx: discord.Interaction) -> typing.Callable[
+        [...],
+        typing.Coroutine[
+            typing.Any,
+            typing.Any,
+            discord.InteractionCallbackResponse[Bot]
+            | discord.WebhookMessage
+            | None
+        ]
+]:
     itx.response: discord.InteractionResponse  # type: ignore
     itx.followup: discord.Webhook  # type: ignore
     if itx.response.is_done():

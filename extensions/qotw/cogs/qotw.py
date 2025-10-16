@@ -17,7 +17,7 @@ from resources.customs import Bot, GuildInteraction
 
 
 class QOTW(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(
@@ -26,7 +26,7 @@ class QOTW(commands.Cog):
     )
     @app_commands.describe(question="What question would you like to add?")
     @module_enabled_check(ModuleKeys.qotw)
-    async def qotw(self, itx: GuildInteraction[Bot], question: str):
+    async def qotw(self, itx: GuildInteraction[Bot], question: str) -> None:
         # get channel of where this message has to be sent
         qotw_channel: discord.TextChannel | None
         qotw_channel = itx.client.get_guild_attribute(

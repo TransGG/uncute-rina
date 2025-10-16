@@ -72,7 +72,11 @@ async def _handle_awawa_reaction(
     return False
 
 
-async def _get_dice_roll_output(dice, faces, mod):
+def _get_dice_roll_output(
+        dice: int,
+        faces: int,
+        mod: int | float
+) -> tuple[str, bool]:
     """Helper to get the text output for a simple /roll."""
     rolls = []
     message_too_long = False
@@ -128,7 +132,7 @@ def _simplify_roll_output(rolls: list[int]) -> str:
 
 
 class FunAddons(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
         self.headpat_wait = 0
         self.rude_comments_opinion_cooldown = 0
@@ -206,7 +210,7 @@ class FunAddons(commands.Cog):
         return False
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
@@ -251,7 +255,7 @@ class FunAddons(commands.Cog):
             public: bool = False,
             mod: int | None = None,
             advanced: str | None = None,
-    ):
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
 
         if advanced is None:
