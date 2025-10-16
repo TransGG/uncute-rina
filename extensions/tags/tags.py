@@ -201,7 +201,7 @@ def create_report_info_tag(
         color=(255, 0, 0),
         report_to_staff=True,
     )
-    tag.embed.set_image(url="https://i.imgur.com/jxEcGvl.gif")
+    tag.embed.set_image(url="https://raw.githubusercontent.com/TransGG/assets/refs/heads/main/how-to-report.gif")
     return tag
 
 
