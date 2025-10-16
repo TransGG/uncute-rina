@@ -369,10 +369,10 @@ def _format_data_for_graph(
         max_time: float,
         min_time: float,
         select_user_ids: list[str],
-        voice_channel: discord.guild.GuildChannel
-                       | discord.Thread
-                       | discord.abc.PrivateChannel
-                       | CustomVoiceChannel,  # todo: narrow down type
+        voice_channel: (discord.guild.GuildChannel
+                        | discord.Thread
+                        | discord.abc.PrivateChannel
+                        | CustomVoiceChannel),  # todo: narrow down type
 ) -> tuple[VcLogGraphData, list[int]]:
     intermediate_data: dict[int, dict[
         typing.Literal["name", "join_time", "timestamps"],

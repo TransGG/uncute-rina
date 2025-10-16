@@ -71,8 +71,8 @@ def test_attribute_types(attribute: str) -> None:
     (AttributeKeys.developer_request_channel,
      ({discord.TextChannel}, False)),
     (AttributeKeys.log_channel, (
-            {*MessageableGuildChannel.__value__.__args__},
-            False,
+        {*MessageableGuildChannel.__value__.__args__},
+        False,
     )),
     (AttributeKeys.vctable_prefix, ({str}, False)),
     (AttributeKeys.admin_roles, ({discord.Role}, True)),  # set
