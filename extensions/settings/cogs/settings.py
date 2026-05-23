@@ -55,7 +55,7 @@ async def _setting_autocomplete(  # noqa: RUF029
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
-            app_commands.Choice(
+            app_commands.Choice[str](
                 name="For a list of attributes/modules, leave `mode` empty.",
                 value="-"
             ),
@@ -63,14 +63,14 @@ async def _setting_autocomplete(  # noqa: RUF029
     elif itx.namespace.type == TypeAutocomplete.module.value:
         module_keys = EnabledModules.__annotations__
         return [
-            app_commands.Choice(name=key, value=key)
+            app_commands.Choice[str](name=key, value=key)
             for key in module_keys
             if current.lower() in key.lower()
         ][:10]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
         attribute_id_keys = ServerAttributeIds.__annotations__
         return [
-            app_commands.Choice(name=key, value=key)
+            app_commands.Choice[str](name=key, value=key)
             for key in attribute_id_keys
             if current.lower() in key.lower()
         ][:10]
@@ -89,7 +89,7 @@ async def _mode_autocomplete(  # noqa: RUF029
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
-            app_commands.Choice(
+            app_commands.Choice[str](
                 name="For a list of attributes/modules, leave `mode` empty.",
                 value="-"
             ),
@@ -98,25 +98,25 @@ async def _mode_autocomplete(  # noqa: RUF029
         if itx.namespace.setting in EnabledModules.__annotations__:
             types += [ModeAutocomplete.enable, ModeAutocomplete.disable]
             return [
-                app_commands.Choice(name=key.value, value=key.value)
+                app_commands.Choice[str](name=key.value, value=key.value)
                 for key in types if current.lower() in key.value.lower()
             ]
-        return [app_commands.Choice(name="Invalid setting given.",
+        return [app_commands.Choice[str](name="Invalid setting given.",
                                     value=ModeAutocomplete.invalid.value)]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
         if itx.namespace.setting is None:
-            return [app_commands.Choice(
+            return [app_commands.Choice[str](
                 name="No setting given. Please give a value for the "
                      "'setting' parameter.",
                 value="-")]
         autocomplete_type = get_attribute_autocomplete_mode(
             itx.namespace.setting)
         if autocomplete_type is None:
-            return [app_commands.Choice(name="Invalid setting given.",
+            return [app_commands.Choice[str](name="Invalid setting given.",
                                         value=ModeAutocomplete.invalid.value)]
         types += autocomplete_type
         return [
-            app_commands.Choice(name=key.value, value=key.value)
+            app_commands.Choice[str](name=key.value, value=key.value)
             for key in types if current.lower() in key.value.lower()
         ]
     else:
@@ -199,7 +199,7 @@ async def _value_autocomplete(  # noqa: RUF029
     itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
-            app_commands.Choice(
+            app_commands.Choice[str](
                 name="For a list of attributes/modules, leave `mode` empty.",
                 value="-"
             ),
@@ -207,25 +207,27 @@ async def _value_autocomplete(  # noqa: RUF029
 
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
         if itx.namespace.mode == ModeAutocomplete.view.value:
-            return [app_commands.Choice(
+            return [app_commands.Choice[str](
                 name="This parameter is unnecessary when viewing "
                      "an attribute.",
                 value="-")]
         elif itx.namespace.mode == ModeAutocomplete.delete.value:
-            return [app_commands.Choice(
+            return [app_commands.Choice[str](
                 name="This parameter is unnecessary when deleting "
                      "an attribute.",
                 value="-")]
 
         if itx.namespace.setting is None:
-            return [app_commands.Choice(
+            return [app_commands.Choice[str](
                 name="No setting given. Please give a value for the "
                      "'setting' parameter.",
                 value="-")]
         attribute_type, _ = get_attribute_type(itx.namespace.setting)
         if len(attribute_type) == 0:
-            return [app_commands.Choice(name="Invalid setting given.",
-                                        value="-")]
+            return [app_commands.Choice[str](
+                name="Invalid setting given.",
+                value="-"
+            )]
 
         results: set[app_commands.Choice[str]] = set()
 
@@ -260,19 +262,19 @@ async def _value_autocomplete(  # noqa: RUF029
             _update_results_from_iterable(results, itx.guild.emojis, current)
         if str in attribute_type:
             # leave as is
-            results.add(app_commands.Choice(name=current, value=current))
+            results.add(app_commands.Choice[str](name=current, value=current))
         if str in attribute_type:
             # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
                 results.add(
-                    app_commands.Choice(name=current, value=current)
+                    app_commands.Choice[str](name=current, value=current)
                 )
 
         if len(results) == 0:
             attribute_type_names = ','.join(
                 i.__name__ for i in attribute_type)
             results.add(
-                app_commands.Choice(
+                app_commands.Choice[str](
                     name=f"No autocompletes for: "
                          f"{attribute_type_names}"[:100],
                     value="-")
@@ -282,7 +284,7 @@ async def _value_autocomplete(  # noqa: RUF029
 
     elif itx.namespace.type == TypeAutocomplete.module.value:
         return [
-            app_commands.Choice(
+            app_commands.Choice[str](
                 name="This parameter is unnecessary when toggling "
                      "module state",
                 value="-"

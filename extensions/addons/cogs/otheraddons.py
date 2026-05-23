@@ -179,19 +179,19 @@ def _get_emoji_from_str(
 async def _unit_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot],
         current: str,
-) -> None:
+) -> list[app_commands.Choice[str]]:
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
     options = options[itx.namespace.mode]
     if itx.namespace.mode == "currency":
-        return [app_commands.Choice(name=option, value=option)
-                for option in options
+        return [app_commands.Choice[str](name=option, value=option)
+                for option in options.keys()
                 if option.lower().startswith(current.lower())
                 ][:10]
     else:
-        return [app_commands.Choice(name=option, value=option)
-                for option in options
+        return [app_commands.Choice[str](name=option, value=option)
+                for option in options.keys()
                 if current.lower() in option.lower()
                 ][:25]
 
@@ -199,7 +199,7 @@ async def _unit_autocomplete(  # noqa: RUF029
 async def _role_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot],
         current: str
-) -> None:
+) -> list[app_commands.Choice[str]]:
     """Autocomplete for /remove-role command."""
     if isinstance(itx.user, discord.User):
         return []
@@ -215,14 +215,18 @@ async def _role_autocomplete(  # noqa: RUF029
                     or current.lower() in role_options[role.id][1].lower()):
                 options.append(role.id)
     if options:
-        return [app_commands.Choice(name=role_options[role_id][0],
-                                    value=role_options[role_id][1])
-                for role_id in options
-                ][:15]
+        return [
+            app_commands.Choice[str](
+                name=role_options[role_id][0],
+                value=role_options[role_id][1]
+            ) for role_id in options
+        ][:15]
     else:
         return [
-            app_commands.Choice(name="You don't have any roles to remove!",
-                                value="none")
+            app_commands.Choice[str](
+                name="You don't have any roles to remove!",
+                value="none",
+            )
         ]
 
 

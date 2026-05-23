@@ -182,7 +182,7 @@ class TermDictionary(commands.Cog):
 
         # respond with found autocompletion terms
         return [
-            app_commands.Choice(name=term, value=term)
+            app_commands.Choice[str](name=term, value=term)
             for term in terms
         ][:7]  # limit choices to the first 7
 

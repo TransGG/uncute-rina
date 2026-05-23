@@ -61,12 +61,12 @@ async def _tag_autocomplete(  # noqa: RUF029
     print(current)
     print(_get_enabled_tag_ids(itx))
     if current == "":
-        return [app_commands.Choice(name="Show list of tags", value="help")]
+        return [app_commands.Choice[str](name="Show list of tags", value="help")]
 
     # only show tags that are enabled in the server
     tags = _get_enabled_tag_ids(itx)
 
-    return [app_commands.Choice(name=tag, value=tag)
+    return [app_commands.Choice[str](name=tag, value=tag)
             for tag in tags
             if current.lower() in tag.lower()
             ][:15]
@@ -81,7 +81,7 @@ async def _tag_name_autocomplete(  # noqa: RUF029
             and itx.guild is not None):
         tag_objects = get_tags(itx.guild)
         return [
-            app_commands.Choice(name=key, value=key)
+            app_commands.Choice[str](name=key, value=key)
             for key in tag_objects.keys()
             if current.lower() in key.lower()
         ]

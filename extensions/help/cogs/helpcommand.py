@@ -71,16 +71,16 @@ async def _help_page_autocomplete(  # noqa: RUF029
     user_is_staff = is_admin(itx, itx.user)
 
     if current.isdecimal():
-        current_page = None
+        current_page: int | None = None
         try:
             current_page = int(current)
         except ValueError:
             pass
 
-        if current_page is not None and current_page in aliases:
+        if current_page is not None and current_page in aliases.keys():
             if (user_is_staff
                     or not help_pages[current_page].get("staff_only", False)):
-                results.append(app_commands.Choice(
+                results.append(app_commands.Choice[int](
                     name=aliases[current_page][0], value=current_page))
                 return results
 
@@ -92,7 +92,7 @@ async def _help_page_autocomplete(  # noqa: RUF029
                 continue
 
             if current.lower() in alias.lower():
-                results.append(app_commands.Choice(
+                results.append(app_commands.Choice[int](
                     name=alias[:100], value=page))
                 added_pages.append(page)
                 break  # only add each page once
@@ -111,7 +111,7 @@ async def _help_page_autocomplete(  # noqa: RUF029
         if page in added_pages:
             continue
         if current.lower() in help_pages[page]["description"].lower():
-            results.append(app_commands.Choice(
+            results.append(app_commands.Choice[int](
                 name=help_pages[page]["title"][:100], value=page))
             # added_pages.append(page)
             # ^ unnecessary because it won't iterate pages after this.
