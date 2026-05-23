@@ -72,7 +72,7 @@ def _create_crash_embed(
         error_source: str,
         error_type: str,
         traceback_text: str
-) -> None:
+) -> list[discord.Embed]:
     error_caps = error_type.upper()
     time_prefix = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     debug_message = (f"\n\n\n\n[{time_prefix}]"
@@ -83,7 +83,7 @@ def _create_crash_embed(
     #  tick marks.
     msg = debug_message.replace("``",
                                 "`` ")
-    embeds = []
+    embeds: list[discord.Embed] = []
     total_characters = 0
     while len(msg) > 0 and len(embeds) < 10:
         # 4090 = 4096 (max embed description length) - len(2 * "```")
@@ -110,12 +110,17 @@ def _get_crash_logging_message(
         error_type: str,
         itx: discord.Interaction[Bot] | None,
         traceback_text: str,
-) -> None:
+) -> MessageableGuildChannel | None:
     log_channel: MessageableGuildChannel | None = None
-    potential_guild = getattr(itx, "guild", None)
+    potential_guild: discord.Guild | None = getattr(itx, "guild", None)
     if potential_guild is not None:
-        log_channel = client.get_guild_attribute(
-            potential_guild, AttributeKeys.log_channel)
+        log_channel = typing.cast(
+            MessageableGuildChannel | None,
+            client.get_guild_attribute(
+                potential_guild,
+                AttributeKeys.log_channel
+            )
+        )
     if log_channel is None and client.server_settings is None:
         debug(f"Error during startup\n\n\n[{error_type}]: {error_source}\n\n"
               f"{traceback_text}\n\n")
@@ -126,7 +131,8 @@ def _get_crash_logging_message(
         backup_guild_ids = [959551566388547676, 985931648094834798,
                             981615050664075404]
         possible_log_channels: list[MessageableGuildChannel | None] = [
-            client.get_guild_attribute(guild_id, AttributeKeys.log_channel)
+            typing.cast(MessageableGuildChannel | None,
+                        client.get_guild_attribute(guild_id, AttributeKeys.log_channel))
             for guild_id in backup_guild_ids
         ]
         # grab the first non-None logging channel

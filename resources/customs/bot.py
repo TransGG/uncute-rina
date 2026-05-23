@@ -28,10 +28,6 @@ if TYPE_CHECKING:
     from extensions.settings.objects import ServerSettings
 
 
-T = TypeVar('T')
-TN = T | None
-
-
 class Bot(commands.Bot):
     # bot uptime start, used in /version in cmd_staffaddons
     startup_time = datetime.now().astimezone()
@@ -131,12 +127,12 @@ class Bot(commands.Bot):
     # Type checking with the class is effectively impossible,
     #  as the key dictates the type, and any union we would emit
     #  would then need to be explicitly ignored in a type check.
-    def get_guild_attribute(
+    def get_guild_attribute[Default](
             self,
             guild: discord.Guild | int,
             *args: str,
-            default: TN = None
-    ) -> GuildAttributeType | TN | list[GuildAttributeType | TN]:
+            default: Default = None
+    ) -> GuildAttributeType | Default | list[GuildAttributeType | Default]:
         """
         Get ServerSettings attributes for the given guild.
 
@@ -170,7 +166,7 @@ class Bot(commands.Bot):
 
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[GuildAttributeType | TN] = []
+        output: list[GuildAttributeType | Default] = []
 
         parent_server = attributes[AttributeKeys.parent_server]  # type: ignore[literal-required] # noqa: E501
 

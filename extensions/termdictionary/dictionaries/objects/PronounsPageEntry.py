@@ -1,4 +1,4 @@
-from typing import TypedDict, Required, Any
+from typing import TypedDict, Required
 
 
 class PronousPageLocaleEntry(TypedDict, total=False):
