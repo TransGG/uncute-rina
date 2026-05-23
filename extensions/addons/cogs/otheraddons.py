@@ -298,7 +298,7 @@ class OtherAddons(commands.Cog):
             # more info:
             #  https://docs.openexchangerates.org/reference/latest-json
             params = {
-                "appid": itx.client.api_tokens['Open Exchange Rates'],
+                "app_id": itx.client.api_tokens['Open Exchange Rates'],
                 "show_alternative": "true",
             }
             async with aiohttp.ClientSession() as client, client.get(
