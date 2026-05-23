@@ -369,7 +369,7 @@ def _format_data_for_graph(
         max_time: float,
         min_time: float,
         select_user_ids: list[str],
-        voice_channel: (discord.guild.GuildChannel
+        voice_channel: (discord.abc.GuildChannel
                         | discord.Thread
                         | discord.abc.PrivateChannel
                         | CustomVoiceChannel),  # todo: narrow down type

@@ -6,6 +6,9 @@ import discord
 
 from extensions.settings.objects.attribute_keys import AttributeKeys
 import extensions.settings.objects.server_settings as server_settings
+from extensions.settings.objects.server_attributes import (
+    MessageableGuildChannel
+)
 
 from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
@@ -13,7 +16,6 @@ from .debug import debug, DebugColor
 
 if TYPE_CHECKING:
     from resources.customs import Bot, GuildInteraction
-    from extensions.settings.objects import MessageableGuildChannel
 
 
 def get_mod_ticket_channel(

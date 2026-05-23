@@ -14,7 +14,7 @@ async def get_or_fetch_channel(
         client: discord.Client,
         channel_id: int
 ) -> (
-        discord.guild.GuildChannel
+        discord.abc.GuildChannel
         | discord.Thread
         | discord.abc.PrivateChannel
         | None

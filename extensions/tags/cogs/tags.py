@@ -32,7 +32,7 @@ report_message_reminder = datetime.min
 
 def _get_enabled_tag_ids(itx: discord.Interaction[Bot]) -> set[str]:
     """Helper function to get all enabled tags in a guild."""
-    default_tags = [i.lower() for i in tag_info_dict]
+    default_tags = list(tag_info_dict)
     custom_tags = list(get_tags(itx.guild))
     return set(default_tags + custom_tags)
 
@@ -43,6 +43,8 @@ async def _tag_autocomplete(  # noqa: RUF029
         current: str,
 ) -> list[discord.app_commands.Choice[str]]:
     """Autocomplete for /tag command."""
+    print(current)
+    print(_get_enabled_tag_ids(itx))
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
 
@@ -50,7 +52,8 @@ async def _tag_autocomplete(  # noqa: RUF029
     tags = _get_enabled_tag_ids(itx)
 
     return [app_commands.Choice(name=tag, value=tag)
-            for tag in tags if current.lower() in tag.lower()
+            for tag in tags
+            if current.lower() in tag.lower()
             ][:15]
 
 
@@ -141,16 +144,19 @@ class TagFunctions(commands.Cog):
 
     @app_commands.command(name="tag",
                           description="Look up something through a tag")
-    @app_commands.describe(tag="What tag do you want more information about?")
-    @app_commands.describe(public="Show everyone in chat? (default: yes)")
-    @app_commands.describe(anonymous="Hide your name when sending the message "
-                                     "publicly? (default: yes)")
-    @app_commands.autocomplete(tag=_tag_autocomplete)
+    @app_commands.rename(tag_name="tag")
+    @app_commands.describe(
+        tag_name="What tag do you want more information about?",
+        public="Show everyone in chat? (default: yes)",
+        anonymous="Hide your name when sending the message publicly? "
+                  "(default: yes)",
+    )
+    @app_commands.autocomplete(tag_name=_tag_autocomplete)
     @module_enabled_check(ModuleKeys.tags)
     async def tag(
             self,
             itx: GuildInteraction[Bot],
-            tag: str,
+            tag_name: str,
             public: bool = True,
             anonymous: bool = True,
     ) -> None:
@@ -165,39 +171,50 @@ class TagFunctions(commands.Cog):
             )
             return
 
-        tag_ids = _get_enabled_tag_ids(itx)
-        tag = tag.lower()
-        if tag in tag_ids:
-            if tag in tag_info_dict:
-                await tag_info_dict[tag](itx, public, anonymous)
-            else:
-                tag_data = get_tag(itx.guild, tag)
-                if tag_data is None:
-                    raise NotImplementedError(f"Tag '{tag}' not found.")
-                custom_tag = CustomTag(
-                    tag,
-                    tag_data["title"],
-                    tag_data["description"],
-                    tag_data["color"],
-                    tag_data["report_to_staff"],
-                )
-                await custom_tag.send(itx, public, anonymous)
-        elif tag == "help":
+        if tag_name == "help":
             await itx.response.send_message(
                 "List of tags currently available to send:\n"
                 + '\n'.join(["- " + i for i in tag_info_dict]),
                 ephemeral=True,
             )
-        else:
+            return
+
+        type TagName = str  # Correctly-capitalized tag name
+        tag_ids: set[TagName] = _get_enabled_tag_ids(itx)
+        # Map to convert lowercased tag names to correctly-cased tag names.
+        tag_map: dict[str, TagName] = {tag.lower(): tag for tag in tag_ids}
+        tag: TagName | None = tag_map.get(tag_name.lower(), None)
+
+        if tag is None:
             await itx.response.send_message(
                 "No tag found with this name!",
                 ephemeral=True,
             )
+            return
+
+        if tag in tag_info_dict:
+            # Default tag
+            await tag_info_dict[tag](itx, public, anonymous)
+        else:
+            # Custom tag
+            tag_data = get_tag(itx.guild, tag)
+            if tag_data is None:
+                raise NotImplementedError(f"Tag '{tag}' not found.")
+            custom_tag = CustomTag(
+                tag,
+                tag_data["title"],
+                tag_data["description"],
+                tag_data["color"],
+                tag_data["report_to_staff"],
+            )
+            await custom_tag.send(itx, public, anonymous)
 
     @app_commands.command(name="tag-manage",
                           description="Add and remove custom tags")
-    @app_commands.describe(mode="Do you want to add or remove the tag?")
-    @app_commands.describe(tag_name="The identifier of the tag")
+    @app_commands.describe(
+        mode="Do you want to add or remove the tag?",
+        tag_name="The identifier of the tag",
+    )
     @app_commands.choices(mode=[
         discord.app_commands.Choice(name=TagMode.help.value,
                                     value=TagMode.help.value),

@@ -263,6 +263,6 @@ tag_info_dict: dict[
              typing.Coroutine[typing.Any, typing.Any, None]]
 ] = {
     # sorted alphabetically
-    "enabling embeds": send_enabling_embeds_info,
-    "report": send_report_info,
+    "Enabling embeds": send_enabling_embeds_info,
+    "Report": send_report_info,
 }
