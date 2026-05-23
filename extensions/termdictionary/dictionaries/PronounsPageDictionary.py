@@ -170,7 +170,7 @@ class PronounsPageDictionary(DictionaryBase):
             term: str
     ) -> list[PronounsPageEntry]:
         http_safe_term = term.lower().replace("/", " ").replace("%", " ")
-        url = f'https://en.pronouns.page/api/terms/search/{http_safe_term}'
+        url = f'https://en.pronouns.page/api/public/v3/terms/search/{http_safe_term}'
 
         async with self._session.get(url) as response:
             response_api = await response.text()
