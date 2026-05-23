@@ -35,8 +35,8 @@ def debug(
         text: str = "",
         color: DebugColor = DebugColor.default,
         add_time: bool = True,
-        end="\n",
-        advanced=False
+        end: str = "\n",
+        advanced: bool = False
 ) -> None:
     """
     Log a message to the console.
@@ -92,13 +92,13 @@ def debug(
     if advanced:
         for _detColor in detail_color:
             while "&" + _detColor in text:
-                _text = text
+                text_tmp = text
                 text = text.replace(
                     "m&" + _detColor,
                     ";" + detail_color[_detColor] + "m",
                     1
                 )
-                if _text == text:
+                if text_tmp == text:
                     # No previous coloring found to replace, so add a
                     #  new one instead. (no m&)
                     text = text.replace(

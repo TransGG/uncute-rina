@@ -1,0 +1,70 @@
+exclude = [".venv", "unit_tests"]
+line-length=79
+[lint]
+select = [
+    "ANN", # Type annotations
+    "ASYNC", # Async bugs
+    "S", # Security bugs
+    "A", # Built-in shadowing bugs
+    "C4", # Generator expression lints
+    "EXE", # Checks that executable files are set up properly
+    "FIX", # Grabs TODOs
+    "ICN", # Catches weird imports
+    "LOG", # Catches logging issues
+    "SLF", # Catches reading private members
+    # Catches redundant code
+    #"SIM101", "SIM102", "SIM103", "SIM110", "SIM113", "SIM114", "SIM116", "SIM117", "SIM118", "SIM2", "SIM401", "SIM9",
+    "TID", # More weird imports
+    "PTH", # Pathlib
+    "NPY", # NumPy
+    "PD", # Pandas
+    "PERF", # Performance lints
+    "E", "W", # Standard warnings and errors
+    "F", # Generic non-style mistakes
+    "PLE", # Pylint errors
+    "PLW", # Pylint warnings
+    # Ruff-specific
+    "RUF",
+    "RUF006", # asyncio tasks can be GC'd and killed
+    "RUF013", # Explicit Optional
+    "RUF015", # Turning something into a list to get the first element is slow
+    "RUF016", # Invalid index type
+    "RUF017", # Bizarre list merge
+    "RUF018", "RUF030", "RUF040",  # Assert issues
+    "RUF019", # Bizarre dict element access
+    "RUF021", # and/or bracketing
+    "RUF024", # Bad dict construction
+    "RUF026", # Defaultdict misuse
+    "RUF027", # Something looks like an f-string, but is missing the `f`
+    "RUF028", # Invalid supression comments
+    "RUF043", # pytest issues
+    "E261",
+    "ANN", # Type annotations would take wayyy too long to do properly  # HA YOU THOUGHT (I only spent 2 hours TwT)
+    "C4", # list comprehensions
+    "RUF013", # Optional types should be properly marked
+    "PERF", # speeeeeed ... in python?... Uhkay sure.
+    "RUF059", # Unused variables
+    "E501", # Don't allow long lines: 79 chars max.
+    "PLW0127", # Allow self-assingment to indicate type
+    "SIM101", # Merge isinstance() calls by using tuples
+    "RUF001", "RUF003", # Weird tests for characters that look similar
+]
+
+ignore = [
+    # Things we should probably do
+    "S101", # We should not use asserts, as some environments disable them  # IMO pretty silly idea
+    "PGH004", "RUF100", # Blanket disabling lints isn't great
+
+    # Style stuff that's bad, but won't cause issues
+    "PTH", # pathlib still technically works
+
+    # Ignoring these more permanently
+    "S311", # We don't need a CSPRNG anywhere, right?
+#    "RUF022", "RUF023", "I001", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
+#    "SIM105", "SIM108", "SIM300", # No suppressing exceptions. Use ternary operator; don't use yoda conditions.
+    "PLW2901", # Allow reassigning in loops
+    "PLW0603", # We seem to be choosing to use globals
+    "FIX002", # Too much TODO
+#    "RUF005", # [*a, *b] is apparently faster than a + b, but it's not *that* important
+    "RUF010", # Explicit f-string conversion is fine and readable
+]

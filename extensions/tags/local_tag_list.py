@@ -68,7 +68,7 @@ async def create_tag(
         raise ValueError("Embed title too long.")
     if len(embed_description) > 4096:
         raise ValueError("Embed description too long.")
-    if not all([0 <= c <= 255 for c in embed_color]):
+    if not all(0 <= c <= 255 for c in embed_color):
         raise ValueError("Embed colors must be RGB values between 0 and 255.")
 
     embed_object = DatabaseTagObject(
@@ -140,7 +140,8 @@ async def fetch_tags(
     if data is None:
         return {}
 
-    local_tag_list[guild.id] = {name: DatabaseTagObject(**tag_data)
+    # This should be good, since it comes directly from the DB
+    local_tag_list[guild.id] = {name: DatabaseTagObject(**tag_data)  # type: ignore[typeddict-item] # noqa: E501
                                 for name, tag_data in data.items()}
     return local_tag_list[guild.id]
 
@@ -163,7 +164,9 @@ async def fetch_all_tags(
     for guild_id, tag_objects in data.items():
         tags = {}
         for tag_name, tag_data in tag_objects.items():
-            tag_object = DatabaseTagObject(**tag_data)
+            # This should be good, since it comes directly from the DB
+            # noinspection LongLine
+            tag_object = DatabaseTagObject(**tag_data)  # type: ignore[typeddict-item] # noqa: E501
             tags[tag_name] = tag_object
         local_tag_list[guild_id] = tags
 

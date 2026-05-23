@@ -12,14 +12,14 @@ class BumpReminderObject:
             client: Bot,
             guild: discord.Guild,
             remindertime: datetime
-    ):
+    ) -> None:
         self.client = client
         self.guild = guild
         self.remindertime = remindertime - timedelta(seconds=1.5)
         client.sched.add_job(self.send_reminder, "date",
                              run_date=self.remindertime)
 
-    async def send_reminder(self):
+    async def send_reminder(self) -> None:
         if not self.client.is_module_enabled(
                 self.guild, ModuleKeys.bump_reminder):
             return

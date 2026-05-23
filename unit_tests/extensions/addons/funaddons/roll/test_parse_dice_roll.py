@@ -21,7 +21,7 @@ from extensions.addons.roll import _parse_dice_roll
     # ^ dang, AI, that's nasty. But my program doesn't parse
     #  it that way, haha.
 ])
-def test_valid_cases(query, expected):
+def test_valid_cases(query: str, expected: tuple[int, int | None]) -> None:
     assert _parse_dice_roll(query) == expected
 
 
@@ -41,6 +41,6 @@ def test_valid_cases(query, expected):
     ("9-9d99", ValueError),  # Invalid characters in dice part
     ("99d9-9", ValueError),  # Invalid characters in faces part
 ])
-def test_invalid_cases(query, expected_exception):
+def test_invalid_cases(query: str, expected_exception) -> None:
     with pytest.raises(expected_exception):
         _parse_dice_roll(query)

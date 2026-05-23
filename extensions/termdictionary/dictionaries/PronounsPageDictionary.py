@@ -51,20 +51,20 @@ class PronounsPageDictionary(DictionaryBase):
         for item in data:
             item_db = item['definition']
             while item['definition'] == item_db:
-                replacement = re.search("(?<==).+?(?=})",
+                replacement = re.search(r"(?<==).+?(?=})",
                                         item['definition'])
                 if replacement is not None:
-                    item['definition'] = re.sub("{(#.+?=).+?}",
+                    item['definition'] = re.sub(r"{(#.+?=).+?}",
                                                 replacement.group(),
                                                 item['definition'], 1)
                 if item['definition'] == item_db:  # if nothing changed:
                     break
                 item_db = item['definition']
             while item['definition'] == item_db:
-                replacement = re.search("(?<={).+?(?=})",
+                replacement = re.search(r"(?<={).+?(?=})",
                                         item['definition'])
                 if replacement is not None:
-                    item['definition'] = re.sub("{.+?}",
+                    item['definition'] = re.sub(r"{.+?}",
                                                 replacement.group(),
                                                 item['definition'], 1)
                 if item['definition'] == item_db:  # if nothing changed:
@@ -74,7 +74,10 @@ class PronounsPageDictionary(DictionaryBase):
         return search
 
     @staticmethod
-    def _get_expand_medium_search_string(result_str, search):
+    def _get_expand_medium_search_string(
+            result_str: str,
+            search: list[PronounsPageEntry],
+    ) -> str:
         result_str += "Here is a list to make your search more specific:\n"
         results: list[str] = []
         for item in search:
@@ -89,7 +92,10 @@ class PronounsPageDictionary(DictionaryBase):
         return result_str
 
     @staticmethod
-    def _get_expand_big_search_string(result_str, search):
+    def _get_expand_big_search_string(
+            result_str: str,
+            search: list[PronounsPageEntry],
+    ) -> str:
         result_str += "Here is a list to make your search more specific:\n"
         results: list[str] = []
         for item in search:
@@ -102,7 +108,8 @@ class PronounsPageDictionary(DictionaryBase):
 
     @staticmethod
     def _select_exact_items(
-            search: list[PronounsPageEntry], term
+            search: list[PronounsPageEntry],
+            term: str,
     ) -> list[PronounsPageEntry]:
         """
         Select search results whose key or synonyms exactly match the
@@ -114,11 +121,11 @@ class PronounsPageDictionary(DictionaryBase):
         """
         # If one of the search results matches exactly with the
         #  search, give that definition.
-        results: list[PronounsPageEntry] = []
-        for item in search:
-            if simplify(term) in simplify(item['term'].split('|')):
-                results.append(item)
-        return results
+        return [
+            item
+            for item in search
+            if simplify(term) in simplify(item['term'].split("|"))
+        ]
 
     @staticmethod
     def _get_result_string(

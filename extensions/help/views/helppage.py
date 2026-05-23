@@ -31,7 +31,7 @@ class HelpPageView(PageView):  # todo: add "override" to all overriding funcs
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         self.page = 2
         self.update_button_colors()
         await self.update_page(itx, self)
@@ -41,7 +41,7 @@ class HelpPageView(PageView):  # todo: add "override" to all overriding funcs
             self,
             itx: discord.Interaction[Bot],
             _: discord.ui.Button
-    ):
+    ) -> None:
         help_page_indexes = list(self.pages)
         jump_page_modal = SingleLineModal(
             "Jump to a help page",

@@ -18,7 +18,11 @@ from extensions.termdictionary.views import DictionaryapiPageview
 CompressedApiData = list[tuple[str, dict[str, list[str]], str, str, str]]
 
 
-def _format_page_sections(antonyms, meanings, synonyms):
+def _format_page_sections(
+        antonyms: set[str],
+        meanings: dict[str, list[str]],
+        synonyms: set[str],
+) -> dict[str, list[str]]:
     page_sections: dict[str, list[str]] = {}
     for part_of_speech, definitions in meanings.items():
         part_of_speech = part_of_speech.capitalize()
@@ -33,7 +37,9 @@ def _format_page_sections(antonyms, meanings, synonyms):
     return page_sections
 
 
-def _extract_api_data(result):
+def _extract_api_data(
+        result: DictionaryApiEntry
+) -> tuple[set[str], dict[str, list[str]], set[str]]:
     meanings: dict[str, list[str]] = {}
     synonyms: set[str] = set()
     antonyms: set[str] = set()
@@ -52,7 +58,7 @@ def _extract_api_data(result):
 
 
 class DictionaryApiDictionary(DictionaryBase):
-    def __init__(self, session: aiohttp.ClientSession):
+    def __init__(self, session: aiohttp.ClientSession) -> None:
         super().__init__(session)
         self._embed: discord.Embed | None = None
         self._view: DictionaryapiPageview | None = None

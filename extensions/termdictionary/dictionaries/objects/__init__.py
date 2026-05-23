@@ -1,11 +1,11 @@
 __all__ = [
     "CustomDictionaryEntry",
-    "PronounsPageEntry",
-    "DictionaryApiEntry",
     "DetailedTermPage",
-    "term_page_to_embed",
-    "get_term_lines",
+    "DictionaryApiEntry",
+    "PronounsPageEntry",
     "UrbanDictionaryEntry",
+    "get_term_lines",
+    "term_page_to_embed",
 ]
 
 from .CustomDictionaryEntry import CustomDictionaryEntry

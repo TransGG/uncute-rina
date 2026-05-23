@@ -213,7 +213,7 @@ async def refetch_watchlist_threads(
 
     # store reference to dict into a shorter variable
 
-    failed_fetches = []
+    failed_fetches: list[discord.Thread] = []
     # iterate non-archived threads
     for thread in watch_channel.threads:
         await _import_thread_to_local_list(
@@ -231,7 +231,8 @@ async def refetch_watchlist_threads(
 async def _import_thread_to_local_list(
         async_rina_db: AgnosticDatabase,
         failed_fetches: list[discord.Thread],
-        thread: discord.Thread):
+        thread: discord.Thread,
+) -> None:
     """
     A helper function to add watchlists to the mongo database from the
     given thread.

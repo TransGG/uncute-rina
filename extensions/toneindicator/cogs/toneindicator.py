@@ -276,7 +276,10 @@ def _handle_tag_definition(
     return result_str, bool(results)
 
 
-def _handle_acronym(string, exact) -> tuple[str, bool]:
+def _handle_acronym(
+        string: str,
+        exact: bool,
+) -> tuple[str, bool]:
     """
     Helper function to retrieve all definitions matching a tone indnicator.
 
@@ -340,8 +343,8 @@ class ToneIndicator(commands.Cog):
             itx: discord.Interaction[Bot],
             mode: int,
             string: str,
-            public: bool = False
-    ):
+            public: bool = False,
+    ) -> None:
         result_str = ""
         has_results = False
         if mode == SearchMode.definition.value:

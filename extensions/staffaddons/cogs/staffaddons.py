@@ -1,15 +1,14 @@
 from datetime import datetime, timedelta
 # ^ for /delete_week_selfies (within 7 days), and /version startup
 #  time parsing to discord unix <t:1234:F>
-import requests
-# to fetch from GitHub and see Rina is running the latest version
+import aiohttp  # to fetch from GitHub and see Rina is running latest version
 
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 from resources.checks.permissions import is_staff
 # ^ to check if messages in the selfies channel were sent by staff
 from resources.checks import (
@@ -22,20 +21,20 @@ from resources.utils.utils import log_to_guild
 
 
 class StaffAddons(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    @app_commands.check(is_staff_check)
     @app_commands.command(name="say",
                           description="Force Rina to repeat your wise words")
     @app_commands.describe(text="What will you make Rina repeat?",
                            reply_to_interaction="Show who sent the message?")
+    @is_staff_check
     async def say(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             text: str,
             reply_to_interaction: bool = False
-    ):
+    ) -> None:
         if reply_to_interaction:
             await itx.response.send_message(
                 text,
@@ -43,11 +42,23 @@ class StaffAddons(commands.Cog):
                 allowed_mentions=discord.AllowedMentions.none()
             )
             return
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I can't see the channel you're trying to send in.",
+                ephemeral=False,
+            )
+            return
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message(
+                "This channel does not let me send messages.",
+                ephemeral=False,
+            )
+            return
 
         await log_to_guild(
             itx.client,
             itx.guild,
-            (f"{itx.user.nick or itx.user.name} ({itx.user.id})"
+            (f"{getattr(itx.user, 'nick', itx.user.name)} ({itx.user.id})"
              f" said a message using Rina: {text}"),
             crash_if_not_found=True,
             ignore_dms=True
@@ -77,7 +88,7 @@ class StaffAddons(commands.Cog):
     )
     @is_staff_check
     @module_enabled_check(ModuleKeys.selfies_channel_deletion)
-    async def delete_week_selfies(self, itx: discord.Interaction[Bot]):
+    async def delete_week_selfies(self, itx: GuildInteraction[Bot]) -> None:
         # This function largely copies the built-in channel.purge()
         #  function with a check, but is more fancy by offering a
         #  sort of progress update every 50-100 messages :D
@@ -87,6 +98,18 @@ class StaffAddons(commands.Cog):
             raise MissingAttributesCheckFailure(
                 ModuleKeys.selfies_channel_deletion,
                 [AttributeKeys.selfies_channel])
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I can't see the channel you're trying to send in.",
+            )
+            return
+        if (not isinstance(itx.channel, discord.abc.Messageable)
+                or not isinstance(itx.channel, discord.abc.GuildChannel)):
+            await itx.response.send_message(
+                "This channel does not let me send messages.",
+                ephemeral=False,
+            )
+            return
 
         time_now = int(datetime.now().timestamp())  # get time in unix
 
@@ -162,18 +185,18 @@ class StaffAddons(commands.Cog):
             )
         except discord.Forbidden:
             await itx.followup.send(
-                f"Removed {message_delete_count} messages older"
-                f" than 7 days!",
+                f"Removed {message_delete_count} messages older "
+                f"than 7 days!",
                 ephemeral=False
             )
 
     @app_commands.command(name="version", description="Get bot version")
-    async def get_bot_version(self, itx: discord.Interaction[Bot]):
+    async def get_bot_version(self, itx: discord.Interaction[Bot]) -> None:
         # get most recently pushed bot version
-        # noinspection LongLine
-        latest_rina = requests.get(
-            "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa
-        ).text
+        async with aiohttp.ClientSession() as client, client.get(
+                "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa: E501
+        ) as response:
+            latest_rina = await response.text()
         latest_version = (latest_rina
                           .split("BOT_VERSION = \"", 1)[1]
                           .split("\"", 1)[0])
@@ -185,17 +208,18 @@ class StaffAddons(commands.Cog):
                     f"Bot is currently running on v{itx.client.version} "
                     f"(latest: v{latest_version})\n"
                     f"(started <t:{unix}:D> at <t:{unix}:T>)",
-                    ephemeral=False)
+                    ephemeral=False,
+                )
                 return
-        else:
-            await itx.response.send_message(
-                f"Bot is currently running on v{itx.client.version} (latest)\n"
-                f"(started <t:{unix}:D> at <t:{unix}:T>)",
-                ephemeral=False)
+        await itx.response.send_message(
+            f"Bot is currently running on v{itx.client.version} (latest)\n"
+            f"(started <t:{unix}:D> at <t:{unix}:T>)",
+            ephemeral=False,
+        )
 
-    @app_commands.check(is_staff_check)
     @app_commands.command(name="update", description="Update slash-commands")
-    async def update_command_tree(self, itx: discord.Interaction[Bot]):
+    @is_staff_check
+    async def update_command_tree(self, itx: GuildInteraction[Bot]) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
         await itx.response.defer(ephemeral=True)

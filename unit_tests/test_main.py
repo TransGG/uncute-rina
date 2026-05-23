@@ -8,7 +8,7 @@ from main import EXTENSIONS
 #  overall testing each function.
 
 
-def test_warn_all_modules_enabled():
+def test_warn_all_modules_enabled() -> None:
     # Arrange
     extension_folders = []
     directory = os.path.join(__file__, os.pardir, os.pardir, "extensions")
@@ -33,7 +33,7 @@ def test_warn_all_modules_enabled():
         warn(msg)
 
 
-def test_all_modules_exist():
+def test_all_modules_exist() -> None:
     # Arrange
     directory = os.path.join(__file__, os.pardir, os.pardir, "extensions")
     directory = os.path.normpath(directory)

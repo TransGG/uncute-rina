@@ -7,6 +7,7 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from extensions.emojistats.database_dicts import StickerStatsData
 from resources.checks import not_in_dms_check
 from resources.customs import Bot, GuildInteraction
 
@@ -15,7 +16,7 @@ async def _add_to_sticker_data(
         sticker_name: str,
         async_rina_db: motorcore.AgnosticDatabase,
         sticker_id: str
-):
+) -> None:
     """
     Helper function to add sticker data to the mongo database when
     a sticker is sent in chat.
@@ -49,7 +50,7 @@ async def _add_to_sticker_data(
 
 
 class StickerStats(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     stickerstats = app_commands.Group(
@@ -59,7 +60,7 @@ class StickerStats(commands.Cog):
     )
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
@@ -83,7 +84,7 @@ class StickerStats(commands.Cog):
             self,
             itx: GuildInteraction[Bot],
             sticker_name: str
-    ):
+    ) -> None:
         if ":" in sticker_name:
             # idk why people would, but idk the format for stickers so
             #  ill just assume <name:id> or something idk.
@@ -142,7 +143,7 @@ class StickerStats(commands.Cog):
             public: bool = False,
             max_results: int = 10,
             used_max: int = sys.maxsize,
-    ):
+    ) -> None:
         await itx.response.defer(ephemeral=not public)
 
         unused_stickers = []
@@ -169,7 +170,7 @@ class StickerStats(commands.Cog):
             #  it, so don't search for a "0" then.
             query["messageUsedCount"] = {"$lte": used_max}
 
-        sticker_stats: list[dict[str, str | int | bool]] = \
+        sticker_stats: list[StickerStatsData] = \
             [x async for x in collection.find(query)]
         sticker_stat_ids: list[str] = await collection.distinct("id")
 
@@ -208,7 +209,7 @@ class StickerStats(commands.Cog):
     @stickerstats.command(name="getstickertop10",
                           description="Get top 10 most used stickers")
     @not_in_dms_check
-    async def get_sticker_top_10(self, itx: GuildInteraction[Bot]):
+    async def get_sticker_top_10(self, itx: GuildInteraction[Bot]) -> None:
         collection = itx.client.async_rina_db["stickerstats"]
         output = ""
         for source_type in ["messageUsedCount"]:

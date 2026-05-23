@@ -6,7 +6,9 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.help.cogs import send_help_menu
-from extensions.settings.objects import AttributeKeys, ModuleKeys
+from extensions.settings.objects import (
+    AttributeKeys, ModuleKeys, MessageableGuildChannel
+)
 from extensions.tags.local_tag_list import (
     create_tag, remove_tag, get_tags, get_tag
 )
@@ -28,16 +30,21 @@ from extensions.tags.tags import (
 report_message_reminder = datetime.min
 
 
-def _get_enabled_tag_ids(itx) -> set[str]:
+def _get_enabled_tag_ids(itx: discord.Interaction[Bot]) -> set[str]:
     """Helper function to get all enabled tags in a guild."""
-    default_tags = [i.lower() for i in tag_info_dict]
-    custom_tags = [i for i in get_tags(itx.guild)]
+    default_tags = list(tag_info_dict)
+    custom_tags = list(get_tags(itx.guild))
     return set(default_tags + custom_tags)
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
+async def _tag_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str,
+) -> list[discord.app_commands.Choice[str]]:
     """Autocomplete for /tag command."""
+    print(current)
+    print(_get_enabled_tag_ids(itx))
     if current == "":
         return [app_commands.Choice(name="Show list of tags", value="help")]
 
@@ -45,13 +52,16 @@ async def _tag_autocomplete(itx: discord.Interaction[Bot], current: str):
     tags = _get_enabled_tag_ids(itx)
 
     return [app_commands.Choice(name=tag, value=tag)
-            for tag in tags if current.lower() in tag.lower()
+            for tag in tags
+            if current.lower() in tag.lower()
             ][:15]
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_name_autocomplete(itx: discord.Interaction[Bot], current: str):
-    """Autocomplete for /tag-manage command."""
+async def _tag_name_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str,
+) -> list[discord.app_commands.Choice[str]]:
     if (itx.namespace.mode == TagMode.delete.value
             and itx.guild is not None):
         tag_objects = get_tags(itx.guild)
@@ -99,11 +109,11 @@ def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
 
 
 class TagFunctions(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         global report_message_reminder
         if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
             return
@@ -121,7 +131,7 @@ class TagFunctions(commands.Cog):
         staff_role_mentions = [f"<@&{role.id}>" for role in staff_roles
                                if staff_roles is not None]
 
-        ticket_channel: discord.abc.Messageable | None
+        ticket_channel: MessageableGuildChannel | None
         ticket_channel = get_mod_ticket_channel(self.client, message.guild)
 
         if any(staff_role_mentions in message.content
@@ -134,50 +144,77 @@ class TagFunctions(commands.Cog):
 
     @app_commands.command(name="tag",
                           description="Look up something through a tag")
-    @app_commands.describe(tag="What tag do you want more information about?")
-    @app_commands.describe(public="Show everyone in chat? (default: yes)")
-    @app_commands.describe(anonymous="Hide your name when sending the message "
-                                     "publicly? (default: yes)")
-    @app_commands.autocomplete(tag=_tag_autocomplete)
+    @app_commands.rename(tag_name="tag")
+    @app_commands.describe(
+        tag_name="What tag do you want more information about?",
+        public="Show everyone in chat? (default: yes)",
+        anonymous="Hide your name when sending the message publicly? "
+                  "(default: yes)",
+    )
+    @app_commands.autocomplete(tag_name=_tag_autocomplete)
     @module_enabled_check(ModuleKeys.tags)
     async def tag(
             self,
             itx: GuildInteraction[Bot],
-            tag: str,
+            tag_name: str,
             public: bool = True,
-            anonymous: bool = True
-    ):
-        tag_ids = _get_enabled_tag_ids(itx)
-        tag = tag.lower()
-        if tag in tag_ids:
-            if tag in tag_info_dict:
-                await tag_info_dict[tag](itx, public, anonymous)
-            else:
-                tag_data = get_tag(itx.guild, tag)
-                if tag_data is None:
-                    raise NotImplementedError(f"Tag '{tag}' not found.")
-                custom_tag = CustomTag(
-                    tag,
-                    tag_data["title"],
-                    tag_data["description"],
-                    tag_data["color"],
-                    tag_data["report_to_staff"]
-                )
-                await custom_tag.send(itx, public, anonymous)
-        elif tag == "help":
+            anonymous: bool = True,
+    ) -> None:
+        if (
+                not isinstance(itx.channel, discord.abc.Messageable)
+                and public
+                and anonymous
+        ):
+            await itx.response.send_message(
+                "Messages can't be sent in this channel!",
+                ephemeral=True,
+            )
+            return
+
+        if tag_name == "help":
             await itx.response.send_message(
                 "List of tags currently available to send:\n"
                 + '\n'.join(["- " + i for i in tag_info_dict]),
-                ephemeral=True
+                ephemeral=True,
             )
+            return
+
+        type TagName = str  # Correctly-capitalized tag name
+        tag_ids: set[TagName] = _get_enabled_tag_ids(itx)
+        # Map to convert lowercased tag names to correctly-cased tag names.
+        tag_map: dict[str, TagName] = {tag.lower(): tag for tag in tag_ids}
+        tag: TagName | None = tag_map.get(tag_name.lower(), None)
+
+        if tag is None:
+            await itx.response.send_message(
+                "No tag found with this name!",
+                ephemeral=True,
+            )
+            return
+
+        if tag in tag_info_dict:
+            # Default tag
+            await tag_info_dict[tag](itx, public, anonymous)
         else:
-            await itx.response.send_message("No tag found with this name!",
-                                            ephemeral=True)
+            # Custom tag
+            tag_data = get_tag(itx.guild, tag)
+            if tag_data is None:
+                raise NotImplementedError(f"Tag '{tag}' not found.")
+            custom_tag = CustomTag(
+                tag,
+                tag_data["title"],
+                tag_data["description"],
+                tag_data["color"],
+                tag_data["report_to_staff"],
+            )
+            await custom_tag.send(itx, public, anonymous)
 
     @app_commands.command(name="tag-manage",
                           description="Add and remove custom tags")
-    @app_commands.describe(mode="Do you want to add or remove the tag?")
-    @app_commands.describe(tag_name="The identifier of the tag")
+    @app_commands.describe(
+        mode="Do you want to add or remove the tag?",
+        tag_name="The identifier of the tag",
+    )
     @app_commands.choices(mode=[
         discord.app_commands.Choice(name=TagMode.help.value,
                                     value=TagMode.help.value),
@@ -194,7 +231,7 @@ class TagFunctions(commands.Cog):
             itx: GuildInteraction[Bot],
             mode: str,
             tag_name: str,
-    ):
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if mode == TagMode.help.value:
             await send_help_menu(itx, 901)
@@ -242,7 +279,15 @@ class TagFunctions(commands.Cog):
                 f"'{mode}' is not a valid mode.", ephemeral=True)
 
     @staticmethod
-    def _parse_tag_information(create_tag_modal, itx):
+    def _parse_tag_information(
+            create_tag_modal: CreateTagModal,
+            itx: GuildInteraction[Bot]
+    ) -> tuple[
+            tuple[int, int, int],
+            str,
+            bool,
+            str,
+    ]:
         title = create_tag_modal.embed_title.value
         description = create_tag_modal.description.value
         description = replace_string_command_mentions(

@@ -6,11 +6,11 @@ from resources.customs import Bot
 class GetNameModal(discord.ui.Modal, title="Search page with word"):
     def __init__(
             self,
-            pages,
+            pages: list[str],
             timeout: float | None = None
-    ):
+    ) -> None:
         super().__init__(timeout=timeout)
-        self.pages = pages
+        self.pages: list[str] = pages
         self.page: int | None = None
         self.return_interaction: discord.Interaction[Bot] | None = None
         self.question_text = discord.ui.TextInput(
@@ -24,7 +24,7 @@ class GetNameModal(discord.ui.Modal, title="Search page with word"):
     async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
             self,
             itx: discord.Interaction[Bot]
-    ):
+    ) -> None:
         word = self.question_text.value.lower()
         for page_id in range(len(self.pages)):
             # 1. self.pages[page_id] returns ['15 nora\n13 rose\n9

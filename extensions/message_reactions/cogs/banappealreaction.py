@@ -1,20 +1,24 @@
+import typing
+
 import discord
 import discord.ext.commands as commands
 
+from extensions.qotw.utils import create_thread
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from resources.customs import Bot, GuildMessage
 
 
 class BanAppealReactionsAddon(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.ban_appeal_reactions):
             return
+        message = typing.cast(GuildMessage, message)
         ban_appeal_webhook_id: discord.User | None = \
             self.client.get_guild_attribute(
                 message.guild, AttributeKeys.ban_appeal_webhook_id
@@ -40,10 +44,6 @@ class BanAppealReactionsAddon(commands.Cog):
             #    "Do you have anything else to add?"         |  open question
             return  # prevent crashing later in the program.
 
-        await message.add_reaction("👍")
-        await message.add_reaction("🤷")
-        await message.add_reaction("👎")
-
         field_name = appeal_embed.fields[1].name
         field_value = appeal_embed.fields[1].value
         # get appeal person's username (expected username)
@@ -68,39 +68,12 @@ class BanAppealReactionsAddon(commands.Cog):
                 f"instead!"
             )
 
-        username: str = field_value
-        try:
-            thread = await message.create_thread(
-                name=f"App-{platform[0]}-{username[:80]}",
-                auto_archive_duration=10080
-            )
-        except discord.errors.Forbidden:
-            # no permission to send message (should be reported to staff
-            # server owner I suppose)
-            raise
-        except discord.errors.HTTPException:
-            # I expect this HTTP exception to have code=400 "BAD REQUEST"
-            thread = await message.create_thread(
-                name=f"Appeal-{platform[0]}-Malformed username",
-                auto_archive_duration=10080
-            )
-        await thread.join()
-        joiner_msg = await thread.send("user-mention placeholder")
-
-        ban_appeal_role = self.client.get_guild_attribute(
-            message.guild, AttributeKeys.ban_appeal_reaction_role)
-        if ban_appeal_role is None:
-            cmd_settings = self.client.get_command_mention_with_args(
-                "settings",
-                type="Attribute",
-                setting=AttributeKeys.ban_appeal_reaction_role,
-                mode="Set",
-                value=" "
-            )
-            await joiner_msg.edit(
-                content=f"No role has been set up to be pinged after a "
-                        f"ban appeal is created. Use {cmd_settings} "
-                        f"to add one.")
-        else:
-            await joiner_msg.edit(content=f"<@&{ban_appeal_role.id}>")
-            await joiner_msg.delete()
+        username: str = field_value or "Empty username"
+        await create_thread(
+            self.client,
+            message,
+            f"App-{platform[0]}-{username[:80]}",
+            AttributeKeys.ban_appeal_reaction_role,
+            emojis=[discord.PartialEmoji.from_str(emoji)
+                    for emoji in ("👍", "🤷", "👎")]
+        )

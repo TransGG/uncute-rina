@@ -1,11 +1,14 @@
 from __future__ import annotations
 # ^ for logging, to show log time; and for parsetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import discord
 
 from extensions.settings.objects.attribute_keys import AttributeKeys
 import extensions.settings.objects.server_settings as server_settings
+from extensions.settings.objects.server_attributes import (
+    MessageableGuildChannel
+)
 
 from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
@@ -13,7 +16,6 @@ from .debug import debug, DebugColor
 
 if TYPE_CHECKING:
     from resources.customs import Bot, GuildInteraction
-    from extensions.settings.objects import MessageableGuildChannel
 
 
 def get_mod_ticket_channel(
@@ -32,11 +34,13 @@ def get_mod_ticket_channel(
     """
     if isinstance(guild_id, discord.Interaction):
         guild_id = guild_id.guild.id
-    ticket_channel: MessageableGuildChannel | None = \
+    ticket_channel = cast(
+        MessageableGuildChannel | None,
         client.get_guild_attribute(
             guild_id,
             AttributeKeys.ticket_create_channel
         )
+    )
 
     return ticket_channel
 
@@ -69,8 +73,12 @@ async def log_to_guild(
     :raise MissingAttributesCheckFailure: If no logging channel is
      defined.
     """
+    # If we don't have a logging channel, then this ain't gonna work
+    if guild is None:
+        return False
+    # The given key should restrict us to messagable channels
     log_channel: discord.abc.Messageable | None = client.get_guild_attribute(
-        guild, AttributeKeys.log_channel)
+        guild, AttributeKeys.log_channel)  # type: ignore[assignment]
     if log_channel is None:
         if ignore_dms and is_in_dms(guild):
             return False
@@ -93,7 +101,7 @@ async def log_to_guild(
                 attribute_raw = "<no server data>"
             else:
                 attribute_raw = str(entry["attribute_ids"].get(
-                    AttributeKeys.log_channel, "<no attribute data>"))  # noqa
+                    AttributeKeys.log_channel, "<no attribute data>"))  # noqa: E501
 
             if attribute_raw.isdecimal():
                 guild = client.get_guild(guild_id)

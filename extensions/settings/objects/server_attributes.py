@@ -20,6 +20,7 @@ type GuildAttributeType = (
     | discord.Role | list[discord.Role]
     | discord.User
     | discord.VoiceChannel
+    | discord.ForumChannel
 )
 
 
@@ -39,7 +40,7 @@ class ServerAttributes(TypedDict):
 
     log_channel: MessageableGuildChannel | None
 
-    qotw_suggestions_channel: MessageableGuildChannel | None
+    qotw_suggestions_channel: discord.TextChannel | None
     developer_request_channel: discord.TextChannel | None
     # ^ needs to be able to have threads
     developer_request_reaction_role: discord.Role | None

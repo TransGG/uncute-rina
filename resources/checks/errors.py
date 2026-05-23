@@ -6,7 +6,7 @@ class InsufficientPermissionsCheckFailure(CheckFailure):
 
 
 class ModuleNotEnabledCheckFailure(CheckFailure):
-    def __init__(self, module_key):
+    def __init__(self, module_key: str) -> None:
         self.module_key = module_key
 
 
@@ -15,9 +15,9 @@ class CommandDoesNotSupportDMsCheckFailure(CheckFailure):
 
 
 class MissingAttributesCheckFailure(CheckFailure):
-    def __init__(self, module: str | None, attributes: list[str]):
+    def __init__(self, module: str | None, attributes: list[str]) -> None:
         self.module: str | None = module
         self.attributes: list[str] = list(attributes)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.module}; " + ', '.join(self.attributes)

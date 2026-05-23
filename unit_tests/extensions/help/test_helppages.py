@@ -8,7 +8,7 @@ from extensions.help.helppages import help_pages, aliases
 from extensions.help.utils import generate_help_page_embed
 
 
-def test_help_pages_integer_key():
+def test_help_pages_integer_key() -> None:
     # Arrange
     invalid_keys = []
 
@@ -21,7 +21,7 @@ def test_help_pages_integer_key():
     assert invalid_keys == [], "All help pages should have an integer key."
 
 
-def test_help_pages_sorted():
+def test_help_pages_sorted() -> None:
     # Arrange
     page_keys = list(help_pages)
 
@@ -33,7 +33,7 @@ def test_help_pages_sorted():
         "All help pages should be sorted by default."
 
 
-def test_help_pages_attributes():
+def test_help_pages_attributes() -> None:
     # Arrange
     invalid_pages = []
     allowed_keys = HelpPage.__annotations__
@@ -48,11 +48,11 @@ def test_help_pages_attributes():
          "attributes: title, description, fields, staff_only")
 
 
-def test_embed_lengths():
+def test_embed_lengths() -> None:
     # Arrange
     fake_client = CustomObject()
 
-    def fake_get_command_mention(cmd: str):
+    def fake_get_command_mention(cmd: str) -> str:
         fake_id = "0" * 19  # discord ids are roughly this length, I guess?
         return f"</{cmd}:{fake_id}>"
 
@@ -70,11 +70,11 @@ def test_embed_lengths():
             pytest.fail(issues)
 
 
-def test_aliases_for_each_help_page():
+def test_aliases_for_each_help_page() -> None:
     assert len(aliases) == len(help_pages)  # all pages have an alias
 
 
-def test_each_alias_list_is_not_empty():
+def test_each_alias_list_is_not_empty() -> None:
     empty_alias_lists = []
     for page, alias in aliases.items():
         if len(alias) == 0:

@@ -17,14 +17,24 @@ from extensions.termdictionary.dictionary_sources import DictionarySources
 from extensions.termdictionary.utils import simplify
 
 from resources.checks import is_staff_check  # for staff dictionary commands
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 # For logging custom dictionary changes, or when a search query returns
 #  nothing or >2000 characters
 from resources.utils.utils import log_to_guild
 
 
+def instantiate_sources(
+        sources: list[tuple[DictionarySources, type[DictionaryBase]]],
+        session: aiohttp.ClientSession,
+) -> list[tuple[DictionarySources, DictionaryBase]]:
+    return [
+        (dictionary[0], dictionary[1](session))
+        for dictionary in sources
+    ]
+
+
 class TermDictionary(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         self._session = aiohttp.ClientSession()
         self._dictionary_sources: list[
             tuple[DictionarySources, type[DictionaryBase]]
@@ -38,7 +48,7 @@ class TermDictionary(commands.Cog):
              UrbanDictionary),
         ]
 
-    async def cog_unload(self):
+    async def cog_unload(self) -> None:
         await self._session.close()
 
     @app_commands.command(name="dictionary",
@@ -82,7 +92,7 @@ class TermDictionary(commands.Cog):
             term: str,
             public: bool = False,
             source: DictionarySources = DictionarySources.All,
-    ):
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         await itx.response.defer(ephemeral=not public)
 
@@ -94,11 +104,7 @@ class TermDictionary(commands.Cog):
                 if dictionary[0] == source
             ]
 
-        # instantiate classes
-        sources = [
-            (dictionary[0], dictionary[1](self._session))
-            for dictionary in sources
-        ]
+        sources = instantiate_sources(sources, self._session)
 
         await asyncio.gather(*[
             source.construct_response(term)
@@ -136,7 +142,7 @@ class TermDictionary(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             current: str
-    ):
+    ) -> list[discord.app_commands.Choice[str]]:
         if current == '':
             return []
 
@@ -149,13 +155,14 @@ class TermDictionary(commands.Cog):
                 source = itx.namespace.source
 
             sources = [
-                (dictionary[0], dictionary[1](self._session))
+                dictionary
                 for dictionary in self._dictionary_sources[:]
                 if dictionary[0] == source
             ]
+        sources = instantiate_sources(sources, self._session)
 
         # fetch autocompletion results
-        async def fetch_with_timeout(dictionary: DictionaryBase):
+        async def fetch_with_timeout(dictionary: DictionaryBase) -> set[str]:
             try:
                 return await asyncio.wait_for(
                     dictionary.get_autocomplete(current),
@@ -183,7 +190,6 @@ class TermDictionary(commands.Cog):
         description='Change custom entries in the dictionary'
     )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="define",
                    description="Add a dictionary entry for a word!")
     @app_commands.describe(
@@ -192,13 +198,14 @@ class TermDictionary(commands.Cog):
         definition="Give this term a definition",
         synonyms="Add synonyms (SEPARATE WITH \", \")"
     )
+    @is_staff_check
     async def define(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             term: str,
             definition: str,
-            synonyms: str = ""
-    ):
+            synonyms: str = "",
+    ) -> None:
         # Test if this term is already defined in this dictionary.
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
@@ -252,7 +259,6 @@ class TermDictionary(commands.Cog):
             ephemeral=True,
         )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="redefine",
                    description="Edit a dictionary entry for a word!")
     @app_commands.describe(
@@ -260,12 +266,13 @@ class TermDictionary(commands.Cog):
              "Example: Egg, Hormone Replacement Therapy (HRT), etc.",
         definition="Redefine this definition"
     )
+    @is_staff_check
     async def redefine(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             term: str,
             definition: str
-    ):
+    ) -> None:
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -292,14 +299,14 @@ class TermDictionary(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="undefine",
                    description="Remove a dictionary entry for a word!")
     @app_commands.describe(
         term="What word do you need to undefine (case sensitive). Example: "
              "Egg, Hormone Replacement Therapy (HRT), etc",
     )
-    async def undefine(self, itx: discord.Interaction[Bot], term: str):
+    @is_staff_check
+    async def undefine(self, itx: GuildInteraction[Bot], term: str) -> None:
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)
@@ -325,7 +332,6 @@ class TermDictionary(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.check(is_staff_check)
     @admin.command(name="editsynonym",
                    description="Add a synonym to a previously defined word")
     @app_commands.describe(
@@ -338,13 +344,14 @@ class TermDictionary(commands.Cog):
         discord.app_commands.Choice(name='Add a synonym', value=1),
         discord.app_commands.Choice(name='Remove a synonym', value=2),
     ])
+    @is_staff_check
     async def edit_synonym(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             term: str,
             mode: int,
-            synonym: str
-    ):
+            synonym: str,
+    ) -> None:
         collection = itx.client.rina_db["termDictionary"]
         query = {"term": term}
         search = collection.find_one(query)

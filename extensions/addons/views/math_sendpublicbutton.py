@@ -4,7 +4,7 @@ from resources.customs import Bot
 
 
 class SendPublicButtonMath(discord.ui.View):
-    def __init__(self, timeout=180):
+    def __init__(self, timeout: float = 180) -> None:
         super().__init__()
         self.value = None
         self.timeout = timeout
@@ -14,8 +14,15 @@ class SendPublicButtonMath(discord.ui.View):
             self,
             itx: discord.Interaction[Bot],
             _button: discord.ui.Button
-    ):
+    ) -> None:
         self.value = 1
+        if itx.message is None:
+            await itx.response.send_message(
+                "I can't find that message so can't send it publicly!",
+                ephemeral=True
+            )
+            return
+
         await itx.response.edit_message(content="Sent successfully!")
         cmd_math = itx.client.get_command_mention("math")
         await itx.followup.send(

@@ -13,7 +13,7 @@ from extensions.addons.roll import _validate_dice_and_faces
     (999999, 99, True),  # almost a million dice
     (99, 999999, True),  # almost a million faces
 ])
-def test_valid_cases(dice: int, faces: int, expected: bool):
+def test_valid_cases(dice: int, faces: int, expected: bool) -> None:
     assert _validate_dice_and_faces(dice, faces) == expected
 
 
@@ -23,6 +23,6 @@ def test_valid_cases(dice: int, faces: int, expected: bool):
     (1000000, 1, OverflowError),  # a million dice
     (0, 1000000, OverflowError),  # a million faces
 ])
-def test_invalid_cases(dice: int, faces: int, expected_exception):
+def test_invalid_cases(dice: int, faces: int, expected_exception) -> None:
     with pytest.raises(expected_exception):
         _validate_dice_and_faces(dice, faces)

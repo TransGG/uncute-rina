@@ -1,6 +1,6 @@
 from extensions.help.helppage import HelpPage
 
-__all__ = ["help_pages", 'aliases', 'FIRST_PAGE']
+__all__ = ['FIRST_PAGE', 'aliases', "help_pages"]
 
 from extensions.settings.objects import AttributeKeys
 
@@ -846,7 +846,7 @@ help_pages: dict[int, HelpPage] = {
 }
 
 
-FIRST_PAGE: int = list(help_pages)[0]
+FIRST_PAGE: int = next(iter(help_pages))
 
 
 aliases: dict[int, list[str]] = {

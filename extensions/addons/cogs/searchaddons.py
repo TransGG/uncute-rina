@@ -1,6 +1,7 @@
 import json  # to read API json responses
 
-import requests  # to read api calls
+import aiohttp  # to read api calls
+import aiohttp.client_exceptions
 
 import discord
 import discord.app_commands as app_commands
@@ -101,8 +102,10 @@ def _format_wolfram_warnings(data: WolframQueryResult) -> str:
         #  list instead.
         # Edit: Turns out they do.
         if isinstance(data["warnings"], list):
-            for warning in data["warnings"]:
-                warnings.append(warning["text"])
+            warnings.extend([
+                warning["text"]
+                for warning in data["warnings"]
+            ])
         else:
             warnings.append(data["warnings"]["text"])
     if len(data.get("timedout", "")) > 0:
@@ -336,16 +339,16 @@ def _format_wolfram_error_output(data: WolframQueryResult) -> str:
             "It appears you filled in something for which I can't "
             "get extra feedback..\n"
             "Feel free to report the situation to MysticMia#7612"
-            + "\n\n"
-              "Interpreted input:\n"
-              "> {input_string}"
+            + f"\n\n"
+              f"Interpreted input:\n"
+              f"> {input_string}"
               if input_string is not None
               else ""
         )
 
 
 class SearchAddons(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(
@@ -356,7 +359,11 @@ class SearchAddons(commands.Cog):
         country_id="What country do you want to know more about? "
                    "(GB, US, AU, etc.)"
     )
-    async def equaldex(self, itx: discord.Interaction[Bot], country_id: str):
+    async def equaldex(
+            self,
+            itx: discord.Interaction[Bot],
+            country_id: str,
+    ) -> None:
         illegal_characters = ""
         for char in country_id.lower():
             if char not in "abcdefghijklmnopqrstuvwxyz":
@@ -375,11 +382,11 @@ class SearchAddons(commands.Cog):
             "apiKey": equaldex_key,
             # "formatted": "true",
         }
-        response = requests.get(
-            "https://www.equaldex.com/api/region",
-            params=querystring
-        )
-        response_api = response.text
+        async with aiohttp.ClientSession() as client, client.get(
+                "https://www.equaldex.com/api/region",
+                params=querystring
+        ) as response:
+            response_api = await response.text()
         # returns ->  <pre>{"regions":{...}}</pre>  <- so you need to
         #  remove the <pre> and </pre> parts. It also has some
         #  <br \/>\r\n strings in there for some reason...? so uh
@@ -449,7 +456,7 @@ class SearchAddons(commands.Cog):
                 #                          "Not banned", "Varies by Region"]:
                 #     value = "🟨 " + value
                 # else:
-                #     value = "➖ " + value
+                #     value = "➖ " + value  # noqa: RUF003
                 status_description = \
                     status['description']
                 description = issue_details['description']
@@ -481,7 +488,7 @@ class SearchAddons(commands.Cog):
 
     @app_commands.command(name="math",
                           description="Ask Wolfram Alpha a question")
-    async def math(self, itx: discord.Interaction[Bot], query: str):
+    async def math(self, itx: discord.Interaction[Bot], query: str) -> None:
         # todo: shorten function / split, and re-investigate the API
         #  docs to see if I can parse stuff better
         await itx.response.defer(ephemeral=True)
@@ -505,11 +512,15 @@ class SearchAddons(commands.Cog):
             "output": "json",
         }
         try:
-            api_response: WolframResult = requests.get(
-                "https://api.wolframalpha.com/v2/query",
-                params=params
-            ).json()
-        except requests.exceptions.JSONDecodeError:
+            async with aiohttp.ClientSession() as client, client.get(
+                    "https://api.wolframalpha.com/v2/query",
+                    params=params
+            ) as response:
+                api_response: WolframResult = await response.json()
+        except (
+                aiohttp.client_exceptions.ContentTypeError,
+                json.JSONDecodeError
+        ):
             await itx.followup.send(
                 "Your input gave a malformed result! Perhaps it took "
                 "too long to calculate...",

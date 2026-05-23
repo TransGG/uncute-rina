@@ -29,11 +29,16 @@ def create_simple_button(
 
     :return: A button with the given properties.
     """
+    button: discord.ui.Button
     if label_is_emoji:
         button = discord.ui.Button(emoji=label, style=style, disabled=disabled)
     else:
         button = discord.ui.Button(label=label, style=style, disabled=disabled)
-    button.callback = callback
+    # evil kludge that makes mypy angery
+    #
+    # We need to assign the method, and we're not getting a callback for
+    #  something that isn't a bot.
+    button.callback = callback  # type: ignore[method-assign, assignment]
     return button
 
 
@@ -53,8 +58,8 @@ class GenericTwoButtonView(discord.ui.View):
                 "Confirm", discord.ButtonStyle.green),
             button_false: tuple[str, discord.ButtonStyle] = (
                 "Cancel", discord.ButtonStyle.red),
-            timeout: float | None = None
-    ):
+            timeout: float | None = None,
+    ) -> None:
         """
         Create a new view with two buttons. Clicking the first button
         will set :py:attr:`value` to True, and the second button sets it
@@ -76,11 +81,11 @@ class GenericTwoButtonView(discord.ui.View):
             button_false[0], button_false[1], self.on_button_false
         ))
 
-    async def on_button_true(self, _: discord.Interaction[Bot]):
+    async def on_button_true(self, _: discord.Interaction[Bot]) -> None:
         self.value = True
         self.stop()
 
-    async def on_button_false(self, _: discord.Interaction[Bot]):
+    async def on_button_false(self, _: discord.Interaction[Bot]) -> None:
         self.value = False
         self.stop()
 
@@ -199,7 +204,11 @@ class PageView(discord.ui.View):
         return button_style, disabled
 
     @abstractmethod
-    async def update_page(self, itx: discord.Interaction[Bot], view: PageView):
+    async def update_page(
+            self,
+            itx: discord.Interaction[Bot],
+            view: PageView
+    ) -> None:
         """
         Update the page message.
 
@@ -220,7 +229,7 @@ class PageView(discord.ui.View):
             appended_buttons: list[discord.ui.Button] | None = None,
             loop_around_pages: bool = True,
             timeout: float | None = None
-    ):
+    ) -> None:
         super().__init__(timeout=timeout)
         self.page: int = starting_page
         self.loop_around_pages = loop_around_pages
@@ -257,7 +266,7 @@ class PageView(discord.ui.View):
             #  shared across instances -_-
             self.add_item(post_button)
 
-    async def on_page_down(self, itx: discord.Interaction[Bot]):
+    async def on_page_down(self, itx: discord.Interaction[Bot]) -> None:
         if self.page - 1 < 0:  # below lowest index
             self.page = self.max_page_index  # set to the highest index
         else:
@@ -266,7 +275,7 @@ class PageView(discord.ui.View):
         self.update_button_colors()
         await self.update_page(itx, self)
 
-    async def on_page_up(self, itx: discord.Interaction[Bot]):
+    async def on_page_up(self, itx: discord.Interaction[Bot]) -> None:
         if self.page + 1 > self.max_page_index:  # above highest index
             self.page = 0  # set to the lowest index
         else:

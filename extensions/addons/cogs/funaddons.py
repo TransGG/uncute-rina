@@ -72,12 +72,14 @@ async def _handle_awawa_reaction(
     return False
 
 
-async def _get_dice_roll_output(dice, faces, mod):
+def _get_dice_roll_output(
+        dice: int,
+        faces: int,
+        mod: int | float
+) -> tuple[str, bool]:
     """Helper to get the text output for a simple /roll."""
-    rolls = []
     message_too_long = False
-    for _ in range(dice):
-        rolls.append(random.randint(1, faces))
+    rolls = [random.randint(1, faces) for _ in range(dice)]
     dice_info = (f"I rolled {dice:,} di{'c' * (dice != 1)}e with "
                  f"{faces:,} face{'s' * (faces > 1)}")
     modifier_info = ""
@@ -97,7 +99,7 @@ async def _get_dice_roll_output(dice, faces, mod):
         out = (f":\n"
                f"With this many numbers, I've simplified it a little. "
                f"You rolled `{sum(rolls) + (mod or 0):,}`.")
-        details = await _simplify_roll_output(rolls)
+        details = _simplify_roll_output(rolls)
         if len(details) > 1500:
             details = ""
         elif len(details) > 300:
@@ -109,18 +111,17 @@ async def _get_dice_roll_output(dice, faces, mod):
     return output_string, message_too_long
 
 
-async def _simplify_roll_output(rolls: list[int]) -> str:
+def _simplify_roll_output(rolls: list[int]) -> str:
     """Helper to represent dice rolls into (eyes, count) entries."""
     roll_db = {}
     for roll in rolls:
-        try:
-            roll_db[roll] += 1
-        except KeyError:
+        if roll not in roll_db:
             roll_db[roll] = 1
+        roll_db[roll] += 1
     # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
     # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)]
     #  that is then sorted by the first item in the tuple.
-    roll_db = sorted([x for x in roll_db.items()])
+    roll_db = sorted(roll_db.items())
     details = "You rolled "
     for roll, count in roll_db:
         details += f"'{roll}'x{count}, "
@@ -128,7 +129,7 @@ async def _simplify_roll_output(rolls: list[int]) -> str:
 
 
 class FunAddons(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
         self.headpat_wait = 0
         self.rude_comments_opinion_cooldown = 0
@@ -206,7 +207,7 @@ class FunAddons(commands.Cog):
         return False
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
@@ -251,13 +252,12 @@ class FunAddons(commands.Cog):
             public: bool = False,
             mod: int | None = None,
             advanced: str | None = None,
-    ):
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
 
         if advanced is None:
             await itx.response.defer(ephemeral=not public)
-            out, too_long = await _get_dice_roll_output(
-                dice, faces, mod)
+            out, too_long = _get_dice_roll_output(dice, faces, mod)
             if too_long:
                 await itx.delete_original_response()
             await itx.followup.send(out, ephemeral=too_long)
@@ -283,12 +283,12 @@ class FunAddons(commands.Cog):
                         ephemeral=True,
                     )
                     return
-            _add = advanced.replace('-', '+-').split('+')
-            add = [add_section for add_section in _add if len(add_section) > 0]
+            add_list = advanced.replace('-', '+-').split('+')
+            add = [add_section
+                   for add_section in add_list
+                   if len(add_section) > 0]
             # print("add:       ",add)
-            multiply = []
-            for add_section in add:
-                multiply.append(add_section.split('*'))
+            multiply = [add_section.split('*') for add_section in add]
             # print("multiply:  ",multiply)
             try:
                 result = [[sum(generate_roll(query))
@@ -312,8 +312,8 @@ class FunAddons(commands.Cog):
             if "+" in advanced or '-' in advanced:
                 out += [' + '.join([str(_product_of_list(section))
                                     for section in result])]
-            out += [str(sum([_product_of_list(section)
-                             for section in result]))]
+            out += [str(sum(_product_of_list(section)
+                            for section in result))]
             output = discord.utils.escape_markdown('\n= '.join(out))
             if len(output) >= 1950:
                 output = ("Your result was too long! I couldn't send it. "

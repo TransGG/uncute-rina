@@ -13,7 +13,7 @@ import discord.ext.commands as commands
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
     module_enabled_check  # cuz it's a staff command
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
@@ -285,14 +285,14 @@ async def _get_vc_activity(
     return output
 
 
-async def _make_bar_graph(
-        df,
+def _make_bar_graph(
+        df: pd.DataFrame,
         lower_bound: float,
         sorted_usernames: list[int],
         upper_bound: float,
         voice_channel: discord.VoiceChannel | discord.StageChannel,
         timezone_offset: float | None
-):
+) -> None:
     df["Diff"] = df.Finish - df.Start
     color = "crimson"
     fig, ax = plt.subplots(figsize=(6, 3))
@@ -345,9 +345,9 @@ async def _make_bar_graph(
     # When more users are shown (e.g., 30), that would bring the font
     #  size to 144 / 30 = 4.8,
     #
-    # [1]: https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html # noqa
-    # [2]: https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size # noqa
-    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx # noqa
+    # [1]: https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html # noqa: E501
+    # [2]: https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size # noqa: E501
+    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx # noqa: E501
 
     scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)
     # ^ clamp to 4 <= size <= 12 (default)
@@ -359,12 +359,24 @@ async def _make_bar_graph(
     plt.savefig('outputs/vcLogs.png', dpi=300)
 
 
-async def _format_data_for_graph(
-        events, max_time, min_time, select_user_ids, voice_channel
-):
+def _format_data_for_graph(
+        events: list[tuple[
+            float,
+            tuple[int, str],
+            tuple[int, str] | None,
+            tuple[int, str] | None
+        ]],  # todo: make type variable
+        max_time: float,
+        min_time: float,
+        select_user_ids: list[str],
+        voice_channel: (discord.abc.GuildChannel
+                        | discord.Thread
+                        | discord.abc.PrivateChannel
+                        | CustomVoiceChannel),  # todo: narrow down type
+) -> tuple[VcLogGraphData, list[int]]:
     intermediate_data: dict[int, dict[
         typing.Literal["name", "join_time", "timestamps"],
-        str | None | float | list[tuple[float, float]]
+        list[tuple[float, float]] | str | float | None
     ]] = {}
     for event in events:
         unix, user, from_channel, to_channel = event
@@ -419,7 +431,7 @@ async def _format_data_for_graph(
 
 
 class VCLogReader(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(name="getvcdata",
@@ -433,24 +445,27 @@ class VCLogReader(commands.Cog):
         user_ids="Specific user ids to filter the graph for "
                  "(separate with comma)"
     )
-    @app_commands.check(is_staff_check)
+    @app_commands.rename(
+        requested_channel_input="requested_channel"
+    )
+    @is_staff_check
     @module_enabled_check(ModuleKeys.vc_log_reader)
     async def get_voice_channel_data(
             self,
-            itx: discord.Interaction[Bot],
-            requested_channel: str,
+            itx: GuildInteraction[Bot],
+            requested_channel_input: str,
             lower_bound: str,
-            upper_bound: str = None,
-            timezone_offset: float = None,
+            upper_bound: str | None = None,
+            timezone_offset: float | None = None,
             msg_log_limit: int = 5000,
             user_ids: str | None = None
-    ):
+    ) -> None:
         select_user_ids = []
         if user_ids is not None:
             select_user_ids: list[str] = user_ids.replace(" ", "").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str \
-            = requested_channel
+            = requested_channel_input
         warning = ""
         if type(requested_channel) is discord.app_commands.AppCommandChannel:
             voice_channel = itx.client.get_channel(requested_channel.id)
@@ -550,12 +565,12 @@ class VCLogReader(commands.Cog):
                     None
                 ))
 
-        data, sorted_usernames = await _format_data_for_graph(
+        data, sorted_usernames = _format_data_for_graph(
             events, max_time, min_time, select_user_ids, voice_channel)
 
         df = pd.DataFrame(data=data)
-        await _make_bar_graph(df, lower_bound, sorted_usernames,
-                              upper_bound, voice_channel, timezone_offset)
+        _make_bar_graph(df, lower_bound, sorted_usernames,
+                        upper_bound, voice_channel, timezone_offset)
 
         await itx.followup.send(
             warning

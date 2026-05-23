@@ -9,12 +9,13 @@ from resources.checks import (
     module_enabled_check,
     MissingAttributesCheckFailure,
 )
+from resources.utils.discord_utils import get_member_or_filter
 from resources.views.generics import GenericTwoButtonView
 from resources.checks.permissions import is_staff
 # ^ to prevent people in vc-tables from muting staff.
 from resources.utils.utils import log_to_guild
 # ^ to log custom vc changes
-from resources.customs import Bot
+from resources.customs import Bot, GuildInteraction
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 from extensions.customvcs.utils import (
@@ -31,16 +32,16 @@ from extensions.customvcs.utils import (
 # region Permission checks
 def _is_vc_table_owner(
         channel: discord.VoiceChannel,
-        target: discord.Role | discord.Member
+        target: discord.Role | discord.Member | discord.Object
 ) -> bool:
     if target not in channel.overwrites:
         return False
-    return channel.overwrites[target].connect
+    return channel.overwrites[target].connect is True
 
 
 def _is_vctable_speaker(
         channel: discord.VoiceChannel,
-        target: discord.Role | discord.Member
+        target: discord.Role | discord.Member | discord.Object
 ) -> bool:
     if target not in channel.overwrites:
         return False
@@ -49,7 +50,7 @@ def _is_vctable_speaker(
 
 def _is_vctable_muted(
         channel: discord.VoiceChannel,
-        target: discord.Role | discord.Member
+        target: discord.Role | discord.Member | discord.Object
 ) -> bool:
     if target not in channel.overwrites:
         return False
@@ -58,7 +59,7 @@ def _is_vctable_muted(
 
 def _is_vctable_participant(
         channel: discord.VoiceChannel,
-        target: discord.Role | discord.Member
+        target: discord.Role | discord.Member | discord.Object
 ) -> bool:
     if target not in channel.overwrites:
         return False
@@ -86,23 +87,25 @@ def _is_vctable_locked(
 
 
 def _get_vctable_members_with_predicate(
-        channel: discord.VoiceChannel,
-        predicate: Callable[
-            [discord.VoiceChannel, discord.Member | discord.Role
-             | discord.Object], bool]
-):
-    outputs = []
-    for target in channel.overwrites:
-        if predicate(channel, target) and isinstance(target, discord.Member):
-            outputs.append(target.mention)
-    return outputs
+    channel: discord.VoiceChannel,
+    predicate: Callable[
+        [discord.VoiceChannel, discord.Member | discord.Role | discord.Object],
+        bool,
+    ],
+) -> list[str]:
+    return [
+        target.mention
+        for target in channel.overwrites
+        if (predicate(channel, target)
+            and isinstance(target.id, discord.Member))
+    ]
 
 
 async def _get_current_voice_channel(
-        itx: discord.Interaction[Bot],
+        itx: GuildInteraction[Bot],
         action: str,
-        from_event: bool = None
-):
+        from_event: bool | None = None
+) -> discord.VoiceChannel | None:
     """Gets the voice channel of the command executor if it's
     a custom voice channel.
 
@@ -128,7 +131,11 @@ async def _get_current_voice_channel(
             AttributeKeys.custom_vc_blacklisted_channels,
             AttributeKeys.custom_vc_blacklist_prefix
         )
-    if None in (vc_hub, vc_category, vc_blacklist_prefix):
+    if (
+            vc_hub is None
+            or vc_category is None
+            or vc_blacklist_prefix is None
+    ):
         missing = [key for key, value in {
             AttributeKeys.custom_vc_create_channel: vc_hub,
             AttributeKeys.custom_vc_category: vc_category,
@@ -137,33 +144,43 @@ async def _get_current_voice_channel(
             if value is None]
         raise MissingAttributesCheckFailure(ModuleKeys.vc_tables, missing)
 
+    if isinstance(itx.user, discord.User):
+        if not from_event:
+            await itx.response.send_message(
+                f"Couldn't {action}: You aren't connected to a voice channel!",
+                ephemeral=True,
+            )
+        return None
     if itx.user.voice is None or itx.user.voice.channel is None:
         if not from_event:
             await itx.response.send_message(
                 f"Couldn't {action}: You aren't connected to a voice channel!",
                 ephemeral=True,
             )
-        return
+        return None
     channel = itx.user.voice.channel
 
-    if not is_vc_custom(channel, vc_category, vc_hub,
-                        blacklisted_channels, vc_blacklist_prefix):
+    if (
+            not isinstance(channel, discord.VoiceChannel)
+            or not is_vc_custom(channel, vc_category, vc_hub,
+                                blacklisted_channels, vc_blacklist_prefix)
+    ):
         if not from_event:
             await itx.response.send_message(
                 f"Couldn't {action}: This voice channel is not compatible "
                 f"with VcTables!",
                 ephemeral=True,
             )
-        return
+        return None
 
     return channel
 
 
 async def _get_channel_if_owner(
-        itx: discord.Interaction[Bot] | discord.Member,
+        itx: GuildInteraction[Bot],
         action: str,
         from_event: bool = False
-):
+) -> discord.VoiceChannel | None:
     """
     Gets the voice channel of the command executor if they are in a
     custom voice channel that has turned into a vctable AND they are the
@@ -182,7 +199,13 @@ async def _get_channel_if_owner(
     """
     channel = await _get_current_voice_channel(itx, action, from_event)
     if channel is None:
-        return
+        # Don't send any messages, the function already does this.
+        return None
+    assert isinstance(itx.user, discord.Member), (
+        f"Expected _get_current_voice_channel to filter itx.user to "
+        f"a discord.Member, but it turns out it is still of type "
+        f"{type(itx.user)}!"
+    )
 
     if not _is_vc_table_owner(channel, itx.user):
         if not from_event:
@@ -193,7 +216,7 @@ async def _get_channel_if_owner(
                 f"make it one!)",
                 ephemeral=True,
             )
-        return
+        return None
     return channel
 
 
@@ -202,7 +225,7 @@ class VcTables(
         name="vctable",
         description="Make your voice channels advanced!"
 ):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     # region Commands
@@ -216,10 +239,10 @@ class VcTables(
     @module_enabled_check(ModuleKeys.vc_tables)
     async def vctable_create(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             owners: str = "",
             name: app_commands.Range[str, 3, 35] | None = None
-    ):
+    ) -> None:
         vctable_prefix: str | None = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.vctable_prefix)
         if vctable_prefix is None:
@@ -227,9 +250,12 @@ class VcTables(
                 ModuleKeys.vc_tables, [AttributeKeys.vctable_prefix])
 
         warning = ""
+        user = await get_member_or_filter(itx, itx.user)
+        if user is None:
+            return
 
-        owners = owners.split(",")
-        if itx.user.guild is None:
+        owner_list = owners.split(",")
+        if user.guild is None:
             await itx.response.send_message(
                 "You don't seem to be in this guild, so I can't give you "
                 "permissions for this voice channel... Maybe ask @mysticmia "
@@ -240,9 +266,9 @@ class VcTables(
         cmd_owner = itx.client.get_command_mention_with_args(
             "vctable owner", mode="Add", user=" ")
         # region Parse vctable owners
-        added_owners = [itx.user]
+        added_owners = [user]
         added_owner_ids = []
-        for mention in owners:
+        for mention in owner_list:
             if mention == "":
                 continue
             mention: str = mention.strip()
@@ -293,8 +319,15 @@ class VcTables(
         user_vc = await _get_current_voice_channel(itx, "create VcTable")
         if user_vc is None:
             return
+        assert (user_vc.category is not None
+                and user.voice is not None
+                and user.voice.channel is not None), (
+            "Expected _get_current_voice_channel to handle incorrect "
+            "situations, but one of the requirements was still None!"
+            + str([user_vc.category, user.voice])
+        )
 
-        if name == user_vc.name:
+        if name == user_vc.name and name is not None:  # Test None for typer
             warning += (
                 "Info: VcTables get a prefix, so the channel name is edited "
                 "to include it. Bots can only edit a channel's name twice "
@@ -321,7 +354,7 @@ class VcTables(
                     ephemeral=True)
                 return
 
-        first_rename_time = try_store_vc_rename(itx.user.voice.channel.id)
+        first_rename_time = try_store_vc_rename(user.voice.channel.id)
         if first_rename_time:
             await itx.followup.send(
                 f"This channel has been renamed too often in the past "
@@ -391,12 +424,12 @@ class VcTables(
                 ephemeral=True
             )
 
-    @module_enabled_check(ModuleKeys.vc_tables)
     @app_commands.command(
         name="disband",
         description="reset permissions and convert vctable back to customvc"
     )
-    async def vctable_disband(self, itx: discord.Interaction[Bot]):
+    @module_enabled_check(ModuleKeys.vc_tables)
+    async def vctable_disband(self, itx: GuildInteraction[Bot]) -> None:
         vctable_prefix: str | None = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.vctable_prefix)
         if vctable_prefix is None:
@@ -406,6 +439,9 @@ class VcTables(
         channel = await _get_channel_if_owner(itx, "disband VcTable")
         if channel is None:
             return
+        assert channel.category is not None, (
+            "Assumed owned custom vc was in a category, but it wasn't!"
+        )
         # reset overrides
         await channel.edit(overwrites=channel.category.overwrites)
         # update every user's permissions
@@ -439,7 +475,7 @@ class VcTables(
         description="Get information about this CustomVC add-on feature"
     )
     @module_enabled_check(ModuleKeys.vc_tables)
-    async def vctable_help(self, itx: discord.Interaction[Bot]):
+    async def vctable_help(self, itx: discord.Interaction[Bot]) -> None:
         embed1 = discord.Embed(
             color=discord.Colour.from_rgb(r=255, g=153, b=204),
             title='Custom VC Tables',
@@ -520,10 +556,10 @@ class VcTables(
     @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_owners(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: int,
             user: discord.Member | None = None
-    ):
+    ) -> None:
         # todo: make mode use Enum
         if itx.user == user and mode != 3:
             if mode == 1:
@@ -650,10 +686,10 @@ class VcTables(
     @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_speakers(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: int,
             user: discord.Member | None = None
-    ):
+    ) -> None:
         if itx.user == user and mode != 3:
             await itx.response.send_message(
                 "You can't edit your own speaking permissions!",
@@ -793,10 +829,10 @@ class VcTables(
     @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_participants(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: int,
             user: discord.Member | None = None
-    ):
+    ) -> None:
         if itx.user == user and mode != 3:
             await itx.response.send_message(
                 "You can't edit your own participation permissions!",
@@ -939,10 +975,10 @@ class VcTables(
     @module_enabled_check(ModuleKeys.vc_tables)
     async def edit_vctable_muted_participants(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: int,
             user: discord.Member | None = None
-    ):
+    ) -> None:
         if itx.user == user and mode != 3:
             await itx.response.send_message(
                 "You can't "
@@ -1069,7 +1105,10 @@ class VcTables(
                           description="Only let users speak if they are "
                                       "whitelisted by the owner")
     @module_enabled_check(ModuleKeys.vc_tables)
-    async def vctable_authorized_only(self, itx: discord.Interaction[Bot]):
+    async def vctable_authorized_only(
+            self,
+            itx: GuildInteraction[Bot]
+    ) -> None:
         channel = await _get_channel_if_owner(itx, "enable authorized-only")
         if channel is None:
             return
@@ -1139,7 +1178,7 @@ class VcTables(
                     "the owner"
     )
     @module_enabled_check(ModuleKeys.vc_tables)
-    async def vctable_lock(self, itx: discord.Interaction[Bot]):
+    async def vctable_lock(self, itx: GuildInteraction[Bot]) -> None:
         channel = await _get_channel_if_owner(itx, "enable vctable lock")
         if channel is None:
             return

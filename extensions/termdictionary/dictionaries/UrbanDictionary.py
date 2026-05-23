@@ -18,7 +18,7 @@ from resources.customs import Bot
 class UrbanDictionary(DictionaryBase):
     term_suffix = " [UD]"
 
-    def __init__(self, session: aiohttp.ClientSession):
+    def __init__(self, session: aiohttp.ClientSession) -> None:
         super().__init__(session)
         self._pages: list[discord.Embed] | None = None
 
@@ -47,10 +47,12 @@ class UrbanDictionary(DictionaryBase):
         return score
 
     @staticmethod
-    def _get_urban_dictionary_pages(data) -> list[discord.Embed]:
+    def _get_urban_dictionary_pages(
+            data: list[UrbanDictionaryEntry],
+    ) -> list[discord.Embed]:
         data = sorted(
             data,
-            key=lambda r: UrbanDictionary._calculate_post_score(r),
+            key=UrbanDictionary._calculate_post_score,
             reverse=True  # sort from highest to lowest
         )
 

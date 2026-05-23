@@ -11,7 +11,7 @@ from resources.utils import MissingQuantityException, MissingUnitException
 
 
 class RemindersCog(commands.GroupCog, name="reminder"):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(name="remindme",
@@ -27,7 +27,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
             itx: discord.Interaction[Bot],
             reminder_datetime: str,
             reminder: str
-    ):
+    ) -> None:
         # Supported formats:
         # - "next thursday at 3pm"
         # - "tomorrow"
@@ -139,8 +139,8 @@ class RemindersCog(commands.GroupCog, name="reminder"):
     async def reminders(
             self,
             itx: discord.Interaction[Bot],
-            item: int = None
-    ):
+            item: int | None = None
+    ) -> None:
         collection = itx.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)
@@ -224,7 +224,7 @@ class RemindersCog(commands.GroupCog, name="reminder"):
         item="Which reminder would you like to know more about? "
              "(use reminder-ID)"
     )
-    async def remove(self, itx: discord.Interaction[Bot], item: int):
+    async def remove(self, itx: discord.Interaction[Bot], item: int) -> None:
         collection = itx.client.rina_db["reminders"]
         query = {"userID": itx.user.id}
         db_data = collection.find_one(query)

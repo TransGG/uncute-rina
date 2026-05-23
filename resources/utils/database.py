@@ -8,9 +8,12 @@ class Int64ToIntDecoder(TypeDecoder):
     python_type = int  # The Python type you want to produce
     bson_type = Int64  # The BSON type you want to decode
 
-    def transform_bson(self, value):
+    def transform_bson(
+            self,
+            value: bson_type
+    ) -> int:
         return int(value)
 
 
-codec_options = CodecOptions(
+codec_options: CodecOptions = CodecOptions(
     type_registry=TypeRegistry([Int64ToIntDecoder()]))

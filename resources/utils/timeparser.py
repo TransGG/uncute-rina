@@ -152,7 +152,7 @@ class TimeParser:
             TimeParser.parse_time_string(time_string)  # can raise ValueError
         )
 
-        timedict = {
+        timedict: dict[str, int | float] = {
             "y": start_date.year,
             "M": start_date.month,
             "d": start_date.day,
@@ -235,21 +235,21 @@ class TimeParser:
             raise ValueError("I don't think I can remind you in that long!")
 
         # round everything down to the nearest whole number
-        timedict = {i: int(timedict[i]) for i in timedict}
+        rounded_timedict = {i: int(j) for i, j in timedict.items()}
 
         distance = datetime(
-            timedict["y"],
-            timedict["M"],
+            rounded_timedict["y"],
+            rounded_timedict["M"],
             1,  # add days using timedelta(days=d)
-            timedict["h"],
-            timedict["m"],
-            timedict["s"],
-            timedict["f"],
+            rounded_timedict["h"],
+            rounded_timedict["m"],
+            rounded_timedict["s"],
+            rounded_timedict["f"],
             tzinfo=start_date.tzinfo
         )
         # You cant have >31 days in a month, but if overflow is given,
         #  then let this timedelta calculate the new months/years
-        distance += timedelta(days=timedict["d"] - 1)
+        distance += timedelta(days=rounded_timedict["d"] - 1)
         # ^ -1 cuz datetime.day has to start at 1 (first day of the month)
 
         return distance

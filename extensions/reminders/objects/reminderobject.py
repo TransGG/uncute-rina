@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 async def relaunch_ongoing_reminders(
         client: Bot,
-):
+) -> None:
     """
     Helper to start stored reminders after the bot restarts.
 
@@ -37,24 +37,23 @@ async def relaunch_ongoing_reminders(
      store new scheduler events.
     """
     collection = client.async_rina_db["reminders"]
-    query = {}
-    db_data = collection.find(query)
+    db_data = collection.find({})
     async for entry in db_data:
         entry: DatabaseData
-        try:
-            for reminder in entry["reminders"]:
-                creation_time = datetime.fromtimestamp(
-                    reminder['creationtime'], timezone.utc)
-                reminder_time = datetime.fromtimestamp(
-                    reminder['remindertime'], timezone.utc)
-                ReminderObject(
-                    client, creation_time, reminder_time,
-                    entry['userID'],
-                    reminder['reminder'], entry["reminders"],
-                    continued=True
-                )
-        except KeyError:
-            pass
+        if "reminders" not in entry:
+            continue
+
+        for reminder in entry["reminders"]:
+            creation_time = datetime.fromtimestamp(
+                reminder['creationtime'], timezone.utc)
+            reminder_time = datetime.fromtimestamp(
+                reminder['remindertime'], timezone.utc)
+            ReminderObject(
+                client, creation_time, reminder_time,
+                entry['userID'],
+                reminder['reminder'], entry["reminders"],
+                continued=True
+            )
 
 
 class ReminderObject:
@@ -66,7 +65,7 @@ class ReminderObject:
             reminder: str,
             user_reminders: list[ReminderDict],
             continued: bool = False
-    ):
+    ) -> None:
         self.client = client
         self.creationtime = creationtime
         self.remindertime = remindertime
@@ -128,7 +127,7 @@ class ReminderObject:
                 run_date=self.remindertime
             )
 
-    async def send_reminder(self):
+    async def send_reminder(self) -> None:
         user = await self.client.fetch_user(self.userID)
         creationtime = int(self.creationtime.timestamp())
         try:
@@ -143,12 +142,24 @@ class ReminderObject:
         collection = self.client.rina_db["reminders"]
         query = {"userID": self.userID}
         db_data: DatabaseData | None = collection.find_one(query)
+        if db_data is None:
+            # If the user isn't in the database despite a
+            #  reminder object existing, something has gone *bad*.
+            # But probably not bad enough to crash over, but...
+            # TODO: should log this
+            await user.send(
+                "When trying to delete the reminder, it appeared as if you "
+                "didn't have any reminders running in the first place. If any "
+                "weird effects occur, feel free to contact staff about it "
+                ":)... hmm",
+            )
+            return
         reminders = db_data["reminders"]
         index_subtraction = 0
         for reminder_index in range(len(reminders)):
             current_index = reminder_index - index_subtraction
             reminder_time = reminders[current_index]["remindertime"]
-            if (reminder_time <= int(datetime.now().timestamp())):
+            if reminder_time <= int(datetime.now().timestamp()):
                 del reminders[current_index]
                 index_subtraction += 1
                 # See... If more than 1 reminder is placed at the same time,
@@ -176,13 +187,33 @@ async def _handle_reminder_timestamp_parsing(
         itx: discord.Interaction[Bot],
         reminder_datetime: str
 ) -> tuple[datetime, discord.Interaction[Bot]]:  # todo: docstring
+    """
+    Helper to parse the user's string into a datetime object.
+
+    .. note::
+
+        If the provided datetime string isn't accurate enough, the interaction
+        will be used to send a follow-up question. The click of the button
+        registers a second interaction that can then be used to follow-up
+        further. If the user never continues, an error is raised.
+
+    :param itx: The interaction to ask followups for, in case the user
+     wasn't specific enough.
+    :param reminder_datetime: The string to parse.
+    :return: A tuple of the parsed datetime object, and the interaction that
+     should be used to continue the command.
+    :raise ValueError: If the input string does not match a format or is out
+     of range.
+    :raise ReminderTimeSelectionMenuTimeout: if the TimeOfDaySelection button
+     view times out.
+    """
     mode: TimestampFormats = _validate_timestamp_format(reminder_datetime)
 
     # convert given time string to valid datetime
     timestamp_format = [
         "%Y-%m-%dt%H:%M:%S%z",
         "%Y-%m-%dt%H:%M%z",
-        "%Y-%m-%d"
+        "%Y-%m-%d",
     ][mode.value]
     try:
         timestamp = datetime.strptime(reminder_datetime, timestamp_format)
@@ -379,10 +410,11 @@ async def _parse_reminder_time(
 async def _create_reminder(
         itx: discord.Interaction[Bot],
         distance: datetime,
-        creation_time: datetime, reminder: str,
+        creation_time: datetime,
+        reminder: str,
         db_data: list[ReminderDict],
-        from_copy: bool = False
-):
+        from_copy: bool = False,
+) -> None:
     reminder_object = ReminderObject(
         itx.client,
         creation_time,
@@ -391,45 +423,54 @@ async def _create_reminder(
         reminder,
         db_data
     )
-    _distance = int(distance.timestamp())
+    distance_unix = int(distance.timestamp())
     cmd_reminders = itx.client.get_command_mention("reminder reminders")
     view = ShareReminder()
     if from_copy:
         # send message without view.
         await itx.response.send_message(
-            f"Successfully created a reminder for you on <t:{_distance}:F> "
-            f"for \"{reminder}\"!\n"
+            f"Successfully created a reminder for you "
+            f"on <t:{distance_unix}:F> for \"{reminder}\"!\n"
             f"Use {cmd_reminders} to see your list of reminders",
-            ephemeral=True
+            ephemeral=True,
         )
         return
     else:
         await itx.response.send_message(
-            f"Successfully created a reminder for you on <t:{_distance}:F> "
-            f"for \"{reminder}\"!\n"
+            f"Successfully created a reminder for you "
+            f"on <t:{distance_unix}:F> for \"{reminder}\"!\n"
             f"Use {cmd_reminders} to see your list of reminders",
-            view=view, ephemeral=True
+            view=view,
+            ephemeral=True,
         )
 
     await view.wait()
-    if view.value == 1:
-        msg = (f"{itx.user.mention} shared a reminder on <t:{_distance}:F> "
-               f"for \"{reminder}\"")
+    if view.return_interaction is not None:
+        msg = (f"{itx.user.mention} shared a reminder "
+               f"on <t:{distance_unix}:F> for \"{reminder}\"")
         copy_view = CopyReminder(
             _create_reminder,
             reminder_object,
-            timeout=300
+            timeout=300,
         )
         try:
-            await itx.channel.send(
-                content=msg,
-                view=copy_view,
-                allowed_mentions=discord.AllowedMentions.none()
-            )
+            if (isinstance(itx.channel, discord.abc.Messageable)
+                    or itx.channel is None):
+                await itx.channel.send(
+                    content=msg,
+                    view=copy_view,
+                    allowed_mentions=discord.AllowedMentions.none(),
+                )
+            else:
+                await view.return_interaction.response.send_message(
+                    msg, view=copy_view,
+                    allowed_mentions=discord.AllowedMentions.none(),
+                )
         except discord.errors.Forbidden:
             await view.return_interaction.response.send_message(
-                msg, view=copy_view,
-                allowed_mentions=discord.AllowedMentions.none()
+                msg,
+                view=copy_view,
+                allowed_mentions=discord.AllowedMentions.none(),
             )
     await itx.edit_original_response(view=None)
 
@@ -437,15 +478,15 @@ async def _create_reminder(
 async def parse_and_create_reminder(
         itx: discord.Interaction[Bot],
         reminder_datetime: str,
-        reminder: str
-):
+        reminder: str,
+) -> None:
     # Can't put this function reminders.utils because it calls
     #  _create_reminder, which creates a ReminderObject, so it would be
     #  better-fitting in this same file.
 
     # Check if user has too many reminders (max 50 allowed
     #  (internally chosen limit))
-    user_reminders = get_user_reminders(itx.client, itx.user)
+    user_reminders = await get_user_reminders(itx.client, itx.user)
     if len(user_reminders) > 50:
         cmd_reminders = itx.client.get_command_mention("reminder reminders")
         cmd_remove = itx.client.get_command_mention_with_args(

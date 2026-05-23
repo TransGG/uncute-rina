@@ -12,7 +12,7 @@ from extensions.settings.objects import (
 )
 
 
-def test_matching_keys():
+def test_matching_keys() -> None:
     # Arrange
     at = ServerAttributes.__annotations__.keys()
     atid = ServerAttributeIds.__annotations__.keys()
@@ -26,7 +26,7 @@ def test_matching_keys():
 
 
 @pytest.mark.parametrize("attribute", ServerAttributes.__annotations__.keys())
-def test_attribute_types(attribute: str):
+def test_attribute_types(attribute: str) -> None:
     attribute_type = ServerAttributes.__annotations__[attribute]
 
     origin = typing.get_origin(attribute_type)
@@ -67,21 +67,24 @@ def test_attribute_types(attribute: str):
 
 
 @pytest.mark.parametrize("attribute, expected_output", [
-    (AttributeKeys.parent_server, ([discord.Guild], False)),
+    (AttributeKeys.parent_server, ({discord.Guild}, False)),
     (AttributeKeys.developer_request_channel,
-     ([discord.TextChannel], False)),
-    (AttributeKeys.log_channel, ([MessageableGuildChannel], False)),
-    (AttributeKeys.vctable_prefix, ([str], False)),
-    (AttributeKeys.admin_roles, ([discord.Role], True)),  # list
+     ({discord.TextChannel}, False)),
+    (AttributeKeys.log_channel, (
+        {*MessageableGuildChannel.__value__.__args__},
+        False,
+    )),
+    (AttributeKeys.vctable_prefix, ({str}, False)),
+    (AttributeKeys.admin_roles, ({discord.Role}, True)),  # set
 ])
 def test_get_attribute_types(
         attribute: str,
-        expected_output: tuple[list[type] | None, bool]
-):
+        expected_output: tuple[set[type] | None, bool]
+) -> None:
     assert get_attribute_type(attribute) == expected_output
 
 
-def test_attribute_key_attribute_match_value():
+def test_attribute_key_attribute_match_value() -> None:
     attribute_keys = [i for i in dir(AttributeKeys) if not i.startswith("_")]
     incorrect_keys = []
 
@@ -92,7 +95,7 @@ def test_attribute_key_attribute_match_value():
     assert incorrect_keys == []
 
 
-def test_no_bad_attribute_names():
+def test_no_bad_attribute_names() -> None:
     # Arrange
     invalid_names = []
 
@@ -109,7 +112,7 @@ def test_no_bad_attribute_names():
                     + "\n- ".join(invalid_names))
 
 
-def test_no_bad_attribute_id_names():
+def test_no_bad_attribute_id_names() -> None:
     # Arrange
     invalid_names = []
 
@@ -126,7 +129,7 @@ def test_no_bad_attribute_id_names():
                     + "\n- ".join(invalid_names))
 
 
-def test_no_bad_module_names():
+def test_no_bad_module_names() -> None:
     # Arrange
     invalid_names = []
 
@@ -143,7 +146,7 @@ def test_no_bad_module_names():
                     + "\n- ".join(invalid_names))
 
 
-def test_all_modules_bools():
+def test_all_modules_bools() -> None:
     # Arrange
     module_types = typing.get_type_hints(EnabledModules)
     invalid_types = []

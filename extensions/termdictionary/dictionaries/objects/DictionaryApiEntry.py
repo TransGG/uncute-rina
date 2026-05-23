@@ -66,7 +66,7 @@ def get_term_lines(page: DetailedTermPage) -> list[tuple[str, str]]:
     :return: A list of tuples of the section a line came from, and the
      line itself.
     """
-    word, sections = page
+    _, sections = page
     lines: list[tuple[str, str]] = []
     for section_name, section_values in sections.items():
         for value in section_values:

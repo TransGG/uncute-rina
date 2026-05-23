@@ -29,7 +29,7 @@ def is_in_dms(guild: discord.Guild | int | None) -> bool:
 
 
 def module_enabled_check(
-        module_key
+        module_key: str
 ) -> Callable[[CommandCallback[Any, ..., Any]],
               CommandCallback[GroupT, P, T]]:
     """
@@ -39,7 +39,7 @@ def module_enabled_check(
     :return: A decorator that checks if the given module is enabled in
      the interaction's guild.
     """
-    async def decor_check(itx: discord.Interaction[Bot]):
+    def decor_check(itx: discord.Interaction[Bot]) -> None:
         """
         A decorator that checks if the interaction's guild has a
         module enabled.
@@ -88,7 +88,12 @@ def not_in_dms_check(
     return func
 
 
-def module_not_disabled_check(module_key: str):
+def module_not_disabled_check(
+        module_key: str
+) -> Callable[
+        [CommandCallback[Any, ..., Any]],
+        CommandCallback[GroupT, P, T]
+]:
     """
     A check to check if a module is not disabled.
 
@@ -97,7 +102,7 @@ def module_not_disabled_check(module_key: str):
      in the interaction's guild. ``True`` if the module is enabled or
      if the command was run in DMs, else ``False``.
     """
-    async def decor_check(itx: discord.Interaction[Bot]) -> bool:
+    def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
         A check to check if a command is allowed to be used in the
         current channel. This will be allowed in DMs, but not in servers

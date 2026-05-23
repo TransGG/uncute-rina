@@ -7,7 +7,11 @@ class DictionaryAPISendPageModal(
         discord.ui.Modal,
         title="Share single dictionary entry?"
 ):
-    def __init__(self, max_page, timeout=None):
+    def __init__(
+            self,
+            max_page: int,
+            timeout: float | None = None
+    ) -> None:
         super().__init__()
         self.succeeded: bool = False
         self.timeout = timeout
@@ -21,10 +25,10 @@ class DictionaryAPISendPageModal(
         )
         self.add_item(self.question_text)
 
-    async def on_submit(  # type: ignore
+    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
             self,
             itx: discord.Interaction[Bot]
-    ):
+    ) -> None:
         try:
             self.line = int(self.question_text.value)
         except ValueError:

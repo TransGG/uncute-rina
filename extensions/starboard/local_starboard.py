@@ -158,7 +158,7 @@ def get_starboard_message_id(
     if not starboard_loaded:
         raise StarboardNotLoadedException()
     for star_id, msg_data in get_starboard_message_ids(guild_id).items():
-        orig_chan, orig_id = msg_data
+        _, orig_id = msg_data
         if orig_id == message_id:
             return star_id
     return None
@@ -232,8 +232,8 @@ def parse_starboard_message(
 async def add_to_local_starboard(
         async_rina_db: AgnosticDatabase,
         starboard_msg: GuildMessage,
-        original_msg: GuildMessage
-):
+        original_msg: GuildMessage,
+) -> None:
     """
     Add a starboard message to the database and local cache.
 

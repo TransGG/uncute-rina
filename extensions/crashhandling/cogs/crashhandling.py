@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import traceback  # for crash logging
+import typing  # for on_error type annotations .Any
 import sys
 # ^ to stop the program (and automatically restart, thanks to
 #  pterodactyl)
@@ -46,13 +47,13 @@ async def _send_crash_message(
     :param itx: Interaction with a potential guild. This might allow
      Rina to send the crash log to that guild instead.
     """
-    log_channel = await _get_crash_logging_message(
+    log_channel = _get_crash_logging_message(
         client, error_source, error_type, itx, traceback_text
     )
     if log_channel is None:
         return
 
-    embeds = await _create_crash_embed(
+    embeds = _create_crash_embed(
         color,
         error_source,
         error_type,
@@ -65,12 +66,12 @@ async def _send_crash_message(
     )
 
 
-async def _create_crash_embed(
+def _create_crash_embed(
         color: discord.Colour,
         error_source: str,
         error_type: str,
         traceback_text: str
-):
+) -> None:
     error_caps = error_type.upper()
     time_prefix = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     debug_message = (f"\n\n\n\n[{time_prefix}]"
@@ -102,13 +103,13 @@ async def _create_crash_embed(
     return embeds
 
 
-async def _get_crash_logging_message(
+def _get_crash_logging_message(
         client: Bot,
         error_source: str,
         error_type: str,
         itx: discord.Interaction[Bot] | None,
-        traceback_text: str
-):
+        traceback_text: str,
+) -> None:
     log_channel: MessageableGuildChannel | None = None
     potential_guild = getattr(itx, "guild", None)
     if potential_guild is not None:
@@ -172,13 +173,13 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
 
 
 class CrashHandling(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
         client.on_error = self.on_error
         client.tree.on_error = self.on_app_command_error
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
         # kill switch, see cmd_addons for other on_message events.
@@ -191,8 +192,8 @@ class CrashHandling(commands.Cog):
                 ":sudo shutdown",
             ]
             if message.content == ":kill now please stop" or any(
-                    [message.content.startswith(item)
-                     for item in cool_keys]
+                    message.content.startswith(item)
+                    for item in cool_keys
             ):
                 await message.add_reaction("🔄")
                 sys.exit(0)
@@ -208,7 +209,12 @@ class CrashHandling(commands.Cog):
         elif message.content.lower().startswith("i am a very cool kid"):
             await message.channel.send("Yes. Yes you are.")
 
-    async def on_error(self, event: str, *_args, **_kwargs):
+    async def on_error(
+            self,
+            event: str,
+            *_args: typing.Any,  # noqa: ANN401
+            **_kwargs: typing.Any,  # noqa: ANN401
+    ) -> None:
         global commanderror_cooldown
         if (
                 (datetime.now().astimezone()
@@ -286,25 +292,23 @@ class CrashHandling(commands.Cog):
     async def on_app_command_error(
             itx: discord.Interaction[Bot],
             error: app_commands.AppCommandError
-    ):
+    ) -> None:
         global appcommanderror_cooldown
 
-        error_type = type(error)
-        if error_type is InsufficientPermissionsCheckFailure:
+        if type(error) is InsufficientPermissionsCheckFailure:
             await itx.response.send_message(
                 "You do not have the permissions to run this command!",
                 ephemeral=True
             )
             return
-        elif error_type is CommandDoesNotSupportDMsCheckFailure:
+        elif type(error) is CommandDoesNotSupportDMsCheckFailure:
             await itx.response.send_message(
                 "This command does not work in DMs. Please run this in"
                 " a server instead.",
                 ephemeral=True
             )
             return
-        elif error_type is ModuleNotEnabledCheckFailure:
-            error: ModuleNotEnabledCheckFailure
+        elif type(error) is ModuleNotEnabledCheckFailure:
             if itx.client.server_settings is None:
                 cmd_settings = itx.client.get_command_mention("settings")
                 await itx.response.send_message(
@@ -339,8 +343,7 @@ class CrashHandling(commands.Cog):
                 ephemeral=True
             )
             return
-        elif error_type is MissingAttributesCheckFailure:
-            error: MissingAttributesCheckFailure
+        elif type(error) is MissingAttributesCheckFailure:
             cmd_settings = itx.client.get_command_mention_with_args(
                 "settings",
                 type="Attribute",
@@ -353,8 +356,7 @@ class CrashHandling(commands.Cog):
                 f"Your command failed to completely execute because it relied "
                 f"on certain server attributes that were not defined! An "
                 f"admin will have to run {cmd_settings} "
-                f"`type:Attribute` `setting: ` for the following "
-                f"attribute(s):\n"
+                f"for the following attribute(s):\n"
                 f"> " + ', '.join(error.attributes)
             )
             return
@@ -437,20 +439,27 @@ class CrashHandling(commands.Cog):
                    f"details: {repr(ex)}\n")
             #   f"    command: {error.command}\n" + \
             #   f"    arguments: {error.args}\n"
-        if hasattr(error, 'original'):
-            if hasattr(error.original, 'code'):
-                msg += f"    code: {error.original.code}\n"
-            if hasattr(error.original, 'status'):
-                msg += (f"    original error: {error.original.status}: "
-                        f"{error.original.text}\n\n")
+        original_error = getattr(error, 'original', None)
+        if original_error is not None:
+            code = getattr(original_error, 'code', None)
+            if code is not None:
+                msg += f"    code: {code}\n"
+            status = getattr(original_error, 'status', None)
+            if status is not None:
+                msg += (f"    original error: {status}: "
+                        f"{original_error.text}\n\n")
                 #    f"   error response:     {error.original.response}\n\n"
         msg += traceback.format_exc()
         # details: /help `page:1` `param2:hey`
-        command_details = (
-            f"</{itx.command.name}:{itx.data.get('id')}> "
-            + ' '.join([f"`{k}:{v}`"
-                        for k, v in itx.namespace.__dict__.items()])
-        )
+        if itx.data is not None and itx.command is not None:
+            command_details = (
+                f"</{itx.command.name}:{itx.data.get('id', 0)}> "
+                + ' '.join([f"`{k}:{v}`"
+                            for k, v in itx.namespace.__dict__.items()])
+            )
+        else:
+            command_details = ""
+
         await _send_crash_message(
             itx.client,
             "AppCommand Error",

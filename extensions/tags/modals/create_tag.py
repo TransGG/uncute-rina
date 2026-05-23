@@ -37,12 +37,15 @@ class CreateTagModal(discord.ui.Modal):
         max_length=13,  # enough for "123, 123, 123"
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(title="Create a custom tag.")
 
         self.return_interaction: GuildInteraction[Bot] | None = None
 
-    async def on_submit(self, itx: discord.Interaction[Bot]):  # pyright: ignore [reportIncompatibleMethodOverride] # noqa
+    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+            self,
+            itx: discord.Interaction[Bot]
+    ) -> None:
         itx.response: discord.InteractionResponse  # type: ignore
         if itx.guild is None:
             await itx.response.send_message(

@@ -11,3 +11,12 @@ class EmojiStatsData(TypedDict, total=False):
     animated: Required[bool]  # emoji.animated
     reactionUsedCount: NotRequired[int]
     # ^ how often messages have been replied to with this emoji
+
+
+class StickerStatsData(TypedDict, total=False):
+    id: Required[str]  # sticker.id (unique)
+    name: Required[str]  # sticker.name
+    messageUsedCount: NotRequired[int]
+    # ^ how often messages have contained this sticker
+    lastUsed: Required[int]
+    # ^ unix timestamp of when this sticker was last used

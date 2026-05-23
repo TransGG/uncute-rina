@@ -7,7 +7,11 @@ from resources.views.generics import PageView
 
 
 class UrbanDictionaryPageView(PageView):
-    def __init__(self, pages: list[discord.Embed], timeout=None):
+    def __init__(
+            self,
+            pages: list[discord.Embed],
+            timeout: float | None = None
+    ) -> None:
         super().__init__(
             starting_page=0,
             max_page_index=len(pages) - 1,
@@ -17,7 +21,11 @@ class UrbanDictionaryPageView(PageView):
         self.pages = pages
 
     @override
-    async def update_page(self, itx: discord.Interaction[Bot], view: PageView):
+    async def update_page(
+            self,
+            itx: discord.Interaction[Bot],
+            view: PageView
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         await itx.response.edit_message(
             embed=self.pages[self.page],

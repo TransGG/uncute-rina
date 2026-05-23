@@ -48,10 +48,10 @@ def get_attribute_autocomplete_mode(
 
 
 @is_admin_check
-async def _setting_autocomplete(
+async def _setting_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
@@ -79,11 +79,11 @@ async def _setting_autocomplete(
 
 
 @is_admin_check
-async def _mode_autocomplete(
+async def _mode_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
 
     types = [ModeAutocomplete.view]
 
@@ -123,16 +123,80 @@ async def _mode_autocomplete(
         return []
 
 
+def _subclass_in_list(
+        value: type,
+        types: set[type]
+) -> bool:
+    return any(
+        issubclass(value, t)
+        for t in types
+    )
+
+
+def _list_has_subclass(
+        values: set[type],
+        subclass: type
+) -> bool:
+    return any(
+        issubclass(value, subclass)
+        for value in values
+    )
+
+
+def _has_name_or_id(
+        obj: object, current: str
+) -> bool:
+    assert hasattr(obj, "id") and hasattr(obj, "name")
+    return (current.lower() in getattr(obj, "name").lower()
+            or str(getattr(obj, "id")).startswith(current))
+
+
+def _update_results_from_iterable(
+        results: set[object],
+        iterable: typing.Sequence[object],
+        current: str,
+        pred: typing.Callable[[object], bool] = lambda _: True
+) -> None:
+    max_iterations = 20
+    for obj in iterable:
+        if _has_name_or_id(obj, current) and pred(obj):
+            results.add(
+                app_commands.Choice(
+                    name=getattr(obj, "name"),
+                    value=str(getattr(obj, "id")),
+                )
+            )
+
+        max_iterations -= 1
+        if max_iterations <= 0:
+            break
+
+
+def _update_results_from_id(
+        results: set[object],
+        id_func: typing.Callable[[int], object | None],
+        current: str,
+        pred: typing.Callable[[object], bool] = lambda _: True
+) -> None:
+    if current.isdecimal():
+        potential_obj = id_func(int(current))
+        if potential_obj is not None and pred(potential_obj):
+            results.add(app_commands.Choice(
+                name=potential_obj.name,
+                value=str(potential_obj.id))
+            )
+
+
 @is_admin_check
-async def _value_autocomplete(
+async def _value_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     if itx.guild is None:
         raise CommandDoesNotSupportDMsCheckFailure()
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa
-    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # pyright: ignore [reportAttributeAccessIssue] # noqa
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa
-    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue] # noqa
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
             app_commands.Choice(
@@ -159,88 +223,51 @@ async def _value_autocomplete(
                      "'setting' parameter.",
                 value="-")]
         attribute_type, _ = get_attribute_type(itx.namespace.setting)
-        if attribute_type is None:
+        if len(attribute_type) == 0:
             return [app_commands.Choice(name="Invalid setting given.",
                                         value="-")]
 
-        results: set[app_commands.Choice] = set()
+        results: set[app_commands.Choice[str]] = set()
 
-        if discord.Guild in attribute_type:
-            # iterate all guilds
-            for guild in itx.client.guilds:
-                if (current.lower() in guild.name.lower()
-                        or str(guild.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=guild.name, value=str(guild.id)))
         if discord.User in attribute_type:
             # Note: discord.User is a subclass of discord.abc.Messageable,
             #  so should be tested before that too.
-            # iterate guild members
-            for member in itx.guild.members:
-                if (current.lower() in member.name.lower()
-                        or str(member.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=member.name, value=str(member.id)))
-                if len(results) > 20:
-                    break
-            # from user id
-            if current.isdecimal():
-                potential_user = itx.client.get_user(int(current))
-                if potential_user is not None:
-                    results.add(app_commands.Choice(
-                        name=potential_user.name, value=str(potential_user.id))
-                    )
-        if any(issubclass(channel_type, discord.abc.GuildChannel)
-               for channel_type in attribute_type):
-            for channel in itx.guild.channels:
-                if (type(channel) in attribute_type
-                        and (current in channel.name
-                             or str(channel.id).startswith(current))):
-                    results.add(app_commands.Choice(
-                        name=channel.name, value=str(channel.id)))
-        if any(issubclass(channel_type, discord.abc.Messageable)
-               for channel_type in attribute_type):
-            # from channel id
-            if current.isdecimal():
-                potential_channel = itx.client.get_channel(int(current))
-                if (
-                        potential_channel is not None
-                        and not isinstance(potential_channel,
-                                           discord.abc.PrivateChannel)
-                ):
-                    results.add(app_commands.Choice(
-                        name=potential_channel.name,
-                        value=str(potential_channel.id))
-                    )
-            # iterate messageable guild channels
-            for channel in itx.guild.channels:
-                if type(channel) in attribute_type:
-                    if (current.lower() in channel.name.lower()
-                            or str(channel.id).startswith(current)):
-                        results.add(app_commands.Choice(
-                            name=channel.name, value=str(channel.id)))
+            _update_results_from_iterable(results, itx.client.users, current)
+            _update_results_from_id(results, itx.client.get_user, current)
+        if _list_has_subclass(attribute_type, discord.abc.GuildChannel):
+            _update_results_from_iterable(
+                results, itx.guild.channels, current,
+                lambda chan: _subclass_in_list(type(chan), attribute_type)
+            )
+        if _list_has_subclass(attribute_type, discord.abc.Messageable):
+            _update_results_from_iterable(
+                results, itx.guild.channels, current,
+                lambda chan: _subclass_in_list(type(chan), attribute_type)
+            )
+            _update_results_from_id(
+                results, itx.client.get_channel, current,
+                lambda chan: not isinstance(chan, discord.abc.PrivateChannel)
+            )
+        if discord.Thread in attribute_type:
+            # Threads are discord.Messageable but aren't listed in
+            #  itx.client.get_channel, so you need to fetch threads separately.
+            _update_results_from_iterable(results, itx.guild.threads, current)
+        if discord.Guild in attribute_type:
+            _update_results_from_iterable(results, itx.client.guilds, current)
         if discord.Role in attribute_type:
-            # iterate guild roles
-            for role in itx.guild.roles:
-                if (current.lower() in role.name.lower()
-                        or str(role.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=role.name, value=str(role.id)))
+            _update_results_from_iterable(results, itx.guild.roles, current)
         if discord.Emoji in attribute_type:
-            # iterate guild emojis
-            for emoji in itx.guild.emojis:
-                if (current.lower() in emoji.name.lower()
-                        or str(emoji.id).startswith(current)):
-                    results.add(app_commands.Choice(
-                        name=emoji.name, value=str(emoji.id)))
+            _update_results_from_iterable(results, itx.guild.emojis, current)
         if str in attribute_type:
             # leave as is
             results.add(app_commands.Choice(name=current, value=current))
         if str in attribute_type:
             # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
-                results.add(app_commands.Choice(
-                    name=current, value=current))
+                results.add(
+                    app_commands.Choice(name=current, value=current)
+                )
+
         if len(results) == 0:
             attribute_type_names = ','.join(
                 i.__name__ for i in attribute_type)
@@ -271,7 +298,7 @@ async def _handle_settings_attribute(
         setting: str | None,
         modify_mode: ModeAutocomplete | None,
         value: str | None,
-):
+) -> None:
     """
     A helper function to handle setting server attributes.
 
@@ -376,7 +403,7 @@ async def _handle_settings_attribute(
                 f"Expected the database value to be of type `int` but it was "
                 f"{type(database_value)} instead: {database_value}"
             )
-            has_current_server, parent_server_id = await _has_guild_as_parent(
+            has_current_server, parent_server_id = _has_guild_as_parent(
                 itx.client, itx.guild, database_value)
             if has_current_server:
                 # parent_server should not be None if has_current_server
@@ -506,7 +533,7 @@ async def _reload_or_store_server_settings(
             await ServerSettings.fetch(client, guild.id)
 
 
-async def _has_guild_as_parent(
+def _has_guild_as_parent(
         client: Bot, guild: discord.Guild, parent_server_id: int
 ) -> tuple[bool, int | None]:
     """
@@ -538,7 +565,7 @@ async def _handle_settings_module(
         help_str: str,
         setting: str | None,
         modify_mode: ModeAutocomplete | None
-):
+) -> None:
     """
     A helper function to handle setting server attributes.
     :param itx: The interaction with which to respond to messages, and
@@ -550,7 +577,7 @@ async def _handle_settings_module(
     module_keys = EnabledModules.__annotations__
 
     if setting is None:
-        disabled_modules = set([i for i in module_keys])
+        disabled_modules = set(module_keys)
         enabled_modules = set()
 
         if itx.client.server_settings is None:
@@ -658,7 +685,7 @@ async def _handle_settings_module(
 
 
 class SettingsCog(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     migrate_group = app_commands.Group(
@@ -666,7 +693,7 @@ class SettingsCog(commands.Cog):
         description="A grouping of migrate commands.",
     )
     #
-    # @app_commands.check(is_admin_check)
+    # @is_admin_check
     # @migrate_group.command(
     #     name="database",
     #     description="Migrate bot settings to new database."
@@ -674,7 +701,7 @@ class SettingsCog(commands.Cog):
     # async def database(
     #         self,
     #         itx: discord.Interaction[Bot]
-    # ):
+    # ) -> None:
     #     itx.response: discord.InteractionResponse[Bot]  # type: ignore
     #     await ServerSettings.migrate(itx.client.async_rina_db)
     #     await itx.response.send_message(
@@ -691,7 +718,7 @@ class SettingsCog(commands.Cog):
     )
     @is_admin_check
     @module_enabled_check(ModuleKeys.watchlist)
-    async def migrate_watchlist(self, itx: GuildInteraction[Bot]):
+    async def migrate_watchlist(self, itx: GuildInteraction[Bot]) -> None:
         watchlist_channel: discord.TextChannel | None = \
             itx.client.get_guild_attribute(
                 itx.guild, AttributeKeys.watchlist_channel)
@@ -708,13 +735,13 @@ class SettingsCog(commands.Cog):
         await itx.followup.send("Successfully imported watchlist threads.",
                                 ephemeral=True)
     #
-    # @app_commands.check(is_admin_check)
-    # @module_enabled_check(ModuleKeys.starboard)
     # @migrate_group.command(
     #     name="migrate-starboard",
     #     description="Fetch all starboard messages for this server."
     # )
-    # async def migrate_starboard(self, itx: discord.Interaction[Bot]):
+    # @is_admin_check
+    # @module_enabled_check(ModuleKeys.starboard)
+    # async def migrate_starboard(self, itx: GuildInteraction[Bot]) -> None:
     #     starboard_channel: discord.abc.Messageable | None = \
     #         itx.client.get_guild_attribute(
     #             itx.guild, AttributeKeys.starboard_channel)
@@ -750,8 +777,8 @@ class SettingsCog(commands.Cog):
             setting_type: str,
             setting: str | None = None,
             mode: str | None = None,
-            value: str | None = None
-    ):
+            value: str | None = None,
+    ) -> None:
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
         cmd_help = itx.client.get_command_mention_with_args(

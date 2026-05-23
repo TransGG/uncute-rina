@@ -19,18 +19,21 @@ from resources.utils.utils import log_to_guild
 
 from extensions.compliments.views import ConfirmPronounsView
 
+type ComplimentBlackboardType = typing.Literal["personal_list", "list"]
+
 
 async def _choose_and_send_compliment(
         itx: discord.Interaction[Bot],
         user: discord.User | discord.Member,
         compliment_type: str,
         async_rina_db: motor.core.AgnosticDatabase
-):
+) -> None:
+    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
     # todo: split function into multiple functions
     quotes = {
         "fem_quotes": [
             # "Was the sun always this hot? or is it because of you?",
-            # "Hey baby, are you an angel? Cuz I’m allergic to feathers.",
+            # "Hey baby, are you an angel? Cuz I'm allergic to feathers.",
             # "I bet you sweat glitter.",
             "Your hair looks stunning!",
             "Being around you is like being on a happy little vacation.",
@@ -76,7 +79,7 @@ async def _choose_and_send_compliment(
             "morb",
             "You look great today!",
             "You light up the room!",
-            "On a scale from 1 to 10, you’re an 11!",
+            "On a scale from 1 to 10, you're an 11!",
             'When you say, “I meant to do that,” I totally believe you.',
             "You should be thanked more often. So thank you!",
             "You are so easy to have a conversation with!",
@@ -110,7 +113,7 @@ async def _choose_and_send_compliment(
 
     collection = async_rina_db["complimentblacklist"]  # todo: use DatabaseKeys
     query = {"user": user.id}
-    search: dict[str, int | list] = await collection.find_one(query)
+    search: dict[str, int | list] | None = await collection.find_one(query)
     blacklist: list = []
     if search is not None:
         try:
@@ -173,9 +176,10 @@ async def _choose_and_send_compliment(
             )
     else:
         await itx.response.send_message(
-            base + random.choice(quotes[compliment_type]) + suffix,
+            content=base + random.choice(quotes[compliment_type]) + suffix,
             allowed_mentions=discord.AllowedMentions(
-                everyone=False, users=[user], roles=False, replied_user=False)
+                everyone=False, users=[user], roles=False,
+                replied_user=False)
         )
 
 
@@ -184,6 +188,7 @@ async def _send_confirm_gender_modal(
         itx: discord.Interaction[Bot],
         user: discord.User | discord.Member
 ) -> None:
+    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(
@@ -242,7 +247,8 @@ async def _rina_used_deflect_and_it_was_very_effective(
         "Hey my lie detector said you are lying.",
         "No I am not cute",
         "k",
-        (message.author.nick or message.author.name) + ", stop lying >:C",
+        (getattr(message.author, 'nick', message.author.name)
+         + ", stop lying >:C"),
         "BAD!",
         ("https://cdn.discordapp.com/emojis/920918513969950750.webp"
          "?size=4096&quality=lossless"),
@@ -256,12 +262,12 @@ async def _rina_used_deflect_and_it_was_very_effective(
         "No, you are <3",
         "Nope. I doubt it. There's no way I can be as cute as you",
         ("You gotta praise those around you as well. "
-         + (message.author.nick or message.author.name)
+         + getattr(message.author, 'nick', message.author.name)
          + ", for example, is very cute."),
         ("Oh by the way, did I say "
-         + (message.author.nick or message.author.name)
+         + getattr(message.author, 'nick', message.author.name)
          + " was cute yet? I probably didn't. "
-         + (message.author.nick or message.author.name)
+         + getattr(message.author, 'nick', message.author.name)
          + "? You're very cute"),
         "You know I'm not a mirror, right?",
         "*And the oscar for cutest responses goes to..  YOU!!*",
@@ -270,14 +276,15 @@ async def _rina_used_deflect_and_it_was_very_effective(
          "you keep up with being such a cutie all the time?")
     ]
     # check if user would like femme responses telling them they're cute
-    for role in message.author.roles:
+    roles = getattr(message.author, 'roles', [])
+    for role in roles:
         if role.name.lower() == "she/her":
             responses += femme_responses
     respond = random.choice(responses)
     if respond == "BAD!":
         # noinspection LongLine
         await message.channel.send(
-            "https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless",  # noqa
+            "https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless",  # noqa: E501
             allowed_mentions=discord.AllowedMentions.none()
         )
     await message.channel.send(
@@ -286,7 +293,11 @@ async def _rina_used_deflect_and_it_was_very_effective(
     )
 
 
-async def _add_to_blacklist(itx, db_location, string):
+async def _add_to_blacklist(
+        itx: discord.Interaction[Bot],
+        db_location: ComplimentBlackboardType,
+        string: str
+) -> list[str]:
     """
     Add a string to the command executor's blacklist.
     :param itx: The interaction with the user/executor, and itx.client.
@@ -311,11 +322,11 @@ async def _add_to_blacklist(itx, db_location, string):
 
 
 class Compliments(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @staticmethod
-    def _contains_cuteness_assignment(msg: str):
+    def _contains_cuteness_assignment(msg: str) -> bool | None:
         # todo: upgrade cute-call detection hardware
         return (
             ((("cute" or "cutie" or "adorable" in msg)
@@ -325,18 +336,17 @@ class Compliments(commands.Cog):
         )
 
     @commands.Cog.listener()  # Rina reflecting cuteness compliments
-    async def on_message(self, message: discord.Message):
-        if message.author.bot:
+    async def on_message(self, message: discord.Message) -> None:
+        if message.author.bot or self.client.user is None:
             return
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
-            called_cute: bool | None = self._contains_cuteness_assignment(
-                msg)
-            if called_cute is True:
+            called_cute: bool | None = self._contains_cuteness_assignment(msg)
+            if called_cute:
                 try:
                     await message.add_reaction("<:this:960916817801535528>")
-                except (discord.HTTPException or discord.NotFound):
+                except (discord.HTTPException, discord.NotFound):
                     await log_to_guild(
                         self.client,
                         message.guild,
@@ -346,7 +356,7 @@ class Compliments(commands.Cog):
                     raise
             elif called_cute is False:
                 await _rina_used_deflect_and_it_was_very_effective(message)
-            elif any([x in msg for x in [
+            elif any(x in msg for x in [
                 "can i have a pat",
                 "can i have a headpat",
                 "can i have pat",
@@ -371,7 +381,7 @@ class Compliments(commands.Cog):
                 "headpat pls",
                 "pat please",
                 "headpat please"
-            ]]):
+            ]):
                 try:
                     # todo: make server settings emoji
                     # todo: make server module toggleable
@@ -403,7 +413,13 @@ class Compliments(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             user: discord.User
-    ):
+    ) -> None:
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message(
+                "Messages can't be sent in this channel!",
+                ephemeral=True,
+            )
+            return
         # discord.User because discord.Member gets
         #  errors.TransformerError in DMs.
         user_roles = getattr(user, "roles", [])[:]
@@ -450,15 +466,22 @@ class Compliments(commands.Cog):
             location: int,
             mode: int,
             string: str | None = None
-    ):  # todo: split function into multiple smaller functions
+    ) -> None:  # todo: split function into multiple smaller functions
         itx.response: discord.InteractionResponse[Bot]  # type: ignore
         itx.followup: discord.Webhook  # type: ignore
+        db_location: ComplimentBlackboardType
         if location == 1:
             db_location = "personal_list"
         elif location == 2:
             db_location = "list"
         else:
-            raise NotImplementedError("This shouldn't happen.")
+            await itx.response.send_message(
+                "This shouldn't happen...; "
+                "but you provided an incorrect location for "
+                "the compliment blacklist.",
+                ephemeral=True,
+            )
+            return
 
         if mode == 1:  # add an item to the blacklist
             if string is None:
@@ -497,7 +520,7 @@ class Compliments(commands.Cog):
                     ephemeral=True)
                 return
             try:
-                string = int(string)
+                index = int(string)
             except ValueError:
                 await itx.response.send_message(
                     "To remove a string from your blacklist, you must give "
@@ -508,8 +531,9 @@ class Compliments(commands.Cog):
             collection = itx.client.async_rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
             search0: dict[
-                typing.Literal["personal_list", "list"],
-                list[str]] = await collection.find_one(query)
+                ComplimentBlackboardType,
+                list[str]
+            ] | None = await collection.find_one(query)
             if search0 is None:
                 await itx.response.send_message(
                     "There are no items on your blacklist, so you can't "
@@ -520,7 +544,7 @@ class Compliments(commands.Cog):
             blacklist = search0.get(db_location, [])
 
             try:
-                del blacklist[string]
+                del blacklist[index]
             except IndexError:
                 cmd_blacklist = itx.client.get_command_mention(
                     "complimentblacklist")
@@ -529,7 +553,8 @@ class Compliments(commands.Cog):
                     f"on your list with that ID. Use {cmd_blacklist} "
                     f"`mode:Check` to see the IDs assigned to each item on "
                     f"your list",
-                    ephemeral=True)
+                    ephemeral=True
+                )
                 return
             await collection.update_one(
                 query,
@@ -537,7 +562,7 @@ class Compliments(commands.Cog):
                 upsert=True
             )
             await itx.response.send_message(
-                f"Successfully removed `{string}` from your blacklist. Your "
+                f"Successfully removed `{index}` from your blacklist. Your "
                 f"blacklist now contains {len(blacklist)} "
                 f"string{'s' * (len(blacklist) != 1)}.",
                 ephemeral=True)
@@ -545,20 +570,20 @@ class Compliments(commands.Cog):
         elif mode == 3:  # check
             collection = itx.client.async_rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
-            search1: dict[str, int | list] = await collection.find_one(query)  # type: ignore # noqa
+            search1: dict[str, int | list] | None = \
+                await collection.find_one(query)
             if search1 is None:
                 await itx.response.send_message(
                     "There are no strings in your blacklist, so... nothing "
                     "to list here...",
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
             blacklist = search1.get(db_location, [])
             length = len(blacklist)
 
-            ans = []
-            for blackboard_id in range(length):
-                ans.append(f"`{blackboard_id}`: {blacklist[blackboard_id]}")
+            ans = [f"`{blackboard_id}`: {blacklist[blackboard_id]}"
+                   for blackboard_id in range(length)]
             ans = '\n'.join(ans)
             await itx.response.send_message(
                 f"Found {length} string{'s' * (length != 1)}:\n{ans}"[:2000],

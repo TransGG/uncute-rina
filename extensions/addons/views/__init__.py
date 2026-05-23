@@ -1,4 +1,4 @@
-__all__ = ['SendPublicButtonMath', 'EqualDexAdditionalInfo']
+__all__ = ['EqualDexAdditionalInfo', 'SendPublicButtonMath']
 
-from .math_sendpublicbutton import SendPublicButtonMath
 from .equaldex_additionalinfo import EqualDexAdditionalInfo
+from .math_sendpublicbutton import SendPublicButtonMath

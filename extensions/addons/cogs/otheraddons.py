@@ -1,6 +1,4 @@
-import json  # to read API json responses
-import requests  # to read api calls
-
+import aiohttp
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
@@ -22,22 +20,22 @@ MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
-currency_options = {
-    code: 0 for code in (
-        "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,"
-        "BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,CHF,CLF,CLP,CNH,CNY,COP,"
-        "CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,"
-        "GGP,GHS,GIP,GMD,GNF,GTQ,GYD,HKD,HNL,HRK,HTG,HUF,IDR,ILS,IMP,INR,IQD,"
-        "IRR,ISK,JEP,JMD,JOD,JPY,KES,KGS,KHR,KMF,KPW,KRW,KWD,KYD,KZT,LAK,LBP,"
-        "LKR,LRD,LSL,LYD,MAD,MDL,MGA,MKD,MMK,MNT,MOP,MRU,MUR,MVR,MWK,MXN,MYR,"
-        "MZN,NAD,NGN,NIO,NOK,NPR,NZD,OMR,PAB,PEN,PGK,PHP,PKR,PLN,PYG,QAR,RON,"
-        "RSD,RUB,RWF,SAR,SBD,SCR,SDG,SEK,SGD,SHP,SLE,SLL,SOS,SRD,SSP,STD,STN,"
-        "SVC,SYP,SZL,THB,TJS,TMT,TND,TOP,TRY,TTD,TWD,TZS,UAH,UGX,USD,UYU,UZS,"
-        "VEF,VES,VND,VUV,WST,XAF,XAG,XAU,XCD,XCG,XDR,XOF,XPD,XPF,XPT,YER,ZAR,"
-        "ZMW,ZWG,ZWL"
-        .split(",")
-    )
-}
+currency_options = dict.fromkeys(
+    "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,"
+    "BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,CHF,CLF,CLP,CNH,CNY,COP,"
+    "CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,"
+    "GGP,GHS,GIP,GMD,GNF,GTQ,GYD,HKD,HNL,HRK,HTG,HUF,IDR,ILS,IMP,INR,IQD,"
+    "IRR,ISK,JEP,JMD,JOD,JPY,KES,KGS,KHR,KMF,KPW,KRW,KWD,KYD,KZT,LAK,LBP,"
+    "LKR,LRD,LSL,LYD,MAD,MDL,MGA,MKD,MMK,MNT,MOP,MRU,MUR,MVR,MWK,MXN,MYR,"
+    "MZN,NAD,NGN,NIO,NOK,NPR,NZD,OMR,PAB,PEN,PGK,PHP,PKR,PLN,PYG,QAR,RON,"
+    "RSD,RUB,RWF,SAR,SBD,SCR,SDG,SEK,SGD,SHP,SLE,SLL,SOS,SRD,SSP,STD,STN,"
+    "SVC,SYP,SZL,THB,TJS,TMT,TND,TOP,TRY,TTD,TWD,TZS,UAH,UGX,USD,UYU,UZS,"
+    "VEF,VES,VND,VUV,WST,XAF,XAG,XAU,XCD,XCG,XDR,XOF,XPD,XPF,XPT,YER,ZAR,"
+    "ZMW,ZWG,ZWL"
+    .split(","),
+    0
+)
+
 conversion_rates = {  # [default 0, incrementation]
     "temperature": {
         "Celsius": [273.15, 1, "°C"],
@@ -178,7 +176,10 @@ def _get_emoji_from_str(
         return emoji
 
 
-async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
+async def _unit_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str,
+) -> None:
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
@@ -195,7 +196,10 @@ async def _unit_autocomplete(itx: discord.Interaction[Bot], current: str):
                 ][:25]
 
 
-async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):
+async def _role_autocomplete(  # noqa: RUF029
+        itx: discord.Interaction[Bot],
+        current: str
+) -> None:
     """Autocomplete for /remove-role command."""
     if isinstance(itx.user, discord.User):
         return []
@@ -223,11 +227,11 @@ async def _role_autocomplete(itx: discord.Interaction[Bot], current: str):
 
 
 class OtherAddons(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
@@ -282,7 +286,7 @@ class OtherAddons(commands.Cog):
             value: float,
             to_unit: str,
             public: bool = False
-    ):
+    ) -> None:
         rates = conversion_rates.copy()
         if mode not in rates:
             await itx.response.send_message(
@@ -297,11 +301,11 @@ class OtherAddons(commands.Cog):
                 "appid": itx.client.api_tokens['Open Exchange Rates'],
                 "show_alternative": "true",
             }
-            response_api = requests.get(
-                "https://openexchangerates.org/api/latest.json",
-                params=params
-            ).text
-            data = json.loads(response_api)
+            async with aiohttp.ClientSession() as client, client.get(
+                    "https://openexchangerates.org/api/latest.json",
+                    params=params
+            ) as response:
+                data = await response.json()
             if data.get("error", 0):
                 await itx.response.send_message(
                     "I'm sorry, something went wrong while trying to get "
@@ -367,7 +371,7 @@ class OtherAddons(commands.Cog):
             upvote_emoji_str: str,
             downvote_emoji_str: str,
             neutral_emoji_str: str | None = None
-    ):
+    ) -> None:
         if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(
                 itx.guild, ModuleKeys.poll_reactions):
             # Server specifically disabled this feature.
@@ -392,7 +396,7 @@ class OtherAddons(commands.Cog):
             return
 
         errors = []
-        message: None | discord.Message = None  # happy IDE
+        message: discord.Message | None = None  # happy IDE
         if message_id_str.isdecimal():
             message_id = int(message_id_str)
             try:
@@ -500,7 +504,7 @@ class OtherAddons(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             command: str
-    ):
+    ) -> None:
         command = command.removeprefix("/").lower()
         try:
             for section in command.split(" "):
@@ -535,7 +539,11 @@ class OtherAddons(commands.Cog):
     @app_commands.describe(role_name="The name of the role to remove")
     @app_commands.autocomplete(role_name=_role_autocomplete)
     @module_enabled_check(ModuleKeys.remove_role_command)
-    async def remove_role(self, itx: discord.Interaction[Bot], role_name: str):
+    async def remove_role(
+            self,
+            itx: discord.Interaction[Bot],
+            role_name: str
+    ) -> None:
         if isinstance(itx.user, discord.User):
             # It shouldn't be a discord.User cause the app_command check
             #  prevents DMs. But to make the type checker happy, here you go.

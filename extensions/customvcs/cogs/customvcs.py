@@ -22,7 +22,7 @@ from extensions.customvcs.utils import is_vc_custom
 async def _reset_voice_channel_permissions_if_vctable(
         vctable_prefix: str,
         voice_channel: discord.VoiceChannel
-):
+) -> None:
     """
     Reset a voice channel's permission overrides if the 'owners' of the
     voice channel table are no longer present/connected to the channel.
@@ -40,47 +40,49 @@ async def _reset_voice_channel_permissions_if_vctable(
         "Couldn't reset voice channel permissions of custom VC because "
         "the channel was not in a category."
     )
-    if len(voice_channel.overwrites) > len(  # todo: invert if-statement
+    # if VcTable, reset ownership; and all owners leave:
+    #  reset all perms
+    if len(voice_channel.overwrites) <= len(
             voice_channel.category.overwrites):
-        # if VcTable, reset ownership; and all owners leave:
-        #  reset all perms
-        reset_vctable = True
-        # check if no owners left --> all members in the voice channel
-        #  aren't owner.
-        for target in voice_channel.overwrites:
-            if target not in voice_channel.members:
-                continue
-            if voice_channel.overwrites[target].connect:
-                reset_vctable = False
-                break
-        if not reset_vctable:
-            return
+        return
 
-        try:
-            # reset overrides; error caught in try-except
-            await voice_channel.edit(
-                overwrites=voice_channel.category.overwrites)
-            # update every user's permissions
-            for user in voice_channel.members:
-                await user.move_to(voice_channel)
-            await voice_channel.send(
-                "This channel was converted from a VcTable back to a normal"
-                " CustomVC because all the owners left"
-            )
-            # remove channel's name prefix (seperately from the
-            #  overwrites due to things like ratelimiting)
-            if voice_channel.name.startswith(vctable_prefix):
-                new_channel_name = voice_channel.name[len(vctable_prefix):]
-                try_store_vc_rename(voice_channel.id, max_rename_limit=3)
-                # same as `/vctable disband`
-                # allow max 3 renamed: if a staff queued a rename due
-                #  to rules, it'd be queued at 3. It would be bad to
-                #  have it be renamed back to the bad name right after.
-                await voice_channel.edit(name=new_channel_name)
-                # ^ error caught in try-except
-        except discord.errors.NotFound:
-            # catches two possible voice_channel.edit() exceptions
-            pass  # event triggers after vc could be deleted already
+    reset_vctable = True
+    # check if no owners left --> all members in the voice channel
+    #  aren't owner.
+    for target in voice_channel.overwrites:
+        if target not in voice_channel.members:
+            continue
+        if voice_channel.overwrites[target].connect:
+            reset_vctable = False
+            break
+    if not reset_vctable:
+        return
+
+    try:
+        # reset overrides; error caught in try-except
+        await voice_channel.edit(
+            overwrites=voice_channel.category.overwrites)
+        # update every user's permissions
+        for user in voice_channel.members:
+            await user.move_to(voice_channel)
+        await voice_channel.send(
+            "This channel was converted from a VcTable back to a normal"
+            " CustomVC because all the owners left"
+        )
+        # remove channel's name prefix (seperately from the
+        #  overwrites due to things like ratelimiting)
+        if voice_channel.name.startswith(vctable_prefix):
+            new_channel_name = voice_channel.name[len(vctable_prefix):]
+            try_store_vc_rename(voice_channel.id, max_rename_limit=3)
+            # same as `/vctable disband`
+            # allow max 3 renamed: if a staff queued a rename due
+            #  to rules, it'd be queued at 3. It would be bad to
+            #  have it be renamed back to the bad name right after.
+            await voice_channel.edit(name=new_channel_name)
+            # ^ error caught in try-except
+    except discord.errors.NotFound:
+        # catches two possible voice_channel.edit() exceptions
+        pass  # event triggers after vc could be deleted already
 
 
 async def _create_new_custom_vc(
@@ -89,7 +91,7 @@ async def _create_new_custom_vc(
         voice_channel: discord.VoiceChannel,
         customvc_category: discord.CategoryChannel,
         customvc_hub: discord.VoiceChannel,
-):
+) -> None:
     """
     A helper function to create a new custom voice channel
 
@@ -163,7 +165,7 @@ async def _handle_delete_custom_vc(
         client: Bot,
         member: discord.Member,
         voice_channel: discord.VoiceChannel
-):
+) -> None:
     """
     Handle the deletion of a custom voice channel (and error handling)
 
@@ -198,7 +200,7 @@ async def _handle_custom_voice_channel_leave_events(
         member: discord.Member,
         voice_channel: discord.VoiceChannel,
         vctable_prefix: str
-):
+) -> None:
     """
     A helper function to handle the custom voice channel events when
     a user leaves a channel. This includes: channel deletion,
@@ -220,7 +222,7 @@ async def _handle_custom_voice_channel_leave_events(
 
 
 class CustomVcs(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
 
     @commands.Cog.listener()
@@ -229,7 +231,7 @@ class CustomVcs(commands.Cog):
             member: discord.Member,
             before: discord.VoiceState,
             after: discord.VoiceState
-    ):
+    ) -> None:
         if not self.client.is_module_enabled(
                 member.guild, ModuleKeys.custom_vcs):
             return
@@ -301,7 +303,7 @@ class CustomVcs(commands.Cog):
             self, itx: discord.Interaction[Bot],
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
-    ):
+    ) -> None:
         vc_hub: discord.VoiceChannel | None
         vc_category: discord.CategoryChannel | None
         vctable_prefix: str | None

@@ -66,6 +66,7 @@ async def _create_uncool_watchlist_thread(
     :param watch_channel: The channel to create the thread in.
     :return: A tuple of the created watchlist message and thread.
     """
+
     # make and send uncool embed for the loading period while it sends
     # the copyable version (we want the jump url)
     embed = discord.Embed(
@@ -109,8 +110,12 @@ async def _create_uncool_watchlist_thread(
 
 
 async def _update_uncool_watchlist_embed(
-        jump_url: str, reported_message_info,
-        msg, reason, user):
+        jump_url: str,
+        reported_message_info: str,
+        msg: discord.Message,
+        reason: str,
+        user: discord.Member | discord.User,
+) -> None:
     # edit the uncool embed to make it cool: Show reason, link to
     #  report message (if provided), link to plaintext
     embed = discord.Embed(
@@ -135,8 +140,8 @@ async def _add_to_watchlist(
         user: discord.Member | discord.User,
         reason: str = "",
         message_id_str: str | None = None,
-        warning=""
-):
+        warning: str = "",
+) -> None:
     if not is_staff(itx, itx.user):
         await itx.response.send_message(
             "You don't have the right permissions to do this.",
@@ -194,6 +199,21 @@ async def _add_to_watchlist(
     if message_id is None:
         reported_message_info = ""
     else:
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I don't think you sent this in a channel, so I can't "
+                "find the message id either!",
+                ephemeral=True,
+            )
+            return
+        elif not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.followup.send(
+                "This channel does not contain any messages, so I can't find "
+                "your mentioned message in here either!",
+                ephemeral=True,
+            )
+            return
+
         try:
             reported_message = await itx.channel.fetch_message(message_id)
         except discord.Forbidden:
@@ -346,7 +366,7 @@ async def _add_to_watchlist(
 async def watchlist_ctx_user(
         itx: GuildInteraction[Bot],
         user: discord.User,
-):
+) -> None:
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
         title="Add user to watchlist",
@@ -362,8 +382,8 @@ async def watchlist_ctx_user(
 @module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_message(
         itx: GuildInteraction[Bot],
-        message: discord.Message
-):
+        message: discord.Message,
+) -> None:
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
         title="Add user to watchlist using message",
@@ -375,7 +395,7 @@ async def watchlist_ctx_message(
 
 
 class WatchList(commands.Cog):
-    def __init__(self, client: Bot):
+    def __init__(self, client: Bot) -> None:
         self.client = client
         self.client.tree.add_command(watchlist_ctx_user)
         self.client.tree.add_command(watchlist_ctx_message)
@@ -389,11 +409,11 @@ class WatchList(commands.Cog):
     @module_enabled_check(ModuleKeys.watchlist)
     async def watchlist(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             user: discord.User | discord.Member,
             reason: str = "",
             message_id: str | None = None
-    ):
+    ) -> None:
         try:
             user = await (app_commands.transformers
                           .MemberTransformer()
@@ -417,9 +437,9 @@ class WatchList(commands.Cog):
     @module_enabled_check(ModuleKeys.watchlist)
     async def check_watchlist(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             user: discord.User
-    ):
+    ) -> None:
         if not is_staff(itx, itx.user):
             await itx.response.send_message(
                 "You don't have the right permissions to do this.",
@@ -427,8 +447,9 @@ class WatchList(commands.Cog):
             )
             return
 
-        watch_channel = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.watchlist_channel)
+        watch_channel: discord.TextChannel | None = \
+            itx.client.get_guild_attribute(
+                itx.guild, AttributeKeys.watchlist_channel)
         if watch_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.watchlist, [AttributeKeys.watchlist_channel])
@@ -453,7 +474,7 @@ class WatchList(commands.Cog):
             )
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.watchlist):
             return
@@ -493,41 +514,52 @@ class WatchList(commands.Cog):
             #  response in this channel)
             return
 
-        reported_user_id = None
+        reported_user_id: int | None = None
         for embed in message.embeds:
             for field in embed.fields:
+                if field.name is None or field.value is None:
+                    continue
                 if field.name.lower() == "user":
-                    reported_user_id = field.value.split("`")[1]
-                    if reported_user_id.isdecimal():
-                        reported_user_id = int(reported_user_id)
+                    reported_user_str = field.value.split("`")[1]
+                    if reported_user_str.isdecimal():
+                        reported_user_id = int(reported_user_str)
+                        break
+
+                    if field.value.startswith("> "):
+                        # remove the `> quote` markdown
+                        field.value = field.value[2:]
+                    # from "%<@x>%", take "x"
+                    reported_user_str = (field
+                                         .value
+                                         .split(">", 1)[0]
+                                         .split("@")[1])
+                    if reported_user_str.isdecimal():
+                        reported_user_id = int(reported_user_str)
+                        break
                     else:
-                        if field.value.startswith("> "):
-                            # remove the `> quote` markdown
-                            field.value = field.value[2:]
-                        # from "%<@x>%", take "x"
-                        reported_user_id = (field
-                                            .value
-                                            .split(">", 1)[0]
-                                            .split("@")[1])
-                        if reported_user_id.isdecimal():
-                            reported_user_id = int(reported_user_id)
-                        else:
-                            raise Exception("User id was not an id!")
+                        raise Exception("User id was not an id!")
+        if reported_user_id is None:
+            raise Exception(
+                "Badeline sent an embed in the staff logs category but it "
+                "didn't contain any \"user\" field!"
+            )
 
         watchlist_thread_id = get_watchlist(
             watchlist_channel.guild.id, reported_user_id)
         on_watchlist: bool = watchlist_thread_id is not None
 
         if on_watchlist:
-            thread: discord.Thread = \
+            thread = \
                 await watchlist_channel.guild.fetch_channel(
                     watchlist_thread_id
                 )
+            assert isinstance(thread, discord.Thread), \
+                f"Watchlist was not a thread! {type(thread)}"
             # ^ fetch, to retrieve (archived) thread.
             await message.forward(thread)
 
     @commands.Cog.listener()
-    async def on_raw_thread_delete(self, event: RawThreadDeleteEvent):
+    async def on_raw_thread_delete(self, event: RawThreadDeleteEvent) -> None:
         try:
             user_id = get_user_id_from_watchlist(
                 event.guild_id, event.thread_id)

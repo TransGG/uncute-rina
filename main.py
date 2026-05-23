@@ -30,7 +30,7 @@ from resources.customs import ApiTokenDict
 from resources.utils import debug, codec_options, DebugColor
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.0.4.0"
+BOT_VERSION = "2.1.0"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
@@ -101,12 +101,12 @@ def get_token_data() -> tuple[
      for an api used in the program.
     """
     load_progress.begin("Loading api keys...")
+    tokens = {}
+    missing_tokens: list[str] = []
     try:
-        with open("api_keys.json", "r") as f:
+        with open("api_keys.json", "r", encoding="utf-8") as f:
             api_keys = json.loads(f.read())
-        tokens = {}
         bot_token: str = api_keys['Discord']
-        missing_tokens: list[str] = []
         for key in ApiTokenDict.__annotations__:
             # copy every other key to a new dictionary to check if every
             #  key is in the file.
@@ -114,7 +114,6 @@ def get_token_data() -> tuple[
                 missing_tokens.append(key)
                 continue
             tokens[key] = api_keys[key]
-        tokens = ApiTokenDict(**tokens)
     except FileNotFoundError:
         raise
     except json.decoder.JSONDecodeError as ex:
@@ -125,6 +124,8 @@ def get_token_data() -> tuple[
         ).with_traceback(None)
     if missing_tokens:
         raise KeyError("Missing API key for: " + ', '.join(missing_tokens))
+
+    tokens = ApiTokenDict(**tokens)  # type: ignore[typeddict-item]
 
     load_progress.begin("Loading database clusters...")
     mongo_client: MongoClient = MongoClient(tokens['MongoDB'])
@@ -152,7 +153,7 @@ def get_version() -> str:
     file_version = BOT_VERSION.split(".")
     try:
         os.makedirs("outputs", exist_ok=True)
-        with open("outputs/version.txt", "r") as f:
+        with open("outputs/version.txt", "r", encoding="utf-8") as f:
             rina_version = f.read().split(".")
     except FileNotFoundError:
         rina_version = ["0"] * len(file_version)
@@ -160,12 +161,12 @@ def get_version() -> str:
     # 1: private dev server; 2: public dev server (TransPlace [Copy])
     for v in range(len(file_version)):
         if int(file_version[v]) > int(rina_version[v]):
-            rina_version = file_version + ["0"]
+            rina_version = [*file_version, "0"]
             break
     else:
         rina_version[-1] = str(int(rina_version[-1]) + 1)
     rina_version = '.'.join(rina_version)
-    with open("outputs/version.txt", "w") as f:
+    with open("outputs/version.txt", "w", encoding="utf-8") as f:
         f.write(f"{rina_version}")
     load_progress.complete("Loaded version", newline=False)
     return rina_version
@@ -207,7 +208,7 @@ def create_client(
     return bot
 
 
-def start_app():
+def start_app() -> None:
     (token, tokens, rina_db, async_rina_db) = get_token_data()
     version = get_version()
     client = create_client(tokens, rina_db, async_rina_db, version)
@@ -216,7 +217,7 @@ def start_app():
     # this can probably be done better
     # region Client events
     @client.event
-    async def on_ready():
+    async def on_ready() -> None:
         text = (f"Logged in as {client.user}, in version {version} "
                 f"(in {datetime.now().astimezone() - program_start})")
         try:
@@ -273,7 +274,7 @@ def start_app():
             post_startup_progress.complete("Loaded starboard messages.")
 
     @client.event
-    async def setup_hook():
+    async def setup_hook() -> None:
         start_progress.complete("Started Bot")
         start_progress.begin("Caching bot's command names and their ids")
         client.commandList = await client.tree.fetch_commands()

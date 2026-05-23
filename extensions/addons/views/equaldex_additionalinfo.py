@@ -2,7 +2,7 @@ import discord
 
 
 class EqualDexAdditionalInfo(discord.ui.View):
-    def __init__(self, url):
+    def __init__(self, url: str) -> None:
         super().__init__()
         link_button = discord.ui.Button(style=discord.ButtonStyle.gray,
                                         label="More info",

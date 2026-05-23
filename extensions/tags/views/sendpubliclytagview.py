@@ -3,7 +3,7 @@ import discord
 
 from resources.utils.utils import log_to_guild
 from resources.customs import Bot
-from extensions.settings.objects import AttributeKeys
+from extensions.settings.objects import AttributeKeys, MessageableGuildChannel
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,9 +15,9 @@ class SendPubliclyTagView(discord.ui.View):
             self,
             tag: CustomTag,
             report_to_staff: bool,
-            timeout: int = None,
-            log_msg=None,
-    ):
+            timeout: float | None = None,
+            log_msg: str | None = None,
+    ) -> None:
         super().__init__()
 
         self.value = None
@@ -29,9 +29,11 @@ class SendPubliclyTagView(discord.ui.View):
     @discord.ui.button(label='Send publicly',
                        style=discord.ButtonStyle.primary)
     async def send_publicly(
-            self, itx: discord.Interaction[Bot], _button: discord.ui.Button
-    ):
-        itx.followup: discord.Webhook  # noqa
+            self,
+            itx: discord.Interaction[Bot],
+            _: discord.ui.Button,
+    ) -> None:
+        itx.followup: discord.Webhook  # type: ignore
 
         if self.tag.report_to_staff:
             public_footer = (
@@ -47,6 +49,25 @@ class SendPubliclyTagView(discord.ui.View):
             footer = ""
         else:
             footer = embed.footer.text + "\n"
+        if itx.channel is None:
+            await itx.response.send_message(
+                "I don't know what channel you're sending this in!",
+                ephemeral=True,
+            )
+            return
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message(
+                "Messages can't be sent in this channel!",
+                ephemeral=True,
+            )
+            return
+        if (itx.guild is None
+                or not isinstance(itx.channel, discord.abc.GuildChannel)):
+            await itx.response.send_message(
+                "You can only send tags in servers!",
+                ephemeral=True,
+            )
+            return
 
         embed.set_footer(text=footer + public_footer)
         await itx.response.edit_message(
@@ -64,7 +85,8 @@ class SendPubliclyTagView(discord.ui.View):
                 "",
                 embed=embed,
                 ephemeral=False,
-                allowed_mentions=discord.AllowedMentions.none()
+                wait=True,
+                allowed_mentions=discord.AllowedMentions.none(),
             )
         if self.log_msg:
             self.log_msg += (f", in {itx.channel.mention} "
@@ -72,12 +94,14 @@ class SendPubliclyTagView(discord.ui.View):
                              f"[Jump to the tag message]({msg.jump_url})")
             if self.report_to_staff:
                 await log_to_guild(itx.client, itx.guild, self.log_msg)
+                staff_message_reports_channel: MessageableGuildChannel | None
                 staff_message_reports_channel = itx.client.get_guild_attribute(
+                    itx.guild,
                     AttributeKeys.staff_reports_channel)
                 if staff_message_reports_channel is not None:
                     await staff_message_reports_channel.send(self.log_msg)
         self.stop()
 
-    async def on_timeout(self):
+    async def on_timeout(self) -> None:
         self.send_publicly.disabled = True
         self.send_publicly.style = discord.ButtonStyle.gray

@@ -6,7 +6,7 @@ from resources.customs import Bot
 
 
 class TodoList(commands.Cog):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @app_commands.command(name="todo", description="Add or remove a to-do!")
@@ -26,8 +26,8 @@ class TodoList(commands.Cog):
             self,
             itx: discord.Interaction[Bot],
             mode: int,
-            todo: str = None
-    ):
+            todo: str | None = None,
+    ) -> None:
         # todo: use Enum for mode
         if mode == 1:  # Add item to to-do list
             if todo is None:
@@ -141,9 +141,10 @@ class TodoList(commands.Cog):
             todo_list = search["list"]
             length = len(todo_list)
 
-            ans = []
-            for item_id in range(length):
-                ans.append(f"`{item_id}`: {todo_list[item_id]}")
+            ans = [
+                f"`{item_id}`: {todo_list[item_id]}"
+                for item_id in range(length)
+            ]
             ans = '\n'.join(ans)
             await itx.response.send_message(
                 f"Found {length} to-do item{'s' * (length != 1)}:\n{ans}",

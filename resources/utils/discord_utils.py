@@ -1,7 +1,24 @@
+from __future__ import annotations
+
+import typing
+
 import discord
+from typing import TYPE_CHECKING
 
 
-async def get_or_fetch_channel(client: discord.Client, channel_id: int):
+if TYPE_CHECKING:
+    from resources.customs import GuildInteraction, Bot
+
+
+async def get_or_fetch_channel(
+        client: discord.Client,
+        channel_id: int
+) -> (
+        discord.abc.GuildChannel
+        | discord.Thread
+        | discord.abc.PrivateChannel
+        | None
+):
     """
     Use client.get_channel or client.fetch_channel if None
 
@@ -22,3 +39,79 @@ async def get_or_fetch_channel(client: discord.Client, channel_id: int):
         return None
 
     return ch
+
+
+def send_channel_or_interaction(
+        itx: discord.Interaction
+) -> typing.Callable[
+        [...],
+        typing.Coroutine[
+            typing.Any,
+            typing.Any,
+            discord.Message
+        ]
+]:
+    itx.response: discord.InteractionResponse  # type: ignore
+    itx.followup: discord.Webhook  # type: ignore
+
+    if (
+            itx.channel is None
+            or not isinstance(itx.channel, discord.abc.Messageable)
+            or itx.guild is None
+            or not itx.channel.permissions_for(itx.guild.me).send_messages
+    ):
+        return send_or_followup(itx)
+
+    async def try_send_message(
+            *args,    # noqa: ANN002
+            **kwargs,    # noqa: ANN003
+    ) -> discord.Message:
+        assert itx.channel is not None
+        assert isinstance(itx.channel, discord.abc.Messageable)
+
+        try:
+            return await itx.channel.send(*args, **kwargs)
+        except discord.Forbidden:
+            return await send_or_followup(itx)(*args, **kwargs)
+
+    return try_send_message
+
+
+def send_or_followup(itx: discord.Interaction) -> typing.Callable[
+        [...],
+        typing.Coroutine[
+            typing.Any,
+            typing.Any,
+            discord.InteractionCallbackResponse[Bot]
+            | discord.WebhookMessage
+            | None
+        ]
+]:
+    itx.response: discord.InteractionResponse  # type: ignore
+    itx.followup: discord.Webhook  # type: ignore
+    if itx.response.is_done():
+        return itx.followup.send
+    return itx.response.send_message
+
+
+async def get_member_or_filter(
+        itx: GuildInteraction[Bot],
+        user: discord.User | discord.Member
+) -> discord.Member | None:
+    """
+    Helper to send a warning response if the user is not a member of the guild.
+
+    :param itx: The interaction to respond with. Note it is a GuildInteraction,
+     because this function should only be used when you want to ensure the user
+     is actually a member of the guild and automatically reply if not.
+    :param user: The user to check.
+    :return: The user if they are a :py:class:`discord.Member`, else None.
+    """
+    if isinstance(user, discord.User):
+        await itx.response.send_message(
+            "I could not find you in the server (I see you as User, not "
+            "as Member), so I couldn't ",
+            ephemeral=True,
+        )
+        return None
+    return user
