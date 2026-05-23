@@ -8,14 +8,15 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.customs import Bot, GuildInteraction
-from resources.checks.permissions import is_staff
-# ^ to check if messages in the selfies channel were sent by staff
+from resources.abc import GuildInteraction
 from resources.checks import (
     is_staff_check,
     module_enabled_check,
-    MissingAttributesCheckFailure
+    MissingAttributesCheckFailure,
+    is_staff,
+    # ^ to check if messages in the selfies channel were sent by staff
 )
+from resources.customs import Bot
 from resources.utils.utils import log_to_guild
 # ^ logging when a staff command is used
 

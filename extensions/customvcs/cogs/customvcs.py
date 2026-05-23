@@ -3,12 +3,12 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.customs import Bot
 from resources.checks.permissions import is_staff
 # ^ to let staff rename other people's custom vcs
 from resources.checks import (
     module_enabled_check, MissingAttributesCheckFailure
 )
+from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log custom vc changes
 
 from extensions.customvcs.channel_rename_tracker import (

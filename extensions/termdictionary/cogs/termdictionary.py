@@ -16,8 +16,9 @@ from extensions.termdictionary.dictionaries.UrbanDictionary import \
 from extensions.termdictionary.dictionary_sources import DictionarySources
 from extensions.termdictionary.utils import simplify
 
+from resources.abc import GuildInteraction
 from resources.checks import is_staff_check  # for staff dictionary commands
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 # For logging custom dictionary changes, or when a search query returns
 #  nothing or >2000 characters
 from resources.utils.utils import log_to_guild

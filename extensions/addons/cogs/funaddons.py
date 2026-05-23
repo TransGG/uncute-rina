@@ -9,8 +9,9 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.addons.roll import generate_roll
+from resources.abc import GuildMessage
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot, GuildMessage
+from resources.customs import Bot
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
 

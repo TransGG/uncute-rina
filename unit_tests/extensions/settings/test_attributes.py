@@ -8,8 +8,10 @@ from extensions.settings.objects import (
     ServerAttributes,
     ServerAttributeIds,
     EnabledModules,
-    AttributeKeys, get_attribute_type, MessageableGuildChannel,
+    AttributeKeys,
+    get_attribute_type,
 )
+from resources.abc import MessageableGuildChannel
 
 
 def test_matching_keys() -> None:

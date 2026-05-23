@@ -8,8 +8,9 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.emojistats.database_dicts import StickerStatsData
+from resources.abc import GuildInteraction
 from resources.checks import not_in_dms_check
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 
 
 async def _add_to_sticker_data(

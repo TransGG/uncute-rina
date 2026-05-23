@@ -2,7 +2,6 @@ __all__ = [
     'AttributeKeys',
     'EnabledModules',
     'GuildAttributeType',
-    'MessageableGuildChannel',
     'ModeAutocomplete',
     'ModuleKeys',
     'ServerAttributeIds',
@@ -23,7 +22,6 @@ from .server_settings import (
 from .attribute_keys import AttributeKeys
 from .server_attributes import (
     ServerAttributes,
-    MessageableGuildChannel,
     GuildAttributeType,
 )
 from .server_attribute_ids import ServerAttributeIds

@@ -9,11 +9,11 @@ from types import UnionType, GenericAlias
 
 import discord
 
+from resources.abc import MessageableGuildChannel
 from resources.utils.debug import debug, DebugColor
 from .server_attributes import (
     ServerAttributes,
     GuildAttributeType,
-    MessageableGuildChannel,
 )
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
@@ -130,7 +130,7 @@ def parse_attribute(
 
     funcs: set[Callable[
         [int],
-        GuildAttributeType | discord.abc.PrivateChannel | None
+        GuildAttributeType | None
     ]] = set()
 
     if is_attribute_type(discord.Guild):

@@ -17,10 +17,12 @@ from extensions.settings.objects import (
     AttributeKeys,
     EnabledModules,
     ServerAttributes,
-    MessageableGuildChannel,
     GuildAttributeType,
 )
-from .api_token_dict import ApiTokenDict
+from resources.abc import (
+    ApiTokenDict,
+    MessageableGuildChannel,
+)
 
 if TYPE_CHECKING:
     from extensions.settings.objects import ServerSettings

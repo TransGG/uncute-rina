@@ -4,17 +4,22 @@ from typing import Callable
 import discord
 
 from extensions.settings.objects import (
-    AttributeKeys, ModuleKeys, MessageableGuildChannel
+    AttributeKeys,
+    ModuleKeys,
+)
+from extensions.tags.views import SendPubliclyTagView
+
+from resources.abc import (
+    GuildInteraction,
+    MessageableGuildChannel,
 )
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 from resources.utils.utils import get_mod_ticket_channel
 # ^ for ticket channel id in Report tag
 from resources.utils.utils import log_to_guild
 # ^ for logging when people send tags anonymously (in case someone
 #  abuses the anonymity)
-
-from extensions.tags.views import SendPubliclyTagView
 
 
 class CustomTag:

@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from resources.customs import GuildInteraction, Bot
+    from resources.abc import GuildInteraction
+    from resources.customs import Bot
 
 
 async def get_or_fetch_channel(

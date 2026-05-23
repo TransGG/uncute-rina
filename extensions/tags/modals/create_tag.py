@@ -2,7 +2,8 @@ import typing
 
 import discord
 
-from resources.customs import Bot, GuildInteraction
+from resources.abc import GuildInteraction
+from resources.customs import Bot
 
 
 class CreateTagModal(discord.ui.Modal):

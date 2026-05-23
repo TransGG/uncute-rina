@@ -6,10 +6,13 @@ import discord.ext.commands as commands
 from extensions.settings.objects import (
     AttributeKeys,
     ModuleKeys,
-    MessageableGuildChannel,
 )
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot, GuildMessage
+from resources.customs import Bot
+from resources.abc import (
+    GuildMessage,
+    MessageableGuildChannel,
+)
 from resources.utils.discord_utils import get_or_fetch_channel
 from resources.utils.utils import log_to_guild
 # ^ to log starboard addition/removal

@@ -6,8 +6,8 @@ import discord.ext.commands as commands
 from extensions.settings.objects import (
     ModuleKeys,
     AttributeKeys,
-    MessageableGuildChannel,
 )
+from resources.abc import MessageableGuildChannel
 from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
 from resources.checks.command_checks import is_in_dms
 from resources.customs import Bot

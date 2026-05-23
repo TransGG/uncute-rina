@@ -11,9 +11,10 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.abc import GuildInteraction
 from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
     module_enabled_check  # cuz it's a staff command
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel

@@ -19,14 +19,20 @@ import discord  # for main discord bot functionality
 
 from extensions.reminders.objects import \
     relaunch_ongoing_reminders
-from extensions.settings.objects import ServerSettings, MessageableGuildChannel
+from extensions.settings.objects import ServerSettings
 from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
 from extensions.watchlist.local_watchlist import fetch_all_watchlists
 # ^ for fetching all watchlists on startup
 
-from resources.customs import Bot, ProgressBar
-from resources.customs import ApiTokenDict
+from resources.abc import (
+    ApiTokenDict,
+    MessageableGuildChannel,
+)
+from resources.customs import (
+    Bot,
+    ProgressBar,
+)
 from resources.utils import debug, codec_options, DebugColor
 
 program_start = datetime.now().astimezone()  # startup time after local imports

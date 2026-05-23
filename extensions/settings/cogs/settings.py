@@ -20,7 +20,7 @@ from extensions.settings.objects import (
     TypeAutocomplete, ModeAutocomplete,
     parse_attribute, get_attribute_type, AttributeKeys, ModuleKeys
 )
-from resources.customs import GuildInteraction
+from resources.abc import GuildInteraction
 
 
 if typing.TYPE_CHECKING:

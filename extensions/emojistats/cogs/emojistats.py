@@ -10,7 +10,8 @@ import discord.ext.commands as commands
 
 from extensions.emojistats.database_dicts import EmojiStatsData
 from extensions.reminders.objects.emoji_animate_type import EmojiAnimateType
-from resources.customs import Bot, GuildInteraction
+from resources.abc import GuildInteraction
+from resources.customs import Bot
 from resources.checks import not_in_dms_check
 
 from extensions.emojistats.emojisendsource import EmojiSendSource

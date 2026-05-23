@@ -1,14 +1,8 @@
 from typing import TypedDict
+from resources.abc import MessageableGuildChannel
 
 import discord
 
-
-type MessageableGuildChannel = (
-    discord.TextChannel
-    | discord.VoiceChannel
-    | discord.StageChannel
-    | discord.Thread
-)
 
 type GuildAttributeType = (
     str | int

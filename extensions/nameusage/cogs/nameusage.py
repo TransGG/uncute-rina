@@ -7,8 +7,9 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.nameusage.views.pageview import GetTopPageView
+from resources.abc import GuildInteraction
 from resources.checks import not_in_dms_check
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 
 
 class NameUsage(
