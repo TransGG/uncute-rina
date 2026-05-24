@@ -48,6 +48,9 @@ async def _handle_awawa_reaction(
     # adding headpats on abababa or awawawawa
     msg_content = message.content.lower()
 
+    if any(char not in set("abw") for char in msg_content):
+        return False
+
     if len(msg_content) > 5 and (msg_content.startswith("aba")
                                  or msg_content.startswith("awa")):
         # check if the message content is /(ab|aw)+a/i
@@ -58,17 +61,15 @@ async def _handle_awawa_reaction(
                 return True
             except discord.errors.Forbidden:
                 # user blocked rina :(, or just no perms
-                pass
+                return False
 
     if len(msg_content) > 9 and msg_content.startswith("a"):
-        if any(char not in set("abw") for char in msg_content):
-            return False
-
         try:
             await message.add_reaction(awawawa_emoji)
             return True
-        except discord.errors.Forbidden:  # blocked rina :(, or just no perms
-            pass
+        except discord.errors.Forbidden:
+            # blocked rina :(, or just no perms
+            return False
 
     return False
 
@@ -76,12 +77,12 @@ async def _handle_awawa_reaction(
 def _get_dice_roll_output(
         dice: int,
         faces: int,
-        mod: int | float
+        mod: int | float | None
 ) -> tuple[str, bool]:
     """Helper to get the text output for a simple /roll."""
     message_too_long = False
     rolls = [random.randint(1, faces) for _ in range(dice)]
-    dice_info = (f"I rolled {dice:,} di{'c' * (dice != 1)}e with "
+    dice_info = (f"You rolled {dice:,} di{'c' * (dice != 1)}e with "
                  f"{faces:,} face{'s' * (faces > 1)}")
     modifier_info = ""
     if mod is None:
@@ -106,8 +107,6 @@ def _get_dice_roll_output(
         elif len(details) > 300:
             message_too_long = True
         out += "\n" + details
-    elif len(out) > 300:
-        message_too_long = True
     output_string = dice_info + modifier_info + out
     return output_string, message_too_long
 
@@ -117,7 +116,7 @@ def _simplify_roll_output(rolls: list[int]) -> str:
     roll_db = {}
     for roll in rolls:
         if roll not in roll_db:
-            roll_db[roll] = 1
+            roll_db[roll] = 0
         roll_db[roll] += 1
     # order dict by the eyes rolled: {"eyes":"count",1:4,2:1,3:4,4:1}
     # x.items() gives a list of tuples [(1,4), (2,1), (3,4), (4,1)]
@@ -126,6 +125,9 @@ def _simplify_roll_output(rolls: list[int]) -> str:
     details = "You rolled "
     for roll, count in roll_db:
         details += f"'{roll}'x{count}, "
+    if len(details) > 0:
+        # remove trailing comma
+        details = details[:-2]
     return details
 
 
