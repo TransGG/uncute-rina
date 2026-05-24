@@ -7,21 +7,36 @@ import discord.ext.commands as commands
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import (
-    AttributeKeys, ModuleKeys, MessageableGuildChannel
+    AttributeKeys,
+    ModuleKeys,
 )
 from extensions.tags.local_tag_list import (
-    create_tag, remove_tag, get_tags, get_tag
+    create_tag,
+    remove_tag,
+    get_tags,
+    get_tag,
 )
 from extensions.tags.modals.create_tag import CreateTagModal
 from extensions.tags.tag_manage_modes import TagMode
-from resources.checks import module_enabled_check, is_admin_check
-from resources.customs import Bot, GuildInteraction
-from resources.utils import replace_string_command_mentions
-from resources.utils.utils import get_mod_ticket_channel
-# ^ for ticket channel id in Report tag
+from resources.abc import (
+    GuildInteraction,
+    MessageableGuildChannel,
+)
+from resources.checks import (
+    module_enabled_check,
+    is_admin_check,
+)
+from resources.customs import Bot
+from resources.utils import (
+    replace_string_command_mentions,
+    get_mod_ticket_channel,
+    # ^ for ticket channel id in Report tag
+)
 
 from extensions.tags.tags import (
-    tag_info_dict, create_report_info_tag, CustomTag
+    tag_info_dict,
+    create_report_info_tag,
+    CustomTag,
 )
 
 
@@ -46,12 +61,12 @@ async def _tag_autocomplete(  # noqa: RUF029
     print(current)
     print(_get_enabled_tag_ids(itx))
     if current == "":
-        return [app_commands.Choice(name="Show list of tags", value="help")]
+        return [app_commands.Choice[str](name="Show list of tags", value="help")]
 
     # only show tags that are enabled in the server
     tags = _get_enabled_tag_ids(itx)
 
-    return [app_commands.Choice(name=tag, value=tag)
+    return [app_commands.Choice[str](name=tag, value=tag)
             for tag in tags
             if current.lower() in tag.lower()
             ][:15]
@@ -66,7 +81,7 @@ async def _tag_name_autocomplete(  # noqa: RUF029
             and itx.guild is not None):
         tag_objects = get_tags(itx.guild)
         return [
-            app_commands.Choice(name=key, value=key)
+            app_commands.Choice[str](name=key, value=key)
             for key in tag_objects.keys()
             if current.lower() in key.lower()
         ]

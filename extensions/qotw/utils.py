@@ -99,7 +99,7 @@ def _create_main_embed(
         copyable_version: discord.Message,
         description: str,
         user: discord.User | discord.Member,
-) -> None:
+) -> discord.Embed:
     """
     Create an embed for a thread. It has a description and hyperlink to the
      first message in the thread.

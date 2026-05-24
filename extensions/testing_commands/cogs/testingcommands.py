@@ -6,8 +6,9 @@ from discord.ext import commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects import AttributeKeys
+from resources.abc import GuildInteraction
 from resources.checks import MissingAttributesCheckFailure, is_staff_check
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 from resources.views.generics import PageView, create_simple_button
 
 

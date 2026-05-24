@@ -49,27 +49,17 @@ class PronounsPageDictionary(DictionaryBase):
         """
         search = []
         for item in data:
-            item_db = item['definition']
-            while item['definition'] == item_db:
-                replacement = re.search(r"(?<==).+?(?=})",
+            item_def = item['definition']
+            while item['definition'] == item_def:
+                replacement = re.search(r"\[(.+?)]\(#.+?\)",
                                         item['definition'])
                 if replacement is not None:
-                    item['definition'] = re.sub(r"{(#.+?=).+?}",
-                                                replacement.group(),
+                    item['definition'] = re.sub(r"\[.+?]\(#.+?\)",
+                                                replacement.group(1),
                                                 item['definition'], 1)
-                if item['definition'] == item_db:  # if nothing changed:
+                if item['definition'] == item_def:  # if nothing changed:
                     break
-                item_db = item['definition']
-            while item['definition'] == item_db:
-                replacement = re.search(r"(?<={).+?(?=})",
-                                        item['definition'])
-                if replacement is not None:
-                    item['definition'] = re.sub(r"{.+?}",
-                                                replacement.group(),
-                                                item['definition'], 1)
-                if item['definition'] == item_db:  # if nothing changed:
-                    break
-                item_db = item['definition']
+                item_def = item['definition']
             search.append(item)
         return search
 
@@ -150,6 +140,7 @@ class PronounsPageDictionary(DictionaryBase):
             result_str += (f"> **{', '.join(item['term'].split('|'))}:** "
                            f"{item['definition']}\n")
         if (len(search) - len(results)) > 0:
+            # todo: show which other results. Eg. "demigender" also has "bidemigender".
             result_str += (f"{len(search) - len(results)} other non-exact "
                            f"results found.")
         if len(result_str) > 1999:
@@ -170,7 +161,7 @@ class PronounsPageDictionary(DictionaryBase):
             term: str
     ) -> list[PronounsPageEntry]:
         http_safe_term = term.lower().replace("/", " ").replace("%", " ")
-        url = f'https://en.pronouns.page/api/terms/search/{http_safe_term}'
+        url = f'https://en.pronouns.page/api/public/v3/terms/search/{http_safe_term}'
 
         async with self._session.get(url) as response:
             response_api = await response.text()

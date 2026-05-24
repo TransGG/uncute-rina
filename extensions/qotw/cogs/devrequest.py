@@ -4,9 +4,13 @@ import discord.app_commands as app_commands
 
 from extensions.qotw.utils import create_thread, ping_open_threads
 from extensions.settings.objects import AttributeKeys, ModuleKeys
-from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
-    module_enabled_check  # for dev request thread ping
-from resources.customs import Bot, GuildInteraction
+from resources.abc import GuildInteraction
+from resources.checks import (
+    is_staff_check,
+    MissingAttributesCheckFailure,
+    module_enabled_check,  # for dev request thread ping
+)
+from resources.customs import Bot
 
 emoji_color_options = {
     "🔴": discord.Colour.from_rgb(r=255, g=100, b=100),

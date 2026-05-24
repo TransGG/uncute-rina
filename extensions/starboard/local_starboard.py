@@ -1,9 +1,11 @@
 import discord
 from motor.core import AgnosticDatabase
 
-from extensions.settings.objects import MessageableGuildChannel
-from resources.customs import Bot, GuildMessage
-
+from resources.abc import (
+    GuildMessage,
+    MessageableGuildChannel,
+)
+from resources.customs import Bot
 from resources.pymongo import (
     remove_data, DatabaseKeys, add_data, get_data, get_all_data
 )

@@ -16,8 +16,9 @@ from extensions.termdictionary.dictionaries.UrbanDictionary import \
 from extensions.termdictionary.dictionary_sources import DictionarySources
 from extensions.termdictionary.utils import simplify
 
+from resources.abc import GuildInteraction
 from resources.checks import is_staff_check  # for staff dictionary commands
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 # For logging custom dictionary changes, or when a search query returns
 #  nothing or >2000 characters
 from resources.utils.utils import log_to_guild
@@ -175,13 +176,13 @@ class TermDictionary(commands.Cog):
             fetch_with_timeout(source)
             for _, source in sources
         ]
-        results: list[set[str]] = await asyncio.gather(*tasks)
+        results: tuple[set[str]] = await asyncio.gather(*tasks)
 
         terms: set[str] = set.union(*results)
 
         # respond with found autocompletion terms
         return [
-            app_commands.Choice(name=term, value=term)
+            app_commands.Choice[str](name=term, value=term)
             for term in terms
         ][:7]  # limit choices to the first 7
 

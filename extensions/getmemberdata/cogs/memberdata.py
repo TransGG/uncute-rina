@@ -11,8 +11,9 @@ import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
+from resources.abc import GuildInteraction
 from resources.checks import not_in_dms_check
-from resources.customs import Bot, GuildInteraction
+from resources.customs import Bot
 
 
 type MemberDataType = typing.Literal[

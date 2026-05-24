@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ^ for scheduling Reminders
 from datetime import datetime
 # ^ for startup and crash logging, and Reminders
-from typing import TYPE_CHECKING, TypeVar, Any
+from typing import TYPE_CHECKING, Any
 import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
@@ -17,17 +17,15 @@ from extensions.settings.objects import (
     AttributeKeys,
     EnabledModules,
     ServerAttributes,
-    MessageableGuildChannel,
     GuildAttributeType,
 )
-from .api_token_dict import ApiTokenDict
+from resources.abc import (
+    ApiTokenDict,
+    MessageableGuildChannel,
+)
 
 if TYPE_CHECKING:
     from extensions.settings.objects import ServerSettings
-
-
-T = TypeVar('T')
-TN = T | None
 
 
 class Bot(commands.Bot):
@@ -129,12 +127,12 @@ class Bot(commands.Bot):
     # Type checking with the class is effectively impossible,
     #  as the key dictates the type, and any union we would emit
     #  would then need to be explicitly ignored in a type check.
-    def get_guild_attribute(
+    def get_guild_attribute[Default](
             self,
             guild: discord.Guild | int,
             *args: str,
-            default: TN = None
-    ) -> GuildAttributeType | TN | list[GuildAttributeType | TN]:
+            default: Default = None
+    ) -> GuildAttributeType | Default | list[GuildAttributeType | Default]:
         """
         Get ServerSettings attributes for the given guild.
 
@@ -168,7 +166,7 @@ class Bot(commands.Bot):
 
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[GuildAttributeType | TN] = []
+        output: list[GuildAttributeType | Default] = []
 
         parent_server = attributes[AttributeKeys.parent_server]  # type: ignore[literal-required] # noqa: E501
 

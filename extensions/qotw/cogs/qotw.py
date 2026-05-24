@@ -6,14 +6,17 @@ from extensions.qotw.utils import create_thread
 from extensions.settings.objects import (
     ModuleKeys,
     AttributeKeys,
-    MessageableGuildChannel,
 )
 from resources.checks import (
     module_enabled_check,
     MissingAttributesCheckFailure
 )
+from resources.abc import (
+    GuildInteraction,
+    MessageableGuildChannel,
+)
+from resources.customs import Bot
 from resources.utils.utils import get_mod_ticket_channel
-from resources.customs import Bot, GuildInteraction
 
 
 class QOTW(commands.Cog):

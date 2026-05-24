@@ -6,11 +6,14 @@ import discord.ext.commands as commands
 from extensions.settings.objects import (
     AttributeKeys,
     ModuleKeys,
-    MessageableGuildChannel,
 )
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot, GuildMessage
-from resources.utils.discord_utils import get_or_fetch_channel
+from resources.customs import Bot
+from resources.abc import (
+    GuildMessage,
+    MessageableGuildChannel,
+    get_or_fetch_messageable_guild_channel,
+)
 from resources.utils.utils import log_to_guild
 # ^ to log starboard addition/removal
 
@@ -345,7 +348,7 @@ async def _fetch_starboard_and_original_messages(
 
     if isinstance(original_message, int):
         if isinstance(original_message_channel, int):
-            fetched_channel = await get_or_fetch_channel(
+            fetched_channel = await get_or_fetch_messageable_guild_channel(
                 client, original_message_channel)
             assert isinstance(
                 fetched_channel, MessageableGuildChannel.__value__), (

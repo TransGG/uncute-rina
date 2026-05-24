@@ -6,8 +6,8 @@ import discord.ext.commands as commands
 from extensions.settings.objects import (
     ModuleKeys,
     AttributeKeys,
-    MessageableGuildChannel,
 )
+from resources.abc import MessageableGuildChannel
 from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
 from resources.checks.command_checks import is_in_dms
 from resources.customs import Bot
@@ -179,19 +179,19 @@ def _get_emoji_from_str(
 async def _unit_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot],
         current: str,
-) -> None:
+) -> list[app_commands.Choice[str]]:
     options = conversion_rates.copy()
     if itx.namespace.mode not in options:
         return []  # user hasn't selected a mode yet.
     options = options[itx.namespace.mode]
     if itx.namespace.mode == "currency":
-        return [app_commands.Choice(name=option, value=option)
-                for option in options
+        return [app_commands.Choice[str](name=option, value=option)
+                for option in options.keys()
                 if option.lower().startswith(current.lower())
                 ][:10]
     else:
-        return [app_commands.Choice(name=option, value=option)
-                for option in options
+        return [app_commands.Choice[str](name=option, value=option)
+                for option in options.keys()
                 if current.lower() in option.lower()
                 ][:25]
 
@@ -199,7 +199,7 @@ async def _unit_autocomplete(  # noqa: RUF029
 async def _role_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot],
         current: str
-) -> None:
+) -> list[app_commands.Choice[str]]:
     """Autocomplete for /remove-role command."""
     if isinstance(itx.user, discord.User):
         return []
@@ -215,14 +215,18 @@ async def _role_autocomplete(  # noqa: RUF029
                     or current.lower() in role_options[role.id][1].lower()):
                 options.append(role.id)
     if options:
-        return [app_commands.Choice(name=role_options[role_id][0],
-                                    value=role_options[role_id][1])
-                for role_id in options
-                ][:15]
+        return [
+            app_commands.Choice[str](
+                name=role_options[role_id][0],
+                value=role_options[role_id][1]
+            ) for role_id in options
+        ][:15]
     else:
         return [
-            app_commands.Choice(name="You don't have any roles to remove!",
-                                value="none")
+            app_commands.Choice[str](
+                name="You don't have any roles to remove!",
+                value="none",
+            )
         ]
 
 
@@ -298,7 +302,7 @@ class OtherAddons(commands.Cog):
             # more info:
             #  https://docs.openexchangerates.org/reference/latest-json
             params = {
-                "appid": itx.client.api_tokens['Open Exchange Rates'],
+                "app_id": itx.client.api_tokens['Open Exchange Rates'],
                 "show_alternative": "true",
             }
             async with aiohttp.ClientSession() as client, client.get(

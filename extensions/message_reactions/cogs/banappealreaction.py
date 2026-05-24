@@ -5,8 +5,9 @@ import discord.ext.commands as commands
 
 from extensions.qotw.utils import create_thread
 from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.abc import GuildMessage
 from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot, GuildMessage
+from resources.customs import Bot
 
 
 class BanAppealReactionsAddon(commands.Cog):

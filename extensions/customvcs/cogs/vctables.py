@@ -5,17 +5,18 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
+from resources.abc import GuildInteraction
 from resources.checks import (
     module_enabled_check,
     MissingAttributesCheckFailure,
+    is_staff,
+    # ^ to prevent people in vc-tables from muting staff.
 )
+from resources.customs import Bot
 from resources.utils.discord_utils import get_member_or_filter
-from resources.views.generics import GenericTwoButtonView
-from resources.checks.permissions import is_staff
-# ^ to prevent people in vc-tables from muting staff.
 from resources.utils.utils import log_to_guild
 # ^ to log custom vc changes
-from resources.customs import Bot, GuildInteraction
+from resources.views.generics import GenericTwoButtonView
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 from extensions.customvcs.utils import (

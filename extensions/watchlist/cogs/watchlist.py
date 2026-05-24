@@ -7,7 +7,8 @@ import discord.ext.commands as commands
 from discord import RawThreadDeleteEvent
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.customs import Bot, GuildInteraction
+from resources.abc import GuildInteraction
+from resources.customs import Bot
 from resources.checks.permissions import is_staff
 # ^ to check role in _add_to_watchlist, as backup
 from resources.checks import (
