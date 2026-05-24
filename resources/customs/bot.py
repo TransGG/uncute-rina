@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ^ for scheduling Reminders
 from datetime import datetime
 # ^ for startup and crash logging, and Reminders
-from typing import TYPE_CHECKING, TypeVar, Any
+from typing import TYPE_CHECKING, Any
 import motor.core as motorcore  # for typing
 from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing

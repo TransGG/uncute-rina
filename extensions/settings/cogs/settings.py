@@ -91,7 +91,7 @@ async def _mode_autocomplete(  # noqa: RUF029
         return [
             app_commands.Choice[str](
                 name="For a list of attributes/modules, leave `mode` empty.",
-                value="-"
+                value="-",
             ),
         ]
     elif itx.namespace.type == TypeAutocomplete.module.value:
@@ -101,8 +101,10 @@ async def _mode_autocomplete(  # noqa: RUF029
                 app_commands.Choice[str](name=key.value, value=key.value)
                 for key in types if current.lower() in key.value.lower()
             ]
-        return [app_commands.Choice[str](name="Invalid setting given.",
-                                    value=ModeAutocomplete.invalid.value)]
+        return [app_commands.Choice[str](
+            name="Invalid setting given.",
+            value=ModeAutocomplete.invalid.value,
+        )]
     elif itx.namespace.type == TypeAutocomplete.attribute.value:
         if itx.namespace.setting is None:
             return [app_commands.Choice[str](
@@ -112,8 +114,10 @@ async def _mode_autocomplete(  # noqa: RUF029
         autocomplete_type = get_attribute_autocomplete_mode(
             itx.namespace.setting)
         if autocomplete_type is None:
-            return [app_commands.Choice[str](name="Invalid setting given.",
-                                        value=ModeAutocomplete.invalid.value)]
+            return [app_commands.Choice[str](
+                name="Invalid setting given.",
+                value=ModeAutocomplete.invalid.value,
+            )]
         types += autocomplete_type
         return [
             app_commands.Choice[str](name=key.value, value=key.value)
