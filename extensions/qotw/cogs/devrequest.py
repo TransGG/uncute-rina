@@ -81,8 +81,7 @@ class DevRequest(commands.Cog):
             self,
             itx: GuildInteraction[Bot]
     ) -> None:
-        await itx.response.send_message("`[+  ]`: Fetching cached threads.",
-                                        ephemeral=True)
+        await itx.response.defer(ephemeral=True)
         watchlist_channel: discord.TextChannel | None
         watchlist_channel = itx.client.get_guild_attribute(
             itx.guild, AttributeKeys.developer_request_channel)

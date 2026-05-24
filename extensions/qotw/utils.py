@@ -198,7 +198,8 @@ async def ping_open_threads(
      return a boolean indicating whether the thread should be pinged.
     :param ping_message: The message to send to each pinged thread.
     """
-    await itx.response.send_message(
+    assert itx.response.is_done()  # should have been deferred already
+    await itx.followup.send(
         "`[+  ]`: Fetching cached threads.",
         ephemeral=True
     )
