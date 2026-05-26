@@ -17,7 +17,7 @@ from extensions.customvcs.channel_rename_tracker import (
     try_store_vc_rename
 )
 from extensions.customvcs.modals import CustomVcStaffEditorModal
-from extensions.customvcs.utils import is_vc_custom
+from extensions.customvcs.utils import is_vc_custom, is_vc_table_owner
 
 
 async def _reset_voice_channel_permissions_if_vctable(
@@ -351,6 +351,15 @@ class CustomVcs(commands.Cog):
             await itx.response.send_message(
                 "You can't change that voice channel's name!",
                 ephemeral=True
+            )
+            return
+
+        if (isinstance(channel, discord.VoiceChannel)
+                and is_vc_custom(channel, vc_category, vc_hub, vc_blacklisted_channels, vc_blacklist_prefix)
+                and not is_vc_table_owner(channel, itx.user)):
+            await itx.response.send_message(
+                "You are not an owner of this VC Table so cannot change the name or user limit.",
+                ephemeral=True,
             )
             return
 
