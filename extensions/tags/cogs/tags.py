@@ -137,11 +137,10 @@ class TagFunctions(commands.Cog):
         if message.author.bot:
             return
 
-        staff_role_list: list[discord.Role]
-        admin_role_list: list[discord.Role]
-        staff_role_list, admin_role_list = self.client.get_guild_attribute(
-            message.guild, AttributeKeys.staff_roles,
-            AttributeKeys.admin_roles, default=[])
+        guild_attributes = self.client.get_guild_attributes(message.guild)
+        staff_role_list = guild_attributes.staff_roles
+        admin_role_list = guild_attributes.admin_roles
+
         staff_roles = set(staff_role_list + admin_role_list)
         staff_role_mentions = [f"<@&{role.id}>" for role in staff_roles
                                if staff_roles is not None]

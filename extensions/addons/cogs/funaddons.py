@@ -216,10 +216,10 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.headpat_reactions):
+            assert message.guild is not None  # implicit in is_module_enabled
             message = typing.cast(GuildMessage, message)
-            headpat_emoji: discord.Emoji | None
-            headpat_emoji = self.client.get_guild_attribute(
-                message.guild, AttributeKeys.headpat_emoji)
+            headpat_emoji = self.client.get_guild_attributes(
+                message.guild).headpat_emoji
             if headpat_emoji is None:
                 raise MissingAttributesCheckFailure(
                     ModuleKeys.headpat_reactions,
@@ -229,9 +229,10 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.awawawa_reactions):
+            assert message.guild is not None  # implicit in is_module_enabled
             awawawa_emoji: discord.Emoji | None
-            awawawa_emoji = self.client.get_guild_attribute(
-                message.guild, AttributeKeys.awawawa_emoji)
+            awawawa_emoji = self.client.get_guild_attributes(
+                message.guild).awawawa_emoji
             if awawawa_emoji is None:
                 raise MissingAttributesCheckFailure(
                     ModuleKeys.awawawa_reactions,

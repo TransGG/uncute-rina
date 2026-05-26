@@ -14,11 +14,10 @@ from pymongo.database import Database as PyMongoDatabase
 # ^ for MongoDB database typing
 
 from extensions.settings.objects import (
-    AttributeKeys,
     EnabledModules,
     ServerAttributes,
-    GuildAttributeType,
 )
+from extensions.settings.objects.server_attributes import default_server_attributes
 from resources.abc import (
     ApiTokenDict,
     MessageableGuildChannel,
@@ -127,31 +126,28 @@ class Bot(commands.Bot):
     # Type checking with the class is effectively impossible,
     #  as the key dictates the type, and any union we would emit
     #  would then need to be explicitly ignored in a type check.
-    def get_guild_attribute[Default](
+    def get_guild_attributes[Default](
             self,
             guild: discord.Guild | int,
-            *args: str,
-            default: Default = None
-    ) -> GuildAttributeType | Default | list[GuildAttributeType | Default]:
+            default: Default = None,
+    ) -> ServerAttributes:
         """
         Get ServerSettings attributes for the given guild.
 
+        Uses a main guild's attributes as baseplate, and then
+        recursively looks at the guild's parent to fill in unset
+        attribute values.
+
         :param guild: The guild or guild id of the server you want to
          get attributes for.
-        :param args: The attribute(s) to get the values of. Must be keys
-         of ServerAttributes.
-        :param default: The value to return if attribute was not found.
-        :return: A single or list of values matching the requested
-         attributes, with *default* if attributes are not found.
+        :param default: The value to fill if an attribute isn't found.
+        :return: A newly made ServerAttributes object with attributes
+         from the asked guild and its parents.
         """
-        if type(guild) is discord.Guild:
+        if isinstance(guild, discord.Guild):
             guild_id: int = guild.id
         else:
-            assert type(guild) is int  # why doesn't the interpreter see this?
             guild_id: int = guild
-
-        if len(args) == 0:
-            raise ValueError("You must provide at least one argument!")
 
         if (
                 self.server_settings is None
@@ -160,35 +156,29 @@ class Bot(commands.Bot):
             # If settings have not been fetched yet, or if the guild
             #  doesn't have any settings (perhaps the bot was recently
             #  added).
-            if len(args) > 1:
-                return [default for _ in args]
-            return default
+            return default_server_attributes(default)
 
         attributes = self.server_settings[guild_id].attributes
 
-        output: list[GuildAttributeType | Default] = []
+        unset_keys = [
+            key
+            for key, val in ServerAttributes.__annotations__.items()
+            if val is None
+        ]
 
-        parent_server = attributes[AttributeKeys.parent_server]  # type: ignore[literal-required] # noqa: E501
+        # Fill unset attributes with parent values
+        parent_attributes = attributes  # set to self to prepare iterative recursion
+        while len(unset_keys) > 0 and (parent := parent_attributes["parent_server"]) is not None:
+            parent_attributes = self.server_settings[parent.id].attributes
+            for key in list(unset_keys):  # clone the list because we're editing it inside the loop
+                if getattr(parent_attributes, key, None) is not None:  # type: ignore[literal-required] # noqa: E501
+                    # Ignore the string literal warning, I guess.
+                    # `key` is always a string, and should also always be
+                    #  a key of the TypedDict ServerAttributes.
+                    attributes[key] = parent_attributes[key]  # type: ignore[literal-required] # noqa: E501
+                    unset_keys.remove(key)
 
-        for arg in args:
-            if arg not in attributes:
-                assert arg not in ServerAttributes.__annotations__
-                raise ValueError(
-                    f"Attribute '{arg}' is not a valid attribute!")
-
-            att_value = attributes[arg]  # type:ignore
-            if att_value is not None:
-                output.append(att_value)
-            elif parent_server is not None:
-                maybe_the_parent_server_has_it = self.get_guild_attribute(
-                    parent_server, arg, default=default)
-                output.append(maybe_the_parent_server_has_it)
-            else:
-                output.append(default)
-
-        if len(output) == 1:
-            return output[0]
-        return output
+        return attributes
 
     def is_module_enabled(
             self, guild: discord.Guild | int | None, *args: str
@@ -202,9 +192,9 @@ class Bot(commands.Bot):
         :return: The enabled/disabled state of the module as boolean, or
          a list of booleans matching the list of module keys given.
         """
-        if type(guild) is discord.Guild:
+        if isinstance(guild, discord.Guild):
             guild_id: int = guild.id
-        elif type(guild) is int:
+        elif isinstance(guild, int):
             guild_id: int = guild
         else:  # guild is None
             return False

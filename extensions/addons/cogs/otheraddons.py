@@ -9,7 +9,7 @@ from extensions.settings.objects import (
 )
 from resources.abc import MessageableGuildChannel
 from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
-from resources.checks.command_checks import is_in_dms
+from resources.checks.command_checks import is_in_dms, module_not_disabled_check
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
 
@@ -368,6 +368,7 @@ class OtherAddons(commands.Cog):
         neutral_emoji_str="Neutral emoji option (placed between the "
                           "up/downvote)"
     )
+    @module_not_disabled_check(ModuleKeys.poll_reactions)
     async def add_poll_reactions(
             self,
             itx: discord.Interaction[Bot],
@@ -376,10 +377,6 @@ class OtherAddons(commands.Cog):
             downvote_emoji_str: str,
             neutral_emoji_str: str | None = None
     ) -> None:
-        if not is_in_dms(itx.guild) and not itx.client.is_module_enabled(
-                itx.guild, ModuleKeys.poll_reactions):
-            # Server specifically disabled this feature.
-            raise ModuleNotEnabledCheckFailure(ModuleKeys.poll_reactions)
         if itx.channel is None:
             await itx.response.send_message(
                 "I don't know what channel you're sending this in, so I "
@@ -438,8 +435,8 @@ class OtherAddons(commands.Cog):
 
         blacklisted_channels: list[MessageableGuildChannel] = []
         if itx.guild is not None:
-            blacklisted_channels = itx.client.get_guild_attribute(
-                itx.guild, AttributeKeys.poll_reaction_blacklisted_channels) \
+            blacklisted_channels = itx.client.get_guild_attributes(
+                itx.guild).poll_reaction_blacklisted_channels
 
         if (blacklisted_channels is not None
                 and itx.channel.id in blacklisted_channels):

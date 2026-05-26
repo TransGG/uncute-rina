@@ -104,9 +104,8 @@ class TestingCog(commands.GroupCog, name="testing"):
             private_notes: str = "",
             role_changes: str = ""
     ) -> None:
-        staff_logs_category = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.staff_logs_category
-        )
+        staff_logs_category = itx.client.get_guild_attributes(
+            itx.guild).staff_logs_category
         if staff_logs_category is None:
             raise MissingAttributesCheckFailure(
                 "testing", [AttributeKeys.staff_logs_category])

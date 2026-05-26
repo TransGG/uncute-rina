@@ -31,8 +31,8 @@ def is_staff(
         return False
 
     # The passed keys will only correspond to roles, so this cast is fine
-    staff_roles: list[discord.Role] = itx.client.get_guild_attribute(
-        itx.guild, AttributeKeys.staff_roles, default=[])  # type: ignore[assignment] # noqa: E501
+    staff_roles: list[discord.Role] = itx.client.get_guild_attributes(
+        itx.guild).staff_roles
     roles_set: set[discord.Role] = set(staff_roles)
     return (
         len(roles_set.intersection(member.roles)) > 0
@@ -58,8 +58,8 @@ def is_admin(
         return False
 
     # The passed keys will only correspond to roles, so this cast is fine
-    admin_roles: list[discord.Role] = itx.client.get_guild_attribute(
-        itx.guild, AttributeKeys.admin_roles, default=[])  # type: ignore[assignment] # noqa: E501
+    admin_roles = itx.client.get_guild_attributes(
+        itx.guild).admin_roles
     roles_set: set[discord.Role] = set(admin_roles)
     return (
         len(roles_set.intersection(member.roles)) > 0

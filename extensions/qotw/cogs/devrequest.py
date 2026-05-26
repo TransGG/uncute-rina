@@ -3,7 +3,7 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.qotw.utils import create_thread, ping_open_threads
-from extensions.settings.objects import AttributeKeys, ModuleKeys
+from extensions.settings.objects import AttributeKeys, ModuleKeys, ServerSettings, ServerAttributes
 from resources.abc import GuildInteraction
 from resources.checks import (
     is_staff_check,
@@ -35,11 +35,8 @@ class DevRequest(commands.Cog):
             itx: GuildInteraction[Bot],
             suggestion: app_commands.Range[str, 25, 1500],
     ) -> None:
-        developer_request_channel: discord.TextChannel | None = \
-            itx.client.get_guild_attribute(
-                itx.guild,
-                AttributeKeys.developer_request_channel,
-            )
+        developer_request_channel = itx.client.get_guild_attributes(
+                itx.guild).developer_request_channel
         if developer_request_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.dev_requests,
@@ -57,11 +54,15 @@ class DevRequest(commands.Cog):
         await itx.response.defer(ephemeral=True)
 
         title = "BotRQ-" + suggestion.replace("\\n", "\n")[:48]
+        def reaction_role_lambda(attrs: ServerAttributes):
+            return attrs.developer_request_reaction_role
+
         await create_thread(
             itx.client,
             (itx.user, developer_request_channel, suggestion),
-            AttributeKeys.developer_request_channel,
             title,
+            reaction_role_lambda,
+            AttributeKeys.developer_request_reaction_role,
             emojis=[discord.PartialEmoji.from_str(emoji)
                     for emoji in ("⬆️", "⬇️")]
         )
@@ -82,9 +83,8 @@ class DevRequest(commands.Cog):
             itx: GuildInteraction[Bot]
     ) -> None:
         await itx.response.defer(ephemeral=True)
-        watchlist_channel: discord.TextChannel | None
-        watchlist_channel = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.developer_request_channel)
+        watchlist_channel = itx.client.get_guild_attributes(
+            itx.guild).developer_request_channel
         if watchlist_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.dev_requests,
@@ -123,15 +123,15 @@ class DevRequest(commands.Cog):
         if not self.client.is_module_enabled(
                 payload.guild_id, ModuleKeys.dev_requests):
             return
+        assert payload.guild_id is not None
         dev_request_channel: discord.TextChannel | None = \
-            self.client.get_guild_attribute(
-                payload.guild_id,
-                AttributeKeys.developer_request_channel
-            )
+            self.client.get_guild_attributes(
+                payload.guild_id).developer_request_channel
         if dev_request_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.dev_requests,
-                [AttributeKeys.developer_request_channel])
+                [AttributeKeys.developer_request_channel],
+            )
 
         if (dev_request_channel.id != payload.channel_id
                 or payload.member is None):

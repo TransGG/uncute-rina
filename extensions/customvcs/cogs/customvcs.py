@@ -3,6 +3,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.settings.objects import ModuleKeys, AttributeKeys
+from resources.abc import GuildInteraction
 from resources.checks.permissions import is_staff
 # ^ to let staff rename other people's custom vcs
 from resources.checks import (
@@ -235,35 +236,28 @@ class CustomVcs(commands.Cog):
         if not self.client.is_module_enabled(
                 member.guild, ModuleKeys.custom_vcs):
             return
+        guild_attribute = self.client.get_guild_attributes(member.guild)
 
-        customvc_hub: discord.VoiceChannel | None
-        customvc_category: discord.CategoryChannel | None
-        vctable_prefix: str | None
-        blacklisted_channels: list[discord.VoiceChannel]
-        vc_blacklist_prefix: str | None
-        (
-            customvc_hub, customvc_category, vctable_prefix,
-            blacklisted_channels, vc_blacklist_prefix
-        ) = self.client.get_guild_attribute(
-            member.guild,
-            AttributeKeys.custom_vc_create_channel,
-            AttributeKeys.custom_vc_category,
-            AttributeKeys.vctable_prefix,
-            AttributeKeys.custom_vc_blacklisted_channels,
-            AttributeKeys.custom_vc_blacklist_prefix
-        )
+        customvc_hub = guild_attribute.custom_vc_create_channel
+        customvc_category = guild_attribute.custom_vc_category
+        vctable_prefix = guild_attribute.vctable_prefix
+        blacklisted_channels = guild_attribute.custom_vc_blacklisted_channels
+        vc_blacklist_prefix = guild_attribute.custom_vc_blacklist_prefix
+
         if (customvc_hub is None
                 or customvc_category is None
                 or vctable_prefix is None
                 or vc_blacklist_prefix is None):
             # `blacklisted_channels` can be left empty.
-            missing = [key for key, value in {
-                AttributeKeys.custom_vc_create_channel: customvc_hub,
-                AttributeKeys.custom_vc_category: customvc_category,
-                AttributeKeys.vctable_prefix: vctable_prefix,
-                AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix
-            }.items()
-                if value is None]
+            missing = [
+                key for key, value in {
+                    AttributeKeys.custom_vc_create_channel: customvc_hub,
+                    AttributeKeys.custom_vc_category: customvc_category,
+                    AttributeKeys.vctable_prefix: vctable_prefix,
+                    AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix
+                }.items()
+                if value is None
+            ]
             raise MissingAttributesCheckFailure(
                 ModuleKeys.custom_vcs, missing)
 
@@ -300,24 +294,16 @@ class CustomVcs(commands.Cog):
                            limit="Give your voice channel a user limit!")
     @module_enabled_check(ModuleKeys.custom_vcs)
     async def edit_custom_vc(
-            self, itx: discord.Interaction[Bot],
+            self, itx: GuildInteraction[Bot],
             name: app_commands.Range[str, 3, 35] | None = None,
             limit: app_commands.Range[int, 0, 99] | None = None
     ) -> None:
-        vc_hub: discord.VoiceChannel | None
-        vc_category: discord.CategoryChannel | None
-        vctable_prefix: str | None
-        vc_blacklist_prefix: str | None
-        vc_blacklisted_channels: list[discord.VoiceChannel]
-        (vc_hub, vc_category, vctable_prefix, vc_blacklist_prefix,
-         vc_blacklisted_channels) = itx.client.get_guild_attribute(
-            itx.guild,
-            AttributeKeys.custom_vc_create_channel,
-            AttributeKeys.custom_vc_category,
-            AttributeKeys.vctable_prefix,
-            AttributeKeys.custom_vc_blacklist_prefix,
-            AttributeKeys.custom_vc_blacklisted_channels,
-        )
+        guild_attributes = itx.client.get_guild_attributes(itx.guild)
+        vc_hub = guild_attributes.custom_vc_create_channel
+        vc_category = guild_attributes.custom_vc_category
+        vctable_prefix = guild_attributes.vctable_prefix
+        vc_blacklist_prefix = guild_attributes.custom_vc_blacklist_prefix
+        vc_blacklisted_channels = guild_attributes.custom_vc_blacklisted_channels
 
         if (vc_hub is None
                 or vc_category is None

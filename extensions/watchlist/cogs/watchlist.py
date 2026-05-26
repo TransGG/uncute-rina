@@ -88,10 +88,8 @@ async def _create_uncool_watchlist_thread(
                                      auto_archive_duration=10080)
     await thread.join()
     joiner_msg = await thread.send("user-mention placeholder")
-    watchlist_reaction_role: discord.Guild | None = client.get_guild_attribute(
-        watch_channel.guild,
-        AttributeKeys.watchlist_reaction_role
-    )
+    watchlist_reaction_role = client.get_guild_attributes(
+        watch_channel.guild).watchlist_reaction_role
     if watchlist_reaction_role is None:
         cmd_settings = client.get_command_mention_with_args(
             "settings",
@@ -137,7 +135,7 @@ async def _update_uncool_watchlist_embed(
 
 
 async def _add_to_watchlist(
-        itx: discord.Interaction[Bot],
+        itx: GuildInteraction[Bot],
         user: discord.Member | discord.User,
         reason: str = "",
         message_id_str: str | None = None,
@@ -183,8 +181,8 @@ async def _add_to_watchlist(
         return
 
     # get channel of where this message has to be sent
-    watch_channel: discord.TextChannel | None = itx.client.get_guild_attribute(
-        itx.guild, AttributeKeys.watchlist_channel)
+    watch_channel = itx.client.get_guild_attributes(
+        itx.guild).watchlist_channel
     if watch_channel is None:
         raise MissingAttributesCheckFailure(
             ModuleKeys.watchlist, [AttributeKeys.watchlist_channel])
@@ -449,11 +447,12 @@ class WatchList(commands.Cog):
             return
 
         watch_channel: discord.TextChannel | None = \
-            itx.client.get_guild_attribute(
-                itx.guild, AttributeKeys.watchlist_channel)
+            itx.client.get_guild_attributes(
+                itx.guild).watchlist_channel
         if watch_channel is None:
             raise MissingAttributesCheckFailure(
-                ModuleKeys.watchlist, [AttributeKeys.watchlist_channel])
+                ModuleKeys.watchlist, [AttributeKeys.watchlist_channel],
+            )
 
         await itx.response.defer(ephemeral=True)
         watchlist_thread_id = get_watchlist(watch_channel.guild.id, user.id)
@@ -479,16 +478,11 @@ class WatchList(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.watchlist):
             return
-        staff_logs_category: discord.CategoryChannel | None
-        badeline_bot: discord.User | None
-        watchlist_channel: discord.TextChannel | None
-        staff_logs_category, badeline_bot, watchlist_channel = \
-            self.client.get_guild_attribute(
-                message.guild,
-                AttributeKeys.staff_logs_category,
-                AttributeKeys.badeline_bot,
-                AttributeKeys.watchlist_channel
-            )
+        guild_attributes = self.client.get_guild_attributes(message.guild)
+        staff_logs_category = guild_attributes.staff_logs_category
+        badeline_bot = guild_attributes.badeline_bot
+        watchlist_channel = guild_attributes.watchlist_channel
+
         if (staff_logs_category is None
                 or badeline_bot is None
                 or watchlist_channel is None):

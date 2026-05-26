@@ -105,6 +105,7 @@ class StaffPollsChannelAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.polls_only_channel):
             return
+        assert message.guild is not None
 
         # Can raise discord.Forbidden if:
         # - Missing `Manage Messages` to delete non-poll messages.
@@ -113,23 +114,23 @@ class StaffPollsChannelAddon(commands.Cog):
         #   the reaction role.
         # - Missing
 
-        polls_channel: discord.TextChannel | None
-        polls_channel_reaction_role: discord.Role | None
-        polls_channel, polls_channel_reaction_role = \
-            self.client.get_guild_attribute(
-                message.guild,
-                AttributeKeys.polls_only_channel,
-                AttributeKeys.polls_channel_reaction_role,
-            )
+        guild_attributes = self.client.get_guild_attributes(message.guild)
+        polls_channel = guild_attributes.polls_only_channel
+        polls_channel_reaction_role = guild_attributes.polls_channel_reaction_role
+
         if (polls_channel is None
                 or polls_channel_reaction_role is None):
-            missing = [key for key, value in {
-                AttributeKeys.polls_only_channel: polls_channel,
-                AttributeKeys.polls_channel_reaction_role:
-                    polls_channel_reaction_role}.items()
-                if value is None]
+            missing = [
+                key for key, value in {
+                    AttributeKeys.polls_only_channel: polls_channel,
+                    AttributeKeys.polls_channel_reaction_role: polls_channel_reaction_role
+                }.items()
+                if value is None
+            ]
             raise MissingAttributesCheckFailure(
-                ModuleKeys.polls_only_channel, missing)
+                ModuleKeys.polls_only_channel,
+                missing,
+            )
 
         if message.channel == polls_channel:
 

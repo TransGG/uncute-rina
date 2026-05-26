@@ -31,11 +31,8 @@ class QOTW(commands.Cog):
     @module_enabled_check(ModuleKeys.qotw)
     async def qotw(self, itx: GuildInteraction[Bot], question: str) -> None:
         # get channel of where this message has to be sent
-        qotw_channel: discord.TextChannel | None
-        qotw_channel = itx.client.get_guild_attribute(
-            itx.guild,
-            AttributeKeys.qotw_suggestions_channel
-        )
+        qotw_channel = itx.client.get_guild_attributes(
+            itx.guild).qotw_suggestions_channel
         if qotw_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.qotw,
@@ -59,10 +56,18 @@ class QOTW(commands.Cog):
 
         await itx.response.defer(ephemeral=True)
 
+        def reaction_role_lambda(attrs: ServerAttributes):
+            # this one is kinda silly...
+            # but it only sends the message, and then removes it immediately after,
+            # so it doesn't really matter that this is mentioning a channel instead of a role.
+            # probably...
+            return attrs.qotw_suggestions_channel
+
         await create_thread(
             itx.client,
             (itx.user, qotw_channel, question),
             f"QOTW-{question[:50]}",
+            reaction_role_lambda,
             AttributeKeys.qotw_suggestions_channel,
             emojis=[discord.PartialEmoji.from_str(emoji)
                     for emoji in ("⬆️", "⬇️")]

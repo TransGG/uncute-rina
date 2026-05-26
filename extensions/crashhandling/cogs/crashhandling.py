@@ -114,13 +114,8 @@ def _get_crash_logging_message(
     log_channel: MessageableGuildChannel | None = None
     potential_guild: discord.Guild | None = getattr(itx, "guild", None)
     if potential_guild is not None:
-        log_channel = typing.cast(
-            MessageableGuildChannel | None,
-            client.get_guild_attribute(
-                potential_guild,
-                AttributeKeys.log_channel
-            )
-        )
+        log_channel = client.get_guild_attributes(
+            potential_guild).log_channel
     if log_channel is None and client.server_settings is None:
         debug(f"Error during startup\n\n\n[{error_type}]: {error_source}\n\n"
               f"{traceback_text}\n\n")
@@ -131,8 +126,7 @@ def _get_crash_logging_message(
         backup_guild_ids = [959551566388547676, 985931648094834798,
                             981615050664075404]
         possible_log_channels: list[MessageableGuildChannel | None] = [
-            typing.cast(MessageableGuildChannel | None,
-                        client.get_guild_attribute(guild_id, AttributeKeys.log_channel))
+            client.get_guild_attributes(guild_id).log_channel
             for guild_id in backup_guild_ids
         ]
         # grab the first non-None logging channel

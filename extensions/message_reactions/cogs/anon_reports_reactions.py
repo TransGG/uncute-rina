@@ -15,9 +15,9 @@ class AnonReportsReactionsAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.anonymous_report_reactions):
             return
-        anon_reports_webhook_id: int | None
-        anon_reports_webhook_id = self.client.get_guild_attribute(
-            message.guild, AttributeKeys.anonymous_reports_webhook_id)
+        assert message.guild is not None
+        anon_reports_webhook_id = self.client.get_guild_attributes(
+            message.guild).anonymous_reports_webhook_id
         if anon_reports_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.anonymous_report_reactions,

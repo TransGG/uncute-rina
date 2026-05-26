@@ -16,8 +16,9 @@ class AEGISPingReactionsAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.aegis_ping_reactions):
             return
-        aegis_ping_role: discord.Role | None = self.client.get_guild_attribute(
-            message.guild, AttributeKeys.aegis_ping_role)
+        assert message.guild is not None
+        aegis_ping_role = self.client.get_guild_attributes(
+            message.guild).aegis_ping_role
         if aegis_ping_role is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.aegis_ping_reactions,

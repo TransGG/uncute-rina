@@ -120,18 +120,12 @@ async def _get_current_voice_channel(
     :raise MissingAttributesCheckFailure: If any guild attributes
      are missing.
     """
-    vc_hub: discord.VoiceChannel | None
-    vc_category: discord.CategoryChannel | None
-    blacklisted_channels: list[discord.VoiceChannel]
-    vc_blacklist_prefix: str | None
-    vc_hub, vc_category, blacklisted_channels, vc_blacklist_prefix = \
-        itx.client.get_guild_attribute(
-            itx.guild,
-            AttributeKeys.custom_vc_create_channel,
-            AttributeKeys.custom_vc_category,
-            AttributeKeys.custom_vc_blacklisted_channels,
-            AttributeKeys.custom_vc_blacklist_prefix
-        )
+    guild_attributes = itx.client.get_guild_attributes(itx.guild)
+    vc_hub = guild_attributes.custom_vc_create_channel
+    vc_category = guild_attributes.custom_vc_category
+    blacklisted_channels = guild_attributes.custom_vc_blacklisted_channels
+    vc_blacklist_prefix = guild_attributes.custom_vc_blacklist_prefix
+
     if (
             vc_hub is None
             or vc_category is None
@@ -244,8 +238,8 @@ class VcTables(
             owners: str = "",
             name: app_commands.Range[str, 3, 35] | None = None
     ) -> None:
-        vctable_prefix: str | None = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.vctable_prefix)
+        vctable_prefix = itx.client.get_guild_attributes(
+            itx.guild).vctable_prefix
         if vctable_prefix is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.vc_tables, [AttributeKeys.vctable_prefix])
@@ -431,8 +425,8 @@ class VcTables(
     )
     @module_enabled_check(ModuleKeys.vc_tables)
     async def vctable_disband(self, itx: GuildInteraction[Bot]) -> None:
-        vctable_prefix: str | None = itx.client.get_guild_attribute(
-            itx.guild, AttributeKeys.vctable_prefix)
+        vctable_prefix = itx.client.get_guild_attributes(
+            itx.guild).vctable_prefix
         if vctable_prefix is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.vc_tables, [AttributeKeys.vctable_prefix])

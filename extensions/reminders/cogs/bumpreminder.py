@@ -22,11 +22,13 @@ class BumpReminder(commands.Cog):
         if message.guild is None:
             return
 
-        bump_bot: discord.User | None = self.client.get_guild_attribute(
-            message.guild, AttributeKeys.bump_reminder_bot)
+        bump_bot: discord.User | None = self.client.get_guild_attributes(
+            message.guild).AttributeKeys.bump_reminder_bot
         if bump_bot is None:
             raise MissingAttributesCheckFailure(
-                ModuleKeys.bump_reminder, [AttributeKeys.bump_reminder_bot])
+                ModuleKeys.bump_reminder,
+                [AttributeKeys.bump_reminder_bot],
+            )
 
         if message.author.id != bump_bot.id:
             return

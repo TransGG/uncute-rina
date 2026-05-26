@@ -491,13 +491,14 @@ class VCLogReader(commands.Cog):
                        "or has been deleted!\n\n")
 
         vc_activity_logs_channel: discord.abc.Messageable | None
-        vc_activity_logs_channel = itx.client.get_guild_attribute(
-            itx.guild_id, AttributeKeys.voice_channel_activity_logs_channel)
+        vc_activity_logs_channel = itx.client.get_guild_attributes(
+            itx.guild_id).voice_channel_activity_logs_channel
 
         if vc_activity_logs_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.vc_log_reader,
-                [AttributeKeys.voice_channel_activity_logs_channel])
+                [AttributeKeys.voice_channel_activity_logs_channel],
+            )
 
         if upper_bound is None:
             upper_bound = 0  # 0 minutes from now
