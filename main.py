@@ -36,7 +36,7 @@ from resources.customs import (
 from resources.utils import debug, codec_options, DebugColor
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.2.1"
+BOT_VERSION = "2.3.0"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
