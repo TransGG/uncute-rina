@@ -1,10 +1,10 @@
 import typing
 
+from datetime import datetime
 import discord
 
-from extensions.settings.objects import GuildAttributeType
 from resources.customs import Bot
-from datetime import datetime
+from extensions.settings.objects import ServerAttributes
 
 
 # region create thread

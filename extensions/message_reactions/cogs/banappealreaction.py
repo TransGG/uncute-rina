@@ -4,7 +4,11 @@ import discord
 import discord.ext.commands as commands
 
 from extensions.qotw.utils import create_thread
-from extensions.settings.objects import AttributeKeys, ModuleKeys
+from extensions.settings.objects import (
+    AttributeKeys,
+    ModuleKeys,
+    ServerAttributes,
+)
 from resources.abc import GuildMessage
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
@@ -68,6 +72,7 @@ class BanAppealReactionsAddon(commands.Cog):
             )
 
         username: str = field_value or "Empty username"
+
         def reaction_role_lambda(attrs: ServerAttributes):
             return attrs.ban_appeal_reaction_role
 

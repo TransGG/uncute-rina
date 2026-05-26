@@ -1,5 +1,4 @@
 import dataclasses
-from typing import TypedDict
 from resources.abc import MessageableGuildChannel
 
 import discord
@@ -85,6 +84,7 @@ class ServerAttributes:
     polls_only_channel: discord.TextChannel | None = None
     # ^ needs to be able to have threads
     polls_channel_reaction_role: discord.Role | None = None
+
 
 def default_server_attributes[T](default: T | None = None):
     out = ServerAttributes()

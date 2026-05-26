@@ -30,10 +30,10 @@ def test_get_dice_roll_output_short(
 
 @pytest.mark.parametrize("dice, faces, mod, expected", [
     (10000, 10000, None,
-"You rolled 10,000 dice with 10,000 faces:\n"
-     "With this many numbers, I've simplified it a little. "
-     "You rolled `10,000`.\n"
-     "You rolled '1'x10000"),
+        "You rolled 10,000 dice with 10,000 faces:\n"
+        "With this many numbers, I've simplified it a little. "
+        "You rolled `10,000`.\n"
+        "You rolled '1'x10000"),
 ])
 def test_get_dice_roll_output_long_short(
         dice: int,
@@ -55,10 +55,11 @@ def test_get_dice_roll_output_much_too_long() -> None:
     expected = (
         "You rolled 10,000 dice with 10,000 faces:\n"
         "With this many numbers, I've simplified it a little. "
-        f"You rolled `{(10000*(1+10000))//2:,}`.\n" #
+        f"You rolled `{(10000*(1+10000))//2:,}`.\n"
+        # sum from 1 to 10000 due to custom 'get_random_output' function
     )
-
     random_output = 0
+
     def get_random_output(*_):
         nonlocal random_output
         random_output += 1
@@ -75,12 +76,11 @@ def test_get_dice_roll_output_long_long() -> None:
     dice = 100
     faces = 1
     mod = None
-
+    random_output = 0
     # I don't really care about the string output.
     # It just compresses it into '1'x1 etc. for 1 to 100
     # But doesn't compress it further because it's just barely long enough.
 
-    random_output = 0
     def get_random_output(dice, faces):
         nonlocal random_output
         random_output += 1

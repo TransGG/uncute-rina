@@ -5,10 +5,9 @@ import discord.ext.commands as commands
 
 from extensions.settings.objects import (
     ModuleKeys,
-    AttributeKeys,
 )
 from resources.abc import MessageableGuildChannel
-from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
+from resources.checks import module_enabled_check
 from resources.checks.command_checks import is_in_dms, module_not_disabled_check
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions

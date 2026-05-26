@@ -3,7 +3,11 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.qotw.utils import create_thread, ping_open_threads
-from extensions.settings.objects import AttributeKeys, ModuleKeys, ServerSettings, ServerAttributes
+from extensions.settings.objects import (
+    AttributeKeys,
+    ModuleKeys,
+    ServerAttributes,
+)
 from resources.abc import GuildInteraction
 from resources.checks import (
     is_staff_check,

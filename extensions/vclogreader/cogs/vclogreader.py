@@ -23,6 +23,12 @@ from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
 
 
+class VcLogTimestampData(typing.TypedDict, total=False):
+    name: str
+    join_time: float | None
+    timestamps: list[tuple[float, float]]
+
+
 def extract_id_and_name(
         embed: discord.Embed,
         field_number: int,
@@ -375,10 +381,7 @@ def _format_data_for_graph(
                         | discord.abc.PrivateChannel
                         | CustomVoiceChannel),  # todo: narrow down type
 ) -> tuple[VcLogGraphData, list[int]]:
-    intermediate_data: dict[int, dict[
-        typing.Literal["name", "join_time", "timestamps"],
-        list[tuple[float, float]] | str | float | None
-    ]] = {}
+    intermediate_data: dict[int, VcLogTimestampData] = {}
     for event in events:
         unix, user, from_channel, to_channel = event
         # get channel id
@@ -468,7 +471,8 @@ class VCLogReader(commands.Cog):
         requested_channel: discord.app_commands.AppCommandChannel | str \
             = requested_channel_input
         warning = ""
-        if type(requested_channel) is discord.app_commands.AppCommandChannel:
+        voice_channel: discord.VoiceChannel | None
+        if isinstance(requested_channel, discord.app_commands.AppCommandChannel):
             voice_channel = itx.client.get_channel(requested_channel.id)
         else:
             if not requested_channel.isdecimal():
@@ -482,13 +486,18 @@ class VCLogReader(commands.Cog):
         if voice_channel is None:
             # make custom vc if the voice channel we're trying to get
             #  logs does not exist anymore.
+            if isinstance(requested_channel, discord.app_commands.AppCommandChannel):
+                channel_id = requested_channel.id
+            else:
+                channel_id = int(requested_channel)
             voice_channel = CustomVoiceChannel(
-                channel_id=int(requested_channel),
+                channel_id=channel_id,
                 name="Unknown Channel",
                 members=[]
             )
             warning = ("Warning: This channel is not a voice channel, "
                        "or has been deleted!\n\n")
+        assert voice_channel is not None
 
         vc_activity_logs_channel: discord.abc.Messageable | None
         vc_activity_logs_channel = itx.client.get_guild_attributes(

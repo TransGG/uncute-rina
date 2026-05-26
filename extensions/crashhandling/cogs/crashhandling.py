@@ -9,7 +9,6 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from extensions.settings.objects import AttributeKeys
 from resources.abc import MessageableGuildChannel
 from resources.checks import (
     CommandDoesNotSupportDMsCheckFailure,
