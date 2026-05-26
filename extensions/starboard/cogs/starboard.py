@@ -372,9 +372,8 @@ async def _fetch_starboard_and_original_messages(
         orig_msg = original_message
 
     if isinstance(starboard_message, int):
-        starboard_channel: MessageableGuildChannel | None
-        starboard_channel = client.get_guild_attribute(
-            guild_id, AttributeKeys.starboard_channel)
+        starboard_channel = client.get_guild_attributes(
+            guild_id).starboard_channel
         if starboard_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.starboard, [AttributeKeys.starboard_channel])
@@ -414,7 +413,7 @@ def _get_starboard_message_data(
             raise ValueError("original_message and starboard_message "
                              "cannot both be None")
 
-        if isinstance(starboard_message, GuildMessage):
+        if isinstance(starboard_message, discord.Message):
             starboard_message_id = starboard_message.id
         else:
             starboard_message_id = starboard_message
@@ -432,7 +431,7 @@ def _get_starboard_message_data(
             original_message_channel = orig_data[0]
 
     elif starboard_message is None:
-        if isinstance(original_message, GuildMessage):
+        if isinstance(original_message, discord.Message):
             original_message_id = original_message.id
         else:
             original_message_id = original_message
@@ -451,7 +450,7 @@ def _get_starboard_message_data(
             )
 
     if original_message_channel is None:
-        if isinstance(starboard_message, GuildMessage):
+        if isinstance(starboard_message, discord.Message):
             starboard_message_id = starboard_message.id
         else:
             starboard_message_id = starboard_message
@@ -575,38 +574,26 @@ class Starboard(commands.Cog):
                                              ModuleKeys.starboard):
             return
 
-        star_channel: MessageableGuildChannel | None
-        star_minimum: int | None
-        channel_blacklist: list[MessageableGuildChannel] | None
-        starboard_emoji: discord.Emoji | None
-        downvote_init_value: int | None
-        (star_channel, star_minimum, channel_blacklist,
-         starboard_emoji, downvote_init_value) = \
-            self.client.get_guild_attribute(
-                payload.guild_id,
-                AttributeKeys.starboard_channel,
-                AttributeKeys.starboard_minimum_upvote_count,
-                AttributeKeys.starboard_blacklisted_channels,
-                AttributeKeys.starboard_upvote_emoji,
-                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
-        )
+        guild_attributes = self.client.get_guild_attributes(payload.guild_id)
+        star_channel = guild_attributes.starboard_channel
+        star_minimum = guild_attributes.starboard_minimum_upvote_count
+        channel_blacklist = guild_attributes.starboard_blacklisted_channels
+        starboard_emoji = guild_attributes.starboard_upvote_emoji
+        downvote_init_value = guild_attributes.starboard_minimum_vote_count_for_downvote_delete
 
-        if (star_channel is None
+        if (
+                star_channel is None
                 or star_minimum is None
                 or channel_blacklist is None
                 or starboard_emoji is None
-                or downvote_init_value is None):
+                or downvote_init_value is None
+        ):
             missing = [key for key, value in {
-                AttributeKeys.starboard_channel:
-                    star_channel,
-                AttributeKeys.starboard_minimum_upvote_count:
-                    star_minimum,
-                AttributeKeys.starboard_blacklisted_channels:
-                    channel_blacklist,
-                AttributeKeys.starboard_upvote_emoji:
-                    starboard_emoji,
-                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete:
-                    downvote_init_value
+                AttributeKeys.starboard_channel: star_channel,
+                AttributeKeys.starboard_minimum_upvote_count: star_minimum,
+                AttributeKeys.starboard_blacklisted_channels: channel_blacklist,
+                AttributeKeys.starboard_upvote_emoji: starboard_emoji,
+                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete: downvote_init_value
             }.items()
                 if value is None]
             raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
@@ -706,16 +693,10 @@ class Starboard(commands.Cog):
                                              ModuleKeys.starboard):
             return
 
-        star_channel: discord.abc.Messageable | None
-        starboard_emoji: discord.Emoji | None
-        downvote_init_value: int | None
-        star_channel, starboard_emoji, downvote_init_value = \
-            self.client.get_guild_attribute(
-                payload.guild_id,
-                AttributeKeys.starboard_channel,
-                AttributeKeys.starboard_upvote_emoji,
-                AttributeKeys.starboard_minimum_vote_count_for_downvote_delete
-            )
+        guild_attributes = self.client.get_guild_attributes(payload.guild_id)
+        star_channel = guild_attributes.starboard_channel
+        starboard_emoji = guild_attributes.starboard_upvote_emoji
+        downvote_init_value = guild_attributes.starboard_minimum_vote_count_for_downvote_delete
 
         if (star_channel is None
                 or starboard_emoji is None
@@ -769,13 +750,10 @@ class Starboard(commands.Cog):
             return
         assert message_payload.guild_id is not None
 
-        star_channel: MessageableGuildChannel | None
-        starboard_emoji: discord.Emoji | None
-        star_channel, starboard_emoji = self.client.get_guild_attribute(
-            message_payload.guild_id,
-            AttributeKeys.starboard_channel,
-            AttributeKeys.starboard_upvote_emoji
-        )
+        guild_attributes = self.client.get_guild_attributes(
+            message_payload.guild_id)
+        star_channel = guild_attributes.starboard_channel
+        starboard_emoji = guild_attributes.starboard_upvote_emoji
 
         if star_channel is None or starboard_emoji is None:
             missing = [key for key, value in {

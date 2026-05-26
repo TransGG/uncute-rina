@@ -96,10 +96,8 @@ class SendPubliclyTagView(discord.ui.View):
                              f"[Jump to the tag message]({msg.jump_url})")
             if self.report_to_staff:
                 await log_to_guild(itx.client, itx.guild, self.log_msg)
-                staff_message_reports_channel: MessageableGuildChannel | None
-                staff_message_reports_channel = itx.client.get_guild_attribute(
-                    itx.guild,
-                    AttributeKeys.staff_reports_channel)
+                staff_message_reports_channel = itx.client.get_guild_attributes(
+                    itx.guild).staff_reports_channel
                 if staff_message_reports_channel is not None:
                     await staff_message_reports_channel.send(self.log_msg)
         self.stop()

@@ -35,13 +35,8 @@ def get_mod_ticket_channel(
     """
     if isinstance(guild_id, discord.Interaction):
         guild_id = guild_id.guild.id
-    ticket_channel = cast(
-        MessageableGuildChannel | None,
-        client.get_guild_attribute(
-            guild_id,
-            AttributeKeys.ticket_create_channel
-        )
-    )
+    ticket_channel = client.get_guild_attributes(
+            guild_id).ticket_create_channel
 
     return ticket_channel
 
@@ -78,8 +73,7 @@ async def log_to_guild(
     if guild is None:
         return False
     # The given key should restrict us to messagable channels
-    log_channel: discord.abc.Messageable | None = client.get_guild_attribute(
-        guild, AttributeKeys.log_channel)  # type: ignore[assignment]
+    log_channel = client.get_guild_attributes(guild).log_channel
     if log_channel is None:
         if ignore_dms and is_in_dms(guild):
             return False

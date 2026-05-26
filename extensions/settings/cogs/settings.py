@@ -299,7 +299,7 @@ async def _value_autocomplete(  # noqa: RUF029
 
 
 async def _handle_settings_attribute(
-        itx: discord.Interaction[Bot],
+        itx: GuildInteraction[Bot],
         help_str: str,
         setting: str | None,
         modify_mode: ModeAutocomplete | None,
@@ -352,8 +352,6 @@ async def _handle_settings_attribute(
 
     await itx.response.defer(ephemeral=True)  # defer before any database calls
 
-    assert itx.guild is not None  # is_admin_check in parent function
-
     if modify_mode == ModeAutocomplete.view:
         entry = await ServerSettings.get_entry(itx.client.async_rina_db,
                                                itx.guild.id)
@@ -369,7 +367,10 @@ async def _handle_settings_attribute(
             attribute_raw = repr(attribute_raw)
         else:
             attribute_raw = "<no value yet>"
-        attribute_parsed = itx.client.get_guild_attribute(itx.guild, setting)
+
+        guild_attributes = itx.client.get_guild_attributes(itx.guild)
+        attribute_parsed = getattr(guild_attributes, setting)
+
         await itx.followup.send(
             (f"The current value for '{setting}' is:\n"
              f"Raw:\n"
@@ -561,8 +562,9 @@ def _has_guild_as_parent(
         if parent_server_id == guild.id:
             has_current_server = True
             break
-        parent_server_id = client.get_guild_attribute(
-            parent_server_id, AttributeKeys.parent_server)
+        assert parent_server_id is not None  # the IDE type checker is kinda dumb...
+        parent_server_id = client.get_guild_attributes(
+            parent_server_id).parent_server
     return has_current_server, parent_server_id
 
 
@@ -725,9 +727,8 @@ class SettingsCog(commands.Cog):
     @is_admin_check
     @module_enabled_check(ModuleKeys.watchlist)
     async def migrate_watchlist(self, itx: GuildInteraction[Bot]) -> None:
-        watchlist_channel: discord.TextChannel | None = \
-            itx.client.get_guild_attribute(
-                itx.guild, AttributeKeys.watchlist_channel)
+        watchlist_channel = itx.client.get_guild_attributes(
+                itx.guild).watchlist_channel
         if watchlist_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.watchlist,
@@ -749,7 +750,7 @@ class SettingsCog(commands.Cog):
     # @module_enabled_check(ModuleKeys.starboard)
     # async def migrate_starboard(self, itx: GuildInteraction[Bot]) -> None:
     #     starboard_channel: discord.abc.Messageable | None = \
-    #         itx.client.get_guild_attribute(
+    #         itx.client.get_guild_attributes(
     #             itx.guild, AttributeKeys.starboard_channel)
     #     if starboard_channel is None:
     #         raise MissingAttributesCheckFailure(

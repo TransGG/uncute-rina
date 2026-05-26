@@ -35,6 +35,63 @@ def is_vc_custom(
     )
 
 
+# region Permission checks
+def is_vc_table_owner(
+        channel: discord.VoiceChannel,
+        target: discord.Role | discord.Member | discord.Object
+) -> bool:
+    if target not in channel.overwrites:
+        return False
+    return channel.overwrites[target].connect is True
+
+
+def is_vctable_speaker(
+        channel: discord.VoiceChannel,
+        target: discord.Role | discord.Member | discord.Object
+) -> bool:
+    if target not in channel.overwrites:
+        return False
+    return channel.overwrites[target].speak is True
+
+
+def is_vctable_muted(
+        channel: discord.VoiceChannel,
+        target: discord.Role | discord.Member | discord.Object
+) -> bool:
+    if target not in channel.overwrites:
+        return False
+    return channel.overwrites[target].speak is False
+
+
+def is_vctable_participant(
+        channel: discord.VoiceChannel,
+        target: discord.Role | discord.Member | discord.Object
+) -> bool:
+    if target not in channel.overwrites:
+        return False
+    return channel.overwrites[target].view_channel is True
+
+
+def is_vctable_authorized(
+        channel: discord.VoiceChannel,
+        guild: discord.Guild
+) -> bool:
+    if guild.default_role not in channel.overwrites:
+        return False
+    return channel.overwrites[guild.default_role].speak is False
+
+
+def is_vctable_locked(
+        channel: discord.VoiceChannel,
+        guild: discord.Guild
+) -> bool:
+    if guild.default_role not in channel.overwrites:
+        return False
+    return channel.overwrites[guild.default_role].view_channel is False
+
+# endregion Permission checks
+
+
 def edit_permissionoverwrite(
         perms: discord.PermissionOverwrite,
         overwrites: dict[str, bool]

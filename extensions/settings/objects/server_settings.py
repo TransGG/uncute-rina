@@ -12,8 +12,8 @@ import discord
 from resources.abc import MessageableGuildChannel
 from resources.utils.debug import debug, DebugColor
 from .server_attributes import (
-    ServerAttributes,
     GuildAttributeType,
+    ServerAttributes,
 )
 from .server_attribute_ids import ServerAttributeIds
 from .enabled_modules import EnabledModules
@@ -483,7 +483,7 @@ class ServerSettings:
         attribute_ids = ServerAttributeIds(
             **settings.get("attribute_ids", {})
         )
-        guild, attributes = await ServerSettings.get_attributes(
+        guild, attributes = await ServerSettings.load_attributes(
             client, guild_id, attribute_ids
         )
         return ServerSettings(
@@ -496,10 +496,10 @@ class ServerSettings:
     #  from the database?
 
     @staticmethod
-    async def get_attributes(
+    async def load_attributes(
             client: Bot,
             guild_id: int,
-            attributes: ServerAttributeIds
+            attribute_ids: ServerAttributeIds
     ) -> tuple[discord.Guild, ServerAttributes]:
         """
         Load the guild and all attributes from the given ids, using
@@ -514,7 +514,7 @@ class ServerSettings:
          objects from ids.
         :param guild_id: The guild id of the guild of the server
          attributes.
-        :param attributes: The ids of the attributes to load.
+        :param attribute_ids: The ids of the attributes to load.
 
         :return A tuple of the loaded guild and its attributes,
          corresponding with the given ids.
@@ -531,34 +531,50 @@ class ServerSettings:
                 f"- guild_id: {guild_id}"
             )
 
-        new_settings: dict[str, Any | None] = {
-            k: [] if (typing.get_origin(v) is list
-                      or type(v) is list)
-            else None
-            for k, v in ServerAttributes.__annotations__.items()
-        }
+        parsed_attributes = ServerAttributes()
 
-        for attribute, attribute_value in attributes.items():
+        def set_attribute(key: str, val) -> None:
+            # Mostly validation before casting it.
+            # Todo: more graceful handling of errors:
+            #  Can throw AttributeError and AssertionError
+            assert isinstance(key, str), f"Key `{key}` was not a string!"
+            expected_type = ServerAttributes.__annotations__[key]
+            if (
+                    type(expected_type) is list
+                    or typing.get_origin(expected_type) is list
+            ):
+                assert type(val) is list and val is not None, (
+                    f"Value for `{key}` should be a list, but it was "
+                    f"{type(val)} instead!"
+                )
+            else:
+                assert type(val) is not list, (
+                    f"Value for `{key}` should be `{expected_type}`, but it "
+                    f"was `{type(val)}` instead: {val}!"
+                )
+            setattr(parsed_attributes, key, val)
+
+        for attribute_key, attribute_value in attribute_ids.items():
             if type(attribute_value) is list:
                 parsed_values = []
                 for value in attribute_value:
                     parsed_value = parse_attribute(
-                        client, guild, attribute, value,
+                        client, guild, attribute_key, value,
                         invalid_arguments=invalid_arguments)
                     if parsed_value is not None:
                         parsed_values.append(parsed_value)
-                new_settings[attribute] = parsed_values
+                set_attribute(attribute_key, parsed_values)
             else:
                 assert isinstance(attribute_value, (str, int, type(None))), (
-                    f"Expected attribute {attribute} to have value type str "
+                    f"Expected attribute {attribute_key} to have value type str "
                     f"or int, but `{attribute_value}` was of type "
                     f"`{type(attribute_value)}`"
                 )
                 parsed_value = parse_attribute(
-                    client, guild, attribute, attribute_value,
+                    client, guild, attribute_key, attribute_value,
                     invalid_arguments=invalid_arguments)
                 if parsed_value is not None:
-                    new_settings[attribute] = parsed_value
+                    set_attribute(attribute_key, parsed_value)
 
         if invalid_arguments:
             if "log_channel" in invalid_arguments:
@@ -587,23 +603,7 @@ class ServerSettings:
                     DebugColor.lightred
                 )
 
-        # Mostly validation before casting it.
-        for key, value in new_settings.items():
-            assert isinstance(key, str), f"Key `{key}` was not a string!"
-            expected_type = ServerAttributes.__annotations__[key]
-            if (type(expected_type) is list
-                    or typing.get_origin(expected_type) is list):
-                assert type(value) is list and value is not None, (
-                    f"Value for `{key}` should be a list, but it was "
-                    f"{type(value)} instead!"
-                )
-            else:
-                assert type(value) is not list, (
-                    f"Value for `{key}` should be `{expected_type}`, but it "
-                    f"was `{type(value)}` instead: {value}!"
-                )
-        attribute_dict: ServerAttributes = ServerAttributes(**new_settings)  # type: ignore[typeddict-item] # noqa: E501
-        return guild, ServerAttributes(**attribute_dict)
+        return guild, parsed_attributes
 
     def __init__(
             self, *,

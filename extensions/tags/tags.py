@@ -150,9 +150,8 @@ class CustomTag:
 
         if itx.client.is_module_enabled(
                 itx.guild, ModuleKeys.report_tags_to_staff):
-            log_channel: MessageableGuildChannel | None
-            log_channel = itx.client.get_guild_attribute(
-                itx.guild, AttributeKeys.staff_reports_channel)
+            log_channel = itx.client.get_guild_attributes(
+                itx.guild).staff_reports_channel
             if log_channel is None:
                 raise MissingAttributesCheckFailure(
                     ModuleKeys.tags,

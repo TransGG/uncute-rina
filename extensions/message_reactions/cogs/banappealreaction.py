@@ -20,10 +20,8 @@ class BanAppealReactionsAddon(commands.Cog):
                 message.guild, ModuleKeys.ban_appeal_reactions):
             return
         message = typing.cast(GuildMessage, message)
-        ban_appeal_webhook_id: discord.User | None = \
-            self.client.get_guild_attribute(
-                message.guild, AttributeKeys.ban_appeal_webhook_id
-            )
+        ban_appeal_webhook_id = self.client.get_guild_attributes(
+                message.guild).ban_appeal_webhook_id
         if ban_appeal_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.ban_appeal_reactions,
@@ -70,10 +68,14 @@ class BanAppealReactionsAddon(commands.Cog):
             )
 
         username: str = field_value or "Empty username"
+        def reaction_role_lambda(attrs: ServerAttributes):
+            return attrs.ban_appeal_reaction_role
+
         await create_thread(
             self.client,
             message,
             f"App-{platform[0]}-{username[:80]}",
+            reaction_role_lambda,
             AttributeKeys.ban_appeal_reaction_role,
             emojis=[discord.PartialEmoji.from_str(emoji)
                     for emoji in ("👍", "🤷", "👎")]

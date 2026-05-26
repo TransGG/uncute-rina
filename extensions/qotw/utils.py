@@ -2,6 +2,7 @@ import typing
 
 import discord
 
+from extensions.settings.objects import GuildAttributeType
 from resources.customs import Bot
 from datetime import datetime
 
@@ -56,6 +57,7 @@ async def _create_and_join_thread(
 
 async def _ping_reaction_role(
         client: Bot,
+        reaction_role_lambda: typing.Callable[[ServerAttributes], discord.Role | None],
         reaction_role_key: str,
         thread: discord.Thread,
 ) -> None:
@@ -64,18 +66,16 @@ async def _ping_reaction_role(
      message if the reaction role has not been set yet.
 
     :param itx: The interaction and client to retrieve the reaction role with.
-    :param reaction_role_key: The reaction role key to retrieve.
+    :param reaction_role_lambda: A lambda to retrieve the reaction role.
     :param thread: The thread to ping.
     """
     # Mention the reaction role in a message edit, adding them all to the
     # thread without mentioning them and do the same for the requester,
     # though this will only work if they're in the staff server..
     joiner_msg = await thread.send("role mention placeholder")
-    reaction_role: discord.Role | None
-    reaction_role = client.get_guild_attribute(
-        thread.guild,
-        reaction_role_key,
-    )
+    guild_attributes = client.get_guild_attributes(
+        thread.guild)
+    reaction_role = reaction_role_lambda(guild_attributes)
     if reaction_role is None:
         cmd_settings = client.get_command_mention_with_args(
             "settings",
@@ -135,8 +135,9 @@ async def create_thread(
             discord.User | discord.Member,
             discord.TextChannel,
             str
-        ],  # todo: rename to Literal
+        ],  # todo: rename to Literal # what do I mean with this
         thread_title: str,
+        reaction_role_lambda: typing.Callable[[ServerAttributes], discord.Role | None],
         reaction_role_key: str,
         emojis: list[discord.PartialEmoji | discord.Emoji],
 ) -> None:
@@ -148,8 +149,11 @@ async def create_thread(
      the description to put in the thread and embed.
     :param thread_title: The thread title, a string between 1 and 100
      characters.
-    :param reaction_role_key: The reaction role to mention after the thread
-     is created, or None to not add anyone to the thread.
+    :param reaction_role_lambda: A method to retrieve the reaction role
+     to mention after the thread is created,
+     or None to not add anyone to the thread.
+    :param reaction_role_key: The string key used in the settings
+     to adjust/set the reaction role.
     :param emojis: Emojis to add to the main thread embed. Typically for
      voting.
     """
@@ -170,8 +174,8 @@ async def create_thread(
         embed = _create_main_embed(copyable_version, description, user)
         await starter_msg.edit(embed=embed)
 
-    if reaction_role_key is not None:
-        await _ping_reaction_role(client, reaction_role_key, thread)
+    if reaction_role_lambda is not None:
+        await _ping_reaction_role(client, reaction_role_lambda, reaction_role_key, thread)
 
     for emoji in emojis:
         await starter_msg.add_reaction(emoji)
@@ -198,7 +202,8 @@ async def ping_open_threads(
      return a boolean indicating whether the thread should be pinged.
     :param ping_message: The message to send to each pinged thread.
     """
-    await itx.response.send_message(
+    assert itx.response.is_done()  # should have been deferred already
+    await itx.followup.send(
         "`[+  ]`: Fetching cached threads.",
         ephemeral=True
     )

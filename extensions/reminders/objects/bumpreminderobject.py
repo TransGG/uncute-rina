@@ -26,17 +26,21 @@ class BumpReminderObject:
 
         bump_channel: discord.abc.Messageable | None
         bump_role: discord.Role | None
-        bump_channel, bump_role = self.client.get_guild_attribute(
-            self.guild, AttributeKeys.bump_reminder_channel,
-            AttributeKeys.bump_reminder_role)
+        bump_channel, bump_role = self.client.get_guild_attributes(
+            self.guild).AttributeKeys.bump_reminder_role
 
         if bump_channel is None or bump_role is None:
-            missing = [key for key, value in {
-                AttributeKeys.bump_reminder_channel: bump_channel,
-                AttributeKeys.bump_reminder_role: bump_role}.items()
-                if value is None]
+            missing = [
+                key for key, value in {
+                    AttributeKeys.bump_reminder_channel: bump_channel,
+                    AttributeKeys.bump_reminder_role: bump_role,
+                }.items()
+                if value is None
+            ]
             raise MissingAttributesCheckFailure(
-                ModuleKeys.bump_reminder, missing)
+                ModuleKeys.bump_reminder,
+                missing,
+            )
 
         await bump_channel.send(
             f"{bump_role.mention} The next bump is ready!",
