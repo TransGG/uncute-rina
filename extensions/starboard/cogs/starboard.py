@@ -413,7 +413,7 @@ def _get_starboard_message_data(
             raise ValueError("original_message and starboard_message "
                              "cannot both be None")
 
-        if isinstance(starboard_message, GuildMessage):
+        if isinstance(starboard_message, discord.Message):
             starboard_message_id = starboard_message.id
         else:
             starboard_message_id = starboard_message
@@ -431,7 +431,7 @@ def _get_starboard_message_data(
             original_message_channel = orig_data[0]
 
     elif starboard_message is None:
-        if isinstance(original_message, GuildMessage):
+        if isinstance(original_message, discord.Message):
             original_message_id = original_message.id
         else:
             original_message_id = original_message
@@ -450,7 +450,7 @@ def _get_starboard_message_data(
             )
 
     if original_message_channel is None:
-        if isinstance(starboard_message, GuildMessage):
+        if isinstance(starboard_message, discord.Message):
             starboard_message_id = starboard_message.id
         else:
             starboard_message_id = starboard_message
