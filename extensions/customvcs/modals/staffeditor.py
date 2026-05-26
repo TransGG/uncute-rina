@@ -150,13 +150,12 @@ class CustomVcStaffEditorModal(
                            f"\"{old_limit}\" to \"{limit}\"",
                     user_limit=limit
                 )
-                username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
                     itx.client,
                     itx.guild,
                     f"Staff: Voice channel \"{old_name}\" ({channel.id}) "
                     f"edited the user limit from \"{old_limit}\" to "
-                    f"\"{limit}\" (by {username}, "
+                    f"\"{limit}\" (by {itx.user.name}, "
                     f"{itx.user.id}){limit_info}"
                 )
                 await itx.response.send_message(
@@ -178,7 +177,7 @@ class CustomVcStaffEditorModal(
                     itx.guild,
                     f"Staff: Voice channel ({channel.id}) renamed from "
                     f"\"{old_name}\" to \"{name}\" (by "
-                    f"{getattr(itx.user, "nick") or itx.user.name}, "
+                    f"{itx.user.name}, "
                     f"{itx.user.id})"
                 )
                 await itx.response.send_message(
@@ -211,12 +210,11 @@ class CustomVcStaffEditorModal(
                 )
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
-            username = getattr(itx.user, 'nick', None) or itx.user.name
             await log_to_guild(
                 itx.client,
                 itx.guild,
                 f"Staff: Warning! >> {ex_message} <<"
-                f" {username} ({itx.user.id}) tried to "
+                f" {itx.user.name} ({itx.user.id}) tried to "
                 f"change {old_name} ({channel.id}) to {name}, but wasn't "
                 f"allowed to by discord, probably because it's in a banned "
                 f"word list for discord's discovery <@262913789375021056>"

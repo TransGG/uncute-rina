@@ -157,7 +157,7 @@ async def _create_new_custom_vc(
     await log_to_guild(
         client,
         member.guild,
-        warning + f"{member.nick or member.name} ({member.id}) created and "
+        warning + f"{member.name} ({member.id}) created and "
                   f"joined voice channel {vc.id} (with the default name)."
     )
 
@@ -182,7 +182,7 @@ async def _handle_delete_custom_vc(
             client,
             member.guild,
             f":warning: **WARNING!! Couldn't delete CustomVC channel** "
-            f"{member.nick or member.name} ({member.id}) left voice channel "
+            f"{member.name} ({member.id}) left voice channel "
             f"\"{voice_channel.name}\" ({voice_channel.id}), and "
             f"was the last one in it, but it **could not be deleted**!"
         )
@@ -190,7 +190,7 @@ async def _handle_delete_custom_vc(
     await log_to_guild(
         client,
         member.guild,
-        f"{member.nick or member.name} ({member.id}) left voice channel "
+        f"{member.name} ({member.id}) left voice channel "
         f"\"{voice_channel.name}\" ({voice_channel.id}), and was the last one "
         f"in it, so it was deleted."
     )
@@ -407,13 +407,12 @@ class CustomVcs(commands.Cog):
                            f"to \"{name}\"",
                     name=str(name)  # apparently literals aren't strings...?
                 )
-                username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
                     itx.client,
                     itx.guild,
                     f"Voice channel ({channel.id}) renamed from "
                     f"\"{old_name}\" to \"{name}\" (by "
-                    f"{username}, {itx.user.id})"
+                    f"{itx.user.name}, {itx.user.id})"
                 )
                 await itx.response.send_message(
                     warning + f"Voice channel successfully renamed "
@@ -432,7 +431,7 @@ class CustomVcs(commands.Cog):
                     itx.guild,
                     f"Voice channel \"{old_name}\" ({channel.id}) edited the "
                     f"user limit from \"{old_limit}\" to \"{limit}\" "
-                    f"(by {getattr(itx.user, "nick") or itx.user.name}, "
+                    f"(by {itx.user.name}, "
                     f"{itx.user.id})"
                 )
                 await itx.response.send_message(
@@ -450,11 +449,10 @@ class CustomVcs(commands.Cog):
                     user_limit=limit,
                     name=str(name)  # Literal is apparently not a string?
                 )
-                username = getattr(itx.user, 'nick', None) or itx.user.name
                 await log_to_guild(
                     itx.client,
                     itx.guild,
-                    f"{username} ({itx.user.id}) "
+                    f"{itx.user.name} ({itx.user.id}) "
                     f"changed VC ({channel.id}) name \"{old_name}\" to "
                     f"\"{name}\" and user limit from \"{old_limit}\" to "
                     f"\"{limit}\""
@@ -471,7 +469,7 @@ class CustomVcs(commands.Cog):
                 itx.client,
                 itx.guild,
                 f"Warning! >> {ex_message} << "
-                f"{itx.user.nick or itx.user.name} ({itx.user.id}) "
+                f"{itx.user.name} ({itx.user.id}) "
                 f"tried to change {old_name} ({channel.id}) to {name}, but "
                 f"wasn't allowed to by discord, probably because it's in a "
                 f"banned word list for discord's discovery "

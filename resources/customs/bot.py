@@ -162,20 +162,17 @@ class Bot(commands.Bot):
 
         unset_keys = [
             key
-            for key, val in ServerAttributes.__annotations__.items()
-            if val is None
+            for key, _ in ServerAttributes.__annotations__.items()
+            if getattr(attributes, key, None) is None
         ]
 
         # Fill unset attributes with parent values
         parent_attributes = attributes  # set to self to prepare iterative recursion
-        while len(unset_keys) > 0 and (parent := parent_attributes["parent_server"]) is not None:
+        while len(unset_keys) > 0 and (parent := parent_attributes.parent_server) is not None:
             parent_attributes = self.server_settings[parent.id].attributes
             for key in list(unset_keys):  # clone the list because we're editing it inside the loop
-                if getattr(parent_attributes, key, None) is not None:  # type: ignore[literal-required] # noqa: E501
-                    # Ignore the string literal warning, I guess.
-                    # `key` is always a string, and should also always be
-                    #  a key of the TypedDict ServerAttributes.
-                    attributes[key] = parent_attributes[key]  # type: ignore[literal-required] # noqa: E501
+                if (parent_attr := getattr(parent_attributes, key, None)) is not None:
+                    setattr(attributes, key, parent_attr)
                     unset_keys.remove(key)
 
         return attributes
