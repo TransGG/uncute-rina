@@ -25,7 +25,7 @@ def test_get_dice_roll_output_short(
     with mock.patch.object(random, 'randint', return_value=1):
         output, too_long = _get_dice_roll_output(dice, faces, mod)
         assert output == expected
-        assert too_long == False
+        assert too_long is False
 
 
 @pytest.mark.parametrize("dice, faces, mod, expected", [
@@ -44,7 +44,7 @@ def test_get_dice_roll_output_long_short(
     with mock.patch.object(random, 'randint', return_value=1):
         output, too_long = _get_dice_roll_output(dice, faces, mod)
         assert output == expected
-        assert too_long == False
+        assert too_long is False
 
 
 def test_get_dice_roll_output_much_too_long() -> None:
@@ -69,7 +69,7 @@ def test_get_dice_roll_output_much_too_long() -> None:
         output, too_long = _get_dice_roll_output(dice, faces, mod)
         assert output == expected
         # It has been compressed to a size where it is short enough again lol.
-        assert too_long == False
+        assert too_long is False
 
 
 def test_get_dice_roll_output_long_long() -> None:
@@ -88,4 +88,4 @@ def test_get_dice_roll_output_long_long() -> None:
 
     with mock.patch.object(random, 'randint', side_effect=get_random_output):
         output, too_long = _get_dice_roll_output(dice, faces, mod)
-        assert too_long == True
+        assert too_long is True

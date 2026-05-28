@@ -25,5 +25,5 @@ class CustomVoiceChannel(discord.VoiceChannel):
         self.__members = members
 
     @property
-    def members(self):
+    def members(self) -> list[discord.Member]:
         return self.__members

@@ -175,8 +175,8 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
 class CrashHandling(commands.Cog):
     def __init__(self, client: Bot) -> None:
         self.client = client
-        client.on_error = self.on_error
-        client.tree.on_error = self.on_app_command_error
+        client.on_error = self.on_error  # type: ignore[method-assign]
+        client.tree.on_error = self.on_app_command_error  # type: ignore[method-assign]
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:

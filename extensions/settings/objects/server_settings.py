@@ -4,7 +4,7 @@ import typing
 
 from enum import Enum
 import motor.core
-from typing import TypedDict, Any, TypeVar, Callable, TypeAliasType
+from typing import TypedDict, Any, Callable, TypeAliasType
 from types import UnionType, GenericAlias
 
 import discord
@@ -32,8 +32,6 @@ VoiceChannelId = int
 CategoryChannelId = int
 MessageableChannelId = int
 MessageChannel = discord.TextChannel | discord.Thread
-
-T = TypeVar('T')
 
 
 def parse_id_generic(
@@ -278,7 +276,7 @@ class ServerSettings:
     attributes: ServerAttributes
 
     @staticmethod
-    def get_original(
+    def get_original[T](
             attribute: T | list[T]
     ) -> T | NameAndIdData | list[T | NameAndIdData]:
         """Get the name and id of the attribute (or attributes)"""
@@ -533,7 +531,10 @@ class ServerSettings:
 
         parsed_attributes = ServerAttributes()
 
-        def set_attribute(key: str, val) -> None:
+        def set_attribute(
+                key: str,
+                val: GuildAttributeType | None | list[GuildAttributeType]
+        ) -> None:
             # Mostly validation before casting it.
             # Todo: more graceful handling of errors:
             #  Can throw AttributeError and AssertionError

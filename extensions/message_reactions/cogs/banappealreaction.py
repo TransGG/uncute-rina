@@ -73,7 +73,7 @@ class BanAppealReactionsAddon(commands.Cog):
 
         username: str = field_value or "Empty username"
 
-        def reaction_role_lambda(attrs: ServerAttributes):
+        def reaction_role_lambda(attrs: ServerAttributes) -> discord.Role | None:
             return attrs.ban_appeal_reaction_role
 
         await create_thread(

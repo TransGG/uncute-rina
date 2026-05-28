@@ -57,7 +57,7 @@ async def test_handle_awawa_reaction_blocked(content) -> None:
     mock_message.add_reaction.side_effect = MockForbidden()
 
     response = await _handle_awawa_reaction(mock_message, mock_emoji)
-    assert response == False
+    assert response is False
     # add_reaction does still get called once but fails: Forbidden mock
 
     # Test if a given input would have given a reaction.

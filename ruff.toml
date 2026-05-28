@@ -1,5 +1,5 @@
 exclude = [".venv", "unit_tests"]
-line-length=79
+line-length=119
 [lint]
 select = [
     "ANN", # Type annotations
@@ -54,6 +54,7 @@ ignore = [
     # Things we should probably do
     "S101", # We should not use asserts, as some environments disable them  # IMO pretty silly idea
     "PGH004", "RUF100", # Blanket disabling lints isn't great
+    "EXE002",
 
     # Style stuff that's bad, but won't cause issues
     "PTH", # pathlib still technically works
