@@ -1,3 +1,5 @@
-__all__ = ['NameUsage']
+__all__ = [
+    'NameUsage',
+]
 
 from extensions.nameusage.cogs.nameusage import NameUsage

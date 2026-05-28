@@ -1,3 +1,5 @@
-__all__ = ['Compliments']
+__all__ = [
+    'Compliments',
+]
 
 from extensions.compliments.cogs.compliments import Compliments

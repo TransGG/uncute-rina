@@ -1,3 +1,5 @@
-__all__ = ['StaffAddons']
+__all__ = [
+    'StaffAddons',
+]
 
 from extensions.staffaddons.cogs.staffaddons import StaffAddons

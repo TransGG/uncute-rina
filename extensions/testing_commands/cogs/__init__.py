@@ -1,3 +1,5 @@
-__all__ = ['TestingCog']
+__all__ = [
+    'TestingCog',
+]
 
 from extensions.testing_commands.cogs.testingcommands import TestingCog

@@ -1,3 +1,5 @@
-__all__ = ['TermDictionary']
+__all__ = [
+    'TermDictionary',
+]
 
 from extensions.termdictionary.cogs.termdictionary import TermDictionary

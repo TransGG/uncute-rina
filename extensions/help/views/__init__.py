@@ -1,3 +1,5 @@
-__all__ = ['HelpPage']
+__all__ = [
+    'HelpPage',
+]
 
 from extensions.help.helppage import HelpPage

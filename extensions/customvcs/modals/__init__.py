@@ -1,3 +1,5 @@
-__all__ = ['CustomVcStaffEditorModal']
+__all__ = [
+    'CustomVcStaffEditorModal',
+]
 
 from extensions.customvcs.modals.staffeditor import CustomVcStaffEditorModal

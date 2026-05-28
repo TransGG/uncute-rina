@@ -1,3 +1,5 @@
-__all__ = ['VCLogReader']
+__all__ = [
+    'VCLogReader',
+]
 
 from extensions.vclogreader.cogs.vclogreader import VCLogReader

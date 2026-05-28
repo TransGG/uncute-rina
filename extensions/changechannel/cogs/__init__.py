@@ -1,3 +1,5 @@
-__all__ = ['ChangeChannel']
+__all__ = [
+    'ChangeChannel',
+]
 
 from extensions.changechannel.cogs.changechannel import ChangeChannel

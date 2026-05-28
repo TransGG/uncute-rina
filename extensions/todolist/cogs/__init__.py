@@ -1,3 +1,5 @@
-__all__ = ['TodoList']
+__all__ = [
+    'TodoList',
+]
 
 from extensions.todolist.cogs.todolist import TodoList

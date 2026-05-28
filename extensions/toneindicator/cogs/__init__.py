@@ -1,3 +1,5 @@
-__all__ = ['ToneIndicator']
+__all__ = [
+    'ToneIndicator',
+]
 
 from extensions.toneindicator.cogs.toneindicator import ToneIndicator
