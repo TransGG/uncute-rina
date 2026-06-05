@@ -7,8 +7,10 @@ from typing import TypeVar
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
+from discord import Interaction
 
 from extensions.addons.roll import generate_roll
+from extensions.help.cogs import send_help_menu
 from resources.abc import GuildMessage
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
@@ -259,78 +261,96 @@ class FunAddons(commands.Cog):
             advanced: str | None = None,
     ) -> None:
         if advanced is None:
-            await itx.response.defer(ephemeral=not public)
-            out, too_long = _get_dice_roll_output(dice, faces, mod)
-            if too_long:
-                await itx.delete_original_response()
-            await itx.followup.send(out, ephemeral=too_long)
+            await self.roll_simple(itx, dice, faces, mod, public)
         else:
-            await itx.response.defer(ephemeral=not public)
-            advanced = advanced.replace(" ", "")
-            if advanced == "help":
-                cmd_help = itx.client.get_command_mention_with_args(
-                    "help", page="112")
-                await itx.response.send_message(
-                    f"I don't think I ever added a help command... Ping "
-                    f"mysticmia for more information about this command, or "
-                    f"run {cmd_help} for more information."
-                )
+            await self.roll_advanced(itx, advanced, public)
 
-            for char in advanced:
-                if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
-                    if public:
-                        await itx.delete_original_response()
-                    await itx.followup.send(
-                        f"Invalid input! This command doesn't have "
-                        f"support for '{char}' yet!",
-                        ephemeral=True,
-                    )
-                    return
-            add_list = advanced.replace('-', '+-').split('+')
-            add = [add_section
-                   for add_section in add_list
-                   if len(add_section) > 0]
-            # print("add:       ",add)
-            multiply = [add_section.split('*') for add_section in add]
-            # print("multiply:  ",multiply)
-            try:
-                result = [[sum(generate_roll(query))
-                           for query in mult_section]
-                          for mult_section in multiply]
-            except (TypeError, ValueError, OverflowError) as ex:
-                ex_type = ex.__class__.__name__
-                if public:
-                    await itx.delete_original_response()
-                await itx.followup.send(
-                    f"Wasn't able to roll your dice!\n"
-                    f"  {ex_type}: {ex}",
-                    ephemeral=True,
-                )
-                return
-            # print("result:    ",result)
-            out = ["Input:  " + advanced]
-            if "*" in advanced:
-                out += [' + '.join([' * '.join([str(x) for x in section])
-                                    for section in result])]
-            if "+" in advanced or '-' in advanced:
-                out += [' + '.join([str(_product_of_list(section))
-                                    for section in result])]
-            out += [str(sum(_product_of_list(section)
-                            for section in result))]
-            output = discord.utils.escape_markdown('\n= '.join(out))
-            if len(output) >= 1950:
-                output = ("Your result was too long! I couldn't send it. "
-                          "Try making your rolls a bit smaller, perhaps by "
-                          "splitting it into multiple operations...")
-            if len(output) >= 500:
-                public = False
-            try:
-                await itx.followup.send(output, ephemeral=not public)
-            except discord.errors.NotFound:
-                if public:
-                    await itx.delete_original_response()
-                await itx.user.send(
-                    f"Couldn't send you the result of your roll because "
-                    f"it took too long or something. Here you go: \n"
-                    f"{output}"
-                )
+    @staticmethod
+    async def roll_simple(
+            itx: Interaction[Bot],
+            dice: int,
+            faces: int,
+            mod: int | None,
+            public: bool,
+    ) -> None:
+        await itx.response.defer(ephemeral=not public)
+        out, too_long = _get_dice_roll_output(dice, faces, mod)
+        if too_long:
+            await itx.delete_original_response()
+        await itx.followup.send(out, ephemeral=too_long)
+
+    @staticmethod
+    async def roll_advanced(
+            itx: Interaction[Bot],
+            advanced: str,
+            public: bool,
+    ) -> None:
+        await itx.response.defer(ephemeral=not public)
+
+        async def send_roll_error(message: str) -> None:
+            if public:
+                await itx.delete_original_response()
+            await itx.followup.send(
+                message,
+                ephemeral=True,
+            )
+
+        advanced = advanced.replace(" ", "")
+        if advanced == "help":
+            await send_help_menu(itx, 112)
+            return
+
+        char, valid = await FunAddons.check_advanced_roll_input_validity(advanced)
+        if not valid:
+            await send_roll_error(
+                f"Invalid input! This command doesn't have support for '{char}' yet!",
+            )
+            return
+
+        add_list = advanced.replace("-", "+-").split("+")
+        add = [add_section for add_section in add_list if len(add_section) > 0]
+        # print("add:       ",add)
+        multiply = [add_section.split("*") for add_section in add]
+        # print("multiply:  ",multiply)
+        try:
+            result = [[sum(generate_roll(query)) for query in mult_section] for mult_section in multiply]
+        except (TypeError, ValueError, OverflowError) as ex:
+            ex_type = ex.__class__.__name__
+            await send_roll_error(
+                f"Wasn't able to roll your dice!\n  {ex_type}: {ex}",
+            )
+            return
+
+        # print("result:    ",result)
+        out = ["Input:  " + advanced]
+        if "*" in advanced:
+            out += [" + ".join([" * ".join([str(x) for x in section]) for section in result])]
+        if "+" in advanced or "-" in advanced:
+            out += [" + ".join([str(_product_of_list(section)) for section in result])]
+        out += [str(sum(_product_of_list(section) for section in result))]
+        output = discord.utils.escape_markdown("\n= ".join(out))
+        if len(output) >= 1950:
+            output = (
+                "Your result was too long! I couldn't send it. "
+                "Try making your rolls a bit smaller, perhaps by "
+                "splitting it into multiple operations..."
+            )
+        if len(output) >= 500:
+            public = False
+        try:
+            await itx.followup.send(output, ephemeral=not public)
+        except discord.errors.NotFound:
+            if public:
+                await itx.delete_original_response()
+            await itx.user.send(
+                f"Couldn't send you the result of your roll because "
+                f"it took too long or something. Here you go: \n"
+                f"{output}"
+            )
+
+    @staticmethod
+    async def check_advanced_roll_input_validity(advanced: str) -> tuple[str, bool]:
+        for char in advanced:
+            if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
+                return char, False
+        return "", True
