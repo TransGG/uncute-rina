@@ -256,18 +256,6 @@ async def _role_autocomplete(  # noqa: RUF029
         ]
 
 
-async def _add_poll_reaction_emojis(
-        message: discord.Message,
-        downvote_emoji: discord.Emoji | discord.PartialEmoji,
-        neutral_emoji: discord.Emoji | discord.PartialEmoji | None,
-        upvote_emoji: discord.Emoji | discord.PartialEmoji
-) -> None:
-    await message.add_reaction(upvote_emoji)
-    if neutral_emoji is not None:
-        await message.add_reaction(neutral_emoji)
-    await message.add_reaction(downvote_emoji)
-
-
 class OtherAddons(commands.Cog):
     def __init__(self) -> None:
         pass
@@ -472,7 +460,7 @@ class OtherAddons(commands.Cog):
 
         try:
             await itx.response.send_message("Adding emojis...", ephemeral=True)
-            await _add_poll_reaction_emojis(message, downvote_emoji, neutral_emoji, upvote_emoji)
+            await self.add_poll_reaction_emojis(message, downvote_emoji, neutral_emoji, upvote_emoji)
             await itx.edit_original_response(
                 content=":white_check_mark: Successfully added emojis")
         except discord.errors.Forbidden:
@@ -507,6 +495,8 @@ class OtherAddons(commands.Cog):
                 f"{itx.user.name} ({itx.user.id}) used {cmd_poll} "
                 f"on message {message.jump_url}"
             )
+
+    # region poll reaction helpers
 
     @staticmethod
     async def check_poll_reaction_message_id(
@@ -578,6 +568,20 @@ class OtherAddons(commands.Cog):
         else:
             neutral_emoji = None
         return errors, downvote_emoji, neutral_emoji, upvote_emoji
+
+    @staticmethod
+    async def add_poll_reaction_emojis(
+        message: discord.Message,
+        downvote_emoji: discord.Emoji | discord.PartialEmoji,
+        neutral_emoji: discord.Emoji | discord.PartialEmoji | None,
+        upvote_emoji: discord.Emoji | discord.PartialEmoji,
+    ) -> None:
+        await message.add_reaction(upvote_emoji)
+        if neutral_emoji is not None:
+            await message.add_reaction(neutral_emoji)
+        await message.add_reaction(downvote_emoji)
+
+    # endregion poll reaction helpers
 
     @app_commands.command(
         name="get_rina_command_mention",

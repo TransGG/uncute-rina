@@ -395,6 +395,8 @@ class SearchAddons(commands.Cog):
             ephemeral=True
         )
 
+    # region equaldex helpers
+
     @staticmethod
     async def equaldex_check_illegal_characters(country_id: str) -> set[str]:
         return {
@@ -510,6 +512,8 @@ class SearchAddons(commands.Cog):
             )
         embed.set_footer(text="For more info, click the button below,")
         return embed
+
+    # endregion equaldex helpers
 
     @app_commands.command(name="math",
                           description="Ask Wolfram Alpha a question")

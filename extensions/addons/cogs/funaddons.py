@@ -265,6 +265,8 @@ class FunAddons(commands.Cog):
         else:
             await self.roll_advanced(itx, advanced, public)
 
+    # region roll helpers
+
     @staticmethod
     async def roll_simple(
             itx: Interaction[Bot],
@@ -354,3 +356,5 @@ class FunAddons(commands.Cog):
             if char not in "0123456789d+*-":  # kKxXrR": #!!pf≤≥
                 return char, False
         return "", True
+
+    # endregion roll helpers
