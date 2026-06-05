@@ -35,8 +35,8 @@ def _product_of_list(mult_list: list[T]) -> T:
     return a
 
 
-async def _handle_awawa_reaction(
-        message: discord.Message, awawawa_emoji: discord.Emoji,
+def _check_awawa_reaction(
+        message: discord.Message,
 ) -> bool:
     """
     Add an emoji to a given message if its content is ababababa or
@@ -61,20 +61,10 @@ async def _handle_awawa_reaction(
         # check if the message content is /(ab|aw)+a/i
         replaced = msg_content.replace("ab", "").replace("aw", "")
         if replaced == "a":
-            try:
-                await message.add_reaction(awawawa_emoji)
-                return True
-            except discord.errors.Forbidden:
-                # user blocked rina :(, or just no perms
-                return False
+            return True
 
     if len(msg_content) > 9 and msg_content.startswith("a"):
-        try:
-            await message.add_reaction(awawawa_emoji)
-            return True
-        except discord.errors.Forbidden:
-            # blocked rina :(, or just no perms
-            return False
+        return True
 
     return False
 
@@ -242,7 +232,13 @@ class FunAddons(commands.Cog):
                 raise MissingAttributesCheckFailure(
                     ModuleKeys.awawawa_reactions,
                     [AttributeKeys.awawawa_emoji])
-            await _handle_awawa_reaction(message, awawawa_emoji)
+            react = _check_awawa_reaction(message)
+            if react:
+                try:
+                    await message.add_reaction(awawawa_emoji)
+                except discord.errors.Forbidden:
+                    # user blocked rina :(, or just no perms
+                    pass
 
     @app_commands.command(name="roll",
                           description="Roll a die or dice with random chance!")
