@@ -135,6 +135,13 @@ async def _choose_and_send_compliment(
             if string in quotes[compliment_type][x - dec]:
                 del quotes[compliment_type][x - dec]
                 dec += 1
+
+    # Easter egg if targeting Rina
+    if user.id == getattr(itx.client.user, "id", None):
+        quotes[compliment_type] = [
+            "Hey Rina you're cute! Wow thanks Rina! You're welcome Rina! :)",
+        ]
+
     if len(quotes[compliment_type]) == 0:
         quotes[compliment_type].append(
             "No compliment quotes could be given... You and/or this person "
