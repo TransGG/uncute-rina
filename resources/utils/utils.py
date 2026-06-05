@@ -36,7 +36,7 @@ def get_mod_ticket_channel(
     if isinstance(guild_id, discord.Interaction):
         guild_id = guild_id.guild.id
     ticket_channel = client.get_guild_attributes(
-            guild_id).ticket_create_channel
+        guild_id).ticket_create_channel
 
     return ticket_channel
 

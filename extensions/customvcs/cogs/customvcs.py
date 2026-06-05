@@ -463,8 +463,6 @@ class CustomVcs(commands.Cog):
                     f"<@262913789375021056>"
                 )
 
-
-
         if not limit and not name:
             await itx.response.send_message(
                 "You can edit your channel with this command. Set a value "
@@ -474,7 +472,7 @@ class CustomVcs(commands.Cog):
             await _try_change(
                 channel,
                 "Voice channel renamed from \"{channel.name}\" "
-                       f"to \"{name}\"",
+                "to \"{name}\"",
                 rename=name,  # apparently literals aren't strings...?
             )
             await log_to_guild(

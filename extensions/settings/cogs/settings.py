@@ -725,7 +725,7 @@ class SettingsCog(commands.Cog):
     @module_enabled_check(ModuleKeys.watchlist)
     async def migrate_watchlist(self, itx: GuildInteraction[Bot]) -> None:
         watchlist_channel = itx.client.get_guild_attributes(
-                itx.guild).watchlist_channel
+            itx.guild).watchlist_channel
         if watchlist_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.watchlist,

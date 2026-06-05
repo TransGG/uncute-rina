@@ -40,7 +40,7 @@ class DevRequest(commands.Cog):
             suggestion: app_commands.Range[str, 25, 1500],
     ) -> None:
         developer_request_channel = itx.client.get_guild_attributes(
-                itx.guild).developer_request_channel
+            itx.guild).developer_request_channel
         if developer_request_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.dev_requests,

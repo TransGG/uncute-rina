@@ -286,8 +286,10 @@ class MemberData(commands.Cog):
                 min_time += accuracy
 
         for i in results_nullable.keys():  # sort data by key
-            results_nullable[i] = {timestamp: results_nullable[i][timestamp]
-                          for timestamp in sorted(results_nullable[i])}
+            results_nullable[i] = {
+                timestamp: results_nullable[i][timestamp]
+                for timestamp in sorted(results_nullable[i])
+            }
 
         # allow heartbeat or recognising other commands
         await asyncio.sleep(0.1)

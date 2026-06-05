@@ -55,7 +55,7 @@ def test_get_dice_roll_output_much_too_long() -> None:
     expected = (
         "You rolled 10,000 dice with 10,000 faces:\n"
         "With this many numbers, I've simplified it a little. "
-        f"You rolled `{(10000*(1+10000))//2:,}`.\n"
+        f"You rolled `{(10000 * (1 + 10000)) // 2:,}`.\n"
         # sum from 1 to 10000 due to custom 'get_random_output' function
     )
     random_output = 0

@@ -25,7 +25,7 @@ class BanAppealReactionsAddon(commands.Cog):
             return
         message = typing.cast(GuildMessage, message)
         ban_appeal_webhook_id = self.client.get_guild_attributes(
-                message.guild).ban_appeal_webhook_id
+            message.guild).ban_appeal_webhook_id
         if ban_appeal_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.ban_appeal_reactions,

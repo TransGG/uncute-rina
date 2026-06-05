@@ -12,13 +12,16 @@ if TYPE_CHECKING:
 
 
 def send_channel_or_interaction(
-        itx: discord.Interaction
+        itx: discord.Interaction,
 ) -> typing.Callable[
         [...],
         typing.Coroutine[
             typing.Any,
             typing.Any,
-            discord.Message
+            discord.InteractionCallbackResponse[Bot]
+            | discord.WebhookMessage
+            | discord.Message
+            | None,
         ]
 ]:
     if (
@@ -32,7 +35,12 @@ def send_channel_or_interaction(
     async def try_send_message(
             *args,    # noqa: ANN002
             **kwargs,    # noqa: ANN003
-    ) -> discord.Message:
+    ) -> (
+            discord.InteractionCallbackResponse[Bot]
+            | discord.WebhookMessage
+            | discord.Message
+            | None
+    ):
         assert itx.channel is not None
         assert isinstance(itx.channel, discord.abc.Messageable)
 

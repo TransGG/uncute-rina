@@ -16,7 +16,7 @@ def _make_vclog_embed(
         mode: str,
         from_channel: discord.VoiceChannel | discord.StageChannel,
         to_channel: discord.VoiceChannel | discord.StageChannel,
-        user: discord.Member
+        user: discord.Member | discord.User
 ) -> discord.Embed:
     if mode == "Move":
         embed: discord.Embed = discord.Embed(
@@ -69,11 +69,11 @@ def _make_vclog_embed(
     embed.timestamp = datetime.now().astimezone()
     embed.set_author(
         name=f"{user.name}#{user.discriminator}",
-        icon_url=user.avatar.url,
+        icon_url=getattr(user.avatar, "url", None),
     )
     embed.set_footer(
         text=f"{user.name}#{user.discriminator}",
-        icon_url=user.avatar.url
+        icon_url=getattr(user.avatar, "url", None)
     )
 
     return embed
@@ -104,7 +104,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             private_notes: str = "",
             role_changes: str = ""
     ) -> None:
-        staff_logs_category = itx.client.get_guild_attributes(
+        staff_logs_category: discord.CategoryChannel | None = itx.client.get_guild_attributes(
             itx.guild).staff_logs_category
         if staff_logs_category is None:
             raise MissingAttributesCheckFailure(
@@ -138,8 +138,17 @@ class TestingCog(commands.GroupCog, name="testing"):
                         inline=False)
         embed.add_field(name="Role Changes",
                         value=role_changes.replace("[[\\n]]", "\n"))
-        # any channel in AttributeKeys.staff_logs_category should work.
-        await staff_logs_category.send(embed=embed)
+        # any channel in AttributeKeys.staff_logs_category should work.'
+
+        # get first sendable channel in category
+        channel = None
+        for child_channel in staff_logs_category.channels:
+            if hasattr(child_channel, "send"):
+                channel = child_channel
+        if channel is None:
+            raise IOError("staff logs category doesn't contain any channels.")
+
+        await channel.send(embed=embed)
 
     @app_commands.command(name="send_pageview_test",
                           description="Send a test embed with page buttons")
@@ -244,8 +253,8 @@ class TestingCog(commands.GroupCog, name="testing"):
             self,
             itx: discord.Interaction[Bot],
             mode: str,
-            from_channel: discord.VoiceChannel | discord.StageChannel = None,
-            to_channel: discord.VoiceChannel | discord.StageChannel = None,
+            from_channel: discord.VoiceChannel | discord.StageChannel | None = None,
+            to_channel: discord.VoiceChannel | discord.StageChannel | None = None,
     ) -> None:
         # jeez the log is inconsistent lol
         user = itx.user
@@ -269,6 +278,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             )
             return
 
+        assert from_channel is not None and to_channel is not None
         embed = _make_vclog_embed(mode, from_channel, to_channel, user)
         await itx.channel.send(embed=embed)
 
