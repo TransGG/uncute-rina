@@ -21,9 +21,6 @@ def send_channel_or_interaction(
             discord.Message
         ]
 ]:
-    itx.response: discord.InteractionResponse  # type: ignore
-    itx.followup: discord.Webhook  # type: ignore
-
     if (
             itx.channel is None
             or not isinstance(itx.channel, discord.abc.Messageable)
@@ -57,8 +54,6 @@ def send_or_followup(itx: discord.Interaction) -> typing.Callable[
             | None
         ]
 ]:
-    itx.response: discord.InteractionResponse  # type: ignore
-    itx.followup: discord.Webhook  # type: ignore
     if itx.response.is_done():
         return itx.followup.send
     return itx.response.send_message

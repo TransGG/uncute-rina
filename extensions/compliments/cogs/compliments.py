@@ -474,8 +474,6 @@ class Compliments(commands.Cog):
             mode: int,
             string: str | None = None
     ) -> None:  # todo: split function into multiple smaller functions
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
-        itx.followup: discord.Webhook  # type: ignore
         db_location: ComplimentBlackboardType
         if location == 1:
             db_location = "personal_list"

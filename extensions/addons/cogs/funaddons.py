@@ -257,8 +257,6 @@ class FunAddons(commands.Cog):
             mod: int | None = None,
             advanced: str | None = None,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
-
         if advanced is None:
             await itx.response.defer(ephemeral=not public)
             out, too_long = _get_dice_roll_output(dice, faces, mod)

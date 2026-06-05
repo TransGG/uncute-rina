@@ -316,8 +316,6 @@ async def _handle_settings_attribute(
     :param value: The value to give the attribute or remove from the
      attribute (depending on the *modify_mode*).
     """
-    itx.response: discord.InteractionResponse[Bot]  # type: ignore
-    itx.followup: discord.Webhook  # type: ignore
     attribute_keys = ServerAttributes.__annotations__
 
     if setting is None:
@@ -710,7 +708,6 @@ class SettingsCog(commands.Cog):
     #         self,
     #         itx: discord.Interaction[Bot]
     # ) -> None:
-    #     itx.response: discord.InteractionResponse[Bot]  # type: ignore
     #     await ServerSettings.migrate(itx.client.async_rina_db)
     #     await itx.response.send_message(
     #         "Successfully migrated databases.", ephemeral=True)
@@ -786,8 +783,6 @@ class SettingsCog(commands.Cog):
             mode: str | None = None,
             value: str | None = None,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
-        itx.followup: discord.Webhook  # type: ignore
         cmd_help = itx.client.get_command_mention_with_args(
             "help", page="900")
         help_str = f"Use {cmd_help} for more info."

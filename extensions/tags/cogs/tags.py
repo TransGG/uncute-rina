@@ -243,7 +243,6 @@ class TagFunctions(commands.Cog):
             mode: str,
             tag_name: str,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if mode == TagMode.help.value:
             await send_help_menu(itx, 901)
         elif mode == TagMode.create.value:

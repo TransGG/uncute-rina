@@ -94,7 +94,6 @@ class TermDictionary(commands.Cog):
             public: bool = False,
             source: DictionarySources = DictionarySources.All,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         await itx.response.defer(ephemeral=not public)
 
         sources = self._dictionary_sources[:]

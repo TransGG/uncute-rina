@@ -174,7 +174,6 @@ class CustomTag:
         :param report_to_staff: Whether the guild wants to log when
          sensitive tags are sent.
         """
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if anonymous:
             view = SendPubliclyTagView(
                 self, False, timeout=60)

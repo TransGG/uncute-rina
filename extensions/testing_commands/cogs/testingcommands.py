@@ -247,7 +247,6 @@ class TestingCog(commands.GroupCog, name="testing"):
             from_channel: discord.VoiceChannel | discord.StageChannel = None,
             to_channel: discord.VoiceChannel | discord.StageChannel = None,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         # jeez the log is inconsistent lol
         user = itx.user
 

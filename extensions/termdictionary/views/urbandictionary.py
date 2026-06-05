@@ -26,7 +26,6 @@ class UrbanDictionaryPageView(PageView):
             itx: discord.Interaction[Bot],
             view: PageView
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         await itx.response.edit_message(
             embed=self.pages[self.page],
             view=view
