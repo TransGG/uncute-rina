@@ -1,10 +1,10 @@
 import typing
+from typing import Any
 
 import aiohttp
 import discord
 import discord.app_commands as app_commands
 import discord.ext.commands as commands
-from discord import Emoji, Message, PartialEmoji
 
 from extensions.settings.objects import (
     ModuleKeys,
@@ -257,10 +257,10 @@ async def _role_autocomplete(  # noqa: RUF029
 
 
 async def _add_poll_reaction_emojis(
-        message: Message,
-        downvote_emoji: Emoji | PartialEmoji,
-        neutral_emoji: Emoji | PartialEmoji | None,
-        upvote_emoji: Emoji | PartialEmoji
+        message: discord.Message,
+        downvote_emoji: discord.Emoji | discord.PartialEmoji,
+        neutral_emoji: discord.Emoji | discord.PartialEmoji | None,
+        upvote_emoji: discord.Emoji | discord.PartialEmoji
 ) -> None:
     await message.add_reaction(upvote_emoji)
     if neutral_emoji is not None:
@@ -440,52 +440,25 @@ class OtherAddons(commands.Cog):
             )
             return
 
-        errors = []
-        message: discord.Message | None = None  # happy IDE
-        if message_id_str.isdecimal():
-            message_id = int(message_id_str)
-            try:
-                message = await itx.channel.fetch_message(message_id)
-            except discord.errors.NotFound:
-                errors.append("- I couldn't find a message with this ID!")
-            except discord.errors.Forbidden:
-                errors.append(
-                    "- I'm not allowed to find a message in this channel!")
-            except discord.errors.HTTPException:
-                errors.append("- Fetching the message failed.")
-        else:
-            errors.append("- The message ID needs to be a number!")
+        message_errors, message = await self.check_poll_reaction_message_id(
+            itx,
+            message_id_str,
+        )
+        channel_errors = self.check_poll_reaction_channel(
+            itx,
+        )
+        emoji_errors, downvote_emoji, neutral_emoji, upvote_emoji = self.get_poll_reaction_emojis(
+            itx,
+            downvote_emoji_str,
+            neutral_emoji_str,
+            upvote_emoji_str,
+        )
 
-        upvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, upvote_emoji_str)
-        if upvote_emoji is None:
-            errors.append("- I can't use this upvote emoji! "
-                          "(perhaps it's a nitro emoji)")
-
-        downvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, downvote_emoji_str)
-        if downvote_emoji is None:
-            errors.append("- I can't use this downvote emoji! "
-                          "(perhaps it's a nitro emoji)")
-
-        if neutral_emoji_str is not None:
-            neutral_emoji: MaybeEmoji = _get_emoji_from_str(
-                itx.client, neutral_emoji_str)
-            if neutral_emoji is None:
-                errors.append("- I can't use this neutral emoji! "
-                              "(perhaps it's a nitro emoji)")
-        else:
-            neutral_emoji = None
-
-        blacklisted_channels: list[MessageableGuildChannel] = []
-        if itx.guild is not None:
-            blacklisted_channels = itx.client.get_guild_attributes(
-                itx.guild).poll_reaction_blacklisted_channels
-
-        if (blacklisted_channels is not None
-                and itx.channel.id in blacklisted_channels):
-            errors.append("- :no_entry: You are not allowed to use this "
-                          "command in this channel!")
+        errors = [
+            *message_errors,
+            *channel_errors,
+            *emoji_errors,
+        ]
 
         if errors or not message:
             await itx.response.send_message(
@@ -534,6 +507,77 @@ class OtherAddons(commands.Cog):
                 f"{itx.user.name} ({itx.user.id}) used {cmd_poll} "
                 f"on message {message.jump_url}"
             )
+
+    @staticmethod
+    async def check_poll_reaction_message_id(
+            itx: discord.Interaction[Bot],
+            message_id_str: str,
+    ) -> tuple[
+            list[Any],
+            discord.Message | None,
+    ]:
+        errors = []
+        message: discord.Message | None = None  # happy IDE
+        if (itx.channel is None
+                or not hasattr(itx.channel, "fetch_message")):
+            errors.append(
+                "- This channel doesn't support messages (stage/category?)!",
+            )
+        elif message_id_str.isdecimal():
+            message_id = int(message_id_str)
+            try:
+                message = await itx.channel.fetch_message(message_id)
+            except discord.errors.NotFound:
+                errors.append("- I couldn't find a message with this ID!")
+            except discord.errors.Forbidden:
+                errors.append(
+                    "- I'm not allowed to find a message in this channel!")
+            except discord.errors.HTTPException:
+                errors.append("- Fetching the message failed.")
+        else:
+            errors.append("- The message ID needs to be a number!")
+        return errors, message
+
+    @staticmethod
+    def check_poll_reaction_channel(itx: discord.Interaction[Bot]) -> list[str]:
+        blacklisted_channels: list[MessageableGuildChannel] = []
+        if itx.guild is not None:
+            blacklisted_channels = itx.client.get_guild_attributes(
+                itx.guild,
+            ).poll_reaction_blacklisted_channels
+
+        if blacklisted_channels is not None and itx.channel is not None and itx.channel.id in blacklisted_channels:
+            return ["- :no_entry: You are not allowed to use this command in this channel!"]
+        return []
+
+    @staticmethod
+    def get_poll_reaction_emojis(
+            itx: discord.Interaction[Bot],
+            downvote_emoji_str: str,
+            neutral_emoji_str: str | None,
+            upvote_emoji_str: str
+    ) -> tuple[
+            list[str],
+            discord.Emoji | discord.PartialEmoji | None,
+            discord.Emoji | discord.PartialEmoji | None,
+            discord.Emoji | discord.PartialEmoji | None
+    ]:
+        errors = []
+        upvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, upvote_emoji_str)
+        if upvote_emoji is None:
+            errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
+
+        downvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, downvote_emoji_str)
+        if downvote_emoji is None:
+            errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
+
+        if neutral_emoji_str is not None:
+            neutral_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, neutral_emoji_str)
+            if neutral_emoji is None:
+                errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
+        else:
+            neutral_emoji = None
+        return errors, downvote_emoji, neutral_emoji, upvote_emoji
 
     @app_commands.command(
         name="get_rina_command_mention",
