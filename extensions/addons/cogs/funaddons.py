@@ -50,6 +50,11 @@ async def _handle_awawa_reaction(
 
     if any(char not in set("abw") for char in msg_content):
         return False
+    if "a" not in msg_content:
+        return False
+    # It at least has to contain "ab" or "aw". Not just "aaaaaaaaaa"
+    if "b" not in msg_content and "w" not in msg_content:
+        return False
 
     if len(msg_content) > 5 and (msg_content.startswith("aba")
                                  or msg_content.startswith("awa")):
