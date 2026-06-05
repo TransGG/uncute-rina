@@ -159,6 +159,11 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
     """
     try:
         if itx.response.is_done():
+            # Response can be deferred,
+            #  in which case it can be public instead of ephemeral.
+            original_response = await itx.original_response()
+            if not original_response.flags.ephemeral:
+                await original_response.delete()
             await itx.followup.send(message, ephemeral=True)
         else:
             try:
