@@ -162,7 +162,7 @@ class Bot(commands.Bot):
 
         unset_keys = [
             key
-            for key, _ in ServerAttributes.__annotations__.items()
+            for key in ServerAttributes.__annotations__.keys()
             if getattr(attributes, key, None) is None
         ]
 

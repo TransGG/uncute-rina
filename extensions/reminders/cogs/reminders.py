@@ -152,68 +152,69 @@ class RemindersCog(commands.GroupCog, name="reminder"):
                 ephemeral=True)
             return
 
-        try:
-            out = []
-            index = 0
-            if item is None:
-                for reminder in db_data['reminders']:
-                    reminder_text = discord.utils.escape_markdown(
-                        reminder['reminder'])
-                    out.append(
-                        f"ID: `{index}` | Created at: "
-                        f"<t:{reminder['remindertime']}:F> | "
-                        f"Remind you about: {reminder_text}"
-                    )
-                    index += 1
-                out_msg = "Your reminders:\n" + '\n'.join(out)
-                if len(out_msg) >= 1995:
-                    out = []
-                    index = 0
-                    for reminder in db_data['reminders']:
-                        out.append(f"`{index}` | "
-                                   f"<t:{reminder['remindertime']}:F>")
-                        index += 1
-                    cmd_reminders = itx.client.get_command_mention_with_args(
-                        "reminder reminders", item=" ")
-                    out_msg = (
-                        (f"You have {len(db_data['reminders'])} reminders "
-                         f"(use {cmd_reminders} to get more info about a "
-                         f"reminder):\n")
-                        + '\n'.join(out)[:1996]
-                    )
-                await itx.response.send_message(out_msg, ephemeral=True)
-            else:
-                reminder = db_data['reminders'][item]
-                create_time_str = (f"<t:{reminder['creationtime']}:F> "
-                                   f"(<t:{reminder['creationtime']}>)")
-                remind_time_str = (f"<t:{reminder['remindertime']}:F> "
-                                   f"(<t:{reminder['remindertime']}:R>)")
-                text = discord.utils.escape_markdown(reminder['reminder'])
-                await itx.response.send_message(
-                    f"Showing reminder `{index}` out of "
-                    f"`{len(db_data['reminders'])}`:\n"
-                    f"  ID: `{index}`\n"
-                    f"  Created at:             {create_time_str}\n"
-                    f"  Reminding you at: {remind_time_str}\n"
-                    f"  Remind you about: {text}",
-                    ephemeral=True,
-                )
-                return
-        except IndexError:
-            cmd_reminders = itx.client.get_command_mention(
-                "reminder reminders")
-            await itx.response.send_message(
-                f"I couldn't find any reminder with that ID!\n"
-                f"Look for the \"ID: `0`\" at the beginning of your reminder "
-                f"on the reminder list ({cmd_reminders})",
-                ephemeral=True,
-            )
-            return
-        except KeyError:
+        out = []
+        index = 0
+        if "reminders" not in db_data:
             cmd_reminders = itx.client.get_command_mention("reminder remindme")
             await itx.response.send_message(
                 f"You don't have any reminders running at the moment.\n"
                 f"Use {cmd_reminders} to make a reminder!",
+                ephemeral=True,
+            )
+            return
+
+        if item is None:
+            for reminder in db_data['reminders']:
+                reminder_text = discord.utils.escape_markdown(
+                    reminder['reminder'])
+                out.append(
+                    f"ID: `{index}` | Created at: "
+                    f"<t:{reminder['remindertime']}:F> | "
+                    f"Remind you about: {reminder_text}"
+                )
+                index += 1
+            out_msg = "Your reminders:\n" + '\n'.join(out)
+            if len(out_msg) >= 1995:
+                out = []
+                index = 0
+                for reminder in db_data['reminders']:
+                    out.append(f"`{index}` | "
+                               f"<t:{reminder['remindertime']}:F>")
+                    index += 1
+                cmd_reminders = itx.client.get_command_mention_with_args(
+                    "reminder reminders", item=" ")
+                out_msg = (
+                    (f"You have {len(db_data['reminders'])} reminders "
+                     f"(use {cmd_reminders} to get more info about a "
+                     f"reminder):\n")
+                    + '\n'.join(out)[:1996]
+                )
+            await itx.response.send_message(out_msg, ephemeral=True)
+        else:
+            try:
+                reminder = db_data['reminders'][item]
+            except IndexError:
+                cmd_reminders = itx.client.get_command_mention(
+                    "reminder reminders")
+                await itx.response.send_message(
+                    f"I couldn't find any reminder with that ID!\n"
+                    f"Look for the \"ID: `0`\" at the beginning of your reminder "
+                    f"on the reminder list ({cmd_reminders})",
+                    ephemeral=True,
+                )
+                return
+            create_time_str = (f"<t:{reminder['creationtime']}:F> "
+                               f"(<t:{reminder['creationtime']}>)")
+            remind_time_str = (f"<t:{reminder['remindertime']}:F> "
+                               f"(<t:{reminder['remindertime']}:R>)")
+            text = discord.utils.escape_markdown(reminder['reminder'])
+            await itx.response.send_message(
+                f"Showing reminder `{index}` out of "
+                f"`{len(db_data['reminders'])}`:\n"
+                f"  ID: `{index}`\n"
+                f"  Created at:             {create_time_str}\n"
+                f"  Reminding you at: {remind_time_str}\n"
+                f"  Remind you about: {text}",
                 ephemeral=True,
             )
             return

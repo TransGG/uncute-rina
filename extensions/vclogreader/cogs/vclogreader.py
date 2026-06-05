@@ -18,7 +18,7 @@ from resources.customs import Bot
 
 from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
-
+from resources.utils import debug
 
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
 
@@ -42,6 +42,7 @@ def extract_id_and_name(
      the channel information.
     :return: A tuple of the extracted id and name.
     """
+    assert embed.fields[field_number].value is not None
     # split "<#234567> (Channel Name)" to "234567"
     channel_id = (
         embed.fields[field_number].value
@@ -106,7 +107,7 @@ async def _get_vc_activity(
         #  looks like this:
         #
         #   author / image of user that sent message (author.name
-        #    = username + descriminator (#0 in new discord update))
+        #    = username + discriminator (#0 in new discord update))
         #  case 1: the user joins/leaves a voice channel
         #   description: **username#0** joined/left voice channel vc_name
         #   fields[0].name: Channel
@@ -125,6 +126,10 @@ async def _get_vc_activity(
         #    Old = 123456```"
 
         for embed in message.embeds:
+            if embed.description is None:
+                debug("Embed has no description")
+                continue
+
             username = embed.description.split("**", 2)[1].split("#", 1)[0]
             # split **mysticmia#0** to mysticmia
             #  (taking discord usernames can't contain hashtags (cuz
@@ -223,6 +228,7 @@ async def _get_vc_activity(
                 if len(embed.fields) == 0:
                     raise Exception("Embed has no fields!")
                 else:
+                    assert embed.fields[0].value is not None
                     if len(embed.fields[0].value.split("#", 1)) < 2:
                         raise Exception(
                             f"First embed field '{embed.fields[0].value}' "
@@ -234,6 +240,7 @@ async def _get_vc_activity(
                     )
 
             # remove the ```ini\n  ...   ``` from the embed field
+            assert embed.fields[-1].value is not None
             id_data = (embed.fields[-1]
                        .value
                        .replace("```ini", "")[:-3]
@@ -262,6 +269,7 @@ async def _get_vc_activity(
                         f"'User', 'Old', 'New', or 'Channel')")
             user_data.append(username)
 
+            assert embed.timestamp is not None
             event_timestamp = embed.timestamp.timestamp()
 
             try:
@@ -409,15 +417,15 @@ def _format_data_for_graph(
                     (min_time, unix))
             else:
                 intermediate_data[user_id]["timestamps"].append(
-                    (intermediate_data[user_id]["join_time"], unix))
+                    (intermediate_data[user_id]["join_time"], unix))  # type: ignore[arg-type]
                 intermediate_data[user_id]["join_time"] = None
         elif to_channel == voice_channel.id:
             intermediate_data[user_id]["join_time"] = unix
 
     for user_id in intermediate_data:
-        if intermediate_data[user_id]["join_time"]:
+        if intermediate_data[user_id]["join_time"] is not None:
             intermediate_data[user_id]["timestamps"].append(
-                (intermediate_data[user_id]["join_time"], max_time))
+                (intermediate_data[user_id]["join_time"], max_time))  # type: ignore[arg-type]
 
     data: VcLogGraphData = {"User": [], "Start": [], "Finish": []}
 
@@ -464,16 +472,17 @@ class VCLogReader(commands.Cog):
             msg_log_limit: int = 5000,
             user_ids: str | None = None
     ) -> None:
-        select_user_ids = []
+        select_user_ids: list[str] = []
         if user_ids is not None:
-            select_user_ids: list[str] = user_ids.replace(" ", "").split(",")
+            select_user_ids = user_ids.replace(" ", "").split(",")
         # update typing (if channel mention)
         requested_channel: discord.app_commands.AppCommandChannel | str \
             = requested_channel_input
         warning = ""
         voice_channel: discord.VoiceChannel | None
+        prompt_channel: discord.abc.GuildChannel | discord.Thread | discord.abc.PrivateChannel | None
         if isinstance(requested_channel, discord.app_commands.AppCommandChannel):
-            voice_channel = itx.client.get_channel(requested_channel.id)
+            prompt_channel = itx.client.get_channel(requested_channel.id)
         else:
             if not requested_channel.isdecimal():
                 await itx.response.send_message(
@@ -481,7 +490,17 @@ class VCLogReader(commands.Cog):
                     ephemeral=True
                 )
                 return
-            voice_channel = itx.client.get_channel(int(requested_channel))
+            prompt_channel = itx.client.get_channel(int(requested_channel))
+        if (prompt_channel is not None
+                and not isinstance(prompt_channel, discord.VoiceChannel)):
+            await itx.response.send_message(
+                "This is not a voice channel!",
+                ephemeral=True
+            )
+
+        # type checkers are very stupid.
+        assert prompt_channel is None or isinstance(prompt_channel, discord.VoiceChannel)
+        voice_channel = prompt_channel
 
         if voice_channel is None:
             # make custom vc if the voice channel we're trying to get
@@ -501,7 +520,7 @@ class VCLogReader(commands.Cog):
 
         vc_activity_logs_channel: discord.abc.Messageable | None
         vc_activity_logs_channel = itx.client.get_guild_attributes(
-            itx.guild_id).voice_channel_activity_logs_channel
+            itx.guild.id).voice_channel_activity_logs_channel
 
         if vc_activity_logs_channel is None:
             raise MissingAttributesCheckFailure(
@@ -514,24 +533,25 @@ class VCLogReader(commands.Cog):
         try:
             lower_bound = float(lower_bound)
             upper_bound = float(upper_bound)
-            if lower_bound <= 0:
-                await itx.response.send_message(
-                    "Your period (data in the past [x] minutes) has to "
-                    "be above 0!",
-                    ephemeral=True,
-                )
-                return
-            if upper_bound > lower_bound:
-                await itx.response.send_message(
-                    "Your upper bound can't be bigger (-> longer ago) than "
-                    "the lower bound!",
-                    ephemeral=True,
-                )
-                return
         except ValueError:
             await itx.response.send_message(
                 "Your bounding period has to be a number for the amount of "
                 "minutes that have passed",
+                ephemeral=True,
+            )
+            return
+
+        if lower_bound <= 0:
+            await itx.response.send_message(
+                "Your period (data in the past [x] minutes) has to "
+                "be above 0!",
+                ephemeral=True,
+            )
+            return
+        if upper_bound > lower_bound:
+            await itx.response.send_message(
+                "Your upper bound can't be bigger (-> longer ago) than "
+                "the lower bound!",
                 ephemeral=True,
             )
             return

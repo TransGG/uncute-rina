@@ -74,7 +74,7 @@ def get_attribute_type(attribute_key: str) -> tuple[
     else:
         type_queue.append(attribute_type)
 
-    types = set()
+    types: set[type] = set()
     while len(type_queue) > 0:
         element = type_queue.pop(0)
 
@@ -87,7 +87,7 @@ def get_attribute_type(attribute_key: str) -> tuple[
             #  types.UnionType is for `int | str`
             type_queue.extend(element.__args__)
             continue
-        elif element is not type(None):
+        elif not isinstance(element, type(None)):
             types.add(element)
 
     return types, attribute_in_list
@@ -533,7 +533,7 @@ class ServerSettings:
 
         def set_attribute(
                 key: str,
-                val: GuildAttributeType | None | list[GuildAttributeType]
+                val: list[GuildAttributeType] | GuildAttributeType | None
         ) -> None:
             # Mostly validation before casting it.
             # Todo: more graceful handling of errors:
