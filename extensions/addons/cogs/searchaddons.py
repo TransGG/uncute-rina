@@ -11,6 +11,7 @@ from extensions.addons.wolframresult import (
     WolframResult,
     WolframQueryResult,
     WolframPod,
+    WolframAssumption,
 )
 from resources.customs import Bot
 
@@ -23,6 +24,7 @@ from extensions.addons.views.math_sendpublicbutton import (
 )
 from resources.utils import debug, DebugColor
 from resources.utils.stringhelper import ellipsize_string
+
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -225,55 +227,64 @@ def _format_wolfram_assumptions(data: WolframQueryResult) -> str:
     #     data["assumptions"] = [data["assumptions"]]
 
     for assumption in data["assumptions"]:
-        if ("count" not in assumption
-                or assumption["count"] == 0
-                or "values" not in assumption):
-            continue
-
-        assumption_data = {}
-        # because Wolfram|Alpha is being annoyingly
-        #  inconsistent.
-        if "word" in assumption:
-            assumption_data["${word}"] = assumption["word"]
-
-        if isinstance(assumption["values"], dict):
-            # only 1 value, instead of a list. So just make
-            #  a list of 1 value instead.
-            assumption["values"] = [assumption["values"]]
-
-        for value_index, value in enumerate(assumption["values"]):
-            word_id = str(value_index + 1)
-            assumption_data["${desc" + word_id + "}"] \
-                = value["desc"]
-            if "word" not in assumption:
-                continue
-
-            assumption_data["${word" + word_id + "}"] \
-                = assumption["word"]
-
-        if "template" in assumption:
-            template: str = assumption["template"]
-            for replacer in assumption_data:
-                template = template.replace(
-                    replacer, assumption_data[replacer]
-                )
-            if template.endswith("."):
-                template = template[:-1]
-            assumptions.append(template + "?")
-        else:
-            template: str = (
-                assumption["type"]
-                + " - "
-                + assumption["word"]
-                + " (todo)"
-            )
-            assumptions.append(template)
+        assumption_maybe = _extract_assumption(assumption)
+        if assumption_maybe is not None:
+            assumptions.append(assumption_maybe)
 
     if len(assumptions) > 0:
         assumption_str = "\nAssumptions:\n> " + '\n> '.join(assumptions)
     else:
         assumption_str = ""
     return assumption_str
+
+
+def _extract_assumption(assumption: WolframAssumption) -> str | None:
+    if (assumption.get("count", 0) == 0
+            or "values" not in assumption):
+        return None
+
+    assumption_data = {}
+    # because Wolfram|Alpha is being annoyingly
+    #  inconsistent.
+    if "word" in assumption:
+        assumption_data["${word}"] = assumption["word"]
+
+    assumption_values = assumption["values"]
+    if not isinstance(assumption_values, list):
+        # It is a WolframAssumptionValue (TypedDict)
+        #  It has only 1 value, instead of a list. So just make
+        #  a list of 1 value instead.
+        assumption["values"] = [assumption_values]
+
+    assert isinstance(assumption["values"], list)
+
+    for value_index, value in enumerate(assumption["values"]):
+        word_id = str(value_index + 1)
+        assumption_data["${desc" + word_id + "}"] \
+            = value["desc"]
+        if "word" not in assumption:
+            return None
+
+        assumption_data["${word" + word_id + "}"] \
+            = assumption["word"]
+
+    if "template" in assumption:
+        template: str = assumption["template"]
+        for replacer in assumption_data:
+            template = template.replace(
+                replacer, assumption_data[replacer]
+            )
+        if template.endswith("."):
+            template = template[:-1]
+        return template + "?"
+    else:
+        template: str = (
+                assumption["type"]
+                + " - "
+                + assumption["word"]
+                + " (todo)"
+        )
+        return template
 
 
 def _format_wolfram_error_output(data: WolframQueryResult) -> str:
