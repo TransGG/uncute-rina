@@ -74,57 +74,91 @@ async def log_to_guild(
         return False
     # The given key should restrict us to messagable channels
     log_channel = client.get_guild_attributes(guild).log_channel
-    if log_channel is None:
-        if ignore_dms and is_in_dms(guild):
-            return False
-        if crash_if_not_found:
-            raise MissingAttributesCheckFailure(
-                "log_to_guild", [AttributeKeys.log_channel])
 
-        # get current value for log_channel in the guild.
-        if guild is None:
-            attribute_raw = "<server was None>"
+    if log_channel is not None:
+        await log_channel.send(content=msg, allowed_mentions=discord.AllowedMentions.none())
+        return True
+
+    if ignore_dms and is_in_dms(guild):
+        return False
+    if crash_if_not_found:
+        raise MissingAttributesCheckFailure(
+            "log_to_guild", [AttributeKeys.log_channel])
+
+    # get current value for log_channel in the guild.
+    attribute_raw = "<server was None>"
+    if guild is not None:
+        if isinstance(guild, discord.Guild):
+            guild_id = guild.id
         else:
-            if isinstance(guild, discord.Guild):
-                guild_id = guild.id
-            else:
-                guild_id = guild
+            guild_id = guild
+        attribute_raw, log_channel = await _get_log_channel_from_serversettings(client, guild_id)
 
-            entry = await server_settings.ServerSettings.get_entry(
-                client.async_rina_db, guild_id)
-            if entry is None:
-                attribute_raw = "<no server data>"
-            else:
-                attribute_raw = str(entry["attribute_ids"].get(
-                    AttributeKeys.log_channel, "<no attribute data>"))  # noqa: E501
-
-            if attribute_raw.isdecimal():
-                guild = client.get_guild(guild_id)
-                attribute_id = int(attribute_raw)
-                if guild is not None:
-                    try:
-                        log_channel_maybe = await guild.fetch_channel(
-                            attribute_id)
-                    except discord.DiscordException:
-                        log_channel_maybe = None
-                    if not isinstance(log_channel_maybe,
-                                      discord.abc.Messageable):
-                        log_channel_maybe = None
-                    log_channel = log_channel_maybe
-        if log_channel is None:
-            debug(
-                "Exception in log_channel (log_channel could not be loaded):\n"
-                "    guild: " + repr(guild)
-                + "\n    log_channel_id: "
-                + attribute_raw
-                + "\n    log message: "
-                + msg,
-                color=DebugColor.red
-            )
-            return False
+    if log_channel is None:
+        debug(
+            "Exception in log_channel (log_channel could not be loaded):\n"
+            "    guild: " + repr(guild)
+            + "\n    log_channel_id: "
+            + attribute_raw
+            + "\n    log message: "
+            + msg,
+            color=DebugColor.red
+        )
+        return False
 
     await log_channel.send(
         content=msg,
         allowed_mentions=discord.AllowedMentions.none()
     )
     return True
+
+
+async def _get_log_channel_from_serversettings(
+        client: Bot,
+        guild_id: int,
+) -> tuple[
+        str,
+        MessageableGuildChannel | None,
+]:
+    # fetch server settings
+    entry = await server_settings.ServerSettings.get_entry(
+        client.async_rina_db,
+        guild_id,
+    )
+    channel_id_raw: str = "<no server data>"
+    if entry is not None:
+        channel_id_raw = str(
+            entry["attribute_ids"].get(
+                AttributeKeys.log_channel,
+                "<no attribute data>",
+            )
+        )
+
+    # parse log channel id to a channel
+    log_channel_maybe: (
+            MessageableGuildChannel
+            | discord.CategoryChannel
+            | discord.StageChannel
+            | discord.ForumChannel
+            | None
+    ) = None  # we need to handle these other types somehow
+    # ^ not that it should be anything other than a messageable guild channel...
+    #  but there's a guard clause for that below this if-branch.
+    # todo: surely this code can be refactored cleaner...
+    if channel_id_raw.isdecimal():
+        guild: discord.Guild | None = client.get_guild(guild_id)
+        channel_id: int = int(channel_id_raw)
+        if guild is None:
+            return channel_id_raw, None
+
+        try:
+            log_channel_maybe = await guild.fetch_channel(
+                channel_id)
+        except discord.DiscordException:
+            log_channel_maybe = None
+
+    if (log_channel_maybe is not None
+            and not isinstance(log_channel_maybe, MessageableGuildChannel.__value__)):
+        log_channel_maybe = None
+
+    return channel_id_raw, log_channel_maybe
