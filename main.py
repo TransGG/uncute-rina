@@ -291,7 +291,7 @@ def start_app() -> None:
     async def setup_hook() -> None:
         start_progress.complete("Started Bot")
         start_progress.begin("Caching bot's command names and their ids")
-        client.commandList = await client.tree.fetch_commands()
+        client.slash_command_list = await client.tree.fetch_commands()
         start_progress.complete("Cached bot's command names and their ids")
         start_progress.begin("Load extensions and scheduler")
         logger = logging.getLogger("apscheduler")

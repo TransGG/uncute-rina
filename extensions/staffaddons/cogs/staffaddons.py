@@ -223,5 +223,5 @@ class StaffAddons(commands.Cog):
     async def update_command_tree(self, itx: GuildInteraction[Bot]) -> None:
         await itx.response.defer(ephemeral=True)
         await itx.client.tree.sync()
-        itx.client.commandList = await itx.client.tree.fetch_commands()
+        itx.client.slash_command_list = await itx.client.tree.fetch_commands()
         await itx.followup.send("Updated commands")
