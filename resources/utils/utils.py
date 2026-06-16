@@ -136,11 +136,11 @@ async def _get_log_channel_from_serversettings(
 
     # parse log channel id to a channel
     log_channel_maybe: (
-            MessageableGuildChannel
-            | discord.CategoryChannel
-            | discord.StageChannel
-            | discord.ForumChannel
-            | None
+        MessageableGuildChannel
+        | discord.CategoryChannel
+        | discord.StageChannel
+        | discord.ForumChannel
+        | None
     ) = None  # we need to handle these other types somehow
     # ^ not that it should be anything other than a messageable guild channel...
     #  but there's a guard clause for that below this if-branch.

@@ -51,5 +51,5 @@ def ellipsize_string(text: str, max_length: int) -> str:
     """
     assert max_length >= 3
     if len(text) > max_length:
-        return text[:max_length-3] + "..."
+        return text[:max_length - 3] + "..."
     return text

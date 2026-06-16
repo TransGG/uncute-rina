@@ -279,10 +279,10 @@ def _extract_assumption(assumption: WolframAssumption) -> str | None:
         return template + "?"
     else:
         template: str = (
-                assumption["type"]
-                + " - "
-                + assumption["word"]
-                + " (todo)"
+            assumption["type"]
+            + " - "
+            + assumption["word"]
+            + " (todo)"
         )
         return template
 
