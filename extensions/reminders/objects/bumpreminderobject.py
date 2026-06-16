@@ -27,7 +27,7 @@ class BumpReminderObject:
         bump_channel: discord.abc.Messageable | None
         bump_role: discord.Role | None
         bump_channel, bump_role = self.client.get_guild_attributes(
-            self.guild).AttributeKeys.bump_reminder_role
+            self.guild).bump_reminder_role
 
         if bump_channel is None or bump_role is None:
             missing = [
