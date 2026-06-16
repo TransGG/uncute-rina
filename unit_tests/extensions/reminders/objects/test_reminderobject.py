@@ -3,7 +3,7 @@ import pytest
 from datetime import datetime, timedelta, timezone
 import asyncio
 
-from unit_tests.object import CustomObject
+from unit_tests.utils.object import CustomObject
 
 from extensions.reminders.objects.reminderobject import _parse_reminder_time
 from extensions.reminders.exceptions import (

@@ -1,6 +1,6 @@
 import pytest
 
-from unit_tests.object import CustomObject
+from unit_tests.utils.object import CustomObject
 from unit_tests.utils import get_embed_issues
 
 from extensions.help.helppage import HelpPage
