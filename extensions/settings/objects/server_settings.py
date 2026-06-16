@@ -4,7 +4,7 @@ import typing
 
 from enum import Enum
 import motor.core
-from typing import TypedDict, Any, TypeVar, Callable, TypeAliasType
+from typing import TypedDict, Any, Callable, TypeAliasType
 from types import UnionType, GenericAlias
 
 import discord
@@ -33,8 +33,6 @@ CategoryChannelId = int
 MessageableChannelId = int
 MessageChannel = discord.TextChannel | discord.Thread
 
-T = TypeVar('T')
-
 
 def parse_id_generic(
         get_object_function: Callable[[int], GuildAttributeType | None],
@@ -55,7 +53,7 @@ def get_attribute_type(attribute_key: str) -> tuple[
 
     :param attribute_key: The attribute to get the type of.
 
-    :return A tuple of the type of the attribute (or None if the
+    :return A tuple of the type of the attribute (or an empty set if the
      attribute wasn't found) and whether the attribute was in a list.
     """
     attribute_types: dict[str, type] = \
@@ -76,7 +74,7 @@ def get_attribute_type(attribute_key: str) -> tuple[
     else:
         type_queue.append(attribute_type)
 
-    types = set()
+    types: set[type] = set()
     while len(type_queue) > 0:
         element = type_queue.pop(0)
 
@@ -89,9 +87,25 @@ def get_attribute_type(attribute_key: str) -> tuple[
             #  types.UnionType is for `int | str`
             type_queue.extend(element.__args__)
             continue
-        elif element is not type(None):
+        elif (
+                element is not None
+                and not issubclass(element, type(None))
+        ):
+            # isinstance doesn't work if the object is the type class itself.
+            # - isinstance(NoneType, NoneType) == False
+            # - isinstance(A, A) = False
+            # - isinstance(None, NoneType) == True
+            # - isinstance(a, A) = True
+            # Using `is` works though:
+            # - NoneType is NoneType == True
+            # - A is A == True
+            # But it doesn't support subclassing. E.g. `class B(A): pass`
+            # - B is A == False
+            # - isinstance(B, A) == False
+            # - issubclass(B, A) == True
+            # - issubclass(A, A) == True
+            # So I guess you should use issubclass.
             types.add(element)
-
     return types, attribute_in_list
 
 
@@ -278,7 +292,7 @@ class ServerSettings:
     attributes: ServerAttributes
 
     @staticmethod
-    def get_original(
+    def get_original[T](
             attribute: T | list[T]
     ) -> T | NameAndIdData | list[T | NameAndIdData]:
         """Get the name and id of the attribute (or attributes)"""
@@ -533,7 +547,10 @@ class ServerSettings:
 
         parsed_attributes = ServerAttributes()
 
-        def set_attribute(key: str, val) -> None:
+        def set_attribute(
+                key: str,
+                val: list[GuildAttributeType] | GuildAttributeType | None
+        ) -> None:
             # Mostly validation before casting it.
             # Todo: more graceful handling of errors:
             #  Can throw AttributeError and AssertionError

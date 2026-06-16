@@ -31,7 +31,7 @@ class Bot(commands.Bot):
     # bot uptime start, used in /version in cmd_staffaddons
     startup_time = datetime.now().astimezone()
 
-    commandList: list[discord.app_commands.AppCommand]
+    slash_command_list: list[discord.app_commands.AppCommand]
     log_channel: MessageableGuildChannel
     bot_owner: discord.User  # for AllowedMentions in on_appcommand_error()
     sched: AsyncIOScheduler  # for Reminders
@@ -69,40 +69,44 @@ class Bot(commands.Bot):
         # </COMMAND SUBCOMMAND:ID>
         # </COMMAND SUBCOMMAND_GROUP SUBCOMMAND:ID>
         #              /\- is posed as 'subcommand', to make searching easier
-        for command in self.commandList:
-            if command.name != command_name:
-                continue
-            if subcommand is None:
-                return command.mention
 
-            for subgroup in command.options:
-                if subgroup.name != subcommand:
-                    continue
-                if isinstance(subgroup, app_commands.Argument):
-                    raise ValueError(
-                        f"You can't mention command arguments! (Interpreted "
-                        f"{subgroup.name} as argument of {command.name} "
-                        f"instead of subcommand or subcommand group!)"
-                    )
-                if subcommand_group is None:
-                    return subgroup.mention
+        found_commands = [
+            command
+            for command in self.slash_command_list
+            if command.name == command_name
+        ]
+        if len(found_commands) == 0:
+            return "/" + command_string
+        if subcommand is None:
+            return found_commands[0].mention
 
-                # now it technically searches subcommand in
-                #  subcmdgroup.options but to remove additional
-                #  renaming of variables, it stays as is.
-                # subcmdgroup = subgroup  # hm
-                for subcmdgroup in subgroup.options:
-                    if isinstance(subcmdgroup, app_commands.Argument):
-                        raise ValueError(
-                            f"You can't mention command arguments! "
-                            f"(Interpreted {subcmdgroup.name} as an argument "
-                            f"of `/{command.name} {subgroup.name}` instead of "
-                            f"a subcommand!)"
-                        )
-                    if subcmdgroup.name == subcommand_group:
-                        return subcmdgroup.mention
-        # no command found.
-        return "/" + command_string
+        found_subcommands = [
+            subcmd
+            for command in found_commands
+            for subcmd in command.options
+            if subcmd.name == subcommand
+            and not isinstance(subcmd, app_commands.Argument)
+        ]
+
+        if len(found_subcommands) == 0:
+            return "/" + command_string
+        if subcommand_group is None:
+            return found_subcommands[0].mention
+
+        # so we know the second argument is a subcommand_group instead of a subcommand.
+        found_subcommand_groups = found_subcommands
+        subcommand_group, subcommand = subcommand, subcommand_group
+
+        found_subcommands = [
+            subcmd
+            for subcommand_group in found_subcommand_groups
+            for subcmd in subcommand_group.options
+            if subcmd.name == subcommand
+            and not isinstance(subcmd, app_commands.Argument)
+        ]
+        if len(found_subcommands) == 0:
+            return "/" + command_string
+        return found_subcommands[0].mention
 
     def get_command_mention_with_args(
             self,
@@ -162,20 +166,17 @@ class Bot(commands.Bot):
 
         unset_keys = [
             key
-            for key, val in ServerAttributes.__annotations__.items()
-            if val is None
+            for key in ServerAttributes.__annotations__.keys()
+            if getattr(attributes, key, None) is None
         ]
 
         # Fill unset attributes with parent values
         parent_attributes = attributes  # set to self to prepare iterative recursion
-        while len(unset_keys) > 0 and (parent := parent_attributes["parent_server"]) is not None:
+        while len(unset_keys) > 0 and (parent := parent_attributes.parent_server) is not None:
             parent_attributes = self.server_settings[parent.id].attributes
             for key in list(unset_keys):  # clone the list because we're editing it inside the loop
-                if getattr(parent_attributes, key, None) is not None:  # type: ignore[literal-required] # noqa: E501
-                    # Ignore the string literal warning, I guess.
-                    # `key` is always a string, and should also always be
-                    #  a key of the TypedDict ServerAttributes.
-                    attributes[key] = parent_attributes[key]  # type: ignore[literal-required] # noqa: E501
+                if (parent_attr := getattr(parent_attributes, key, None)) is not None:
+                    setattr(attributes, key, parent_attr)
                     unset_keys.remove(key)
 
         return attributes

@@ -1,7 +1,5 @@
 __all__ = [
     'DatabaseKeys',
-    # 'decode_field',
-    # 'encode_field',
     'add_data',
     'get_all_data',
     'get_data',

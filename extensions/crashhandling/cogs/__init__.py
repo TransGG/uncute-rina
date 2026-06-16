@@ -1,3 +1,5 @@
-__all__ = ['CrashHandling']
+__all__ = [
+    'CrashHandling',
+]
 
 from extensions.crashhandling.cogs.crashhandling import CrashHandling

@@ -20,9 +20,6 @@ class ChangeChannel(commands.Cog):
             itx: GuildInteraction[Bot],
             destination: discord.TextChannel
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
-        itx.followup: discord.Webhook  # type: ignore
-
         if itx.channel is None:
             await itx.response.send_message(
                 "I don't know what channel you're currently in, so I "

@@ -94,7 +94,6 @@ class TermDictionary(commands.Cog):
             public: bool = False,
             source: DictionarySources = DictionarySources.All,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         await itx.response.defer(ephemeral=not public)
 
         sources = self._dictionary_sources[:]
@@ -245,11 +244,10 @@ class TermDictionary(commands.Cog):
         }
         collection.insert_one(post)
 
-        username = getattr(itx.user, 'nick', None) or itx.user.name
         await log_to_guild(
             itx.client,
             itx.guild,
-            f"{username} ({itx.user.id}) added "
+            f"{itx.user.name} ({itx.user.id}) added "
             f"the dictionary definition of '{term}' and set it to "
             f"'{definition}', with synonyms: {synonym_list}",
         )
@@ -288,11 +286,10 @@ class TermDictionary(commands.Cog):
             return
         collection.update_one(query, {"$set": {"definition": definition}})
 
-        username = getattr(itx.user, 'nick', None) or itx.user.name
         await log_to_guild(
             itx.client,
             itx.guild,
-            f"{username} ({itx.user.id}) changed the dictionary definition "
+            f"{itx.user.name} ({itx.user.id}) changed the dictionary definition "
             f"of '{term}' to '{definition}'",
         )
         await itx.response.send_message(
@@ -318,11 +315,10 @@ class TermDictionary(commands.Cog):
                 ephemeral=True,
             )
             return
-        username = getattr(itx.user, 'nick', None) or itx.user.name
         await log_to_guild(
             itx.client,
             itx.guild,
-            f"{username} ({itx.user.id}) undefined the dictionary "
+            f"{itx.user.name} ({itx.user.id}) undefined the dictionary "
             f"definition of '{term}' from '{search['definition']}' with "
             f"synonyms: {search['synonyms']}",
         )
@@ -368,8 +364,6 @@ class TermDictionary(commands.Cog):
                 ephemeral=True)
             return
 
-        username = getattr(itx.user, 'nick', None) or itx.user.name
-
         if mode == 1:
             synonyms = search["synonyms"]
             if synonym.lower() in synonyms:
@@ -387,7 +381,7 @@ class TermDictionary(commands.Cog):
             await log_to_guild(
                 itx.client,
                 itx.guild,
-                f"{username} ({itx.user.id}) added synonym '{synonym}' "
+                f"{itx.user.name} ({itx.user.id}) added synonym '{synonym}' "
                 f"the dictionary definition of '{term}'",
             )
             await itx.response.send_message(
@@ -419,7 +413,7 @@ class TermDictionary(commands.Cog):
             await log_to_guild(
                 itx.client,
                 itx.guild,
-                f"{username} ({itx.user.id}) removed synonym '{synonym}' "
+                f"{itx.user.name} ({itx.user.id}) removed synonym '{synonym}' "
                 f"the dictionary definition of '{term}'",
             )
             await itx.response.send_message(

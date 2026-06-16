@@ -11,6 +11,7 @@ from extensions.addons.wolframresult import (
     WolframResult,
     WolframQueryResult,
     WolframPod,
+    WolframAssumption,
 )
 from resources.customs import Bot
 
@@ -22,6 +23,8 @@ from extensions.addons.views.math_sendpublicbutton import (
     SendPublicButtonMath
 )
 from resources.utils import debug, DebugColor
+from resources.utils.stringhelper import ellipsize_string
+
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -224,55 +227,64 @@ def _format_wolfram_assumptions(data: WolframQueryResult) -> str:
     #     data["assumptions"] = [data["assumptions"]]
 
     for assumption in data["assumptions"]:
-        if ("count" not in assumption
-                or assumption["count"] == 0
-                or "values" not in assumption):
-            continue
-
-        assumption_data = {}
-        # because Wolfram|Alpha is being annoyingly
-        #  inconsistent.
-        if "word" in assumption:
-            assumption_data["${word}"] = assumption["word"]
-
-        if isinstance(assumption["values"], dict):
-            # only 1 value, instead of a list. So just make
-            #  a list of 1 value instead.
-            assumption["values"] = [assumption["values"]]
-
-        for value_index, value in enumerate(assumption["values"]):
-            word_id = str(value_index + 1)
-            assumption_data["${desc" + word_id + "}"] \
-                = value["desc"]
-            if "word" not in assumption:
-                continue
-
-            assumption_data["${word" + word_id + "}"] \
-                = assumption["word"]
-
-        if "template" in assumption:
-            template: str = assumption["template"]
-            for replacer in assumption_data:
-                template = template.replace(
-                    replacer, assumption_data[replacer]
-                )
-            if template.endswith("."):
-                template = template[:-1]
-            assumptions.append(template + "?")
-        else:
-            template: str = (
-                assumption["type"]
-                + " - "
-                + assumption["word"]
-                + " (todo)"
-            )
-            assumptions.append(template)
+        assumption_maybe = _extract_assumption(assumption)
+        if assumption_maybe is not None:
+            assumptions.append(assumption_maybe)
 
     if len(assumptions) > 0:
         assumption_str = "\nAssumptions:\n> " + '\n> '.join(assumptions)
     else:
         assumption_str = ""
     return assumption_str
+
+
+def _extract_assumption(assumption: WolframAssumption) -> str | None:
+    if (assumption.get("count", 0) == 0
+            or "values" not in assumption):
+        return None
+
+    assumption_data = {}
+    # because Wolfram|Alpha is being annoyingly
+    #  inconsistent.
+    if "word" in assumption:
+        assumption_data["${word}"] = assumption["word"]
+
+    assumption_values = assumption["values"]
+    if not isinstance(assumption_values, list):
+        # It is a WolframAssumptionValue (TypedDict)
+        #  It has only 1 value, instead of a list. So just make
+        #  a list of 1 value instead.
+        assumption["values"] = [assumption_values]
+
+    assert isinstance(assumption["values"], list)
+
+    for value_index, value in enumerate(assumption["values"]):
+        word_id = str(value_index + 1)
+        assumption_data["${desc" + word_id + "}"] \
+            = value["desc"]
+        if "word" not in assumption:
+            return None
+
+        assumption_data["${word" + word_id + "}"] \
+            = assumption["word"]
+
+    if "template" in assumption:
+        template: str = assumption["template"]
+        for replacer in assumption_data:
+            template = template.replace(
+                replacer, assumption_data[replacer]
+            )
+        if template.endswith("."):
+            template = template[:-1]
+        return template + "?"
+    else:
+        template: str = (
+            assumption["type"]
+            + " - "
+            + assumption["word"]
+            + " (todo)"
+        )
+        return template
 
 
 def _format_wolfram_error_output(data: WolframQueryResult) -> str:
@@ -362,13 +374,9 @@ class SearchAddons(commands.Cog):
     async def equaldex(
             self,
             itx: discord.Interaction[Bot],
-            country_id: str,
+            country_id: app_commands.Range[str, 1, 6],
     ) -> None:
-        illegal_characters = ""
-        for char in country_id.lower():
-            if char not in "abcdefghijklmnopqrstuvwxyz":
-                if char not in illegal_characters:
-                    illegal_characters += char
+        illegal_characters = await self.equaldex_check_illegal_characters(country_id)
         if len(illegal_characters) > 1:
             await itx.response.send_message(
                 f"You can't use the following characters for country_id!\n"
@@ -376,12 +384,40 @@ class SearchAddons(commands.Cog):
                 ephemeral=True
             )
             return
+
         equaldex_key = itx.client.api_tokens["Equaldex"]
         querystring = {
             "regionid": country_id,
             "apiKey": equaldex_key,
             # "formatted": "true",
         }
+        data, status = await self.get_equaldex_response_data(querystring)
+        fetch_failed = await self.handle_equaldex_data_error(itx, country_id, data, status)
+        if fetch_failed:
+            return
+
+        region = EqualDexRegion(data['regions']['region'])
+
+        embed = self.create_equaldex_embed(region)
+        view = EqualDexAdditionalInfo(region.url)
+        await itx.response.send_message(
+            embed=embed,
+            view=view,
+            ephemeral=True
+        )
+
+    # region equaldex helpers
+
+    @staticmethod
+    async def equaldex_check_illegal_characters(country_id: str) -> set[str]:
+        return {
+            char
+            for char in country_id.lower()
+            if char not in "abcdefghijklmnopqrstuvwxyz"
+        }
+
+    @staticmethod
+    async def get_equaldex_response_data(querystring: dict[str, str]) -> tuple[dict, int]:
         async with aiohttp.ClientSession() as client, client.get(
                 "https://www.equaldex.com/api/region",
                 params=querystring
@@ -402,7 +438,17 @@ class SearchAddons(commands.Cog):
         for key in jsonizing_table:
             response_api = response_api.replace(key, jsonizing_table[key])
         data = json.loads(response_api)
-        if "error" in data and response.status_code == 404:
+        return data, response.status
+
+    @staticmethod
+    async def handle_equaldex_data_error(
+            itx: discord.Interaction[Bot],
+            country_id: str,
+            data: dict,
+            status: int,
+    ) -> bool:
+        fetch_failed = False
+        if "error" in data and status == 404:
             if country_id.lower() == "uk":
                 await itx.response.send_message(
                     f"I'm sorry, I couldn't find '{country_id}'...\n"
@@ -413,11 +459,11 @@ class SearchAddons(commands.Cog):
                     f"I'm sorry, I couldn't find '{country_id}'...",
                     ephemeral=True
                 )
-            return
+            fetch_failed = True
         elif "error" in data:
             if country_id != country_id.upper():
                 await itx.response.send_message(
-                    f"Error code: {response.status_code}\n"
+                    f"Error code: {status}\n"
                     f"I'm sorry, I couldn't find '{country_id}'.\n"
                     f"Have you tried using uppercase? Try with "
                     f"`country_id:{country_id.upper()}`",
@@ -425,14 +471,15 @@ class SearchAddons(commands.Cog):
                 )
             else:
                 await itx.response.send_message(
-                    f"Error code: {response.status_code}\n"
+                    f"Error code: {status}\n"
                     f"I'm sorry, I couldn't find '{country_id}'.",
                     ephemeral=True
                 )
-            return
+            fetch_failed = True
+        return fetch_failed
 
-        region = EqualDexRegion(data['regions']['region'])
-
+    @staticmethod
+    def create_equaldex_embed(region: EqualDexRegion) -> discord.Embed:
         embed = discord.Embed(color=7829503, title=region.name)
         for issue in region.issues:
             issue_details = region.issues[issue]
@@ -460,31 +507,24 @@ class SearchAddons(commands.Cog):
                 status_description = \
                     status['description']
                 description = issue_details['description']
+
                 if len(status_description) > 0:
-                    if len(status_description) > 200:
-                        value += f" ({status_description[:200]}..."
-                    else:
-                        value += f" ({status_description})"
+                    status_description = ellipsize_string(status_description, 198)
+                    value += f"({status_description})"
                 elif len(description) > 0:
-                    if len(description) > 200:
-                        value += f" ({description[:200]}..."
-                    else:
-                        value += f" ({description})"
-                if len(value) > 1024:
-                    value = value[:1020] + "..."
+                    description = ellipsize_string(description, 198)
+                    value += f" ({description})"
+                value = ellipsize_string(value, 1024)
             embed.add_field(
                 name="" if isinstance(issue_details, list)
-                     else issue_details['label'],
+                else issue_details['label'],
                 value=value,
                 inline=False,
             )
         embed.set_footer(text="For more info, click the button below,")
-        view = EqualDexAdditionalInfo(region.url)
-        await itx.response.send_message(
-            embed=embed,
-            view=view,
-            ephemeral=True
-        )
+        return embed
+
+    # endregion equaldex helpers
 
     @app_commands.command(name="math",
                           description="Ask Wolfram Alpha a question")

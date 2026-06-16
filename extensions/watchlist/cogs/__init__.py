@@ -1,3 +1,5 @@
-__all__ = ['WatchList']
+__all__ = [
+    'WatchList',
+]
 
 from extensions.watchlist.cogs.watchlist import WatchList

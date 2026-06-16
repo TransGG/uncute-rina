@@ -1,3 +1,5 @@
-__all__ = ['TagFunctions']
+__all__ = [
+    'TagFunctions',
+]
 
 from extensions.tags.cogs.tags import TagFunctions

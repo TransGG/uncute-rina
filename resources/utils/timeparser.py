@@ -172,6 +172,33 @@ class TimeParser:
             else:
                 timedict[unit[1]] += unit[0]
 
+        TimeParser._handle_floating_point_date_values(timedict)
+        TimeParser._check_date_overflows(timedict)  # can raise ValueError
+
+        # round everything down to the nearest whole number
+        rounded_timedict = {i: int(j) for i, j in timedict.items()}
+
+        distance = datetime(
+            rounded_timedict["y"],
+            rounded_timedict["M"],
+            1,  # add days using timedelta(days=d)
+            rounded_timedict["h"],
+            rounded_timedict["m"],
+            rounded_timedict["s"],
+            rounded_timedict["f"],
+            tzinfo=start_date.tzinfo
+        )
+        # You cant have >31 days in a month, but if overflow is given,
+        #  then let this timedelta calculate the new months/years
+        distance += timedelta(days=rounded_timedict["d"] - 1)
+        # ^ -1 cuz datetime.day has to start at 1 (first day of the month)
+
+        return distance
+
+    @staticmethod
+    def _handle_floating_point_date_values(
+            timedict: dict[str, int | float],
+    ) -> None:
         # check non-whole numbers, and shift "0.2m" to 0.2*60 = 12 seconds
         def decimals(time: float) -> float:
             """
@@ -218,7 +245,10 @@ class TimeParser:
             timedict["f"] += decimals(timedict["s"]) * 1000000
             timedict["s"] = int(timedict["s"])
 
-        # check overflows
+    @staticmethod
+    def _check_date_overflows(
+            timedict: dict[str, int | float],
+    ) -> None:
         if timedict["s"] >= 60:
             timedict["m"] += timedict["s"] // 60
             timedict["s"] %= 60
@@ -233,23 +263,3 @@ class TimeParser:
             timedict["M"] %= 12
         if timedict["y"] >= 3999 or timedict["d"] >= 1500000:
             raise ValueError("I don't think I can remind you in that long!")
-
-        # round everything down to the nearest whole number
-        rounded_timedict = {i: int(j) for i, j in timedict.items()}
-
-        distance = datetime(
-            rounded_timedict["y"],
-            rounded_timedict["M"],
-            1,  # add days using timedelta(days=d)
-            rounded_timedict["h"],
-            rounded_timedict["m"],
-            rounded_timedict["s"],
-            rounded_timedict["f"],
-            tzinfo=start_date.tzinfo
-        )
-        # You cant have >31 days in a month, but if overflow is given,
-        #  then let this timedelta calculate the new months/years
-        distance += timedelta(days=rounded_timedict["d"] - 1)
-        # ^ -1 cuz datetime.day has to start at 1 (first day of the month)
-
-        return distance

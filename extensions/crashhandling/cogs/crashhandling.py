@@ -9,7 +9,6 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from extensions.settings.objects import AttributeKeys
 from resources.abc import MessageableGuildChannel
 from resources.checks import (
     CommandDoesNotSupportDMsCheckFailure,
@@ -158,10 +157,13 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
         The function will always try to respond to the interaction
         ephemerally.
     """
-    itx.response: discord.InteractionResponse[Bot]  # type: ignore
-    itx.followup: discord.Webhook  # type: ignore
     try:
         if itx.response.is_done():
+            # Response can be deferred,
+            #  in which case it can be public instead of ephemeral.
+            original_response = await itx.original_response()
+            if not original_response.flags.ephemeral:
+                await original_response.delete()
             await itx.followup.send(message, ephemeral=True)
         else:
             try:
@@ -176,8 +178,8 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
 class CrashHandling(commands.Cog):
     def __init__(self, client: Bot) -> None:
         self.client = client
-        client.on_error = self.on_error
-        client.tree.on_error = self.on_app_command_error
+        client.on_error = self.on_error  # type: ignore[method-assign]
+        client.tree.on_error = self.on_app_command_error  # type: ignore[method-assign]
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:

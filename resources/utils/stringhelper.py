@@ -35,3 +35,21 @@ def replace_string_command_mentions(text: str, client: Bot) -> str:
                 + client.get_command_mention(command_string)
                 + text[command_end_index + 2:])
     return text
+
+
+def ellipsize_string(text: str, max_length: int) -> str:
+    """
+    Add ellipses to a string if it's longer than **max_length**.
+
+    Strings that are shorter than max_length stay unchanged.
+     Strings that exceed max_length are trimmed and given ellipses at the end,
+     giving them a length equal to max_length.
+
+    :param text: The text to check length for.
+    :param max_length: The maximum length the string may be.
+    :return: A string with perhaps added ellipses.
+    """
+    assert max_length >= 3
+    if len(text) > max_length:
+        return text[:max_length - 3] + "..."
+    return text

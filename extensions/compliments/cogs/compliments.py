@@ -113,7 +113,7 @@ async def _choose_and_send_compliment(
 
     collection = async_rina_db["complimentblacklist"]  # todo: use DatabaseKeys
     query = {"user": user.id}
-    search: dict[str, int | list] | None = await collection.find_one(query)
+    search: dict[str, list] | None = await collection.find_one(query)  # type: ignore
     blacklist: list = []
     if search is not None:
         try:
@@ -122,7 +122,7 @@ async def _choose_and_send_compliment(
             pass
     query = {"user": itx.user.id}
 
-    search = await collection.find_one(query)
+    search = await collection.find_one(query)  # type: ignore
     if search is not None:
         try:
             blacklist += search["personal_list"]
@@ -135,6 +135,13 @@ async def _choose_and_send_compliment(
             if string in quotes[compliment_type][x - dec]:
                 del quotes[compliment_type][x - dec]
                 dec += 1
+
+    # Easter egg if targeting Rina
+    if user.id == getattr(itx.client.user, "id", None):
+        quotes[compliment_type] = [
+            "Hey Rina you're cute! Wow thanks Rina! You're welcome Rina! :)",
+        ]
+
     if len(quotes[compliment_type]) == 0:
         quotes[compliment_type].append(
             "No compliment quotes could be given... You and/or this person "
@@ -329,7 +336,7 @@ class Compliments(commands.Cog):
     def _contains_cuteness_assignment(msg: str) -> bool | None:
         # todo: upgrade cute-call detection hardware
         return (
-            ((("cute" or "cutie" or "adorable" in msg)
+            ((("cute" in msg or "cutie" in msg or "adorable" in msg)
               and "not" in msg)
              or "uncute" in msg)
             and "not uncute" not in msg
@@ -405,10 +412,10 @@ class Compliments(commands.Cog):
                     delete_after=8
                 )
 
-    @module_not_disabled_check(ModuleKeys.compliments)
     @app_commands.command(name="compliment",
                           description="Complement someone fem/masc/enby")
     @app_commands.describe(user="Who do you want to compliment?")
+    @module_not_disabled_check(ModuleKeys.compliments)
     async def compliment(
             self,
             itx: discord.Interaction[Bot],
@@ -467,8 +474,6 @@ class Compliments(commands.Cog):
             mode: int,
             string: str | None = None
     ) -> None:  # todo: split function into multiple smaller functions
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
-        itx.followup: discord.Webhook  # type: ignore
         db_location: ComplimentBlackboardType
         if location == 1:
             db_location = "personal_list"
@@ -533,7 +538,7 @@ class Compliments(commands.Cog):
             search0: dict[
                 ComplimentBlackboardType,
                 list[str]
-            ] | None = await collection.find_one(query)
+            ] | None = await collection.find_one(query)  # type: ignore
             if search0 is None:
                 await itx.response.send_message(
                     "There are no items on your blacklist, so you can't "
@@ -570,8 +575,8 @@ class Compliments(commands.Cog):
         elif mode == 3:  # check
             collection = itx.client.async_rina_db["complimentblacklist"]
             query = {"user": itx.user.id}
-            search1: dict[str, int | list] | None = \
-                await collection.find_one(query)
+            search1: dict[str, list] | None = \
+                await collection.find_one(query)  # type: ignore
             if search1 is None:
                 await itx.response.send_message(
                     "There are no strings in your blacklist, so... nothing "

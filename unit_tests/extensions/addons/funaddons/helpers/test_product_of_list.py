@@ -15,10 +15,10 @@ from extensions.addons.cogs.funaddons import _product_of_list
     ([1] * 100, 1),  # longer list
 
     # I accidentally wrote this test function a second time.
-    ([1, 2, 3], 1*2*3),  # Positive
-    ([-1, -2, -3], -1*-2*-3),  # Negative
-    ([1.2, 0.3], 1.2*0.3),  # floats
-    ([-1, 2, 3], -1*2*3),  # Mixed
+    ([1, 2, 3], 1 * 2 * 3),  # Positive
+    ([-1, -2, -3], -1 * -2 * -3),  # Negative
+    ([1.2, 0.3], 1.2 * 0.3),  # floats
+    ([-1, 2, 3], -1 * 2 * 3),  # Mixed
     ([994, 943, 0], 0),  # Zero
     ([], 1),  # empty list
 ])

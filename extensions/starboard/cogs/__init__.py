@@ -1,3 +1,5 @@
-__all__ = ['Starboard']
+__all__ = [
+    'Starboard',
+]
 
 from extensions.starboard.cogs.starboard import Starboard

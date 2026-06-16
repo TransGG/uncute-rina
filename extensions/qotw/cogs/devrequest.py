@@ -3,7 +3,11 @@ import discord.ext.commands as commands
 import discord.app_commands as app_commands
 
 from extensions.qotw.utils import create_thread, ping_open_threads
-from extensions.settings.objects import AttributeKeys, ModuleKeys, ServerSettings, ServerAttributes
+from extensions.settings.objects import (
+    AttributeKeys,
+    ModuleKeys,
+    ServerAttributes,
+)
 from resources.abc import GuildInteraction
 from resources.checks import (
     is_staff_check,
@@ -36,7 +40,7 @@ class DevRequest(commands.Cog):
             suggestion: app_commands.Range[str, 25, 1500],
     ) -> None:
         developer_request_channel = itx.client.get_guild_attributes(
-                itx.guild).developer_request_channel
+            itx.guild).developer_request_channel
         if developer_request_channel is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.dev_requests,
@@ -54,7 +58,8 @@ class DevRequest(commands.Cog):
         await itx.response.defer(ephemeral=True)
 
         title = "BotRQ-" + suggestion.replace("\\n", "\n")[:48]
-        def reaction_role_lambda(attrs: ServerAttributes):
+
+        def reaction_role_lambda(attrs: ServerAttributes) -> discord.Role | None:
             return attrs.developer_request_reaction_role
 
         await create_thread(

@@ -119,45 +119,46 @@ async def _create_new_custom_vc(
         )
         raise
 
-    try:
-        await member.move_to(
-            vc,
-            reason="Opened a new voice channel through the vc hub thing."
-        )
-        cmd_editvc = client.get_command_mention("editvc")
-        await vc.send(
-            f"Voice channel <#{vc.id}> ({vc.id}) created by "
-            f"<@{member.id}> ({member.id}). Use {cmd_editvc} to edit the "
-            f"name/user limit.",
-            allowed_mentions=discord.AllowedMentions.none()
-        )
-        for custom_vc in customvc_category.voice_channels:
-            if custom_vc.id == customvc_hub or custom_vc.id == vc.id:
-                continue
-            await custom_vc.edit(position=custom_vc.position + 1)
-    except discord.HTTPException as ex:
+    await member.move_to(
+        vc,
+        reason="Opened a new voice channel through the vc hub thing."
+    )
+    cmd_editvc = client.get_command_mention("editvc")
+    await vc.send(
+        f"Voice channel <#{vc.id}> ({vc.id}) created by "
+        f"<@{member.id}> ({member.id}). Use {cmd_editvc} to edit the "
+        f"name/user limit.",
+        allowed_mentions=discord.AllowedMentions.none()
+    )
+    for custom_vc in customvc_category.voice_channels:
+        if custom_vc.id == customvc_hub or custom_vc.id == vc.id:
+            continue
+
         try:
-            await member.move_to(
-                None,
-                reason="Couldn't create a new Custom voice channel so kicked "
-                       "them from their current vc to prevent them staying "
-                       "in the main customvc hub"
-            )
-            # no need to delete vc if they are kicked out of the
-            #  channel, cause then the next event
-            #  (on_voice_state_update) will notice that they left
-            #  the channel.
-        except discord.HTTPException:
-            await vc.delete()
-        warning = str(ex) + (": User clicked the vcHub too fast, and it "
-                             "couldn't move them to their new channel\n")
-        await log_to_guild(client, member.guild, msg=warning)
-        raise
+            await custom_vc.edit(position=custom_vc.position + 1)
+        except discord.HTTPException as ex:
+            try:
+                await member.move_to(
+                    None,
+                    reason="Couldn't create a new Custom voice channel so kicked "
+                           "them from their current vc to prevent them staying "
+                           "in the main customvc hub"
+                )
+                # no need to delete vc if they are kicked out of the
+                #  channel, cause then the next event
+                #  (on_voice_state_update) will notice that they left
+                #  the channel.
+            except discord.HTTPException:
+                await vc.delete()
+            warning = str(ex) + (": User clicked the vcHub too fast, and it "
+                                 "couldn't move them to their new channel\n")
+            await log_to_guild(client, member.guild, msg=warning)
+            raise
 
     await log_to_guild(
         client,
         member.guild,
-        warning + f"{member.nick or member.name} ({member.id}) created and "
+        warning + f"{member.name} ({member.id}) created and "
                   f"joined voice channel {vc.id} (with the default name)."
     )
 
@@ -182,7 +183,7 @@ async def _handle_delete_custom_vc(
             client,
             member.guild,
             f":warning: **WARNING!! Couldn't delete CustomVC channel** "
-            f"{member.nick or member.name} ({member.id}) left voice channel "
+            f"{member.name} ({member.id}) left voice channel "
             f"\"{voice_channel.name}\" ({voice_channel.id}), and "
             f"was the last one in it, but it **could not be deleted**!"
         )
@@ -190,7 +191,7 @@ async def _handle_delete_custom_vc(
     await log_to_guild(
         client,
         member.guild,
-        f"{member.nick or member.name} ({member.id}) left voice channel "
+        f"{member.name} ({member.id}) left voice channel "
         f"\"{voice_channel.name}\" ({voice_channel.id}), and was the last one "
         f"in it, so it was deleted."
     )
@@ -258,13 +259,14 @@ class CustomVcs(commands.Cog):
                 }.items()
                 if value is None
             ]
+            # noinspection PyTypeChecker
             raise MissingAttributesCheckFailure(
                 ModuleKeys.custom_vcs, missing)
 
         if (before.channel is not None
                 and before.channel in before.channel.guild.voice_channels):
             if (
-                    type(before.channel) is discord.VoiceChannel
+                    isinstance(before.channel, discord.VoiceChannel)
                     and is_vc_custom(
                         before.channel, customvc_category, customvc_hub,
                         blacklisted_channels, vc_blacklist_prefix)
@@ -274,9 +276,9 @@ class CustomVcs(commands.Cog):
                     self.client, member, before.channel, vctable_prefix)
 
         if (
-                after.channel is not None
-                and type(after.channel) is discord.VoiceChannel
-                and after.channel == customvc_hub
+                after.channel == customvc_hub
+                and after.channel is not None
+                and isinstance(after.channel, discord.VoiceChannel)
         ):
             await _create_new_custom_vc(
                 self.client,
@@ -316,6 +318,7 @@ class CustomVcs(commands.Cog):
                 AttributeKeys.custom_vc_blacklist_prefix: vc_blacklist_prefix
             }.items()
                 if value is None]
+            # noinspection PyTypeChecker
             raise MissingAttributesCheckFailure(
                 ModuleKeys.custom_vcs, missing)
 
@@ -343,6 +346,13 @@ class CustomVcs(commands.Cog):
             return
 
         channel = itx.user.voice.channel
+        if isinstance(channel, discord.StageChannel):
+            await itx.response.send_message(
+                "You can't edit Stage Channels! Make sure you are in a Voice Channel!",
+                ephemeral=True,
+            )
+        assert isinstance(channel, discord.VoiceChannel)
+
         if (channel.category is None
                 or channel.category != vc_category
                 or channel.id == vc_hub
@@ -354,8 +364,7 @@ class CustomVcs(commands.Cog):
             )
             return
 
-        if (isinstance(channel, discord.VoiceChannel)
-                and is_vc_custom(channel, vc_category, vc_hub, vc_blacklisted_channels, vc_blacklist_prefix)
+        if (is_vc_custom(channel, vc_category, vc_hub, vc_blacklisted_channels, vc_blacklist_prefix)
                 and not is_vc_table_owner(channel, itx.user)):
             await itx.response.send_message(
                 "You are not an owner of this VC Table so cannot change the name or user limit.",
@@ -395,85 +404,132 @@ class CustomVcs(commands.Cog):
 
         old_name = channel.name
         old_limit = channel.user_limit
-        try:
-            if not limit and not name:
-                await itx.response.send_message(
-                    "You can edit your channel with this command. Set a value "
-                    "for the name or the maximum user limit.",
-                    ephemeral=True)
-            if not limit and name:
-                await channel.edit(
-                    reason=f"Voice channel renamed from \"{channel.name}\" "
-                           f"to \"{name}\"",
-                    name=str(name)  # apparently literals aren't strings...?
+
+        # todo: confirm if _optimize_api_call is actually necessary...
+        #  The library code seemed to indicate so but I never tested it.
+        class Missing:
+            pass
+
+        async def _optimize_api_call(
+                voice_channel: discord.VoiceChannel,
+                reason: str,
+                user_limit: int | Missing,
+                rename: str | Missing,
+        ) -> None:
+            assert not (isinstance(user_limit, Missing) and isinstance(rename, Missing))
+
+            if isinstance(rename, Missing):
+                if not isinstance(user_limit, Missing):
+                    await voice_channel.edit(
+                        reason=reason,
+                        user_limit=user_limit,
+                    )
+            else:  # rename has a value
+                if not isinstance(user_limit, Missing):
+                    await voice_channel.edit(
+                        reason=reason,
+                        name=rename,
+                        user_limit=user_limit,
+                    )
+                else:
+                    await voice_channel.edit(
+                        reason=reason,
+                        name=rename,
+                    )
+
+        async def _try_change(
+                voice_channel: discord.VoiceChannel,
+                reason: str,
+                user_limit: int | Missing = Missing(),
+                rename: str | Missing = Missing(),
+        ) -> None:
+            try:
+                await _optimize_api_call(
+                    voice_channel,
+                    reason,
+                    user_limit,
+                    rename,
                 )
-                username = getattr(itx.user, 'nick', None) or itx.user.name
+            except discord.HTTPException as ex:
+                ex_message = repr(ex).split("(", 1)[1][1:-2]
                 await log_to_guild(
                     itx.client,
                     itx.guild,
-                    f"Voice channel ({channel.id}) renamed from "
-                    f"\"{old_name}\" to \"{name}\" (by "
-                    f"{username}, {itx.user.id})"
+                    f"Warning! >> {ex_message} << "
+                    f"{itx.user.name} ({itx.user.id}) "
+                    f"tried to change {old_name} ({channel.id}) to {name}, but "
+                    f"wasn't allowed to by discord, probably because it's in a "
+                    f"banned word list for discord's discovery "
+                    f"<@262913789375021056>"
                 )
-                await itx.response.send_message(
-                    warning + f"Voice channel successfully renamed "
-                              f"to \"{name}\"",
-                    ephemeral=True,
-                    allowed_mentions=discord.AllowedMentions.none()
-                )
-            if limit and not name:
-                await channel.edit(
-                    reason=f"Voice channel limit edited from \"{old_limit}\" "
-                           f"to \"{limit}\"",
-                    user_limit=limit
-                )
-                await log_to_guild(
-                    itx.client,
-                    itx.guild,
-                    f"Voice channel \"{old_name}\" ({channel.id}) edited the "
-                    f"user limit from \"{old_limit}\" to \"{limit}\" "
-                    f"(by {getattr(itx.user, "nick") or itx.user.name}, "
-                    f"{itx.user.id})"
-                )
-                await itx.response.send_message(
-                    warning + f"Voice channel user limit for \"{old_name}\" "
-                              f"successfully edited from \"{old_limit}\" to "
-                              f"\"{limit}\"",
-                    ephemeral=True,
-                    allowed_mentions=discord.AllowedMentions.none()
-                )
-            if limit and name:
-                await channel.edit(
-                    reason=f"Voice channel edited from name: "
-                           f"\"{channel.name}\" to \"{name}\" and user limit "
-                           f"from \"{limit}\" to \"{old_limit}\"",
-                    user_limit=limit,
-                    name=str(name)  # Literal is apparently not a string?
-                )
-                username = getattr(itx.user, 'nick', None) or itx.user.name
-                await log_to_guild(
-                    itx.client,
-                    itx.guild,
-                    f"{username} ({itx.user.id}) "
-                    f"changed VC ({channel.id}) name \"{old_name}\" to "
-                    f"\"{name}\" and user limit from \"{old_limit}\" to "
-                    f"\"{limit}\""
-                )
-                await itx.response.send_message(
-                    warning + "Voice channel name and user limit "
-                              "successfully edited.",
-                    ephemeral=True,
-                    allowed_mentions=discord.AllowedMentions.none()
-                )
-        except discord.errors.HTTPException as ex:
-            ex_message = repr(ex).split("(", 1)[1][1:-2]
+
+        if not limit and not name:
+            await itx.response.send_message(
+                "You can edit your channel with this command. Set a value "
+                "for the name or the maximum user limit.",
+                ephemeral=True)
+        if not limit and name:
+            await _try_change(
+                channel,
+                "Voice channel renamed from \"{channel.name}\" "
+                "to \"{name}\"",
+                rename=name,  # apparently literals aren't strings...?
+            )
             await log_to_guild(
                 itx.client,
                 itx.guild,
-                f"Warning! >> {ex_message} << "
-                f"{itx.user.nick or itx.user.name} ({itx.user.id}) "
-                f"tried to change {old_name} ({channel.id}) to {name}, but "
-                f"wasn't allowed to by discord, probably because it's in a "
-                f"banned word list for discord's discovery "
-                f"<@262913789375021056>"
+                f"Voice channel ({channel.id}) renamed from "
+                f"\"{old_name}\" to \"{name}\" (by "
+                f"{itx.user.name}, {itx.user.id})"
+            )
+            await itx.response.send_message(
+                warning + f"Voice channel successfully renamed "
+                          f"to \"{name}\"",
+                ephemeral=True,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
+        if limit and not name:
+            await _try_change(
+                channel,
+                reason=f"Voice channel limit edited from \"{old_limit}\" "
+                       f"to \"{limit}\"",
+                user_limit=limit
+            )
+            await log_to_guild(
+                itx.client,
+                itx.guild,
+                f"Voice channel \"{old_name}\" ({channel.id}) edited the "
+                f"user limit from \"{old_limit}\" to \"{limit}\" "
+                f"(by {itx.user.name}, "
+                f"{itx.user.id})"
+            )
+            await itx.response.send_message(
+                warning + f"Voice channel user limit for \"{old_name}\" "
+                          f"successfully edited from \"{old_limit}\" to "
+                          f"\"{limit}\"",
+                ephemeral=True,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
+        if limit and name:
+            await _try_change(
+                channel,
+                reason=f"Voice channel edited from name: "
+                       f"\"{channel.name}\" to \"{name}\" and user limit "
+                       f"from \"{limit}\" to \"{old_limit}\"",
+                user_limit=limit,
+                rename=str(name)  # Literal is apparently not a string?
+            )
+            await log_to_guild(
+                itx.client,
+                itx.guild,
+                f"{itx.user.name} ({itx.user.id}) "
+                f"changed VC ({channel.id}) name \"{old_name}\" to "
+                f"\"{name}\" and user limit from \"{old_limit}\" to "
+                f"\"{limit}\""
+            )
+            await itx.response.send_message(
+                warning + "Voice channel name and user limit "
+                          "successfully edited.",
+                ephemeral=True,
+                allowed_mentions=discord.AllowedMentions.none()
             )

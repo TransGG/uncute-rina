@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import typing
+from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ^ for periodic timers
@@ -107,19 +108,11 @@ def get_token_data() -> tuple[
      for an api used in the program.
     """
     load_progress.begin("Loading api keys...")
-    tokens = {}
-    missing_tokens: list[str] = []
     try:
         with open("api_keys.json", "r", encoding="utf-8") as f:
             api_keys = json.loads(f.read())
         bot_token: str = api_keys['Discord']
-        for key in ApiTokenDict.__annotations__:
-            # copy every other key to a new dictionary to check if every
-            #  key is in the file.
-            if key not in api_keys:
-                missing_tokens.append(key)
-                continue
-            tokens[key] = api_keys[key]
+        missing_tokens, tokens = _filter_api_keys(api_keys)
     except FileNotFoundError:
         raise
     except json.decoder.JSONDecodeError as ex:
@@ -143,6 +136,21 @@ def get_token_data() -> tuple[
     load_progress.complete("Loaded database clusters", newline=False)
 
     return bot_token, tokens, rina_db, async_rina_db
+
+
+def _filter_api_keys(
+        api_keys: dict[str, typing.Any],
+) -> tuple[list[str], dict[str, Any]]:
+    tokens = {}
+    missing_tokens: list[str] = []
+    for key in ApiTokenDict.__annotations__:
+        # copy every other key to a new dictionary to check if every
+        #  key is in the file.
+        if key not in api_keys:
+            missing_tokens.append(key)
+            continue
+        tokens[key] = api_keys[key]
+    return missing_tokens, tokens
 
 
 def get_version() -> str:
@@ -283,7 +291,7 @@ def start_app() -> None:
     async def setup_hook() -> None:
         start_progress.complete("Started Bot")
         start_progress.begin("Caching bot's command names and their ids")
-        client.commandList = await client.tree.fetch_commands()
+        client.slash_command_list = await client.tree.fetch_commands()
         start_progress.complete("Cached bot's command names and their ids")
         start_progress.begin("Load extensions and scheduler")
         logger = logging.getLogger("apscheduler")

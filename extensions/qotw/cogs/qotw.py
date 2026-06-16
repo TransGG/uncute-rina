@@ -6,6 +6,7 @@ from extensions.qotw.utils import create_thread
 from extensions.settings.objects import (
     ModuleKeys,
     AttributeKeys,
+    ServerAttributes,
 )
 from resources.checks import (
     module_enabled_check,
@@ -56,7 +57,7 @@ class QOTW(commands.Cog):
 
         await itx.response.defer(ephemeral=True)
 
-        def reaction_role_lambda(attrs: ServerAttributes):
+        def reaction_role_lambda(attrs: ServerAttributes) -> discord.Role:
             # this one is kinda silly...
             # but it only sends the message, and then removes it immediately after,
             # so it doesn't really matter that this is mentioning a channel instead of a role.

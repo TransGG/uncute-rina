@@ -115,6 +115,8 @@ class WolframSubpod(TypedDict, total=False):
     moutput: Any
     cell: Any
     states: list[WolframPodState | WolframPodStateDict]
+    nodata: Any
+    error: Any
 
 
 class WolframPodInfo(TypedDict):

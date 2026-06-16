@@ -6,10 +6,7 @@ import discord.app_commands as app_commands
 import discord.ext.commands as commands
 
 from extensions.help.cogs import send_help_menu
-from extensions.settings.objects import (
-    AttributeKeys,
-    ModuleKeys,
-)
+from extensions.settings.objects import ModuleKeys
 from extensions.tags.local_tag_list import (
     create_tag,
     remove_tag,
@@ -246,7 +243,6 @@ class TagFunctions(commands.Cog):
             mode: str,
             tag_name: str,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         if mode == TagMode.help.value:
             await send_help_menu(itx, 901)
         elif mode == TagMode.create.value:

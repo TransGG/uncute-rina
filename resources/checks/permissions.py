@@ -3,8 +3,6 @@ import discord
 
 from typing import TYPE_CHECKING
 
-from extensions.settings.objects import AttributeKeys
-
 if TYPE_CHECKING:
     from resources.customs import Bot
 

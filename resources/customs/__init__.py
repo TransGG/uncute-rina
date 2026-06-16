@@ -1,6 +1,6 @@
 __all__ = [
     'Bot',
-    'ProgressBar'
+    'ProgressBar',
 ]
 
 from .bot import Bot

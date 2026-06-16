@@ -55,7 +55,7 @@ def debug(
     if type(text) is not str:
         text = repr(text)
 
-    detail_color = {
+    detail_color_map = {
         "&0": "40",
         "&8": "40",
         "&1": "44",
@@ -90,20 +90,20 @@ def debug(
         "r": "0",
     }
     if advanced:
-        for _detColor in detail_color:
-            while "&" + _detColor in text:
+        for detail_color, ansi_code in detail_color_map.items():
+            while "&" + detail_color in text:
                 text_tmp = text
                 text = text.replace(
-                    "m&" + _detColor,
-                    ";" + detail_color[_detColor] + "m",
+                    "m&" + detail_color,
+                    ";" + ansi_code + "m",
                     1
                 )
                 if text_tmp == text:
                     # No previous coloring found to replace, so add a
                     #  new one instead. (no m&)
                     text = text.replace(
-                        "&" + _detColor,
-                        "\033[" + detail_color[_detColor] + "m",
+                        "&" + detail_color,
+                        "\033[" + ansi_code + "m",
                         1
                     )
         color = DebugColor.default

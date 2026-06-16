@@ -4,7 +4,11 @@ import discord
 import discord.ext.commands as commands
 
 from extensions.qotw.utils import create_thread
-from extensions.settings.objects import AttributeKeys, ModuleKeys
+from extensions.settings.objects import (
+    AttributeKeys,
+    ModuleKeys,
+    ServerAttributes,
+)
 from resources.abc import GuildMessage
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
@@ -21,7 +25,7 @@ class BanAppealReactionsAddon(commands.Cog):
             return
         message = typing.cast(GuildMessage, message)
         ban_appeal_webhook_id = self.client.get_guild_attributes(
-                message.guild).ban_appeal_webhook_id
+            message.guild).ban_appeal_webhook_id
         if ban_appeal_webhook_id is None:
             raise MissingAttributesCheckFailure(
                 ModuleKeys.ban_appeal_reactions,
@@ -68,7 +72,8 @@ class BanAppealReactionsAddon(commands.Cog):
             )
 
         username: str = field_value or "Empty username"
-        def reaction_role_lambda(attrs: ServerAttributes):
+
+        def reaction_role_lambda(attrs: ServerAttributes) -> discord.Role | None:
             return attrs.ban_appeal_reaction_role
 
         await create_thread(

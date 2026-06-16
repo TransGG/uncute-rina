@@ -1,3 +1,6 @@
+import typing
+from typing import Any
+
 import aiohttp
 import discord
 import discord.app_commands as app_commands
@@ -5,10 +8,9 @@ import discord.ext.commands as commands
 
 from extensions.settings.objects import (
     ModuleKeys,
-    AttributeKeys,
 )
 from resources.abc import MessageableGuildChannel
-from resources.checks import ModuleNotEnabledCheckFailure, module_enabled_check
+from resources.checks import module_enabled_check
 from resources.checks.command_checks import is_in_dms, module_not_disabled_check
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log add_poll_reactions
@@ -20,7 +22,11 @@ MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
 
-currency_options = dict.fromkeys(
+# make mypy happy by typing the same way as the conversion_rates dictionary
+currency_options: dict[
+    str,
+    tuple[float | int, float | int, str]
+] = dict.fromkeys(
     "AED,AFN,ALL,AMD,ANG,AOA,ARS,AUD,AWG,AZN,BAM,BBD,BDT,BGN,BHD,BIF,BMD,"
     "BND,BOB,BRL,BSD,BTC,BTN,BWP,BYN,BZD,CAD,CDF,CHF,CLF,CLP,CNH,CNY,COP,"
     "CRC,CUC,CUP,CVE,CZK,DJF,DKK,DOP,DZD,EGP,ERN,ETB,EUR,FJD,FKP,GBP,GEL,"
@@ -33,77 +39,83 @@ currency_options = dict.fromkeys(
     "VEF,VES,VND,VUV,WST,XAF,XAG,XAU,XCD,XCG,XDR,XOF,XPD,XPF,XPT,YER,ZAR,"
     "ZMW,ZWG,ZWL"
     .split(","),
-    0
+    (0, 0, "-")
 )
 
-conversion_rates = {  # [default 0, incrementation]
+conversion_rates: dict[
+    str,
+    dict[
+        str,
+        tuple[float | int, float | int, str]
+    ]
+] = {  # [default 0, incrementation]
     "temperature": {
-        "Celsius": [273.15, 1, "°C"],
-        "Kelvin": [0, 1, "K"],
-        "Fahrenheit": [459.67, 1.8, "°F"],
-        "Rankine": [0, 1.8, "°R"]
+        "Celsius": (273.15, 1, "°C"),
+        "Kelvin": (0, 1, "K"),
+        "Fahrenheit": (459.67, 1.8, "°F"),
+        "Rankine": (0, 1.8, "°R"),
     },
     "length": {
-        "kilometer": [0, 0.001, "km"],
-        "hectometer": [0, 0.01, "hm"],
-        "meter": [0, 1, "m"],
-        "decimeter": [0, 10, "dm"],
-        "centimeter": [0, 100, "cm"],
-        "millimeter": [0, 1000, "mm"],
-        "micrometer": [0, 10 ** 6, "μm"],
-        "nanometer": [0, 10 ** 9, "nm"],
-        "picometer": [0, 10 ** 12, "pm"],
-        "femtometer": [0, 10 ** 15, "fm"],
-        "ångström": [0, 10 ** 10, "Å"],
+        "kilometer": (0, 0.001, "km"),
+        "hectometer": (0, 0.01, "hm"),
+        "meter": (0, 1, "m"),
+        "decimeter": (0, 10, "dm"),
+        "centimeter": (0, 100, "cm"),
+        "millimeter": (0, 1000, "mm"),
+        "micrometer": (0, 10 ** 6, "μm"),
+        "nanometer": (0, 10 ** 9, "nm"),
+        "picometer": (0, 10 ** 12, "pm"),
+        "femtometer": (0, 10 ** 15, "fm"),
+        "ångström": (0, 10 ** 10, "Å"),
 
-        "mile": [0, 0.0006213711922373339, "mi"],
-        "yard": [0, 1.09361329833770778652, "yd"],
-        "foot": [0, 3.28083989501312335958, "ft"],
-        "inch": [0, 39.37007874015748031496, "in"],
+        "mile": (0, 0.0006213711922373339, "mi"),
+        "yard": (0, 1.09361329833770778652, "yd"),
+        "foot": (0, 3.28083989501312335958, "ft"),
+        "inch": (0, 39.37007874015748031496, "in"),
 
     },
     "surface area": {
-        "square kilometer": [0, 0.000001, "km²"],
-        "square meter": [0, 1, "m²"],
-        "square centimeter": [0, 10000, "cm²"],
-        "square mile": [0, 0.00000038610215854781256, "mi²"],
-        "square yard": [0, 1.19599, "yd²"],
-        "square feet": [0, 10.76391, "ft²"],
-        "square inch": [0, 1550, "in²"],
-        "hectare": [0, 0.0001, "ha"],
-        "acre": [0, 0.00024710538146716534, "ac"]
+        "square kilometer": (0, 0.000001, "km²"),
+        "square meter": (0, 1, "m²"),
+        "square centimeter": (0, 10000, "cm²"),
+        "square mile": (0, 0.00000038610215854781256, "mi²"),
+        "square yard": (0, 1.19599, "yd²"),
+        "square feet": (0, 10.76391, "ft²"),
+        "square inch": (0, 1550, "in²"),
+        "hectare": (0, 0.0001, "ha"),
+        "acre": (0, 0.00024710538146716534, "ac"),
     },
     "volume": {
-        "cubic meter": [0, 1, "m³"],
-        "cubic centimeter": [0, 1000000, "cm³"],
-        "cubic feet": [0, 35.31466666, "ft³"],
-        "quart": [0, 1056.688209, "qt"],
-        "pint": [0, 2113.376419, "pt"],
-        "fluid ounce": [0, 33814.0227, "fl oz"],
-        "milliliter": [0, 1000000, "mL"],
-        "liter": [0, 1000, "L"],
-        "gallon": [0, 264.172052, "gal"],
-        "cup": [0, 4226.752838, "cp"],
+        "cubic meter": (0, 1, "m³"),
+        "cubic centimeter": (0, 1000000, "cm³"),
+        "cubic feet": (0, 35.31466666, "ft³"),
+        "quart": (0, 1056.688209, "qt"),
+        "pint": (0, 2113.376419, "pt"),
+        "fluid ounce": (0, 33814.0227, "fl oz"),
+        "milliliter": (0, 1000000, "mL"),
+        "liter": (0, 1000, "L"),
+        "gallon": (0, 264.172052, "gal"),
+        "cup": (0, 4226.752838, "cp"),
     },
     "speed": {
-        "meter per second": [0, 1, "m/s"],
-        "feet per second": [0, 3.28084, "ft/s"],
-        "kilometers per hour": [0, 3.6, "km/h"],
-        "miles per hour": [0, 2.23694, "mph"],
-        "knots": [0, 1.94384, "kn"]
+        "meter per second": (0, 1, "m/s"),
+        "feet per second": (0, 3.28084, "ft/s"),
+        "kilometers per hour": (0, 3.6, "km/h"),
+        "miles per hour": (0, 2.23694, "mph"),
+        "knots": (0, 1.94384, "kn"),
     },
     "weight": {
-        "kilogram": [0, 1, "kg"],
-        "gram": [0, 1000, "g"],
-        "milligram": [0, 1000000, "mg"],
-        "ounce": [0, 35.273962, "oz"],  # 28.349523125
-        "pound": [0, 2.20462262, "lb"],  # 0.45359237
-        "stone": [0, 0.157473],
-        "US ton": [0, 0.001102311310924388],
-        "UK ton": [0, 0.0009842065264486655],
-        "Metric ton": [0, 0.001],
+        "kilogram": (0, 1, "kg"),
+        "gram": (0, 1000, "g"),
+        "milligram": (0, 1000000, "mg"),
+        "ounce": (0, 35.273962, "oz."),  # 28.349523125
+        "pound": (0, 2.20462262, "lb"),  # 0.45359237
+        "stone": (0, 0.157473, "st."),
+        "US ton": (0, 0.001102311310924388, "tn"),
+        "UK ton": (0, 0.0009842065264486655, "long ton"),
+        "Metric ton": (0, 0.001, "t"),
     },
-    "currency": currency_options,
+    "currency": currency_options,  # this is just for autocomplete
     "time": {
         # 365.2421896698-6.15359\cdot10^{-6}a-7.29
         #  \cdot10^{-10}a^{2}+2.64\cdot10^{-10}a^{3}
@@ -113,22 +125,36 @@ conversion_rates = {  # [default 0, incrementation]
         #     after which it will be 31556925.0
         # 31556925.0 will hold up for another 18 years (until 2044);
         #  after which it will be 31556924.9 for 19 years (2063)
-        "decennium": [0, 1 / 315569251.0, "dec"],
-        "year": [0, 1 / 31556925.1, "yr"],
-        "month": [0, 12 / 31556925.1, "mo"],
-        "week": [0, 1 / 604800, "wk"],
-        "day": [0, 1 / 86400, "d"],
-        "hour": [0, 1 / 3600, "hr"],
-        "minute": [0, 1 / 60, "min"],
-        "second": [0, 1, "sec"],
-        "millisecond": [0, 10 ** 3, "ms"],
-        "microsecond": [0, 10 ** 6, "μs"],
-        "shake": [0, 10 ** 8, "shake"],
-        "nanosecond": [0, 10 ** 9, "ns"],
-        "picosecond": [0, 10 ** 12, "ps"],
-        "femtosecond": [0, 10 ** 15, "fs"],
+        "decennium": (0, 1 / 315569251.0, "dec"),
+        "year": (0, 1 / 31556925.1, "yr"),
+        "month": (0, 12 / 31556925.1, "mo"),
+        "week": (0, 1 / 604800, "wk"),
+        "day": (0, 1 / 86400, "d"),
+        "hour": (0, 1 / 3600, "hr"),
+        "minute": (0, 1 / 60, "min"),
+        "second": (0, 1, "sec"),
+        "millisecond": (0, 10 ** 3, "ms"),
+        "microsecond": (0, 10 ** 6, "μs"),
+        "shake": (0, 10 ** 8, "shake"),
+        "nanosecond": (0, 10 ** 9, "ns"),
+        "picosecond": (0, 10 ** 12, "ps"),
+        "femtosecond": (0, 10 ** 15, "fs"),
     }
 }
+
+
+class OpenExchangeRatesResponse(typing.TypedDict, total=False):
+    disclaimer: str
+    license: str
+    timestamp: int
+    base: str  # "USD"
+    rates: typing.Required[
+        dict[str, int | float]
+    ]  # basically currency_options
+
+
+class OpenExchangeRatesError(typing.TypedDict):
+    error: int
 
 
 def _get_emoji_from_str(
@@ -309,15 +335,21 @@ class OtherAddons(commands.Cog):
                     "https://openexchangerates.org/api/latest.json",
                     params=params
             ) as response:
-                data = await response.json()
-            if data.get("error", 0):
+                web_response: OpenExchangeRatesResponse | OpenExchangeRatesError = await response.json()
+            if web_response.get("error", 0):
                 await itx.response.send_message(
                     "I'm sorry, something went wrong while trying to get "
                     "the latest currency exchange rates.",
                     ephemeral=True
                 )
                 return
-            options = {x: [0, data['rates'][x], x] for x in data['rates']}
+            data = typing.cast(OpenExchangeRatesResponse, web_response)
+
+            # format api response the same as the other conversion dictionaries
+            options: dict[
+                str,
+                tuple[float, float, str]
+            ] = {x: (0, data['rates'][x], x) for x in data['rates']}
             from_unit = from_unit.upper()
             to_unit = to_unit.upper()
         else:
@@ -396,52 +428,25 @@ class OtherAddons(commands.Cog):
             )
             return
 
-        errors = []
-        message: discord.Message | None = None  # happy IDE
-        if message_id_str.isdecimal():
-            message_id = int(message_id_str)
-            try:
-                message = await itx.channel.fetch_message(message_id)
-            except discord.errors.NotFound:
-                errors.append("- I couldn't find a message with this ID!")
-            except discord.errors.Forbidden:
-                errors.append(
-                    "- I'm not allowed to find a message in this channel!")
-            except discord.errors.HTTPException:
-                errors.append("- Fetching the message failed.")
-        else:
-            errors.append("- The message ID needs to be a number!")
+        message_errors, message = await self.check_poll_reaction_message_id(
+            itx,
+            message_id_str,
+        )
+        channel_errors = self.check_poll_reaction_channel(
+            itx,
+        )
+        emoji_errors, downvote_emoji, neutral_emoji, upvote_emoji = self.get_poll_reaction_emojis(
+            itx,
+            downvote_emoji_str,
+            neutral_emoji_str,
+            upvote_emoji_str,
+        )
 
-        upvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, upvote_emoji_str)
-        if upvote_emoji is None:
-            errors.append("- I can't use this upvote emoji! "
-                          "(perhaps it's a nitro emoji)")
-
-        downvote_emoji: MaybeEmoji = _get_emoji_from_str(
-            itx.client, downvote_emoji_str)
-        if downvote_emoji is None:
-            errors.append("- I can't use this downvote emoji! "
-                          "(perhaps it's a nitro emoji)")
-
-        if neutral_emoji_str is not None:
-            neutral_emoji: MaybeEmoji = _get_emoji_from_str(
-                itx.client, neutral_emoji_str)
-            if neutral_emoji is None:
-                errors.append("- I can't use this neutral emoji! "
-                              "(perhaps it's a nitro emoji)")
-        else:
-            neutral_emoji = None
-
-        blacklisted_channels: list[MessageableGuildChannel] = []
-        if itx.guild is not None:
-            blacklisted_channels = itx.client.get_guild_attributes(
-                itx.guild).poll_reaction_blacklisted_channels
-
-        if (blacklisted_channels is not None
-                and itx.channel.id in blacklisted_channels):
-            errors.append("- :no_entry: You are not allowed to use this "
-                          "command in this channel!")
+        errors = [
+            *message_errors,
+            *channel_errors,
+            *emoji_errors,
+        ]
 
         if errors or not message:
             await itx.response.send_message(
@@ -455,10 +460,7 @@ class OtherAddons(commands.Cog):
 
         try:
             await itx.response.send_message("Adding emojis...", ephemeral=True)
-            await message.add_reaction(upvote_emoji)
-            if neutral_emoji is not None:
-                await message.add_reaction(neutral_emoji)
-            await message.add_reaction(downvote_emoji)
+            await self.add_poll_reaction_emojis(message, downvote_emoji, neutral_emoji, upvote_emoji)
             await itx.edit_original_response(
                 content=":white_check_mark: Successfully added emojis")
         except discord.errors.Forbidden:
@@ -493,6 +495,93 @@ class OtherAddons(commands.Cog):
                 f"{itx.user.name} ({itx.user.id}) used {cmd_poll} "
                 f"on message {message.jump_url}"
             )
+
+    # region poll reaction helpers
+
+    @staticmethod
+    async def check_poll_reaction_message_id(
+            itx: discord.Interaction[Bot],
+            message_id_str: str,
+    ) -> tuple[
+            list[Any],
+            discord.Message | None,
+    ]:
+        errors = []
+        message: discord.Message | None = None  # happy IDE
+        if (itx.channel is None
+                or not hasattr(itx.channel, "fetch_message")):
+            errors.append(
+                "- This channel doesn't support messages (stage/category?)!",
+            )
+        elif message_id_str.isdecimal():
+            message_id = int(message_id_str)
+            try:
+                message = await itx.channel.fetch_message(message_id)
+            except discord.errors.NotFound:
+                errors.append("- I couldn't find a message with this ID!")
+            except discord.errors.Forbidden:
+                errors.append(
+                    "- I'm not allowed to find a message in this channel!")
+            except discord.errors.HTTPException:
+                errors.append("- Fetching the message failed.")
+        else:
+            errors.append("- The message ID needs to be a number!")
+        return errors, message
+
+    @staticmethod
+    def check_poll_reaction_channel(itx: discord.Interaction[Bot]) -> list[str]:
+        blacklisted_channels: list[MessageableGuildChannel] = []
+        if itx.guild is not None:
+            blacklisted_channels = itx.client.get_guild_attributes(
+                itx.guild,
+            ).poll_reaction_blacklisted_channels
+
+        if blacklisted_channels is not None and itx.channel is not None and itx.channel.id in blacklisted_channels:
+            return ["- :no_entry: You are not allowed to use this command in this channel!"]
+        return []
+
+    @staticmethod
+    def get_poll_reaction_emojis(
+            itx: discord.Interaction[Bot],
+            downvote_emoji_str: str,
+            neutral_emoji_str: str | None,
+            upvote_emoji_str: str
+    ) -> tuple[
+            list[str],
+            discord.Emoji | discord.PartialEmoji | None,
+            discord.Emoji | discord.PartialEmoji | None,
+            discord.Emoji | discord.PartialEmoji | None
+    ]:
+        errors = []
+        upvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, upvote_emoji_str)
+        if upvote_emoji is None:
+            errors.append("- I can't use this upvote emoji! (perhaps it's a nitro emoji)")
+
+        downvote_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, downvote_emoji_str)
+        if downvote_emoji is None:
+            errors.append("- I can't use this downvote emoji! (perhaps it's a nitro emoji)")
+
+        if neutral_emoji_str is not None:
+            neutral_emoji: MaybeEmoji = _get_emoji_from_str(itx.client, neutral_emoji_str)
+            if neutral_emoji is None:
+                errors.append("- I can't use this neutral emoji! (perhaps it's a nitro emoji)")
+        else:
+            neutral_emoji = None
+        return errors, downvote_emoji, neutral_emoji, upvote_emoji
+
+    @staticmethod
+    async def add_poll_reaction_emojis(
+        message: discord.Message,
+        downvote_emoji: discord.Emoji | discord.PartialEmoji,
+        neutral_emoji: discord.Emoji | discord.PartialEmoji | None,
+        upvote_emoji: discord.Emoji | discord.PartialEmoji,
+    ) -> None:
+        await message.add_reaction(upvote_emoji)
+        if neutral_emoji is not None:
+            await message.add_reaction(neutral_emoji)
+        await message.add_reaction(downvote_emoji)
+
+    # endregion poll reaction helpers
 
     @app_commands.command(
         name="get_rina_command_mention",

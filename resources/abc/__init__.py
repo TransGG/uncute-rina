@@ -1,7 +1,7 @@
 __all__ = [
     'ApiTokenDict',
-    'GuildMessage',
     'GuildInteraction',
+    'GuildMessage',
     'MessageableGuildChannel',
     'get_or_fetch_messageable_guild_channel',
 ]

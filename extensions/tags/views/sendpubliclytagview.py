@@ -1,8 +1,6 @@
 from __future__ import annotations
 import discord
 
-from extensions.settings.objects import AttributeKeys
-from resources.abc import MessageableGuildChannel
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild
 

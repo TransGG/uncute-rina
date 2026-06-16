@@ -1,5 +1,4 @@
 import dataclasses
-from typing import TypedDict
 from resources.abc import MessageableGuildChannel
 
 import discord
@@ -25,6 +24,7 @@ class ServerAttributes:
 
     This is stored in the client.
     """
+
     # When adding a new key to this class, make sure to add the same
     #  key to the ServerAttributes class.
     # If you're giving it a new type, make sure it gets parsed in
@@ -86,7 +86,8 @@ class ServerAttributes:
     # ^ needs to be able to have threads
     polls_channel_reaction_role: discord.Role | None = None
 
-def default_server_attributes[T](default: T | None = None):
+
+def default_server_attributes[T](default: T | None = None) -> ServerAttributes:
     out = ServerAttributes()
     if default is not None:
         # replace None values with `default`.

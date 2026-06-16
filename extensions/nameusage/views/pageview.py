@@ -39,7 +39,6 @@ class GetTopPageView(PageView):
             itx: discord.Interaction[Bot],
             view: PageView,
     ) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
         embed = self.make_page()
         await itx.response.edit_message(
             embed=embed,

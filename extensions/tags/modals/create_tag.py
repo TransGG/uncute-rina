@@ -47,7 +47,6 @@ class CreateTagModal(discord.ui.Modal):
             self,
             itx: discord.Interaction[Bot]
     ) -> None:
-        itx.response: discord.InteractionResponse  # type: ignore
         if itx.guild is None:
             await itx.response.send_message(
                 "Discord did not provide any Guild information when you "

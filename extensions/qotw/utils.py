@@ -1,10 +1,10 @@
 import typing
 
+from datetime import datetime
 import discord
 
-from extensions.settings.objects import GuildAttributeType
 from resources.customs import Bot
-from datetime import datetime
+from extensions.settings.objects import ServerAttributes
 
 
 # region create thread
@@ -119,9 +119,9 @@ def _create_main_embed(
                     f"({copyable_version.jump_url})",
         timestamp=datetime.now(),
     )
-    username = getattr(user, 'nick', user.name)
+    nick_or_username = user.display_name
     embed.set_author(
-        name=f"{username}",
+        name=f"{nick_or_username}",
         url=f"https://original.poster/{user.id}/",
         icon_url=user.display_avatar.url
     )

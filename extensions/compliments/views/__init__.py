@@ -1,3 +1,5 @@
-__all__ = ['ConfirmPronounsView']
+__all__ = [
+    'ConfirmPronounsView',
+]
 
 from extensions.compliments.views.confirmpronouns import ConfirmPronounsView

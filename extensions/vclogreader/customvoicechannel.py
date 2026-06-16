@@ -1,7 +1,8 @@
 import discord
 
 
-class CustomVoiceChannel:
+class CustomVoiceChannel(discord.VoiceChannel):
+    # noinspection PyMissingConstructor
     def __init__(
             self,
             channel_id: int,
@@ -21,5 +22,8 @@ class CustomVoiceChannel:
         """
         self.id = channel_id
         self.name = name
-        self.mention = "<#" + str(channel_id) + ">"
-        self.members = members
+        self.__members = members
+
+    @property
+    def members(self) -> list[discord.Member]:
+        return self.__members

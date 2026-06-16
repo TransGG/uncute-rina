@@ -221,9 +221,7 @@ class StaffAddons(commands.Cog):
     @app_commands.command(name="update", description="Update slash-commands")
     @is_staff_check
     async def update_command_tree(self, itx: GuildInteraction[Bot]) -> None:
-        itx.response: discord.InteractionResponse[Bot]  # type: ignore
-        itx.followup: discord.Webhook  # type: ignore
         await itx.response.defer(ephemeral=True)
         await itx.client.tree.sync()
-        itx.client.commandList = await itx.client.tree.fetch_commands()
+        itx.client.slash_command_list = await itx.client.tree.fetch_commands()
         await itx.followup.send("Updated commands")

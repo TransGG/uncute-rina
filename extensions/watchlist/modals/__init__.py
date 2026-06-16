@@ -1,3 +1,5 @@
-__all__ = ['WatchlistReasonModal']
+__all__ = [
+    'WatchlistReasonModal',
+]
 
 from .watchlistreasonmodal import WatchlistReasonModal
