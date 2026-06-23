@@ -37,6 +37,10 @@ from extensions.tags.tags import (
 )
 
 
+# for use in CustomTag.send()
+type TagName = str  # Correctly-capitalized tag name
+
+
 # To prevent excessive spamming when multiple people mention staff.
 #  A sort of cooldown
 report_message_reminder = datetime.min
@@ -182,16 +186,16 @@ class TagFunctions(commands.Cog):
             )
             return
 
+        tag_ids: set[TagName] = _get_enabled_tag_ids(itx)
+
         if tag_name == "help":
             await itx.response.send_message(
                 "List of tags currently available to send:\n"
-                + '\n'.join(["- " + i for i in tag_info_dict]),
+                + '\n'.join(["- " + i for i in tag_ids]),
                 ephemeral=True,
             )
             return
 
-        type TagName = str  # Correctly-capitalized tag name
-        tag_ids: set[TagName] = _get_enabled_tag_ids(itx)
         # Map to convert lowercased tag names to correctly-cased tag names.
         tag_map: dict[str, TagName] = {tag.lower(): tag for tag in tag_ids}
         tag: TagName | None = tag_map.get(tag_name.lower(), None)
