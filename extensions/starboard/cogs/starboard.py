@@ -121,7 +121,7 @@ async def _send_starboard_message(
     msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"  # noqa: E501
     embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
     embed.set_footer(text=f"{message.id}")
-    name = getattr(message.author, "nick", message.author.name)
+    name = getattr(message.author, "nick", None) or message.author.name
     embed.set_author(
         name=f"{name}",
         url=f"https://original.poster/{message.author.id}/",
@@ -290,7 +290,7 @@ async def _update_starboard_message_score(
     new_content = '**'.join(parts)
     # update embed message to keep most accurate nickname
     embeds = star_msg.embeds
-    name = getattr(orig_msg.author, "nick", orig_msg.author.name)
+    name = getattr(orig_msg.author, "nick", None) or orig_msg.author.name
     embeds[0].set_author(
         name=f"{name}",
         url=f"https://original.poster/{orig_msg.author.id}/",

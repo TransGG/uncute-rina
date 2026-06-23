@@ -254,7 +254,7 @@ async def _rina_used_deflect_and_it_was_very_effective(
         "Hey my lie detector said you are lying.",
         "No I am not cute",
         "k",
-        (getattr(message.author, 'nick', message.author.name)
+        ((getattr(message.author, 'nick', None) or message.author.name)
          + ", stop lying >:C"),
         "BAD!",
         ("https://cdn.discordapp.com/emojis/920918513969950750.webp"
@@ -269,12 +269,12 @@ async def _rina_used_deflect_and_it_was_very_effective(
         "No, you are <3",
         "Nope. I doubt it. There's no way I can be as cute as you",
         ("You gotta praise those around you as well. "
-         + getattr(message.author, 'nick', message.author.name)
+         + (getattr(message.author, 'nick', None) or message.author.name)
          + ", for example, is very cute."),
         ("Oh by the way, did I say "
-         + getattr(message.author, 'nick', message.author.name)
+         + (getattr(message.author, 'nick', None) or message.author.name)
          + " was cute yet? I probably didn't. "
-         + getattr(message.author, 'nick', message.author.name)
+         + (getattr(message.author, 'nick', None) or message.author.name)
          + "? You're very cute"),
         "You know I'm not a mirror, right?",
         "*And the oscar for cutest responses goes to..  YOU!!*",
