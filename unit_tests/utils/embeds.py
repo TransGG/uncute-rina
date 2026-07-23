@@ -1,10 +1,7 @@
 import discord
-from typing import TYPE_CHECKING
+import typing
 
-from discord.types.embed import EmbedField
-
-if TYPE_CHECKING:
-    from discord.types import embed as d_embed
+from discord.types import embed as d_embed
 
 
 def get_embed_issues(embed: discord.Embed) -> tuple[list[str], int]:
@@ -24,40 +21,44 @@ def get_embed_issues(embed: discord.Embed) -> tuple[list[str], int]:
     issues = []
     total_characters = 0
 
-    embed_dict = embed.to_dict()
+    embed_dict: d_embed.Embed = embed.to_dict()
     for key, value in embed_dict.items():
+        value_str: str  # mypy moment
         match key:
             case "title":
-                total_characters += len(value)
-                if len(value) > 256:
+                value_str = typing.cast(str, value)  # mypy moment
+                total_characters += len(value_str)
+                if len(value_str) > 256:
                     issues.append(
-                        f"Title length exceeds 256 characters (is '{len(value)}')."
+                        f"Title length exceeds 256 characters (is '{len(value_str)}')."
                     )
 
             case "description":
-                total_characters += len(value)
-                if len(value) > 4096:
+                value_str = typing.cast(str, value)  # mypy moment
+                total_characters += len(value_str)
+                if len(value_str) > 4096:
                     issues.append(
                         f"Description length exceeds 4096 characters "
-                        f"(is '{len(value)}')."
+                        f"(is '{len(value_str)}')."
                     )
 
             case "fields":
-                value: list[d_embed.EmbedField]
-                if len(value) > 25:
+                value_fields: list[d_embed.EmbedField] = typing.cast(list[d_embed.EmbedField], value)  # mypy moment
+                if len(value_fields) > 25:
                     issues.append(
-                        f"Embed contains more than 25 fields (is '{len(value)}')."
+                        f"Embed contains more than 25 fields (is '{len(value_fields)}')."
                     )
-                for field in value:
+                for field in value_fields:
                     for field_key, field_value in field.items():
-                        char_count, issue_text = _validate_embed_field(field, field_key, field_value)
+                        char_count, issue_text = _validate_embed_field(
+                            field, field_key, field_value)  # type: ignore[arg-type]
                         total_characters += char_count
                         if issue_text is not None:
                             issues.append(issue_text)
 
             case "footer":
-                value: d_embed.EmbedFooter
-                text = value["text"]
+                value_footer: d_embed.EmbedFooter = typing.cast(d_embed.EmbedFooter, value)  # mypy moment
+                text = value_footer["text"]
                 total_characters += len(text)
                 if len(text) > 2048:
                     issues.append(
@@ -66,8 +67,9 @@ def get_embed_issues(embed: discord.Embed) -> tuple[list[str], int]:
                     )
 
             case "author":
-                value: d_embed.EmbedAuthor
-                for author_key, author_value in value.items():
+                value_author: d_embed.EmbedAuthor = typing.cast(d_embed.EmbedAuthor, value)
+                for author_key, author_value_a in value_author.items():
+                    author_value: str = typing.cast(str, author_value_a)  # mypy moment
                     if author_key == "name":
                         total_characters += len(author_value)
                         if len(author_value) > 256:
@@ -83,7 +85,11 @@ def get_embed_issues(embed: discord.Embed) -> tuple[list[str], int]:
     return issues, total_characters
 
 
-def _validate_embed_field(field: EmbedField, field_key: str, field_value: str) -> tuple[int, str | None]:
+def _validate_embed_field(
+        field: d_embed.EmbedField,
+        field_key: str,
+        field_value: str,
+) -> tuple[int, str | None]:
     if field_key == "type":
         if field_value != "rich":
             return 0, (

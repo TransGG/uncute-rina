@@ -330,7 +330,7 @@ async def _handle_settings_attribute(
         return
 
     if modify_mode is None:
-        await itx.response.send_message("You didn't set a mode!" + help_str,
+        await itx.response.send_message("You didn't set a mode!\n" + help_str,
                                         ephemeral=True)
         return
 
