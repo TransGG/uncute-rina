@@ -393,9 +393,16 @@ async def _handle_settings_attribute(
             return
 
         invalid_arguments: dict[str, str] = {}
+        attribute = await parse_attribute(
             itx.client, itx.guild, setting, value,
             invalid_arguments=invalid_arguments
         )
+        if attribute is None:
+            await itx.followup.send(
+                "Couldn't parse attribute!",
+                ephemeral=True,
+            )
+            return
 
         # [guild, channel, emoji, role, user] if it has an id
         # else [int, str], for example
