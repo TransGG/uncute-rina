@@ -194,7 +194,7 @@ async def _add_to_watchlist(
     )
 
     # get message that supports the report / report reason
-    reported_message = None  # to make IDE happy
+    reported_message: discord.Message | None = None  # to make IDE happy
     if message_id is None:
         reported_message_info = ""
     else:
@@ -273,6 +273,7 @@ async def _add_to_watchlist(
     already_on_watchlist = watchlist_thread_id is not None
 
     if already_on_watchlist:
+        assert watchlist_thread_id is not None  # mypy bad
         # fetch thread, in case the thread was archived (not in cache)
         thread: discord.Thread = await watch_channel.guild.fetch_channel(
             watchlist_thread_id)  # type: ignore

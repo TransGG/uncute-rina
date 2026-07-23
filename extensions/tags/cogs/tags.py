@@ -48,8 +48,10 @@ report_message_reminder = datetime.min
 
 def _get_enabled_tag_ids(itx: discord.Interaction[Bot]) -> set[str]:
     """Helper function to get all enabled tags in a guild."""
-    default_tags = list(tag_info_dict)
-    custom_tags = list(get_tags(itx.guild))
+    default_tags = list(tag_info_dict.keys())
+    if itx.guild is None:
+        return set(default_tags)
+    custom_tags = list(get_tags(itx.guild).keys())
     return set(default_tags + custom_tags)
 
 
@@ -59,8 +61,6 @@ async def _tag_autocomplete(  # noqa: RUF029
         current: str,
 ) -> list[discord.app_commands.Choice[str]]:
     """Autocomplete for /tag command."""
-    print(current)
-    print(_get_enabled_tag_ids(itx))
     if current == "":
         return [app_commands.Choice[str](name="Show list of tags", value="help")]
 

@@ -51,7 +51,7 @@ def get_attribute_autocomplete_mode(
 async def _setting_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
@@ -82,8 +82,8 @@ async def _setting_autocomplete(  # noqa: RUF029
 async def _mode_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
 
     types = [ModeAutocomplete.view]
 
@@ -156,7 +156,7 @@ def _has_name_or_id(
 
 
 def _update_results_from_iterable(
-        results: set[object],
+        results: set[app_commands.Choice[str]],
         iterable: typing.Sequence[object],
         current: str,
         pred: typing.Callable[[object], bool] = lambda _: True
@@ -165,7 +165,7 @@ def _update_results_from_iterable(
     for obj in iterable:
         if _has_name_or_id(obj, current) and pred(obj):
             results.add(
-                app_commands.Choice(
+                app_commands.Choice[str](
                     name=getattr(obj, "name"),
                     value=str(getattr(obj, "id")),
                 )
@@ -176,16 +176,17 @@ def _update_results_from_iterable(
             break
 
 
-def _update_results_from_id(
-        results: set[object],
-        id_func: typing.Callable[[int], object | None],
+def _update_results_from_id[T](
+        results: set[app_commands.Choice[str]],
+        id_func: typing.Callable[[int], T | None],
         current: str,
-        pred: typing.Callable[[object], bool] = lambda _: True
+        pred: typing.Callable[[T], bool] = lambda _: True
 ) -> None:
     if current.isdecimal():
         potential_obj = id_func(int(current))
+        assert hasattr(potential_obj, "id") and hasattr(potential_obj, "name")
         if potential_obj is not None and pred(potential_obj):
-            results.add(app_commands.Choice(
+            results.add(app_commands.Choice[str](
                 name=potential_obj.name,
                 value=str(potential_obj.id))
             )
@@ -197,10 +198,10 @@ async def _value_autocomplete(  # noqa: RUF029
 ) -> list[app_commands.Choice[str]]:
     if itx.guild is None:
         raise CommandDoesNotSupportDMsCheckFailure()
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
             app_commands.Choice[str](
@@ -391,20 +392,20 @@ async def _handle_settings_attribute(
             )
             return
 
-        invalid_arguments = {}
-        attribute = parse_attribute(
+        invalid_arguments: dict[str, str] = {}
             itx.client, itx.guild, setting, value,
             invalid_arguments=invalid_arguments
         )
 
         # [guild, channel, emoji, role, user] if it has an id
         # else [int, str], for example
-        database_value = getattr(attribute, "id", attribute)
+        database_value: int = getattr(attribute, "id", attribute)  # type: ignore[assignment,arg-type]
 
         if setting == AttributeKeys.parent_server:
             # Check if the given server or one of its parents has this server
             #  marked as a parent already.
-            assert type(database_value) is int, (
+            # noinspection PyStringConversionWithoutDunderMethod
+            assert isinstance(database_value, int), (
                 f"Expected the database value to be of type `int` but it was "
                 f"{type(database_value)} instead: {database_value}"
             )
@@ -429,10 +430,11 @@ async def _handle_settings_attribute(
             result = await ServerSettings.get_entry(
                 itx.client.async_rina_db, itx.guild.id)
             if result is not None:
-                items = result["attribute_ids"].get(setting, [])
+                items: list[int] = result["attribute_ids"].get(setting, [])  # type: ignore[assignment]
             else:
                 # if guild has no info yet
                 items = []
+            assert isinstance(items, list)
 
             if database_value in items:
                 await itx.followup.send(
@@ -561,8 +563,11 @@ def _has_guild_as_parent(
             has_current_server = True
             break
         assert parent_server_id is not None  # the IDE type checker is kinda dumb...
-        parent_server_id = client.get_guild_attributes(
+        parent_server: discord.Guild | None = client.get_guild_attributes(
             parent_server_id).parent_server
+        parent_server_id = None
+        if parent_server is not None:
+            parent_server_id = parent_server.id
     return has_current_server, parent_server_id
 
 

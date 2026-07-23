@@ -10,7 +10,7 @@ class Int64ToIntDecoder(TypeDecoder):
 
     def transform_bson(
             self,
-            value: bson_type
+            value: Int64
     ) -> int:
         return int(value)
 

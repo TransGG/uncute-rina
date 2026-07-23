@@ -333,7 +333,7 @@ class ServerSettings:
         """
         collection = async_rina_db[ServerSettings.DATABASE_KEY]
         query = {"guild_id": guild_id}
-        result: ServerSettingData | None = await collection.find_one(query)
+        result: ServerSettingData | None = await collection.find_one(query)  # type: ignore
         return result
 
     @staticmethod
