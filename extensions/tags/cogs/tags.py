@@ -103,7 +103,7 @@ def _get_enabled_tag_ids(
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_autocomplete(  # noqa: RUF029
+async def _tag_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot],
         current: str,
 ) -> list[discord.app_commands.Choice[str]]:
@@ -122,7 +122,7 @@ async def _tag_autocomplete(  # noqa: RUF029
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_manage_autocomplete(  # noqa: RUF029
+async def _tag_manage_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot],
         current: str,
 ) -> list[discord.app_commands.Choice[str]]:

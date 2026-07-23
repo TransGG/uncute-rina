@@ -215,8 +215,8 @@ class CrashHandling(commands.Cog):
     async def on_error(
             self,
             event: str,
-            *_args: typing.Any,  # noqa: ANN401
-            **_kwargs: typing.Any,  # noqa: ANN401
+            *_args: typing.Any,  # ruff: ignore[any-type]
+            **_kwargs: typing.Any,  # ruff: ignore[any-type]
     ) -> None:
         global commanderror_cooldown
         if (

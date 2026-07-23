@@ -359,7 +359,7 @@ class ServerSettings:
             async_rina_db: motor.core.AgnosticDatabase,
             guild_id: int,
             parameter: str,
-            value: typing.Any,  # noqa: ANN401
+            value: typing.Any,  # ruff: ignore[any-type]
     ) -> tuple[bool, bool]:
         if "." in parameter or parameter.startswith("$"):
             raise ValueError(

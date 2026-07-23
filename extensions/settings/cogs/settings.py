@@ -48,10 +48,10 @@ def get_attribute_autocomplete_mode(
 
 
 @is_admin_check
-async def _setting_autocomplete(  # noqa: RUF029
+async def _setting_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue]
 
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
@@ -79,11 +79,11 @@ async def _setting_autocomplete(  # noqa: RUF029
 
 
 @is_admin_check
-async def _mode_autocomplete(  # noqa: RUF029
+async def _mode_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue]
 
     types = [ModeAutocomplete.view]
 
@@ -195,15 +195,15 @@ def _update_results_from_id[T](
 
 
 @is_admin_check
-async def _value_autocomplete(  # noqa: RUF029
+async def _value_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
     if itx.guild is None:
         raise CommandDoesNotSupportDMsCheckFailure()
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
-    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501
+    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue]
+    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue]
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
             app_commands.Choice[str](

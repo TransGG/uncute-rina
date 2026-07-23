@@ -202,7 +202,7 @@ def _get_emoji_from_str(
         return emoji
 
 
-async def _unit_autocomplete(  # noqa: RUF029
+async def _unit_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot],
         current: str,
 ) -> list[app_commands.Choice[str]]:
@@ -222,7 +222,7 @@ async def _unit_autocomplete(  # noqa: RUF029
                 ][:25]
 
 
-async def _role_autocomplete(  # noqa: RUF029
+async def _role_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot],
         current: str
 ) -> list[app_commands.Choice[str]]:

@@ -42,8 +42,8 @@ class Bot(commands.Bot):
             version: str,
             rina_db: PyMongoDatabase,
             async_rina_db: motorcore.AgnosticDatabase,
-            *args: Any,  # noqa: ANN401
-            **kwargs: Any,  # noqa: ANN401
+            *args: Any,  # ruff: ignore[any-type]
+            **kwargs: Any,  # ruff: ignore[any-type]
     ) -> None:
         self.api_tokens: ApiTokenDict = api_tokens
         self.version: str = version

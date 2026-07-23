@@ -2,11 +2,11 @@ exclude = [".venv", "unit_tests"]
 line-length=119
 [lint]
 select = [
-    "ANN", # Type annotations
+    "ANN", # Type annotations would take wayyy too long to do properly  # HA YOU THOUGHT (I only spent 2 hours TwT)
     "ASYNC", # Async bugs
     "S", # Security bugs
     "A", # Built-in shadowing bugs
-    "C4", # Generator expression lints
+    "C4", # Generator expression lints / list comprehensions
     "EXE", # Checks that executable files are set up properly
     "FIX", # Grabs TODOs
     "ICN", # Catches weird imports
@@ -18,54 +18,63 @@ select = [
     "PTH", # Pathlib
     "NPY", # NumPy
     "PD", # Pandas
-    "PERF", # Performance lints
+    "PERF", # Performance lints. Speeeeeed ... in python?... Uhkay sure.
     "E", "W", # Standard warnings and errors
     "F", # Generic non-style mistakes
     "PLE", # Pylint errors
     "PLW", # Pylint warnings
+
     # Ruff-specific
+
+
     "RUF",
-    "RUF006", # asyncio tasks can be GC'd and killed
-    "RUF013", # Explicit Optional
-    "RUF015", # Turning something into a list to get the first element is slow
-    "RUF016", # Invalid index type
-    "RUF017", # Bizarre list merge
-    "RUF018", "RUF030", "RUF040",  # Assert issues
-    "RUF019", # Bizarre dict element access
-    "RUF021", # and/or bracketing
-    "RUF024", # Bad dict construction
-    "RUF026", # Defaultdict misuse
-    "RUF027", # Something looks like an f-string, but is missing the `f`
-    "RUF028", # Invalid supression comments
-    "RUF043", # pytest issues
-    "E261",
-    "ANN", # Type annotations would take wayyy too long to do properly  # HA YOU THOUGHT (I only spent 2 hours TwT)
-    "C4", # list comprehensions
-    "RUF013", # Optional types should be properly marked
-    "PERF", # speeeeeed ... in python?... Uhkay sure.
-    "RUF059", # Unused variables
-    "E501", # Don't allow long lines: 79 chars max.
-    "PLW0127", # Allow self-assingment to indicate type
-    "SIM101", # Merge isinstance() calls by using tuples
-    "RUF001", "RUF003", # Weird tests for characters that look similar
+    "asyncio-dangling-task", # asyncio tasks can be GC'd and killed
+    "implicit-optional", # Explicit Optional
+    "unnecessary-iterable-allocation-for-first-element", # Turning something into a list to get the first element is slow
+    "invalid-index-type", # Invalid index type
+    "quadratic-list-summation", # Bizarre list merge
+
+    # Assert issues
+    "assignment-in-assert",
+    "assert-with-print-message",
+    "invalid-assert-message-literal-argument",
+
+    "unnecessary-key-check", # Bizarre dict element access
+    "parenthesize-chained-operators", # and/or bracketing
+    "mutable-fromkeys-value", # Bad dict construction
+    "default-factory-kwarg", # Defaultdict misuse
+    "missing-f-string-syntax", # Something looks like an f-string, but is missing the `f`
+    "invalid-formatter-suppression-comment", # Invalid supression comments
+    "pytest-raises-ambiguous-pattern", # pytest issues
+    "too-few-spaces-before-inline-comment",
+    "implicit-optional", # Optional types should be properly marked
+    "unused-unpacked-variable", # Unused variables
+    "line-too-long", # Don't allow long lines: 79 chars max.
+    "self-assigning-variable", # Allow self-assingment to indicate type
+    "duplicate-isinstance-call", # Merge isinstance() calls by using tuples
+
+    # Weird tests for characters that look similar
+    "ambiguous-unicode-character-string",
+    "ambiguous-unicode-character-comment",
 ]
 
 ignore = [
     # Things we should probably do
-    "S101", # We should not use asserts, as some environments disable them  # IMO pretty silly idea
-    "PGH004", "RUF100", # Blanket disabling lints isn't great
-    "EXE002",
+    "assert", # We should not use asserts, as some environments disable them  # IMO pretty silly idea
+    "blanket-noqa",
+    "unused-noqa", # Blanket disabling lints isn't great
+    "shebang-missing-executable-file",
 
     # Style stuff that's bad, but won't cause issues
     "PTH", # pathlib still technically works
 
     # Ignoring these more permanently
-    "S311", # We don't need a CSPRNG anywhere, right?
-#    "RUF022", "RUF023", "I001", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
-#    "SIM105", "SIM108", "SIM300", # No suppressing exceptions. Use ternary operator; don't use yoda conditions.
-    "PLW2901", # Allow reassigning in loops
-    "PLW0603", # We seem to be choosing to use globals
-    "FIX002", # Too much TODO
-#    "RUF005", # [*a, *b] is apparently faster than a + b, but it's not *that* important
-    "RUF010", # Explicit f-string conversion is fine and readable
+    "suspicious-non-cryptographic-random-usage", # We don't need a CSPRNG anywhere, right?
+#    "unsorted-dunder-all", "unsorted-dunder-slots", "unsorted-imports", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
+#    "suppressible-exception", "if-else-block-instead-of-if-exp", "yoda-conditions", # No suppressing exceptions. Use ternary operator; don't use yoda conditions.
+    "redefined-loop-name", # Allow reassigning in loops
+    "global-statement", # We seem to be choosing to use globals
+    "line-contains-todo", # Too much TODO
+#    "collection-literal-concatenation", # [*a, *b] is apparently faster than a + b, but it's not *that* important
+    "explicit-f-string-type-conversion", # Explicit f-string conversion is fine and readable
 ]

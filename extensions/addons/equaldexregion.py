@@ -27,7 +27,7 @@ class EqualDexRegion:
      the country.
 
     .. ISO Code: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements
-    """  # noqa: E501
+    """
     def __init__(self, data: dict) -> None:
         """
         Create a region shell to neatly encapsulate and separate api data.

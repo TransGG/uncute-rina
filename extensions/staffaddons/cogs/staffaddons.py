@@ -194,7 +194,7 @@ class StaffAddons(commands.Cog):
     async def get_bot_version(self, itx: discord.Interaction[Bot]) -> None:
         # get most recently pushed bot version
         async with aiohttp.ClientSession() as client, client.get(
-                "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"  # noqa: E501
+                "https://raw.githubusercontent.com/TransPlace-Devs/uncute-rina/main/main.py"
         ) as response:
             latest_rina = await response.text()
         latest_version = (latest_rina

@@ -141,7 +141,7 @@ async def fetch_tags(
         return {}
 
     # This should be good, since it comes directly from the DB
-    local_tag_list[guild.id] = {name: DatabaseTagObject(**tag_data)  # type: ignore[typeddict-item] # noqa: E501
+    local_tag_list[guild.id] = {name: DatabaseTagObject(**tag_data)  # type: ignore[typeddict-item]
                                 for name, tag_data in data.items()}
     return local_tag_list[guild.id]
 
@@ -166,7 +166,7 @@ async def fetch_all_tags(
         for tag_name, tag_data in tag_objects.items():
             # This should be good, since it comes directly from the DB
             # noinspection LongLine
-            tag_object = DatabaseTagObject(**tag_data)  # type: ignore[typeddict-item] # noqa: E501
+            tag_object = DatabaseTagObject(**tag_data)  # type: ignore[typeddict-item]
             tags[tag_name] = tag_object
         local_tag_list[guild_id] = tags
 
