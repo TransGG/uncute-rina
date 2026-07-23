@@ -115,14 +115,6 @@ class CustomTag:
     ) -> None:
         assert isinstance(itx.channel, discord.abc.Messageable), \
             type(itx.channel)
-        if not isinstance(itx.channel, discord.abc.GuildChannel):
-            # Necessary for using itx.channel.mention when trying to log
-            #  the anonymous tag usage.
-            await itx.response.send_message(
-                "This channel is not in a server!",
-                ephemeral=True,
-            )
-            return
         self.send_channel = itx.channel
         if not anonymous:
             await itx.response.send_message(embed=self.embed)

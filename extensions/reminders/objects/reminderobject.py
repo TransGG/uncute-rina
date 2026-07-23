@@ -363,7 +363,7 @@ async def _parse_reminder_time(
     creation_time = itx.created_at  # utc
     assert creation_time.tzinfo == timezone.utc, (
         "Expected discord to provide a timezone of UTC, but it was "
-        f"`{creation_time.tzinfo}` instead!"
+        f"`{creation_time.tzinfo.__str__()}` instead!"
     )
     # ^ it is timezone-aware, in utc
     distance: datetime
@@ -454,8 +454,7 @@ async def _create_reminder(
             timeout=300,
         )
         try:
-            if (isinstance(itx.channel, discord.abc.Messageable)
-                    or itx.channel is None):
+            if isinstance(itx.channel, discord.abc.Messageable):
                 await itx.channel.send(
                     content=msg,
                     view=copy_view,

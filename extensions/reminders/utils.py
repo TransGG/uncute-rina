@@ -20,7 +20,7 @@ async def get_user_reminders(
     db_data: DatabaseData
     if api_response is None:
         await collection.insert_one(query)
-        db_data = DatabaseData(**query)
+        db_data = DatabaseData(**query)  # type: ignore[typeddict-item]
     else:
         db_data = api_response
     return db_data.get('reminders', [])

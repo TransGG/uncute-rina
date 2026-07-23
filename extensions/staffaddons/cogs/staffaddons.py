@@ -59,8 +59,7 @@ class StaffAddons(commands.Cog):
         await log_to_guild(
             itx.client,
             itx.guild,
-            (f"{getattr(itx.user, 'nick', itx.user.name)} ({itx.user.id})"
-             f" said a message using Rina: {text}"),
+            f"{itx.user.name} said a message using Rina: {text}",
             crash_if_not_found=True,
             ignore_dms=True
         )

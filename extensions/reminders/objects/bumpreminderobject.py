@@ -24,9 +24,8 @@ class BumpReminderObject:
                 self.guild, ModuleKeys.bump_reminder):
             return
 
-        bump_channel: discord.abc.Messageable | None
-        bump_channel = self.client.get_guild_attributes(self.guild).bump_reminder_channel
-        bump_role: discord.Role | None
+        bump_channel = self.client.get_guild_attributes(
+            self.guild).bump_reminder_channel
         bump_role = self.client.get_guild_attributes(
             self.guild).bump_reminder_role
 

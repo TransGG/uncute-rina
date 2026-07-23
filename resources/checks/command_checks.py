@@ -39,7 +39,7 @@ def module_enabled_check(
     :return: A decorator that checks if the given module is enabled in
      the interaction's guild.
     """
-    def decor_check(itx: discord.Interaction[Bot]) -> None:
+    def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
         A decorator that checks if the interaction's guild has a
         module enabled.

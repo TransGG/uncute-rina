@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import typing
-
+import discord
 from enum import Enum
 import motor.core
-from typing import TypedDict, Any, Callable, TypeAliasType
-from types import UnionType, GenericAlias
-
-import discord
+import typing
+from typing import Callable
+import types
 
 from resources.abc import MessageableGuildChannel
 from resources.utils.debug import debug, DebugColor
@@ -34,14 +32,19 @@ MessageableChannelId = int
 MessageChannel = discord.TextChannel | discord.Thread
 
 
-def parse_id_generic(
-        get_object_function: Callable[[int], GuildAttributeType | None],
+async def parse_id_generic(
+        get_object_function: Callable[
+            [int],
+            typing.Coroutine[None, None, GuildAttributeType | None]
+        ],
         object_id: int | None
 ) -> GuildAttributeType | None:
-    parsed_obj: GuildAttributeType | None = None
-    if object_id is not None:
-        parsed_obj = get_object_function(object_id)
-    return parsed_obj
+    if object_id is None:
+        return None
+    try:
+        return await get_object_function(object_id)
+    except (discord.Forbidden, discord.HTTPException, discord.NotFound):
+        return None
 
 
 def get_attribute_type(attribute_key: str) -> tuple[
@@ -68,20 +71,20 @@ def get_attribute_type(attribute_key: str) -> tuple[
     if isinstance(attribute_type, list):
         attribute_in_list = True
         type_queue.extend(attribute_type)
-    elif isinstance(attribute_type, GenericAlias):
+    elif isinstance(attribute_type, types.GenericAlias):
         attribute_in_list = True
         type_queue.extend(attribute_type.__args__)
     else:
         type_queue.append(attribute_type)
 
-    types: set[type] = set()
+    all_types: set[type] = set()
     while len(type_queue) > 0:
         element = type_queue.pop(0)
 
-        if isinstance(element, TypeAliasType):
+        if isinstance(element, typing.TypeAliasType):
             type_queue.append(element.__value__)
             continue
-        elif isinstance(element, UnionType):
+        elif isinstance(element, types.UnionType):
             # typing.Union != types.UnionType :/
             #  typing.Union is for `Union[int, str]`
             #  types.UnionType is for `int | str`
@@ -105,11 +108,11 @@ def get_attribute_type(attribute_key: str) -> tuple[
             # - issubclass(B, A) == True
             # - issubclass(A, A) == True
             # So I guess you should use issubclass.
-            types.add(element)
-    return types, attribute_in_list
+            all_types.add(element)
+    return all_types, attribute_in_list
 
 
-def parse_attribute(
+async def parse_attribute(
         client: discord.Client,
         guild: discord.Guild,
         attribute_key: str,
@@ -144,16 +147,29 @@ def parse_attribute(
 
     funcs: set[Callable[
         [int],
-        GuildAttributeType | None
+        GuildAttributeType | None,
     ]] = set()
+    async_funcs: set[Callable[
+        [int],
+        typing.Coroutine[None, None, GuildAttributeType | None,
+    ]]] = set()
+
+    def wrap[T](
+            sync_function: Callable[[int], T]
+    ) -> Callable[[int], typing.Coroutine[None, None, T]]:
+        async def inner(arg: int) -> T:
+            return sync_function(arg)
+        return inner
 
     if is_attribute_type(discord.Guild):
         funcs.add(client.get_guild)
-    if (is_attribute_type(discord.abc.GuildChannel)
-            or is_attribute_type(discord.Thread)):
+    if is_attribute_type(discord.abc.GuildChannel):
         # Could use isinstance(), but I feel like it should only
         #  parse if the type matches exactly.
         funcs.add(guild.get_channel_or_thread)
+    if is_attribute_type(discord.Thread):
+        funcs.add(guild.get_channel_or_thread)
+        async_funcs.add(guild.fetch_channel)
     if is_attribute_type(discord.abc.Messageable):
         # There is no attribute that gives a PrivateChannel
         funcs.add(typing.cast(
@@ -197,7 +213,7 @@ def parse_attribute(
             return attribute_value
         return str(attribute_value)
 
-    if len(funcs) == 0:
+    if len(funcs) == 0 and len(async_funcs) == 0:
         raise ParseError(
             f"Type '{attribute_type}' of attribute "
             f"{attribute_key} could not be parsed. "
@@ -216,8 +232,10 @@ def parse_attribute(
 
     parsed_attribute = None
     for func in funcs:
-        parsed_attribute = parse_id_generic(
-            func,
+        async_funcs.add(wrap(func))
+    for async_func in async_funcs:
+        parsed_attribute = await parse_id_generic(
+            async_func,
             attribute_value_id,
         )
         if parsed_attribute is not None:
@@ -234,7 +252,7 @@ class ParseError(ValueError):
         self.message = message
 
 
-class ServerSettingData(TypedDict):
+class ServerSettingData(typing.TypedDict):
     guild_id: int
     enabled_modules: EnabledModules
     attribute_ids: ServerAttributeIds
@@ -333,7 +351,7 @@ class ServerSettings:
         """
         collection = async_rina_db[ServerSettings.DATABASE_KEY]
         query = {"guild_id": guild_id}
-        result: ServerSettingData | None = await collection.find_one(query)
+        result: ServerSettingData | None = await collection.find_one(query)  # type: ignore
         return result
 
     @staticmethod
@@ -341,7 +359,7 @@ class ServerSettings:
             async_rina_db: motor.core.AgnosticDatabase,
             guild_id: int,
             parameter: str,
-            value: Any,  # noqa: ANN401
+            value: typing.Any,  # noqa: ANN401
     ) -> tuple[bool, bool]:
         if "." in parameter or parameter.startswith("$"):
             raise ValueError(
@@ -575,7 +593,7 @@ class ServerSettings:
             if type(attribute_value) is list:
                 parsed_values = []
                 for value in attribute_value:
-                    parsed_value = parse_attribute(
+                    parsed_value = await parse_attribute(
                         client, guild, attribute_key, value,
                         invalid_arguments=invalid_arguments)
                     if parsed_value is not None:
@@ -587,7 +605,7 @@ class ServerSettings:
                     f"or int, but `{attribute_value}` was of type "
                     f"`{type(attribute_value)}`"
                 )
-                parsed_value = parse_attribute(
+                parsed_value = await parse_attribute(
                     client, guild, attribute_key, attribute_value,
                     invalid_arguments=invalid_arguments)
                 if parsed_value is not None:

@@ -196,8 +196,8 @@ class CustomVcStaffEditorModal(
                 await log_to_guild(
                     itx.client,
                     itx.guild,
-                    f"Staff: {getattr(itx.user, 'nick', itx.user.name)} "
-                    f"({itx.user.id}) changed VC ({channel.id}) name "
+                    f"Staff: {itx.user.name} ({itx.user.id}) "
+                    f"changed VC ({channel.id}) name "
                     f"\"{old_name}\" to \"{name}\" and user limit from "
                     f"\"{old_limit}\" to \"{limit}\"{limit_info}"
                 )
