@@ -11,35 +11,35 @@ local_tag_list: dict[int, dict[str, DatabaseTagObject]] = {}
 
 
 def get_tag(
-        guild: discord.Guild,
+        guild_id: int,
         tag_name: str,
 ) -> DatabaseTagObject | None:
     """
     Get a tag from the cache.
 
-    :param guild: The guild to get the tag from.
+    :param guild_id: The guild id to get the tag from.
     :param tag_name: The name of the tag.
 
     :return: A tag object or ``None`` if no tag with this name is found.
     """
-    if guild.id in local_tag_list:
-        if tag_name in local_tag_list[guild.id]:
-            return local_tag_list[guild.id][tag_name]
+    if guild_id in local_tag_list:
+        if tag_name in local_tag_list[guild_id]:
+            return local_tag_list[guild_id][tag_name]
     return None
 
 
 def get_tags(
-        guild: discord.Guild,
+        guild_id: int,
 ) -> dict[str, DatabaseTagObject]:
     """
     Get a server's tags from the cache.
 
-    :param guild: The guild to get tags from.
+    :param guild_id: The guild to get tags from.
 
     :return: A dictionary containing all tags registered in the guild.
     """
-    if guild.id in local_tag_list:
-        return local_tag_list[guild.id]
+    if guild_id in local_tag_list:
+        return local_tag_list[guild_id]
     return {}
 
 

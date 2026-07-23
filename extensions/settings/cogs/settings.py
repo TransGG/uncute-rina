@@ -152,8 +152,8 @@ def _has_name_or_id(
 ) -> bool:
     assert hasattr(obj, "id") and hasattr(obj, "name")
     return (
-            current.lower() in getattr(obj, "name").lower()
-            or str(getattr(obj, "id")).startswith(current)
+        current.lower() in getattr(obj, "name").lower()
+        or str(getattr(obj, "id")).startswith(current)
     )
 
 

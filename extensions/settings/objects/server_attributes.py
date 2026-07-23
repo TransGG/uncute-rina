@@ -1,7 +1,11 @@
 import dataclasses
+import discord
+import typing
+
 from resources.abc import MessageableGuildChannel
 
-import discord
+if typing.TYPE_CHECKING:
+    from resources.customs.bot import Bot
 
 
 type GuildAttributeType = (
@@ -29,6 +33,7 @@ class ServerAttributes:
     #  key to the ServerAttributes class.
     # If you're giving it a new type, make sure it gets parsed in
     #  ServerSettings.get_attributes().
+    _guild_id: int
 
     parent_server: discord.Guild | None = None
 
@@ -86,9 +91,38 @@ class ServerAttributes:
     # ^ needs to be able to have threads
     polls_channel_reaction_role: discord.Role | None = None
 
+    def get_exclusively_child_guilds(self, bot: Bot) -> set[int]:
+        """Get a list of *just this server's* child guild ids"""
+        # Is a O(n^n) function.
+        guild_ids: set[int] = set()
+        if bot.server_settings is None:
+            return guild_ids  # todo: raise error?
+
+        for guild_id, settings in bot.server_settings.items():
+            if getattr(settings.attributes.parent_server, "id", -1) == self._guild_id:
+                guild_ids.add(guild_id)
+
+        return guild_ids
+
+    def get_all_child_guilds(self, bot: Bot) -> set[int]:
+        """Get a *recursive* list of child guild ids"""
+        if bot.server_settings is None:
+            return set()  # todo: raise error?
+
+        guild_ids: set[int] = self.get_exclusively_child_guilds(bot)
+        child_accumulator: set[int] = set()
+        # ^ so you don't update the set while iterating.
+        for guild_id in guild_ids:
+            child_attributes = bot.server_settings[guild_id].attributes
+            child_map = child_attributes.get_all_child_guilds(bot)
+            child_accumulator.update(child_map)
+        guild_ids.update(child_accumulator)
+
+        return guild_ids
+
 
 def default_server_attributes[T](default: T | None = None) -> ServerAttributes:
-    out = ServerAttributes()
+    out = ServerAttributes(0)
     if default is not None:
         # replace None values with `default`.
         for attr in dir(out):

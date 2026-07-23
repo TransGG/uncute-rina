@@ -41,6 +41,7 @@ from extensions.tags.tags import (
 
 # for use in CustomTag.send()
 type TagName = str  # Correctly-capitalized tag name
+type TagId = str
 
 
 # To prevent excessive spamming when multiple people mention staff.
@@ -48,13 +49,57 @@ type TagName = str  # Correctly-capitalized tag name
 report_message_reminder = datetime.min
 
 
-def _get_enabled_tag_ids(itx: discord.Interaction[Bot]) -> set[str]:
+def get_tags_recursively(
+        itx: discord.Interaction[Bot],
+        guild: discord.Guild,
+) -> list[tuple[str, str, DatabaseTagObject]]:
+    tags: list[tuple[str, str, DatabaseTagObject]] = []
+
+    # Add own guild's tags
+    server_tags = get_tags(guild.id)
+    for tag_name, tag_data in server_tags.items():
+        tags.append((tag_name, tag_name, tag_data))
+
+    # Add all child (recursive) tags
+    guild_attributes = itx.client.get_guild_attributes(guild)
+    child_guild_ids: set[int] = guild_attributes.get_all_child_guilds(itx.client)
+    for child_guild_id in child_guild_ids:
+        child_guild = itx.client.get_guild(child_guild_id)
+        if child_guild is None:
+            continue
+        server_tags = get_tags(child_guild_id)
+        for tag_name, tag_data in server_tags.items():
+            tag_display_name = f"[{child_guild.name[:50]}] {tag_name}"[:100]
+            tag_id = f"{child_guild_id}-{tag_name}"[:100]
+            tags.append(
+                (tag_display_name, tag_id, tag_data)
+            )
+
+    return tags
+
+
+def _get_enabled_tag_ids(
+        itx: discord.Interaction[Bot],
+        recursive: bool = False,
+) -> set[tuple[str, str]]:
     """Helper function to get all enabled tags in a guild."""
-    default_tags = list(tag_info_dict.keys())
+    default_tag_keys = tag_info_dict.keys()
+    default_tags = {(t, t) for t in default_tag_keys}
     if itx.guild is None:
-        return set(default_tags)
-    custom_tags = list(get_tags(itx.guild).keys())
-    return set(default_tags + custom_tags)
+        return default_tags
+
+    if recursive:
+        custom_tags = {
+            (tag_name, tag_id)
+            for tag_name, tag_id, tag_data
+            in get_tags_recursively(itx, itx.guild)
+        }
+    else:
+        custom_tags = {
+            (tag_name, tag_name)
+            for tag_name in get_tags(itx.guild.id)
+        }
+    return default_tags | custom_tags
 
 
 @module_enabled_check(ModuleKeys.tags)
@@ -67,11 +112,12 @@ async def _tag_autocomplete(  # noqa: RUF029
         return [app_commands.Choice[str](name="Show list of tags", value="help")]
 
     # only show tags that are enabled in the server
-    tags = _get_enabled_tag_ids(itx)
+    tags = _get_enabled_tag_ids(itx, recursive=True)
 
-    return [app_commands.Choice[str](name=tag, value=tag)
-            for tag in tags
-            if current.lower() in tag.lower()
+    return [app_commands.Choice[str](name=tag_name, value=tag_id)
+            for tag_name, tag_id in tags
+            # tag_id to cut out the server name part from child servers
+            if current.lower() in tag_id.lower()
             ][:15]
 
 
@@ -84,7 +130,7 @@ async def _tag_manage_autocomplete(  # noqa: RUF029
             itx.namespace.mode == TagMode.edit.value
             or itx.namespace.mode == TagMode.delete.value
     ) and itx.guild is not None:
-        tag_objects = get_tags(itx.guild)
+        tag_objects = get_tags(itx.guild.id)
         return [
             app_commands.Choice[str](name=key, value=key)
             for key in tag_objects.keys()
@@ -190,20 +236,22 @@ class TagFunctions(commands.Cog):
             )
             return
 
-        tag_ids: set[TagName] = _get_enabled_tag_ids(itx)
-
+        tag_ids: set[tuple[TagName, TagId]] = _get_enabled_tag_ids(itx, recursive=True)
         if tag_name == "help":
             await itx.response.send_message(
                 "List of tags currently available to send:\n"
-                + '\n'.join(["- " + i for i in tag_ids]),
+                + '\n'.join(["- " + i[0] for i in tag_ids]),
                 ephemeral=True,
             )
             return
 
         # Map to convert lowercased tag names to correctly-cased tag names.
-        tag_map: dict[str, TagName] = {tag.lower(): tag for tag in tag_ids}
-        tag: TagName | None = tag_map.get(tag_name.lower(), None)
-
+        tag_map: dict[str, tuple[TagName, TagId]] = {
+            tag_id.lower(): (tag_name, tag_id)
+            for tag_name, tag_id in tag_ids
+        }
+        tag: tuple[TagName, TagId] | None = tag_map.get(
+            tag_name.lower(), None)
         if tag is None:
             await itx.response.send_message(
                 "No tag found with this name!",
@@ -211,16 +259,20 @@ class TagFunctions(commands.Cog):
             )
             return
 
-        if tag in tag_info_dict:
+        if tag[1] in tag_info_dict:
             # Default tag
-            await tag_info_dict[tag](itx, public, anonymous)
+            await tag_info_dict[tag[1]](itx, public, anonymous)
         else:
             # Custom tag
-            tag_data = get_tag(itx.guild, tag)
+            tag_data = get_tag(itx.guild.id, tag[1])
+            if tag_data is None:
+                # Tag from a child server
+                original_guild_id, original_tag_name = tag[1].split("-")
+                tag_data = get_tag(int(original_guild_id), original_tag_name)
             if tag_data is None:
                 raise NotImplementedError(f"Tag '{tag}' not found.")
             custom_tag = CustomTag(
-                tag,
+                tag[1],
                 tag_data["title"],
                 tag_data["description"],
                 tag_data["color"],
@@ -263,16 +315,30 @@ class TagFunctions(commands.Cog):
             mode: str,
             tag_name: str,
     ) -> None:
+        server_tags: set[str] = {
+            i[0] for i in _get_enabled_tag_ids(itx, recursive=False)
+            if i not in tag_info_dict.keys()
+        }
+
         match TagMode(mode):
             case TagMode.help:
                 await send_help_menu(itx, 901)
-            case TagMode.create.value:
-                if tag_name in _get_enabled_tag_ids(itx):
+            case TagMode.create:
+                if tag_name in server_tags:
                     await itx.response.send_message(
                         "A tag with this name already exists!",
                         ephemeral=True
                     )
                     return
+                if len(tag_name) > 80:
+                    await itx.response.send_message(
+                        "Please make the tag name less than 80 characters! "
+                        "You can use the tag title for that instead, "
+                        "after setting the tag name."
+                        "The tag name is only meant for "
+                        "searching the tag and won't otherwise be visible.",
+                        ephemeral=True
+                    )
 
                 create_tag_modal = CreateTagModal()
                 await itx.response.send_modal(create_tag_modal)
@@ -295,7 +361,7 @@ class TagFunctions(commands.Cog):
                 await itx.response.send_message(
                     f"Created tag '{tag_name}'.", ephemeral=True)
             case TagMode.edit:
-                tags = get_tags(itx.guild)
+                tags = get_tags(itx.guild.id)
                 tag: DatabaseTagObject | None = tags.get(tag_name, None)
                 if tag is None:
                     await itx.response.send_message(

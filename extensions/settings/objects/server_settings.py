@@ -563,7 +563,7 @@ class ServerSettings:
                 f"- guild_id: {guild_id}"
             )
 
-        parsed_attributes = ServerAttributes()
+        parsed_attributes = ServerAttributes(guild_id)
 
         def set_attribute(
                 key: str,
