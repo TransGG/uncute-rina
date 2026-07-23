@@ -7,6 +7,7 @@ import discord.ext.commands as commands
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import ModuleKeys
+from extensions.tags.database_tag_object import DatabaseTagObject
 from extensions.tags.local_tag_list import (
     create_tag,
     remove_tag,
@@ -14,6 +15,7 @@ from extensions.tags.local_tag_list import (
     get_tag,
 )
 from extensions.tags.modals.create_tag import CreateTagModal
+from extensions.tags.modals.edit_tag import EditTagModal
 from extensions.tags.tag_manage_modes import TagMode
 from resources.abc import (
     GuildInteraction,
@@ -74,12 +76,14 @@ async def _tag_autocomplete(  # noqa: RUF029
 
 
 @module_enabled_check(ModuleKeys.tags)
-async def _tag_name_autocomplete(  # noqa: RUF029
+async def _tag_manage_autocomplete(  # noqa: RUF029
         itx: discord.Interaction[Bot],
         current: str,
 ) -> list[discord.app_commands.Choice[str]]:
-    if (itx.namespace.mode == TagMode.delete.value
-            and itx.guild is not None):
+    if (
+            itx.namespace.mode == TagMode.edit.value
+            or itx.namespace.mode == TagMode.delete.value
+    ) and itx.guild is not None:
         tag_objects = get_tags(itx.guild)
         return [
             app_commands.Choice[str](name=key, value=key)
@@ -230,15 +234,27 @@ class TagFunctions(commands.Cog):
         mode="Do you want to add or remove the tag?",
         tag_name="The identifier of the tag",
     )
-    @app_commands.choices(mode=[
-        discord.app_commands.Choice(name=TagMode.help.value,
-                                    value=TagMode.help.value),
-        discord.app_commands.Choice(name=TagMode.create.value,
-                                    value=TagMode.create.value),
-        discord.app_commands.Choice(name=TagMode.delete.value,
-                                    value=TagMode.delete.value),
-    ])
-    @app_commands.autocomplete(tag_name=_tag_name_autocomplete)
+    @app_commands.choices(
+        mode=[
+            discord.app_commands.Choice(
+                name=TagMode.help.value,
+                value=TagMode.help.value
+            ),
+            discord.app_commands.Choice(
+                name=TagMode.create.value,
+                value=TagMode.create.value
+            ),
+            discord.app_commands.Choice(
+                name=TagMode.edit.value,
+                value=TagMode.edit.value
+            ),
+            discord.app_commands.Choice(
+                name=TagMode.delete.value,
+                value=TagMode.delete.value
+            ),
+        ]
+    )
+    @app_commands.autocomplete(tag_name=_tag_manage_autocomplete)
     @is_admin_check
     @module_enabled_check(ModuleKeys.tags)
     async def tag_manage(
@@ -247,50 +263,110 @@ class TagFunctions(commands.Cog):
             mode: str,
             tag_name: str,
     ) -> None:
-        if mode == TagMode.help.value:
-            await send_help_menu(itx, 901)
-        elif mode == TagMode.create.value:
-            if tag_name in _get_enabled_tag_ids(itx):
-                await itx.response.send_message(
-                    "A tag with this name already exists!",
-                    ephemeral=True
-                )
-                return
+        match TagMode(mode):
+            case TagMode.help:
+                await send_help_menu(itx, 901)
+            case TagMode.create.value:
+                if tag_name in _get_enabled_tag_ids(itx):
+                    await itx.response.send_message(
+                        "A tag with this name already exists!",
+                        ephemeral=True
+                    )
+                    return
 
-            create_tag_modal = CreateTagModal()
-            await itx.response.send_modal(create_tag_modal)
-            await create_tag_modal.wait()
-            if not create_tag_modal.return_interaction:
-                # interaction aborted
-                return
-            itx = create_tag_modal.return_interaction
-            assert itx.guild is not None
-            try:
-                color_tuple, description, report_to_staff, title = \
-                    self._parse_tag_information(create_tag_modal, itx)
-            except ValueError as ex:
-                await itx.response.send_message(ex, ephemeral=True)
-                return
-            await create_tag(
-                itx.client.async_rina_db, itx.guild, tag_name,
-                title, description, color_tuple, report_to_staff
-            )
-            await itx.response.send_message(
-                f"Created tag '{tag_name}'.", ephemeral=True)
-        elif mode == TagMode.delete.value:
-            changed = await remove_tag(itx.client.async_rina_db,
-                                       itx.guild, tag_name)
-            if changed:
+                create_tag_modal = CreateTagModal()
+                await itx.response.send_modal(create_tag_modal)
+                await create_tag_modal.wait()
+                if not create_tag_modal.return_interaction:
+                    # interaction aborted
+                    return
+                itx = create_tag_modal.return_interaction
+                assert itx.guild is not None
+                try:
+                    color_tuple, description, report_to_staff, title = \
+                        self._parse_tag_information(create_tag_modal, itx)
+                except ValueError as ex:
+                    await itx.response.send_message(ex, ephemeral=True)
+                    return
+                await create_tag(
+                    itx.client.async_rina_db, itx.guild, tag_name,
+                    title, description, color_tuple, report_to_staff
+                )
                 await itx.response.send_message(
-                    f"Successfully removed tag '{tag_name}'.",
-                    ephemeral=True)
-            else:
+                    f"Created tag '{tag_name}'.", ephemeral=True)
+            case TagMode.edit:
+                tags = get_tags(itx.guild)
+                tag: DatabaseTagObject | None = tags.get(tag_name, None)
+                if tag is None:
+                    await itx.response.send_message(
+                        "No tag with this name exists!",
+                        ephemeral=True
+                    )
+                    return
+
+                edit_tag_modal = EditTagModal(
+                    title=tag["title"],
+                    description=tag["description"],
+                    color=tag["color"],
+                    report_to_staff=tag["report_to_staff"],
+                )
+                await itx.response.send_modal(edit_tag_modal)
+                await edit_tag_modal.wait()
+                if not edit_tag_modal.return_interaction:
+                    # interaction aborted
+                    return
+                itx = edit_tag_modal.return_interaction
+                assert itx.guild is not None
+                try:
+                    color_tuple, description, report_to_staff, title = self._parse_tag_information(
+                        edit_tag_modal, itx
+                    )
+                except ValueError as ex:
+                    await itx.response.send_message(ex, ephemeral=True)
+                    return
+
+                # Check everything is the same / if anything changed
+                if (
+                        title == tag["title"]
+                        and description == tag["description"]
+                        and color_tuple == tag["color"]
+                        and report_to_staff == tag["report_to_staff"]
+                ):
+                    return
+
+                # Apply changes
+                await remove_tag(
+                    itx.client.async_rina_db,
+                    itx.guild,
+                    tag_name
+                )
+                await create_tag(
+                    itx.client.async_rina_db,
+                    itx.guild,
+                    tag_name,
+                    title,
+                    description,
+                    color_tuple,
+                    report_to_staff
+                )
                 await itx.response.send_message(
-                    f"There was no custom tag named '{tag_name}'.",
-                    ephemeral=True)
-        else:
-            await itx.response.send_message(
-                f"'{mode}' is not a valid mode.", ephemeral=True)
+                    f"Edited (re-created) tag '{tag_name}'.",
+                    ephemeral=True,
+                )
+            case TagMode.delete:
+                changed = await remove_tag(itx.client.async_rina_db,
+                                           itx.guild, tag_name)
+                if changed:
+                    await itx.response.send_message(
+                        f"Successfully removed tag '{tag_name}'.",
+                        ephemeral=True)
+                else:
+                    await itx.response.send_message(
+                        f"There was no custom tag named '{tag_name}'.",
+                        ephemeral=True)
+            case _:
+                await itx.response.send_message(
+                    f"'{mode}' is not a valid mode.", ephemeral=True)
 
     @staticmethod
     def _parse_tag_information(
