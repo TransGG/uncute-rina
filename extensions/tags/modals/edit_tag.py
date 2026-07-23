@@ -14,7 +14,7 @@ class EditTagModal(CreateTagModal):
             description: str,
             report_to_staff: bool,
             color: tuple[int, int, int],
-     ) -> None:
+    ) -> None:
         self.embed_title.default = title
         self.description.default = description
         self.report_to_staff.default = str(report_to_staff)

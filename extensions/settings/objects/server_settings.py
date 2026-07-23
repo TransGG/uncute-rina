@@ -151,8 +151,8 @@ async def parse_attribute(
     ]] = set()
     async_funcs: set[Callable[
         [int],
-        typing.Coroutine[None, None, GuildAttributeType | None,
-    ]]] = set()
+        typing.Coroutine[None, None, GuildAttributeType | None]
+    ]] = set()
 
     def wrap[T](
             sync_function: Callable[[int], T]
