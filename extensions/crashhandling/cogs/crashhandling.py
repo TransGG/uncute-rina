@@ -157,22 +157,27 @@ async def _reply(itx: discord.Interaction[Bot], message: str) -> None:
         The function will always try to respond to the interaction
         ephemerally.
     """
-    try:
-        if itx.response.is_done():
+    if itx.response.is_done():
+        try:
             # Response can be deferred,
             #  in which case it can be public instead of ephemeral.
             original_response = await itx.original_response()
             if not original_response.flags.ephemeral:
                 await original_response.delete()
             await itx.followup.send(message, ephemeral=True)
-        else:
+        except discord.errors.NotFound:
+            # prevent other code from not running
+            pass
+    else:
+        try:
+            await itx.response.send_message(message, ephemeral=True)
+        except discord.errors.NotFound:
+            # interaction not found, e.g. took too long
             try:
-                await itx.response.send_message(message, ephemeral=True)
-            except discord.errors.NotFound:
-                # interaction not found, e.g. took too long
                 await itx.followup.send(message, ephemeral=True)
-    except discord.errors.NotFound:
-        pass  # prevent other code from not running
+            except discord.errors.NotFound:
+                # prevent other code from not running
+                pass
 
 
 class CrashHandling(commands.Cog):

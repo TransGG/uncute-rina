@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 import discord
+from discord import Interaction
 
 from resources.utils import TimeParser
 
@@ -332,12 +333,61 @@ def _validate_timestamp_format(reminder_datetime: str) -> TimestampFormats:
     return mode
 
 
+def _parse_as_unix_datetime(
+        possible_timestamp_datetime: str,
+        creation_time: datetime,
+) -> datetime:
+    # Try to parse the timestamp as unix datetime timestamp.
+    # length of 6: 1000000 = 20 Jan 1970
+    # Safe bet it's a unix timestamp, not someone accidentally
+    #  pressing 7 digits.
+    distance = datetime.fromtimestamp(
+        int(possible_timestamp_datetime),
+        timezone.utc
+    )
+    if distance < creation_time:
+        raise UnixTimestampInPastException(distance, creation_time)
+    return distance
+
+
+def _parse_as_relative_timedelta(
+        creation_time: datetime,
+        reminder_datetime: str,
+) -> datetime:
+    # Try to parse the timestamp as relative date time "1d3h5m" format
+    reminder_datetime = ((" " + reminder_datetime)
+                         .replace(",", "")
+                         .replace("and", "")
+                         .replace(" in ", "")
+                         .replace(" ", "")
+                         .strip().lower())
+    distance = TimeParser.parse_date(reminder_datetime, creation_time)
+    return distance
+
+
+async def parse_as_datetime_string(
+        creation_time: datetime,
+        itx: Interaction[Bot],
+        reminder_datetime: str,
+) -> tuple[datetime, Interaction[Bot]]:
+    distance, itx = await _handle_reminder_timestamp_parsing(
+        itx,
+        reminder_datetime,
+    )
+    time_passed = distance - creation_time
+    if time_passed > timedelta(days=365 * 3999):
+        raise ValueError(
+            "I don't think I can remind you `{}` years into "
+            "the future..."
+            .format(time_passed.days // 365.2425)
+        )
+    return distance, itx
+
+
 async def _parse_reminder_time(
         itx: discord.Interaction[Bot],
         reminder_datetime: str
 ) -> tuple[datetime, datetime, discord.Interaction[Bot]]:
-    # todo: make followup message a separate method, and initiate it by
-    #  making this function raise a specific exception.
     """
     Parse a datetime string: relative to today (2d 11h); a ISO8601
     timestamp; or a unix timestamp. It outputs the reminder's datetime
@@ -367,40 +417,29 @@ async def _parse_reminder_time(
     )
     # ^ it is timezone-aware, in utc
     distance: datetime
+    possible_timestamp_datetime = (reminder_datetime
+                                   .replace("<t:", "")
+                                   .split(":")[0])
+
     try:
-        possible_timestamp_datetime = (reminder_datetime
-                                       .replace("<t:", "")
-                                       .split(":")[0])
         if (possible_timestamp_datetime.isdecimal()
                 and len(possible_timestamp_datetime) > 6):
-            # length of 6: 1000000 = 20 Jan 1970
-            # Safe bet it's a unix timestamp, not someone accidentally
-            #  pressing 7 digits.
-            distance = datetime.fromtimestamp(
-                int(possible_timestamp_datetime),
-                timezone.utc
+            distance = _parse_as_unix_datetime(
+                possible_timestamp_datetime,
+                creation_time,
             )
-            if distance < creation_time:
-                raise UnixTimestampInPastException(distance, creation_time)
         else:
-            reminder_datetime = ((" " + reminder_datetime)
-                                 .replace(",", "")
-                                 .replace("and", "")
-                                 .replace(" in ", "")
-                                 .replace(" ", "")
-                                 .strip().lower())
-            distance = TimeParser.parse_date(reminder_datetime, creation_time)
+            distance = _parse_as_relative_timedelta(
+                creation_time,
+                reminder_datetime,
+            )
     except ValueError:
         try:
-            distance, itx = await _handle_reminder_timestamp_parsing(
-                itx, reminder_datetime)
-            time_passed = distance - creation_time
-            if time_passed > timedelta(days=365 * 3999):
-                raise ValueError(
-                    "I don't think I can remind you `{}` years into "
-                    "the future..."
-                    .format(time_passed.days // 365.2425)
-                )
+            distance, itx = await parse_as_datetime_string(
+                creation_time,
+                itx,
+                reminder_datetime,
+            )
         except ValueError as ex:
             raise TimestampParseException(ex)
 

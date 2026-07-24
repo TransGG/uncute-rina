@@ -63,6 +63,8 @@ async def _reset_voice_channel_permissions_if_vctable(
         # reset overrides; error caught in try-except
         await voice_channel.edit(
             overwrites=voice_channel.category.overwrites)
+    except discord.errors.NotFound:
+        pass  # event triggers after vc could be deleted already
         # update every user's permissions
         for user in voice_channel.members:
             await user.move_to(voice_channel)
@@ -79,11 +81,10 @@ async def _reset_voice_channel_permissions_if_vctable(
             # allow max 3 renamed: if a staff queued a rename due
             #  to rules, it'd be queued at 3. It would be bad to
             #  have it be renamed back to the bad name right after.
-            await voice_channel.edit(name=new_channel_name)
-            # ^ error caught in try-except
-    except discord.errors.NotFound:
-        # catches two possible voice_channel.edit() exceptions
-        pass  # event triggers after vc could be deleted already
+            try:
+                await voice_channel.edit(name=new_channel_name)
+            except discord.errors.NotFound:
+                pass  # event triggers after vc could be deleted already
 
 
 async def _create_new_custom_vc(
