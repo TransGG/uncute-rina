@@ -16,9 +16,15 @@ from resources.abc import MessageableGuildChannel
 
 def test_matching_keys() -> None:
     # Arrange
-    at = ServerAttributes.__annotations__.keys()
-    atid = ServerAttributeIds.__annotations__.keys()
+    at = set(ServerAttributes.__annotations__.keys())
+    atid = set(ServerAttributeIds.__annotations__.keys())
     atk = set(i for i in dir(AttributeKeys) if not i.startswith("_"))
+
+    # Act
+    at.remove("_guild_id")
+    # We have to remove/ignore _guild_id because
+    #  that one is not used for the mongo database
+    #  (that's the key already), so is technically just redundant.
 
     # Assert
     assert at == atid
@@ -29,6 +35,9 @@ def test_matching_keys() -> None:
 
 @pytest.mark.parametrize("attribute", ServerAttributes.__annotations__.keys())
 def test_attribute_types(attribute: str) -> None:
+    if attribute == "_guild_id":
+        return
+
     attribute_type = ServerAttributes.__annotations__[attribute]
 
     origin = typing.get_origin(attribute_type)

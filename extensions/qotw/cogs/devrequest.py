@@ -1,6 +1,7 @@
 import discord
 import discord.ext.commands as commands
 import discord.app_commands as app_commands
+from enum import Enum
 
 from extensions.qotw.utils import create_thread, ping_open_threads
 from extensions.settings.objects import (
@@ -24,6 +25,41 @@ emoji_color_options = {
 }
 
 
+class DevRequestPrefix(Enum):
+    empty = "EMPTY"
+    empty_label = "I don't know"
+    wrong_format = "!!WF"
+
+
+async def _devrequest_prefix_autocomplete(  # ruff: ignore[unused-async]
+        itx: discord.Interaction[Bot],
+        current: str,
+) -> list[app_commands.Choice[str]]:
+    if itx.guild is None:
+        return []
+    prefixes: list[tuple[str, str]] = [
+        (DevRequestPrefix.empty.value, DevRequestPrefix.empty_label.value)
+
+     ]
+    bot_prefixes = itx.client.get_guild_attributes(
+        itx.guild).developer_request_bot_prefixes
+    prefixes += sorted(
+        (prefix.split("|", 1)[0],
+         prefix.split("|", 1)[1])
+        if prefix.count("|") > 0
+        else (DevRequestPrefix.wrong_format.value, f"WrongFormat|{prefix}")
+        for prefix in bot_prefixes
+    )
+    return [
+        discord.app_commands.Choice(
+            name=prefix[1],
+            value=prefix[0],
+        )
+        for prefix in prefixes
+        if current.lower() in prefix[1].lower()
+    ][:14]
+
+
 class DevRequest(commands.Cog):
     def __init__(self, client: Bot) -> None:
         self.client = client
@@ -32,11 +68,16 @@ class DevRequest(commands.Cog):
         name="developer_request",
         description="Suggest a bot idea to the TransPlace developers!"
     )
-    @app_commands.describe(suggestion="What idea would you like to share?")
+    @app_commands.describe(
+        prefix="What is the category of this request?",
+        suggestion="What idea would you like to share?",
+    )
+    @app_commands.autocomplete(prefix=_devrequest_prefix_autocomplete)
     @module_enabled_check(ModuleKeys.dev_requests)
     async def developer_request(
             self,
             itx: GuildInteraction[Bot],
+            prefix: str,
             suggestion: app_commands.Range[str, 25, 1500],
     ) -> None:
         developer_request_channel = itx.client.get_guild_attributes(
@@ -55,9 +96,16 @@ class DevRequest(commands.Cog):
                 ephemeral=True)
             return
 
+        if prefix == DevRequestPrefix.empty.value:
+            prefix = ""
+        elif prefix == DevRequestPrefix.wrong_format.value:
+            prefix = "[???] "
+        else:
+            prefix = f"[{prefix}] "
+
         await itx.response.defer(ephemeral=True)
 
-        title = "BotRQ-" + suggestion.replace("\\n", "\n")[:48]
+        title = "BotRQ-" + prefix + suggestion.replace("\\n", "\n")[:55]
 
         def reaction_role_lambda(attrs: ServerAttributes) -> discord.Role | None:
             return attrs.developer_request_reaction_role

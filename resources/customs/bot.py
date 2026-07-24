@@ -42,8 +42,8 @@ class Bot(commands.Bot):
             version: str,
             rina_db: PyMongoDatabase,
             async_rina_db: motorcore.AgnosticDatabase,
-            *args: Any,  # noqa: ANN401
-            **kwargs: Any,  # noqa: ANN401
+            *args: Any,  # ruff: ignore[any-type]
+            **kwargs: Any,  # ruff: ignore[any-type]
     ) -> None:
         self.api_tokens: ApiTokenDict = api_tokens
         self.version: str = version
@@ -167,7 +167,10 @@ class Bot(commands.Bot):
         unset_keys = [
             key
             for key in ServerAttributes.__annotations__.keys()
-            if getattr(attributes, key, None) is None
+            if (
+                    getattr(attributes, key, None) is None
+                    or getattr(attributes, key, None) == []
+            )
         ]
 
         # Fill unset attributes with parent values
@@ -175,7 +178,10 @@ class Bot(commands.Bot):
         while len(unset_keys) > 0 and (parent := parent_attributes.parent_server) is not None:
             parent_attributes = self.server_settings[parent.id].attributes
             for key in list(unset_keys):  # clone the list because we're editing it inside the loop
-                if (parent_attr := getattr(parent_attributes, key, None)) is not None:
+                if (
+                        (parent_attr := getattr(parent_attributes, key, None)) is not None
+                        and parent_attr != []
+                ):
                     setattr(attributes, key, parent_attr)
                     unset_keys.remove(key)
 

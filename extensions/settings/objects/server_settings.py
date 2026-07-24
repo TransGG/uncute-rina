@@ -157,7 +157,7 @@ async def parse_attribute(
     def wrap[T](
             sync_function: Callable[[int], T]
     ) -> Callable[[int], typing.Coroutine[None, None, T]]:
-        async def inner(arg: int) -> T:
+        async def inner(arg: int) -> T:  # ruff: ignore[unused-async]
             return sync_function(arg)
         return inner
 
@@ -359,7 +359,7 @@ class ServerSettings:
             async_rina_db: motor.core.AgnosticDatabase,
             guild_id: int,
             parameter: str,
-            value: typing.Any,  # noqa: ANN401
+            value: typing.Any,  # ruff: ignore[any-type]
     ) -> tuple[bool, bool]:
         if "." in parameter or parameter.startswith("$"):
             raise ValueError(
@@ -563,7 +563,7 @@ class ServerSettings:
                 f"- guild_id: {guild_id}"
             )
 
-        parsed_attributes = ServerAttributes()
+        parsed_attributes = ServerAttributes(guild_id)
 
         def set_attribute(
                 key: str,

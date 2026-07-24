@@ -289,9 +289,8 @@ async def _rina_used_deflect_and_it_was_very_effective(
             responses += femme_responses
     respond = random.choice(responses)
     if respond == "BAD!":
-        # noinspection LongLine
         await message.channel.send(
-            "https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless",  # noqa: E501
+            "https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless",
             allowed_mentions=discord.AllowedMentions.none()
         )
     await message.channel.send(

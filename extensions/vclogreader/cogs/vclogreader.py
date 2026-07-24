@@ -1,4 +1,3 @@
-import traceback  # to pass traceback into error return message
 from datetime import datetime, timezone, \
     timedelta  # to plot and sort voice chat logs
 
@@ -45,13 +44,13 @@ def extract_id_and_name(
     assert embed.fields[field_number].value is not None
     # split "<#234567> (Channel Name)" to "234567"
     channel_id = (
-        embed.fields[field_number].value
+        embed.fields[field_number].value  # type: ignore[union-attr]
         .split("#", 1)[1]
         .split(">", 1)[0]
     )
     # split "<#234567> (Channel Name)" to "Channel Name"
     channel_name = (
-        embed.fields[field_number].value
+        embed.fields[field_number].value  # type: ignore[union-attr]
         .split(">", 1)[1]
         .split("(", 1)[1][:-1]
     )
@@ -85,6 +84,7 @@ async def _get_vc_activity(
      new_channel?). Typically, at least one of previous_channel or
      new_channel has a value.
     """
+    # todo: holy moly this function is 250 lines.
     # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
     output: list[tuple[
         float,
@@ -168,9 +168,9 @@ async def _get_vc_activity(
 
             # print("Type = ", type)
             # print("Embed field count = ", len(embed.fields))
-            user_data = []
-            previous_channel_data = []
-            current_channel_data = []
+            user_data: list[str] = []
+            previous_channel_data: list[str] = []
+            current_channel_data: list[str] = []
 
             try:
                 if embed.fields[0].name == "Action":
@@ -178,48 +178,6 @@ async def _get_vc_activity(
                     #  also get logged, but are irrelevant for this
                     #  diagram/command.
                     continue
-                # Could be done more efficiently but oh well. Not like
-                #  this is suitable for any other bot either anyway. And
-                #  I'm limited by discord API anyway.
-
-                if len(embed.fields) == 3:
-                    # user moved channels
-                    #  (3 fields: previous/current channel, and IDs)
-                    if event_type != "moved":
-                        raise AssertionError(
-                            f"type '{event_type}' is not a valid type "
-                            f"(should be 'moved')"
-                        )
-
-                    current_id, current_name = extract_id_and_name(
-                        embed, 0)
-                    current_channel_data.append(current_id)
-                    current_channel_data.append(current_name)
-                    previous_id, previous_name = extract_id_and_name(
-                        embed, 1)
-                    previous_channel_data.append(previous_id)
-                    previous_channel_data.append(previous_name)
-                elif len(embed.fields) == 2:
-                    if event_type == "joined":
-                        current_id, current_name = extract_id_and_name(
-                            embed, 0)
-                        current_channel_data.append(current_id)
-                        current_channel_data.append(current_name)
-                    elif event_type == "left":
-                        previous_id, previous_name = extract_id_and_name(
-                            embed, 0)
-                        previous_channel_data.append(previous_id)
-                        previous_channel_data.append(previous_name)
-                    else:
-                        raise AssertionError(
-                            f"type '{event_type}' is not a valid type "
-                            f"(should be 'joined' or 'left')"
-                        )
-                else:
-                    raise AssertionError(
-                        f"Embed fields count was expected to be 3 or 2. "
-                        f"Instead, it was '{len(embed.fields)}'"
-                    )
             except IndexError:
                 # TODO: try to figure out why it crashed that one time.
                 #  Now with more details
@@ -238,6 +196,44 @@ async def _get_vc_activity(
                         f"Embed field '{embed.fields[0].value}' has some "
                         f"other error or something D:"
                     )
+
+            # Could be done more efficiently but oh well. Not like
+            #  this is suitable for any other bot either anyway. And
+            #  I'm limited by discord API anyway.
+
+            if len(embed.fields) == 3:
+                # user moved channels
+                #  (3 fields: previous/current channel, and IDs)
+                if event_type != "moved":
+                    raise AssertionError(
+                        f"type '{event_type}' is not a valid type (should be 'moved')"
+                    )
+
+                current_id, current_name = extract_id_and_name(embed, 0)
+                current_channel_data.append(current_id)
+                current_channel_data.append(current_name)
+                previous_id, previous_name = extract_id_and_name(embed, 1)
+                previous_channel_data.append(previous_id)
+                previous_channel_data.append(previous_name)
+            elif len(embed.fields) == 2:
+                if event_type == "joined":
+                    current_id, current_name = extract_id_and_name(embed, 0)
+                    current_channel_data.append(current_id)
+                    current_channel_data.append(current_name)
+                elif event_type == "left":
+                    previous_id, previous_name = extract_id_and_name(embed, 0)
+                    previous_channel_data.append(previous_id)
+                    previous_channel_data.append(previous_name)
+                else:
+                    raise AssertionError(
+                        f"type '{event_type}' is not a valid type "
+                        f"(should be 'joined' or 'left')"
+                    )
+            else:
+                raise AssertionError(
+                    f"Embed fields count was expected to be 3 or 2. "
+                    f"Instead, it was '{len(embed.fields)}'"
+                )
 
             # remove the ```ini\n  ...   ``` from the embed field
             assert embed.fields[-1].value is not None
@@ -272,26 +268,40 @@ async def _get_vc_activity(
             assert embed.timestamp is not None
             event_timestamp = embed.timestamp.timestamp()
 
-            try:
-                event_user = (int(user_data[0]), user_data[1])
-
-                if len(previous_channel_data) == 0:
-                    previous_channel = None
-                else:
-                    previous_channel = (int(previous_channel_data[0]),
-                                        previous_channel_data[1])
-
-                if len(current_channel_data) == 0:
-                    current_channel = None
-                else:
-                    current_channel = (int(current_channel_data[0]),
-                                       current_channel_data[1])
-            except ValueError:
+            id_integer_test: list[tuple[bool, str]] = [
+                (user_data[0].isdecimal(), "user_data[0]"),
+                (user_data[1].isdecimal(), "user_data[1]"),
+                (previous_channel_data[0].isdecimal(), "previous_channel_data[0]"),
+                (previous_channel_data[1].isdecimal(), "previous_channel_data[1]"),
+                (current_channel_data[0].isdecimal(), "current_channel_data[0]"),
+                (current_channel_data[1].isdecimal(), "current_channel_data[1]"),
+            ]
+            faulty_ids = [
+                variable
+                for is_decimal, variable
+                in id_integer_test
+                if not is_decimal
+            ]
+            if len(faulty_ids) > 0:
                 raise AssertionError(
-                    f"IDs were not numeric!\n"
-                    f"Full error:\n"
-                    f"{traceback.format_exc()}"
+                    "IDs were not numeric!\n"
+                    + ', '.join(faulty_ids)
+                    + "\n"
+                    + str([user_data, previous_channel_data, current_channel_data])
                 )
+            event_user = (int(user_data[0]), user_data[1])
+
+            if len(previous_channel_data) == 0:
+                previous_channel = None
+            else:
+                previous_channel = (int(previous_channel_data[0]),
+                                    previous_channel_data[1])
+
+            if len(current_channel_data) == 0:
+                current_channel = None
+            else:
+                current_channel = (int(current_channel_data[0]),
+                                   current_channel_data[1])
 
             data = (event_timestamp, event_user,
                     previous_channel, current_channel)
@@ -360,9 +370,9 @@ def _make_bar_graph(
     # When more users are shown (e.g., 30), that would bring the font
     #  size to 144 / 30 = 4.8,
     #
-    # [1]: https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html # noqa: E501
-    # [2]: https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size # noqa: E501
-    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx # noqa: E501
+    # [1]: https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html
+    # [2]: https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
+    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
 
     scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)
     # ^ clamp to 4 <= size <= 12 (default)

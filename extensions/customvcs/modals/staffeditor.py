@@ -6,6 +6,87 @@ from resources.utils.utils import log_to_guild
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 
 
+async def _try_change_name_or_limit(
+        channel: discord.VoiceChannel | discord.StageChannel,
+        itx: discord.Interaction[Bot],
+        limit: int | None,
+        limit_info: str,
+        name: str | None,
+        old_limit: int,
+        old_name: str | None,
+        warning: str,
+) -> None:
+    if not limit and not name:
+        await itx.response.send_message(
+            "You can edit a channel with this command. Set a value "
+            "for the name or the maximum user limit.",
+            ephemeral=True)
+    if limit and not name:
+        await channel.edit(
+            reason=f"Staff: Voice channel limit edited from "
+                   f"\"{old_limit}\" to \"{limit}\"",
+            user_limit=limit
+        )
+        await log_to_guild(
+            itx.client,
+            itx.guild,
+            f"Staff: Voice channel \"{old_name}\" ({channel.id}) "
+            f"edited the user limit from \"{old_limit}\" to "
+            f"\"{limit}\" (by {itx.user.name}, "
+            f"{itx.user.id}){limit_info}"
+        )
+        await itx.response.send_message(
+            warning
+            + f"Staff: Voice channel user limit for \"{old_name}\" "
+              f"successfully edited from \"{old_limit}\" to "
+              f"\"{limit}\"",
+            ephemeral=True,
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+    if not limit and name:
+        await channel.edit(
+            reason=f"Staff: Voice channel renamed from "
+                   f"\"{channel.name}\" to \"{name}\"{limit_info}",
+            name=name
+        )
+        await log_to_guild(
+            itx.client,
+            itx.guild,
+            f"Staff: Voice channel ({channel.id}) renamed from "
+            f"\"{old_name}\" to \"{name}\" (by "
+            f"{itx.user.name}, "
+            f"{itx.user.id})"
+        )
+        await itx.response.send_message(
+            warning
+            + f"Staff: Voice channel successfully renamed "
+              f"to \"{name}\"",
+            ephemeral=True,
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+    if limit and name:
+        await channel.edit(
+            reason=f"Staff: Voice channel edited from name: "
+                   f"\"{channel.name}\" to \"{name}\" and user limit "
+                   f"from: \"{limit}\" to \"{old_limit}\"",
+            user_limit=limit, name=name)
+        await log_to_guild(
+            itx.client,
+            itx.guild,
+            f"Staff: {itx.user.name} ({itx.user.id}) "
+            f"changed VC ({channel.id}) name "
+            f"\"{old_name}\" to \"{name}\" and user limit from "
+            f"\"{old_limit}\" to \"{limit}\"{limit_info}"
+        )
+        await itx.response.send_message(
+            warning
+            + "Staff: Voice channel name and user limit "
+              "successfully edited.",
+            ephemeral=True,
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+
+
 class CustomVcStaffEditorModal(
         discord.ui.Modal,
         title='Edit a custom vc\'s channel'
@@ -21,18 +102,18 @@ class CustomVcStaffEditorModal(
         self.vc_category = vc_category
         self.vc_prefix = vctable_prefix
 
-        self.channel_id = discord.ui.TextInput(
+        self.channel_id: discord.ui.TextInput = discord.ui.TextInput(
             label='Channel Id',
             placeholder="Which channel do you want to edit",
             required=True
         )
-        self.name = discord.ui.TextInput(
+        self.name: discord.ui.TextInput = discord.ui.TextInput(
             label='Name',
             placeholder="Give your voice channel a name",
             required=False,
             max_length=100 - len(vctable_prefix)
         )
-        self.limit = discord.ui.TextInput(
+        self.limit: discord.ui.TextInput = discord.ui.TextInput(
             label='Limit',
             placeholder="Give your voice channel a user limit",
             required=False
@@ -41,9 +122,10 @@ class CustomVcStaffEditorModal(
         self.add_item(self.name)
         self.add_item(self.limit)
 
-    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+    async def on_submit(
             self,
-            itx: discord.Interaction[Bot]
+            itx: discord.Interaction[Bot],  # type: ignore[override]
+            # ^ (Interaction vs. Interaction[Bot])
     ) -> None:
         if itx.guild is None:
             await itx.response.send_message(
@@ -139,75 +221,16 @@ class CustomVcStaffEditorModal(
                 f"symbol.\n"
             )
         try:
-            if not limit and not name:
-                await itx.response.send_message(
-                    "You can edit a channel with this command. Set a value "
-                    "for the name or the maximum user limit.",
-                    ephemeral=True)
-            if limit and not name:
-                await channel.edit(
-                    reason=f"Staff: Voice channel limit edited from "
-                           f"\"{old_limit}\" to \"{limit}\"",
-                    user_limit=limit
-                )
-                await log_to_guild(
-                    itx.client,
-                    itx.guild,
-                    f"Staff: Voice channel \"{old_name}\" ({channel.id}) "
-                    f"edited the user limit from \"{old_limit}\" to "
-                    f"\"{limit}\" (by {itx.user.name}, "
-                    f"{itx.user.id}){limit_info}"
-                )
-                await itx.response.send_message(
-                    warning
-                    + f"Staff: Voice channel user limit for \"{old_name}\" "
-                      f"successfully edited from \"{old_limit}\" to "
-                      f"\"{limit}\"",
-                    ephemeral=True,
-                    allowed_mentions=discord.AllowedMentions.none()
-                )
-            if not limit and name:
-                await channel.edit(
-                    reason=f"Staff: Voice channel renamed from "
-                           f"\"{channel.name}\" to \"{name}\"{limit_info}",
-                    name=name
-                )
-                await log_to_guild(
-                    itx.client,
-                    itx.guild,
-                    f"Staff: Voice channel ({channel.id}) renamed from "
-                    f"\"{old_name}\" to \"{name}\" (by "
-                    f"{itx.user.name}, "
-                    f"{itx.user.id})"
-                )
-                await itx.response.send_message(
-                    warning
-                    + f"Staff: Voice channel successfully renamed "
-                      f"to \"{name}\"",
-                    ephemeral=True,
-                    allowed_mentions=discord.AllowedMentions.none()
-                )
-            if limit and name:
-                await channel.edit(
-                    reason=f"Staff: Voice channel edited from name: "
-                           f"\"{channel.name}\" to \"{name}\" and user limit "
-                           f"from: \"{limit}\" to \"{old_limit}\"",
-                    user_limit=limit, name=name)
-                await log_to_guild(
-                    itx.client,
-                    itx.guild,
-                    f"Staff: {itx.user.name} ({itx.user.id}) "
-                    f"changed VC ({channel.id}) name "
-                    f"\"{old_name}\" to \"{name}\" and user limit from "
-                    f"\"{old_limit}\" to \"{limit}\"{limit_info}"
-                )
-                await itx.response.send_message(
-                    warning
-                    + "Staff: Voice channel name and user limit "
-                      "successfully edited.",
-                    ephemeral=True,
-                    allowed_mentions=discord.AllowedMentions.none()
-                )
+            await _try_change_name_or_limit(
+                channel,
+                itx,
+                limit,
+                limit_info,
+                name,
+                old_limit,
+                old_name,
+                warning,
+            )
         except discord.errors.HTTPException as ex:
             ex_message = repr(ex).split("(", 1)[1][1:-2]
             await log_to_guild(

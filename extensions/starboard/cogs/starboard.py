@@ -117,8 +117,7 @@ async def _send_starboard_message(
         description=f"{message.content}",
         timestamp=message.created_at  # this, or datetime.now()
     )
-    # noinspection LongLine
-    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"  # noqa: E501
+    msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
     embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
     embed.set_footer(text=f"{message.id}")
     name = getattr(message.author, "nick", None) or message.author.name
@@ -624,8 +623,7 @@ class Starboard(commands.Cog):
             if payload.emoji.name == "❌":
                 return
 
-            # noinspection LongLine
-            broken_link = f"https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}"  # noqa: E501
+            broken_link = f"https://discord.com/channels/{payload.guild_id}/{payload.channel_id}/{payload.message_id}"
             await log_to_guild(
                 self.client,
                 self.client.get_guild(payload.guild_id),
@@ -762,8 +760,7 @@ class Starboard(commands.Cog):
                 if value is None]
             raise MissingAttributesCheckFailure(ModuleKeys.starboard, missing)
 
-        # noinspection LongLine
-        if message_payload.message_id in starboard_message_ids_marked_for_deletion:  # noqa: E501
+        if message_payload.message_id in starboard_message_ids_marked_for_deletion:
             # marked messages is a global variable
             # this prevents having two 'message deleted' logs for
             # manual deletion of starboard message

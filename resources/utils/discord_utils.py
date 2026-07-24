@@ -33,8 +33,8 @@ def send_channel_or_interaction(
         return send_or_followup(itx)
 
     async def try_send_message(
-            *args,    # noqa: ANN002
-            **kwargs,    # noqa: ANN003
+            *args,    # ruff: ignore[missing-type-args]
+            **kwargs,    # ruff: ignore[missing-type-kwargs]
     ) -> (
             discord.InteractionCallbackResponse[Bot]
             | discord.WebhookMessage

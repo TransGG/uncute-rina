@@ -503,7 +503,7 @@ class SearchAddons(commands.Cog):
                 #                          "Not banned", "Varies by Region"]:
                 #     value = "🟨 " + value
                 # else:
-                #     value = "➖ " + value  # noqa: RUF003
+                #     value = "➖ " + value  # ruff: ignore[ambiguous-unicode-character-comment]
                 status_description = \
                     status['description']
                 description = issue_details['description']
