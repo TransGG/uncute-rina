@@ -157,7 +157,7 @@ async def parse_attribute(
     def wrap[T](
             sync_function: Callable[[int], T]
     ) -> Callable[[int], typing.Coroutine[None, None, T]]:
-        async def inner(arg: int) -> T:
+        async def inner(arg: int) -> T:  # ruff: ignore[unused-async]
             return sync_function(arg)
         return inner
 

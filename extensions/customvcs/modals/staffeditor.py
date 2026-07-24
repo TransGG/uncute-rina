@@ -102,18 +102,18 @@ class CustomVcStaffEditorModal(
         self.vc_category = vc_category
         self.vc_prefix = vctable_prefix
 
-        self.channel_id = discord.ui.TextInput(
+        self.channel_id: discord.ui.TextInput = discord.ui.TextInput(
             label='Channel Id',
             placeholder="Which channel do you want to edit",
             required=True
         )
-        self.name = discord.ui.TextInput(
+        self.name: discord.ui.TextInput = discord.ui.TextInput(
             label='Name',
             placeholder="Give your voice channel a name",
             required=False,
             max_length=100 - len(vctable_prefix)
         )
-        self.limit = discord.ui.TextInput(
+        self.limit: discord.ui.TextInput = discord.ui.TextInput(
             label='Limit',
             placeholder="Give your voice channel a user limit",
             required=False
@@ -122,9 +122,10 @@ class CustomVcStaffEditorModal(
         self.add_item(self.name)
         self.add_item(self.limit)
 
-    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+    async def on_submit(
             self,
-            itx: discord.Interaction[Bot]
+            itx: discord.Interaction[Bot],  # type: ignore[override]
+            # ^ (Interaction vs. Interaction[Bot])
     ) -> None:
         if itx.guild is None:
             await itx.response.send_message(

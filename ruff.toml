@@ -26,7 +26,6 @@ select = [
 
     # Ruff-specific
 
-
     "RUF",
     "asyncio-dangling-task", # asyncio tasks can be GC'd and killed
     "implicit-optional", # Explicit Optional
@@ -55,7 +54,7 @@ select = [
 
     # Weird tests for characters that look similar
     "ambiguous-unicode-character-string",
-    "ambiguous-unicode-character-comment",
+    "ambiguous-unicode-character-comment"
 ]
 
 ignore = [

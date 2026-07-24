@@ -472,8 +472,8 @@ class CustomVcs(commands.Cog):
         if not limit and name:
             await _try_change(
                 channel,
-                "Voice channel renamed from \"{channel.name}\" "
-                "to \"{name}\"",
+                f"Voice channel renamed from \"{channel.name}\" "
+                f"to \"{name}\"",
                 rename=name,  # apparently literals aren't strings...?
             )
             await log_to_guild(

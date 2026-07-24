@@ -1,4 +1,3 @@
-import traceback  # to pass traceback into error return message
 from datetime import datetime, timezone, \
     timedelta  # to plot and sort voice chat logs
 
@@ -45,13 +44,13 @@ def extract_id_and_name(
     assert embed.fields[field_number].value is not None
     # split "<#234567> (Channel Name)" to "234567"
     channel_id = (
-        embed.fields[field_number].value
+        embed.fields[field_number].value  # type: ignore[union-attr]
         .split("#", 1)[1]
         .split(">", 1)[0]
     )
     # split "<#234567> (Channel Name)" to "Channel Name"
     channel_name = (
-        embed.fields[field_number].value
+        embed.fields[field_number].value  # type: ignore[union-attr]
         .split(">", 1)[1]
         .split("(", 1)[1][:-1]
     )
@@ -85,6 +84,7 @@ async def _get_vc_activity(
      new_channel?). Typically, at least one of previous_channel or
      new_channel has a value.
     """
+    # todo: holy moly this function is 250 lines.
     # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
     output: list[tuple[
         float,
