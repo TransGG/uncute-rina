@@ -54,18 +54,18 @@ select = [
 
     # Weird tests for characters that look similar
     "ambiguous-unicode-character-string",
-    "ambiguous-unicode-character-comment"
+    "ambiguous-unicode-character-comment",
+    "blanket-noqa", # Blanket disabling lints isn't great
+    "PTH", # pathlib still technically works
 ]
 
 ignore = [
-    # Things we should probably do
-    "assert", # We should not use asserts, as some environments disable them  # IMO pretty silly idea
-    "blanket-noqa",
-    "unused-noqa", # Blanket disabling lints isn't great
+    "unused-noqa", # different linters have different noqa triggers so aren't always 'unused'.
     "shebang-missing-executable-file",
+    # Things we should probably do
+    "assert", # We should not use asserts (throw exceptions instead!), as optimized environments disable them
 
     # Style stuff that's bad, but won't cause issues
-    "PTH", # pathlib still technically works
 
     # Ignoring these more permanently
     "suspicious-non-cryptographic-random-usage", # We don't need a CSPRNG anywhere, right?
