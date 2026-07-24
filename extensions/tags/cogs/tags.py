@@ -267,7 +267,7 @@ class TagFunctions(commands.Cog):
             tag_data = get_tag(itx.guild.id, tag[1])
             if tag_data is None:
                 # Tag from a child server
-                original_guild_id, original_tag_name = tag[1].split("-")
+                original_guild_id, original_tag_name = tag[1].split("-", 1)
                 tag_data = get_tag(int(original_guild_id), original_tag_name)
             if tag_data is None:
                 raise NotImplementedError(f"Tag '{tag}' not found.")
