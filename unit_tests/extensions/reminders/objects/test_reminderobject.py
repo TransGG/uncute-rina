@@ -42,7 +42,7 @@ def test_output_nochange_match() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, "0d")
+    func = _parse_reminder_time(itx, "0d")  # type: ignore[arg-type]
 
     # Act
     reminder_time, now, itx2 = asyncio.run(func)
@@ -57,7 +57,7 @@ def test_output_timezones_match() -> None:
     # Arrange
     current_time = _get_current_time_formatted().replace(tzinfo=timezone.utc)
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, "0d")
+    func = _parse_reminder_time(itx, "0d")  # type: ignore[arg-type]
 
     # Act
     reminder_time, now, itx2 = asyncio.run(func)
@@ -73,7 +73,7 @@ def test_relative_offset() -> None:
     # Arrange
     current_time = _get_current_time_formatted()
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, "500d,1h,1m,1s")
+    func = _parse_reminder_time(itx, "500d,1h,1m,1s")  # type: ignore[arg-type]
 
     # Act
     reminder_time, _, itx2 = asyncio.run(func)
@@ -93,7 +93,7 @@ def test_offset_overflows() -> None:
         tzinfo=timezone.utc
     )
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, "1y 20mo 50w 500d 30h 100m 100s")
+    func = _parse_reminder_time(itx, "1y 20mo 50w 500d 30h 100m 100s")  # type: ignore[arg-type]
 
     # Act
     reminder_time, _, itx2 = asyncio.run(func)
@@ -116,7 +116,7 @@ def test_discord_timestamp() -> None:
     unix_timestamp = int(new_time.timestamp())
     discord_format = f"<t:{unix_timestamp}:F>"
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, discord_format)
+    func = _parse_reminder_time(itx, discord_format)  # type: ignore[arg-type]
 
     # Act
     reminder_time, _, itx2 = asyncio.run(func)
@@ -141,8 +141,8 @@ def test_iso_date_timeshort_timezone() -> None:
     assert date_string1 != date_string2
 
     itx = CustomObject(created_at=current_time)
-    func1 = _parse_reminder_time(itx, date_string1)
-    func2 = _parse_reminder_time(itx, date_string2)
+    func1 = _parse_reminder_time(itx, date_string1)  # type: ignore[arg-type]
+    func2 = _parse_reminder_time(itx, date_string2)  # type: ignore[arg-type]
 
     # Act
     reminder_time1, _, itx2 = asyncio.run(func1)
@@ -163,8 +163,8 @@ def test_iso_date_timelong_timezone() -> None:
     # ^ 2025-03-01T04:01:05+0100
 
     itx = CustomObject(created_at=current_time)
-    func1 = _parse_reminder_time(itx, date_string1)
-    func2 = _parse_reminder_time(itx, date_string2)
+    func1 = _parse_reminder_time(itx, date_string1)  # type: ignore[arg-type]
+    func2 = _parse_reminder_time(itx, date_string2)  # type: ignore[arg-type]
 
     # Act
     reminder_time1, _, itx2 = asyncio.run(func1)
@@ -186,8 +186,8 @@ def test_iso_date_matches_unix_timestamp() -> None:
     itx = CustomObject(created_at=datetime(
         year=2025, month=1, day=1, tzinfo=timezone.utc))
     # ^ before date_string1
-    func1 = _parse_reminder_time(itx, date_string1)
-    func2 = _parse_reminder_time(itx, date_string2)
+    func1 = _parse_reminder_time(itx, date_string1)  # type: ignore[arg-type]
+    func2 = _parse_reminder_time(itx, date_string2)  # type: ignore[arg-type]
 
     # Act
     reminder_time1, _, itx2 = asyncio.run(func1)
@@ -208,7 +208,7 @@ def test_exception_iso_time_timezone() -> None:
     current_time = _get_custom_time1()
     datetime_string = current_time.strftime('%H:%M:%S%z')  # 04:01:05+0100
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -220,7 +220,7 @@ def test_exception_american_format_ymd() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y/%m/%d %h:%M:%SPM')
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -232,7 +232,7 @@ def test_exception_american_format_dmy() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%d/%m/%Y %h:%M:%SPM')
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -244,7 +244,7 @@ def test_exception_american_format_with_t_ymd() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y/%m/%dT%h:%M:%SPM')
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -256,7 +256,7 @@ def test_exception_american_format_with_t_dmy() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%d/%m/%YT%h:%M:%SPM')
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -268,7 +268,7 @@ def test_malformed_year() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y')  # eg. 2025
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -280,7 +280,7 @@ def test_malformed_year_month() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%M')  # eg. 2025-03
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -293,7 +293,7 @@ def test_exception_iso_date_timeshort() -> None:  # no timezone
     datetime_string = current_time.strftime('%Y-%m-%dT%I:%M')
     # ^ 2025-03-01T4:01:05
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -311,7 +311,7 @@ def test_exception_iso_date_timelong() -> None:  # no timezone
     datetime_string = current_time.strftime('%Y-%m-%dT%H:%M')
     # ^ 2025-03-01T4:01:05
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -325,7 +325,7 @@ def test_exception_iso_date() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%m-%d')  # eg. 2025-03-17
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(AttributeError):
@@ -344,7 +344,7 @@ def test_exception_12_hour_clock() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%m-%dT%h:%M:%SPM')
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):
@@ -356,7 +356,7 @@ def test_exception_12_hour_clock_timezone() -> None:
     current_time = _get_current_time_formatted()
     datetime_string = current_time.strftime('%Y-%m-%dT%h:%M:%SPM%z')
     itx = CustomObject(created_at=current_time)
-    func = _parse_reminder_time(itx, datetime_string)
+    func = _parse_reminder_time(itx, datetime_string)  # type: ignore[arg-type]
 
     # Assert
     with pytest.raises(TimestampParseException):

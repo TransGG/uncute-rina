@@ -28,7 +28,7 @@ def test_matching_keys() -> None:
 
     # Assert
     assert at == atid
-    assert set(at) == atk
+    assert at == atk
     # for assurance
     assert sorted(set(at)) == sorted(at)
 

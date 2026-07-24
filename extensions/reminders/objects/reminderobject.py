@@ -208,7 +208,7 @@ async def _handle_reminder_timestamp_parsing(
     :raise ReminderTimeSelectionMenuTimeout: if the TimeOfDaySelection button
      view times out.
     """
-    mode: TimestampFormats = _validate_timestamp_format(reminder_datetime)
+    mode: TimestampFormats = _validate_timestamp_format(reminder_datetime.lower())
 
     # convert given time string to valid datetime
     timestamp_format = [

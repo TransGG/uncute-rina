@@ -372,7 +372,7 @@ def _make_bar_graph(
     #
     # [1]: https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yticklabels.html
     # [2]: https://matplotlib.org/stable/api/font_manager_api.html#matplotlib.font_manager.FontProperties.set_size
-    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx
+    # [3]: https://stackoverflow.com/questions/62288898/matplotlib-values-for-the-xx-small-x-small-small-medium-large-x-large-xx  # noqa: E501 # ruff: ignore[noqa-comments]
 
     scaling_label_size = min(max(144 / max(len(sorted_usernames), 1), 4), 12)
     # ^ clamp to 4 <= size <= 12 (default)

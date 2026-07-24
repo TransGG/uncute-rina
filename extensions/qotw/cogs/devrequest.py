@@ -39,8 +39,7 @@ async def _devrequest_prefix_autocomplete(  # ruff: ignore[unused-async]
         return []
     prefixes: list[tuple[str, str]] = [
         (DevRequestPrefix.empty.value, DevRequestPrefix.empty_label.value)
-
-     ]
+    ]
     bot_prefixes = itx.client.get_guild_attributes(
         itx.guild).developer_request_bot_prefixes
     prefixes += sorted(

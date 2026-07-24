@@ -15,6 +15,7 @@ class AttributeKeys:
     qotw_suggestions_channel = "qotw_suggestions_channel"
     developer_request_channel = "developer_request_channel"
     developer_request_reaction_role = "developer_request_reaction_role"
+    developer_request_bot_prefixes = "developer_request_bot_prefixes"
 
     watchlist_channel = "watchlist_channel"
     watchlist_reaction_role = "watchlist_reaction_role"

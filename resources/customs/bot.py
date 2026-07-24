@@ -168,8 +168,8 @@ class Bot(commands.Bot):
             key
             for key in ServerAttributes.__annotations__.keys()
             if (
-                    getattr(attributes, key, None) is None
-                    or getattr(attributes, key, None) == []
+                getattr(attributes, key, None) is None
+                or getattr(attributes, key, None) == []
             )
         ]
 
