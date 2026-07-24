@@ -30,6 +30,7 @@ class ServerAttributeIds(TypedDict, total=False):
     qotw_suggestions_channel: MessageableGuildChannelId
     developer_request_channel: TextChannelId
     developer_request_reaction_role: RoleId
+    developer_request_bot_prefixes: list[str]
 
     watchlist_channel: TextChannelId
     watchlist_reaction_role: RoleId

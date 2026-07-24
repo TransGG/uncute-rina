@@ -46,6 +46,7 @@ class ServerAttributes:
     developer_request_channel: discord.TextChannel | None = None
     # ^ needs to be able to have threads
     developer_request_reaction_role: discord.Role | None = None
+    developer_request_bot_prefixes: list[str] = dataclasses.field(default_factory=list)
 
     watchlist_channel: discord.TextChannel | None = None
     # ^ needs to be able to have threads

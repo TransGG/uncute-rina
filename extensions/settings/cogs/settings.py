@@ -267,10 +267,10 @@ async def _value_autocomplete(  # ruff: ignore[unused-async]
             _update_results_from_iterable(results, itx.guild.roles, current)
         if discord.Emoji in attribute_type:
             _update_results_from_iterable(results, itx.guild.emojis, current)
-        if str in attribute_type:
+        if str in attribute_type and len(current) > 0:
             # leave as is
             results.add(app_commands.Choice[str](name=current, value=current))
-        if str in attribute_type:
+        if int in attribute_type:
             # leave as is, if it's a number (otherwise don't suggest anything)
             if current.isdecimal():
                 results.add(
