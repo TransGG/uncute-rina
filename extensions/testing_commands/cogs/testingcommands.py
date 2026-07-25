@@ -146,7 +146,7 @@ class TestingCog(commands.GroupCog, name="testing"):
             if hasattr(child_channel, "send"):
                 channel = child_channel
         if channel is None:
-            raise IOError("staff logs category doesn't contain any channels.")
+            raise OSError("staff logs category doesn't contain any channels.")
 
         await channel.send(embed=embed)
 
@@ -185,7 +185,7 @@ class TestingCog(commands.GroupCog, name="testing"):
                 title=get_chars(random.randint(15, 40)),
                 description=get_chars(60)
             )
-            for _ in range(0, 4):  # embed fields
+            for _ in range(4):  # embed fields
                 e.add_field(
                     name=get_chars(random.randint(10, 30)),
                     value=get_chars(random.randint(20, 60)),

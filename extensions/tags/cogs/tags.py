@@ -131,7 +131,7 @@ async def _tag_manage_autocomplete(  # ruff: ignore[unused-async]
         tag_objects = get_tags(itx.guild.id)
         return [
             app_commands.Choice[str](name=key, value=key)
-            for key in tag_objects.keys()
+            for key in tag_objects
             if current.lower() in key.lower()
         ]
     return []
@@ -152,7 +152,7 @@ def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
         raise ValueError("You need to provide 3 color values "
                          "separated by commas: `255, 255, 255`")
     if not all(i.isdecimal() for i in color_value_strings):
-        expected_format = "255,255,255".split(",")
+        expected_format = "255,255,255"
         raise ValueError(f"Your color values must be numbers. "
                          f"Interpreted colors: {color_value_strings}. "
                          f"Expected format: {expected_format}.")
@@ -238,7 +238,7 @@ class TagFunctions(commands.Cog):
         if tag_name == "help":
             await itx.response.send_message(
                 "List of tags currently available to send:\n"
-                + '\n'.join(["- " + i[0] for i in tag_ids]),
+                + '\n'.join(sorted("- " + i[0] for i in tag_ids)),
                 ephemeral=True,
             )
             return
@@ -315,7 +315,7 @@ class TagFunctions(commands.Cog):
     ) -> None:
         server_tags: set[str] = {
             i[0] for i in _get_enabled_tag_ids(itx, recursive=False)
-            if i not in tag_info_dict.keys()
+            if i not in tag_info_dict
         }
 
         match TagMode(mode):

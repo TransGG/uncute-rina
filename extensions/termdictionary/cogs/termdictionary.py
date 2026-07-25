@@ -179,7 +179,7 @@ class TermDictionary(commands.Cog):
             fetch_with_timeout(source)
             for _, source in sources
         ]
-        results: tuple[set[str]] = await asyncio.gather(*tasks)
+        results: list[set[str]] = await asyncio.gather(*tasks)
 
         terms: set[str] = set.union(*results)
 

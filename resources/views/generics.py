@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import typing
 from abc import abstractmethod
 
@@ -90,7 +91,7 @@ class GenericTwoButtonView(discord.ui.View):
         self.stop()
 
 
-class PageView(discord.ui.View):
+class PageView(discord.ui.View, metaclass=abc.ABCMeta):
     """
     A generic page view to nagivate through given pages.
 
@@ -219,7 +220,6 @@ class PageView(discord.ui.View):
          interaction by the user.
         :param view: The view class instance.
         """
-        pass
 
     def __init__(
             self,

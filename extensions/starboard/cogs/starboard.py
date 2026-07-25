@@ -24,7 +24,7 @@ from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
-starboard_message_ids_marked_for_deletion = []
+starboard_message_ids_marked_for_deletion: list[int] = []
 
 
 async def _fetch_starboard_original_message(
@@ -123,7 +123,7 @@ async def _send_starboard_message(
         url=f"https://original.poster/{message.author.id}/",
         icon_url=message.author.display_avatar.url
     )
-    embed_list = []
+    embed_list: list[discord.Embed] = []
     for attachment in message.attachments:
         # The type checker doesn't seem to pick up that the embeds have been
         #  created manually, and are manually given a `value` attribute.

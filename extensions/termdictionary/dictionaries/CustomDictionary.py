@@ -14,8 +14,8 @@ from .DictionaryBase import DictionaryBase
 
 
 class CustomDictionary(DictionaryBase):
-    def __init__(self, client: aiohttp.ClientSession) -> None:
-        super().__init__(client)
+    def __init__(self, session: aiohttp.ClientSession) -> None:
+        super().__init__(session)
         self._result_str: str | None = None
         self._long_line: bool = False
         self._character_overflow: bool = False

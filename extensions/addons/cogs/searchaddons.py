@@ -71,10 +71,10 @@ def format_wolfram_success_output(
     if data_count <= error_or_nodata:
         return (
             False,
-            "There was no data for your answer!\n"
-            "It seems all your answers had an error or were "
-            "'nodata entries', meaning you might need to try a "
-            "different query to get an answer to your question!"
+            ("There was no data for your answer!\n"
+             "It seems all your answers had an error or were "
+             "'nodata entries', meaning you might need to try a "
+             "different query to get an answer to your question!")
         )
 
     assumptions = _format_wolfram_assumptions(data)
@@ -267,12 +267,11 @@ def _extract_assumption(assumption: WolframAssumption) -> str | None:
 
     if "template" in assumption:
         template: str = assumption["template"]
-        for replacer in assumption_data:
+        for match, replacement in assumption_data.items():
             template = template.replace(
-                replacer, assumption_data[replacer]
+                match, replacement
             )
-        if template.endswith("."):
-            template = template[:-1]
+        template = template.removesuffix(".")
         return template + "?"
     else:
         template: str = (
@@ -432,8 +431,8 @@ class SearchAddons(commands.Cog):
             "<b>": "**",
             r"<\/b>": "**"
         }
-        for key in jsonizing_table:
-            response_api = response_api.replace(key, jsonizing_table[key])
+        for match, replacement in jsonizing_table.items():
+            response_api = response_api.replace(match, replacement)
         data = json.loads(response_api)
         return data, response.status
 

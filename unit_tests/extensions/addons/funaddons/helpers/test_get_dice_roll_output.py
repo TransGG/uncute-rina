@@ -1,6 +1,8 @@
-import pytest
-from unittest import mock
 import random
+from unittest import mock
+
+import pytest
+
 from extensions.addons.cogs.funaddons import _get_dice_roll_output
 
 

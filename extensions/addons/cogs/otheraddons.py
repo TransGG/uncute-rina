@@ -212,12 +212,12 @@ async def _unit_autocomplete(  # ruff: ignore[unused-async]
     options = options[itx.namespace.mode]
     if itx.namespace.mode == "currency":
         return [app_commands.Choice[str](name=option, value=option)
-                for option in options.keys()
+                for option in options
                 if option.lower().startswith(current.lower())
                 ][:10]
     else:
         return [app_commands.Choice[str](name=option, value=option)
-                for option in options.keys()
+                for option in options
                 if current.lower() in option.lower()
                 ][:25]
 
@@ -233,14 +233,19 @@ async def _role_autocomplete(  # ruff: ignore[unused-async]
         1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
         1126160612620243044: ("Hide Venting channel role", "NVA")  # NVA
     }
-    options = []
+    options = [
+        role.id
+        for role in itx.user.roles
+        if (
+            role.id in role_options
+            and (
+                current.lower() in role_options[role.id][0].lower()
+                or current.lower() in role_options[role.id][1].lower()
+            )
+        )
+    ]
 
-    for role in itx.user.roles:
-        if role.id in role_options:
-            if (current.lower() in role_options[role.id][0].lower()
-                    or current.lower() in role_options[role.id][1].lower()):
-                options.append(role.id)
-    if options:
+    if len(options) > 0:
         return [
             app_commands.Choice[str](
                 name=role_options[role_id][0],
