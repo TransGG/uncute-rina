@@ -1,21 +1,34 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import typing
 
 import discord
 from discord import app_commands
 
-from .command_checks import GuildCommandCallback, is_in_dms
+from resources.abc import GuildInteraction
+
+from .command_checks import is_in_dms
 from .errors import (
     CommandDoesNotSupportDMsCheckFailure,
     InsufficientPermissionsCheckFailure,
 )
 from .permissions import is_admin, is_staff
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from discord.app_commands.commands import CommandCallback, GroupT, P, T
 
     from resources.customs import Bot
+
+    GuildCommandCallback = (
+        typing.Callable[
+            typing.Concatenate[GroupT, GuildInteraction[Bot], P],
+            typing.Coroutine[None, None, T],
+        ]
+        | typing.Callable[
+            typing.Concatenate[GuildInteraction[Bot], P],
+            typing.Coroutine[None, None, T],
+        ]
+    )
 
 
 def is_staff_check(

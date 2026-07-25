@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-# \/ to create new reminder task that runs immediately (from a not-async ReminderObject __init__ function)
+# \/ to create new reminder task that runs immediately
+#  (from a not-async ReminderObject __init__ function)
 import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
@@ -13,9 +14,11 @@ from extensions.reminders.exceptions import (
     TimestampParseException,
     UnixTimestampInPastException,
 )
-from extensions.reminders.objects import (
+from extensions.reminders.objects.reminderdict import (
     DatabaseData,
     ReminderDict,
+)
+from extensions.reminders.objects.timestampformats import (
     TimestampFormats,
 )
 from extensions.reminders.utils import get_user_reminders
