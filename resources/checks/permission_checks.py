@@ -4,13 +4,12 @@ from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
-from typing import TYPE_CHECKING, Any
 
+from .command_checks import GuildCommandCallback, is_in_dms
 from .errors import (
     CommandDoesNotSupportDMsCheckFailure,
     InsufficientPermissionsCheckFailure,
 )
-from .command_checks import is_in_dms
 from .permissions import is_admin, is_staff
 
 if TYPE_CHECKING:
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def is_staff_check(
-        func: CommandCallback[Any, ..., Any]
+        func: GuildCommandCallback[GroupT, P, T]
 ) -> CommandCallback[GroupT, P, T]:
     def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
@@ -42,11 +41,11 @@ def is_staff_check(
         raise InsufficientPermissionsCheckFailure("User is not staff")
 
     app_commands.check(decor_check)(func)
-    return func
+    return func  # type: ignore[return-value]
 
 
 def is_admin_check(
-        func: CommandCallback[Any, ..., Any]
+        func: GuildCommandCallback[GroupT, P, T]
 ) -> CommandCallback[GroupT, P, T]:
     def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
@@ -68,4 +67,4 @@ def is_admin_check(
         raise InsufficientPermissionsCheckFailure("User is not admin")
 
     app_commands.check(decor_check)(func)
-    return func
+    return func  # type: ignore[return-value]
