@@ -1,9 +1,9 @@
-import discord
-
 import typing
 
-from resources.views.generics import create_simple_button
+import discord
+
 from resources.customs import Bot
+from resources.views.generics import create_simple_button
 
 
 class TimeOfDaySelection(discord.ui.View):

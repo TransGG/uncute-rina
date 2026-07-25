@@ -3,10 +3,8 @@ from __future__ import annotations
 import typing
 
 import discord
-from typing import TYPE_CHECKING
 
-
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from resources.abc import GuildInteraction
     from resources.customs import Bot
 

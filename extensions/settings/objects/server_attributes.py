@@ -1,6 +1,7 @@
 import dataclasses
-import discord
 import typing
+
+import discord
 
 from resources.abc import MessageableGuildChannel
 
@@ -94,7 +95,6 @@ class ServerAttributes:
 
     def get_exclusively_child_guilds(self, bot: Bot) -> set[int]:
         """Get a list of *just this server's* child guild ids"""
-        # Is a O(n^n) function.
         guild_ids: set[int] = set()
         if bot.server_settings is None:
             return guild_ids  # todo: raise error?
@@ -107,6 +107,7 @@ class ServerAttributes:
 
     def get_all_child_guilds(self, bot: Bot) -> set[int]:
         """Get a *recursive* list of child guild ids"""
+        # Is a O(n^n) function.
         if bot.server_settings is None:
             return set()  # todo: raise error?
 

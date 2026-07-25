@@ -1,10 +1,9 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.toneindicator.searchmode import SearchMode
 from resources.customs import Bot
-
 
 tone_indicators: dict[str, list[str]] = {
     "excited": ["/!", "/exc"],

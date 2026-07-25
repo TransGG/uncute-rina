@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import typing
 from abc import abstractmethod
 
 import discord
-import typing
 
 from resources.customs import Bot
 

@@ -1,22 +1,22 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import app_commands
 from typing import TYPE_CHECKING, Any
 
-from .permissions import is_staff, is_admin
 from .errors import (
     CommandDoesNotSupportDMsCheckFailure,
-    InsufficientPermissionsCheckFailure
+    InsufficientPermissionsCheckFailure,
 )
 from .command_checks import is_in_dms
+from .permissions import is_admin, is_staff
 
 if TYPE_CHECKING:
-    from resources.customs import Bot
+    from discord.app_commands.commands import CommandCallback, GroupT, P, T
 
-    from discord.app_commands.commands import (
-        CommandCallback, GroupT, P, T,
-    )
+    from resources.customs import Bot
 
 
 def is_staff_check(

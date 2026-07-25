@@ -1,4 +1,4 @@
-from typing import TypedDict, Required, NotRequired
+from typing import NotRequired, Required, TypedDict
 
 
 class EmojiStatsData(TypedDict, total=False):

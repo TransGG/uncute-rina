@@ -1,9 +1,8 @@
 import discord
 
+from extensions.help.helppage import HelpPage
 from resources.customs import Bot
 from resources.utils.stringhelper import replace_string_command_mentions
-
-from extensions.help.helppage import HelpPage
 
 
 def generate_help_page_embed(

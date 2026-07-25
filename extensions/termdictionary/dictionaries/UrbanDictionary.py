@@ -1,16 +1,13 @@
-
-import discord
-
-import aiohttp
-from datetime import datetime
 import json
 import math
+from datetime import datetime
 from typing import override
 
+import aiohttp
+import discord
+
 from extensions.termdictionary.dictionaries import DictionaryBase
-from extensions.termdictionary.dictionaries.objects import (
-    UrbanDictionaryEntry
-)
+from extensions.termdictionary.dictionaries.objects import UrbanDictionaryEntry
 from extensions.termdictionary.views import UrbanDictionaryPageView
 from resources.customs import Bot
 

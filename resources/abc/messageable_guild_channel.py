@@ -1,6 +1,6 @@
-import discord
 import typing
 
+import discord
 
 type MessageableGuildChannel = (
     discord.TextChannel

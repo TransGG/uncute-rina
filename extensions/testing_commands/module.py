@@ -1,5 +1,5 @@
-from resources.customs.bot import Bot
 from extensions.testing_commands.cogs import TestingCog
+from resources.customs.bot import Bot
 
 
 async def setup(client: Bot) -> None:

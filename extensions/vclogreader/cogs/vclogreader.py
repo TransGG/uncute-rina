@@ -1,22 +1,26 @@
-from datetime import datetime, timezone, \
-    timedelta  # to plot and sort voice chat logs
-
-import matplotlib.pyplot as plt
-import pandas as pd  # to plot voice channel timeline graph
 import typing
+from datetime import (
+    datetime,
+    timedelta,  # to plot and sort voice chat logs
+    timezone,
+)
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import matplotlib.pyplot as plt
+import pandas as pd  # to plot voice channel timeline graph
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.settings.objects import AttributeKeys, ModuleKeys
-from resources.abc import GuildInteraction
-from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
-    module_enabled_check  # cuz it's a staff command
-from resources.customs import Bot
-
-from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
+from extensions.vclogreader.vcloggraphdata import VcLogGraphData
+from resources.abc import GuildInteraction
+from resources.checks import (
+    MissingAttributesCheckFailure,
+    is_staff_check,
+    module_enabled_check,  # cuz it's a staff command
+)
+from resources.customs import Bot
 from resources.utils import debug
 
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})

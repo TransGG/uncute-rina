@@ -1,19 +1,18 @@
-import discord
+import json
+import urllib.parse
+from typing import override
 
 import aiohttp
-import json
-from typing import override
-import urllib.parse
+import discord
 
-from resources.customs import Bot
-from extensions.termdictionary.dictionaries.DictionaryBase import \
-    DictionaryBase
+from extensions.termdictionary.dictionaries.DictionaryBase import DictionaryBase
 from extensions.termdictionary.dictionaries.objects import (
+    DetailedTermPage,
     DictionaryApiEntry,
-    DetailedTermPage, term_page_to_embed
+    term_page_to_embed,
 )
 from extensions.termdictionary.views import DictionaryapiPageview
-
+from resources.customs import Bot
 
 CompressedApiData = list[tuple[str, dict[str, list[str]], str, str, str]]
 

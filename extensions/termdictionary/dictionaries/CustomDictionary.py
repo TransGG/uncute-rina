@@ -3,12 +3,14 @@ from typing import override
 import aiohttp
 import discord
 
+from extensions.termdictionary.dictionaries.objects import (
+    CustomDictionaryEntry,
+)
+from extensions.termdictionary.utils import simplify
 from resources.checks.permissions import is_staff
 from resources.customs import Bot
+
 from .DictionaryBase import DictionaryBase
-from extensions.termdictionary.dictionaries.objects import \
-    CustomDictionaryEntry
-from extensions.termdictionary.utils import simplify
 
 
 class CustomDictionary(DictionaryBase):

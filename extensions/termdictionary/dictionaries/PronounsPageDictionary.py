@@ -1,13 +1,14 @@
-import discord
-
-import aiohttp
 import json
 import re  # to parse and remove https:/pronouns.page/ in-text page linking
 from typing import override
 
-from .DictionaryBase import DictionaryBase
-from resources.customs import Bot
+import aiohttp
+import discord
+
 from extensions.termdictionary.utils import simplify
+from resources.customs import Bot
+
+from .DictionaryBase import DictionaryBase
 from .objects import PronounsPageEntry
 
 

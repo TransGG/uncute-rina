@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
 import re
-
+from datetime import datetime, timedelta
 
 DistanceComponents = list[tuple[float, str]]
 

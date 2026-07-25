@@ -1,8 +1,8 @@
-from motor.core import AgnosticDatabase, AgnosticCursor
 from typing import TypedDict, TypeVar
 
-from .utils import encode_field, decode_field
+from motor.core import AgnosticCursor, AgnosticDatabase
 
+from .utils import decode_field, encode_field
 
 # Database format (a list of the following):
 # {

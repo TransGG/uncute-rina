@@ -9,11 +9,11 @@ __all__ = [
 ]
 
 from .CustomDictionaryEntry import CustomDictionaryEntry
-from .PronounsPageEntry import PronounsPageEntry
 from .DictionaryApiEntry import (
-    DictionaryApiEntry,
     DetailedTermPage,
-    term_page_to_embed,
+    DictionaryApiEntry,
     get_term_lines,
+    term_page_to_embed,
 )
+from .PronounsPageEntry import PronounsPageEntry
 from .UrbanDictionaryEntry import UrbanDictionaryEntry

@@ -1,28 +1,29 @@
+# to get embed send time for embed because cool (serves no real purpose)
 from datetime import datetime
-# ^ to get embed send time for embed because cool (serves no real purpose)
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
-from discord import RawThreadDeleteEvent
+from discord import RawThreadDeleteEvent, app_commands
+from discord.ext import commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.abc import GuildInteraction
-from resources.customs import Bot
-from resources.checks.permissions import is_staff
-# ^ to check role in _add_to_watchlist, as backup
-from resources.checks import (
-    is_staff_check, module_enabled_check, MissingAttributesCheckFailure
-)  # the cog is pretty much only intended for staff use
-
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from extensions.watchlist.local_watchlist import (
+    WatchlistNotLoadedException,
     create_watchlist,
+    get_user_id_from_watchlist,
     get_watchlist,
     remove_watchlist,
-    get_user_id_from_watchlist,
-    WatchlistNotLoadedException,
 )
 from extensions.watchlist.modals import WatchlistReasonModal
+from resources.abc import GuildInteraction
+from resources.checks import (
+    MissingAttributesCheckFailure,
+    is_staff_check,
+    module_enabled_check,
+)  # the cog is pretty much only intended for staff use
+from resources.checks.permissions import (
+    is_staff,  # to check role in _add_to_watchlist, as backup
+)
+from resources.customs import Bot
 
 
 def _parse_watchlist_string_message_id(

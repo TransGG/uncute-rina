@@ -1,6 +1,5 @@
-from resources.customs.bot import Bot
-
 from extensions.watchlist.cogs import WatchList
+from resources.customs.bot import Bot
 
 
 async def setup(client: Bot) -> None:

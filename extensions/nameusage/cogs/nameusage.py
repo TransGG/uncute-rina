@@ -1,10 +1,8 @@
-import re
-# ^ to remove pronouns from user-/nicknames and split names at
-#  capital letters.
+import re  # to remove pronouns from user-/nicknames and split names at capital letters.
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.nameusage.views.pageview import GetTopPageView
 from resources.abc import GuildInteraction

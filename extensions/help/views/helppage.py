@@ -1,16 +1,16 @@
-import discord
-import random  # for random help page jump page number placeholder
+import random  # for random help page jump page number placeholder\
 
+import discord
+
+from extensions.help.helppage import HelpPage
+from extensions.help.utils import (
+    generate_help_page_embed,
+    get_nearest_help_pages_from_page,
+)
 from resources.customs import Bot
 from resources.modals.generics import SingleLineModal
 from resources.utils.stringhelper import replace_string_command_mentions
 from resources.views.generics import PageView
-
-from extensions.help.utils import (
-    generate_help_page_embed,
-    get_nearest_help_pages_from_page
-)
-from extensions.help.helppage import HelpPage
 
 
 class HelpPageView(PageView):  # todo: add "override" to all overriding funcs

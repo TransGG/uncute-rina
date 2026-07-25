@@ -1,20 +1,20 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.qotw.utils import create_thread
 from extensions.settings.objects import (
-    ModuleKeys,
     AttributeKeys,
+    ModuleKeys,
     ServerAttributes,
-)
-from resources.checks import (
-    module_enabled_check,
-    MissingAttributesCheckFailure
 )
 from resources.abc import (
     GuildInteraction,
     MessageableGuildChannel,
+)
+from resources.checks import (
+    MissingAttributesCheckFailure,
+    module_enabled_check,
 )
 from resources.customs import Bot
 from resources.utils.utils import get_mod_ticket_channel

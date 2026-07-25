@@ -1,6 +1,5 @@
 from typing import TypedDict
 
-
 GuildId = int
 UserId = int
 WebhookId = int

@@ -1,6 +1,5 @@
-from resources.customs.bot import Bot
-
 from extensions.toneindicator.cogs import ToneIndicator
+from resources.customs.bot import Bot
 
 
 async def setup(client: Bot) -> None:

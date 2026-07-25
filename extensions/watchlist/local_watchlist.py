@@ -1,11 +1,14 @@
-from motor.core import AgnosticDatabase
 import discord
+from motor.core import AgnosticDatabase
 
 from resources.pymongo.database_keys import DatabaseKeys
 from resources.pymongo.guild_customs_manager import (
-    add_data, remove_data, get_data, get_all_data, remove_guild_data
+    add_data,
+    get_all_data,
+    get_data,
+    remove_data,
+    remove_guild_data,
 )
-
 
 local_watchlist: dict[int, dict[int, int]] = {}
 watchlist_loaded = False

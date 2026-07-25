@@ -1,4 +1,8 @@
-from bson.codec_options import TypeDecoder, TypeRegistry, CodecOptions
+from bson.codec_options import (
+    CodecOptions,
+    TypeDecoder,
+    TypeRegistry,
+)
 from bson.int64 import Int64
 
 # Haha, yeah AI helped write basically 100% of this.

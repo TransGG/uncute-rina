@@ -1,6 +1,6 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from resources.customs import Bot
 

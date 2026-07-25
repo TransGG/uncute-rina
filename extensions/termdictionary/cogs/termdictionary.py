@@ -1,9 +1,9 @@
-import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import asyncio
 
 import aiohttp
-import asyncio
+import discord
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.termdictionary.dictionaries import (
     # CustomDictionary,
@@ -11,16 +11,20 @@ from extensions.termdictionary.dictionaries import (
     DictionaryBase,
     PronounsPageDictionary,
 )
-from extensions.termdictionary.dictionaries.UrbanDictionary import \
-    UrbanDictionary
+from extensions.termdictionary.dictionaries.UrbanDictionary import (
+    UrbanDictionary,
+)
 from extensions.termdictionary.dictionary_sources import DictionarySources
 from extensions.termdictionary.utils import simplify
-
 from resources.abc import GuildInteraction
-from resources.checks import is_staff_check  # for staff dictionary commands
-from resources.customs import Bot
-# For logging custom dictionary changes, or when a search query returns
-#  nothing or >2000 characters
+from resources.checks import (
+    is_staff_check,  # for staff dictionary commands
+)
+from resources.customs import (
+    Bot,
+    # For logging custom dictionary changes, or when a search query returns
+    #  nothing or >2000 characters.
+)
 from resources.utils.utils import log_to_guild
 
 

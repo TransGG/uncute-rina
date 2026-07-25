@@ -3,5 +3,5 @@ __all__ = [
 ]
 
 from extensions.staff_polls_channel.cogs.staff_polls_channel import (
-    StaffPollsChannelAddon
+    StaffPollsChannelAddon,
 )

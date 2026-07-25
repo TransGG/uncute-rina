@@ -1,43 +1,41 @@
+# to make report tag auto-trigger at most once every 15 minutes
 from datetime import datetime, timedelta
-# ^ to make report tag auto-trigger at most once every 15 minutes
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import ModuleKeys
 from extensions.tags.database_tag_object import DatabaseTagObject
 from extensions.tags.local_tag_list import (
     create_tag,
-    remove_tag,
-    get_tags,
     get_tag,
+    get_tags,
+    remove_tag,
 )
 from extensions.tags.modals.create_tag import CreateTagModal
 from extensions.tags.modals.edit_tag import EditTagModal
 from extensions.tags.tag_manage_modes import TagMode
+from extensions.tags.tags import (
+    CustomTag,
+    create_report_info_tag,
+    tag_info_dict,
+)
 from resources.abc import (
     GuildInteraction,
     MessageableGuildChannel,
 )
 from resources.checks import (
-    module_enabled_check,
     is_admin_check,
+    module_enabled_check,
 )
 from resources.customs import Bot
 from resources.utils import (
-    replace_string_command_mentions,
     get_mod_ticket_channel,
     # ^ for ticket channel id in Report tag
+    replace_string_command_mentions,
 )
-
-from extensions.tags.tags import (
-    tag_info_dict,
-    create_report_info_tag,
-    CustomTag,
-)
-
 
 # for use in CustomTag.send()
 type TagName = str  # Correctly-capitalized tag name

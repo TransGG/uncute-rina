@@ -1,22 +1,19 @@
+# \/ for sleep(0.1) to prevent blocking:
+#  allow discord and other processes to send a heartbeat and function.
 import asyncio
-# for sleep(0.1) to prevent blocking: allow discord and other processes
-#  to send a heartbeat and function.
-from datetime import datetime, timezone
-from typing import Literal
-
-import matplotlib.pyplot as plt
-import pandas as pd  # for graphing member joins/leaves/verifications
-from motor.core import AgnosticDatabase
 import typing
+from datetime import datetime, timezone
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import matplotlib.pyplot as plt
+import pandas as pd  # for graphing member joins/leaves/verifications
+from discord import app_commands
+from discord.ext import commands
+from motor.core import AgnosticDatabase
 
 from resources.abc import GuildInteraction
 from resources.checks import not_in_dms_check
 from resources.customs import Bot
-
 
 type MemberDataType = typing.Literal[
     "joined",
@@ -273,13 +270,13 @@ class MemberData(commands.Cog):
             doubles: bool,
     ) -> tuple[
         dict[
-            Literal["joined", "left", "left unverified", "left verified", "verified"],
+            typing.Literal["joined", "left", "left unverified", "left verified", "verified"],
             dict[float, int],
         ],
         float,
         float,
         dict[
-            Literal["joined", "left", "left unverified", "left verified", "verified"],
+            typing.Literal["joined", "left", "left unverified", "left verified", "verified"],
             int,
         ],
         str
@@ -481,7 +478,7 @@ class MemberData(commands.Cog):
     @staticmethod
     async def _format_event_stats(
             totals: dict[
-                Literal["joined", "left", "left unverified", "left verified", "verified"],
+                typing.Literal["joined", "left", "left unverified", "left verified", "verified"],
                 int
             ],
     ) -> str:

@@ -1,23 +1,21 @@
+# random compliment from list, random user pronouns from their role list, and random keyboard mash.
 import random
 import typing
 
-# ^ random compliment from list, random user pronouns from their role
-#  list, and random keyboard mash.
-
-import motor.core
-
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import motor.core
+from discord import app_commands
+from discord.ext import commands
 
+from extensions.compliments.views import ConfirmPronounsView
 from extensions.settings.objects import ModuleKeys
 from resources.checks.command_checks import module_not_disabled_check
 from resources.customs import Bot
-from resources.utils.utils import log_to_guild
-# ^ to warn when bot can't add headpat reaction (typically because
-#  user blocked Rina)
-
-from extensions.compliments.views import ConfirmPronounsView
+from resources.utils.utils import (
+    log_to_guild,
+    # ^ to warn when bot can't add headpat reaction
+    #  (typically because user blocked Rina)
+)
 
 type ComplimentBlackboardType = typing.Literal["personal_list", "list"]
 

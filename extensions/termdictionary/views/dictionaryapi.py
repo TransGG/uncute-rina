@@ -3,13 +3,12 @@ from typing import override
 import discord
 
 from extensions.termdictionary.dictionaries.objects import (
+    get_term_lines,
     term_page_to_embed,
-    get_term_lines
 )
 from extensions.termdictionary.modals import DictionaryAPISendPageModal
 from resources.customs import Bot
 from resources.views.generics import PageView
-
 
 DetailedTermPage = tuple[str, dict[str, list[str]]]
 

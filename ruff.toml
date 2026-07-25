@@ -57,6 +57,7 @@ select = [
     "ambiguous-unicode-character-comment",
     "blanket-noqa", # Blanket disabling lints isn't great
     "PTH", # pathlib still technically works
+    "unsorted-dunder-all", "unsorted-dunder-slots", "unsorted-imports", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
 ]
 
 ignore = [
@@ -69,7 +70,6 @@ ignore = [
 
     # Ignoring these more permanently
     "suspicious-non-cryptographic-random-usage", # We don't need a CSPRNG anywhere, right?
-#    "unsorted-dunder-all", "unsorted-dunder-slots", "unsorted-imports", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
 #    "suppressible-exception", "if-else-block-instead-of-if-exp", "yoda-conditions", # No suppressing exceptions. Use ternary operator; don't use yoda conditions.
     "redefined-loop-name", # Allow reassigning in loops
     "global-statement", # We seem to be choosing to use globals

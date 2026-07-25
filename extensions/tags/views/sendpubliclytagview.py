@@ -1,10 +1,11 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import discord
 
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from extensions.tags.tags import CustomTag

@@ -1,7 +1,10 @@
 import discord
-import discord.ext.commands as commands
+from discord.ext import commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
+from extensions.settings.objects import (
+    AttributeKeys,
+    ModuleKeys,
+)
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs.bot import Bot
 

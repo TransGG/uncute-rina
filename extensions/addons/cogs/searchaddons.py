@@ -2,29 +2,26 @@ import json  # to read API json responses
 
 import aiohttp  # to read api calls
 import aiohttp.client_exceptions
-
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
-
-from extensions.addons.wolframresult import (
-    WolframResult,
-    WolframQueryResult,
-    WolframPod,
-    WolframAssumption,
-)
-from resources.customs import Bot
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.addons.equaldexregion import EqualDexRegion
 from extensions.addons.views.equaldex_additionalinfo import (
-    EqualDexAdditionalInfo
+    EqualDexAdditionalInfo,
 )
 from extensions.addons.views.math_sendpublicbutton import (
-    SendPublicButtonMath
+    SendPublicButtonMath,
 )
-from resources.utils import debug, DebugColor
+from extensions.addons.wolframresult import (
+    WolframAssumption,
+    WolframPod,
+    WolframQueryResult,
+    WolframResult,
+)
+from resources.customs import Bot
+from resources.utils import DebugColor, debug
 from resources.utils.stringhelper import ellipsize_string
-
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500

@@ -1,6 +1,5 @@
+from extensions.reminders.cogs import BumpReminder, RemindersCog
 from resources.customs.bot import Bot
-
-from extensions.reminders.cogs import RemindersCog, BumpReminder
 
 
 async def setup(client: Bot) -> None:

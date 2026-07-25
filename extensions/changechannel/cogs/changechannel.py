@@ -1,12 +1,11 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
+from extensions.settings.objects import ModuleKeys
 from resources.abc import GuildInteraction
 from resources.checks import module_enabled_check
 from resources.customs import Bot
-
-from extensions.settings.objects import ModuleKeys
 
 
 class ChangeChannel(commands.Cog):

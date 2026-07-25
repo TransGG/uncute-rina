@@ -1,7 +1,7 @@
 import typing
 
 import discord
-import discord.ext.commands as commands
+from discord.ext import commands
 
 from extensions.qotw.utils import create_thread
 from extensions.settings.objects import (

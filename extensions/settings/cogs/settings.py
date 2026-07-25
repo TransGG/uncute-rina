@@ -1,27 +1,33 @@
 from __future__ import annotations
+
 import typing  # for typing.cast and TYPE_CHECKING
 
 import discord
-import discord.ext.commands as commands
-import discord.app_commands as app_commands
-
-from resources.checks import (
-    is_admin_check,
-    module_enabled_check,
-    MissingAttributesCheckFailure,
-    CommandDoesNotSupportDMsCheckFailure,
-)
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.help.cogs import send_help_menu
+from extensions.settings.objects import (
+    AttributeKeys,
+    EnabledModules,
+    ModeAutocomplete,
+    ModuleKeys,
+    ServerAttributeIds,
+    ServerAttributes,
+    ServerSettings,
+    TypeAutocomplete,
+    get_attribute_type,
+    parse_attribute,
+)
 from extensions.settings.objects.server_settings import ParseError
 from extensions.watchlist.local_watchlist import refetch_watchlist_threads
-from extensions.settings.objects import (
-    ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules,
-    TypeAutocomplete, ModeAutocomplete,
-    parse_attribute, get_attribute_type, AttributeKeys, ModuleKeys
-)
 from resources.abc import GuildInteraction
-
+from resources.checks import (
+    CommandDoesNotSupportDMsCheckFailure,
+    MissingAttributesCheckFailure,
+    is_admin_check,
+    module_enabled_check,
+)
 
 if typing.TYPE_CHECKING:
     from resources.customs import Bot

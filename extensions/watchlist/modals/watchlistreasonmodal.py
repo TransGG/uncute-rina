@@ -1,5 +1,6 @@
-import discord
 import typing
+
+import discord
 
 from resources.customs import Bot
 

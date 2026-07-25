@@ -1,20 +1,25 @@
 from __future__ import annotations
 
-import discord
-from enum import Enum
-import motor.core
-import typing
-from typing import Callable
 import types
+import typing
+from collections.abc import Callable
+from enum import Enum
+
+import discord
+import motor.core
 
 from resources.abc import MessageableGuildChannel
-from resources.utils.debug import debug, DebugColor
+from resources.utils.debug import (
+    DebugColor,
+    debug,
+)
+
+from .enabled_modules import EnabledModules
+from .server_attribute_ids import ServerAttributeIds
 from .server_attributes import (
     GuildAttributeType,
     ServerAttributes,
 )
-from .server_attribute_ids import ServerAttributeIds
-from .enabled_modules import EnabledModules
 
 if typing.TYPE_CHECKING:
     from resources.customs import Bot

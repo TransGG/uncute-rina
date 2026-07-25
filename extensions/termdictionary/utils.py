@@ -1,8 +1,6 @@
 from typing import TypeVar
 
-
 del_separators_table = str.maketrans({" ": "", "-": "", "_": ""})
-
 
 StringOrStrings = TypeVar("StringOrStrings", str, list[str])
 

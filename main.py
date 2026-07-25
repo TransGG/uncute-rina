@@ -1,30 +1,27 @@
 #!/usr/bin/env python3
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-# ^ for periodic timers
-from datetime import datetime  # for startup and crash logging
 import json  # for loading the API keys file
 import logging  # to set logging level to not DEBUG and hide unnecessary logs
-import motor.motor_asyncio as motorasync
-# ^ for making Mongo run asynchronously (during api calls)
-import motor.core as motorcore  # for typing
 import pathlib  # for creating outputs/ directory
-from pymongo.database import Database as PyMongoDatabase
-# ^ for MongoDB database typing
-from pymongo import MongoClient
 import traceback
 import typing
+from datetime import datetime  # for startup and crash logging
 
 import discord  # for main discord bot functionality
+import motor.core as motorcore  # for typing
+import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # ^ for periodic timers
+from pymongo import MongoClient  # for MongoDB database typing
+from pymongo.database import Database as PyMongoDatabase
 
-from extensions.reminders.objects import \
-    relaunch_ongoing_reminders
+from extensions.reminders.objects import relaunch_ongoing_reminders
 from extensions.settings.objects import ServerSettings
 from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
-from extensions.watchlist.local_watchlist import fetch_all_watchlists
-# ^ for fetching all watchlists on startup
-
+from extensions.watchlist.local_watchlist import (
+    fetch_all_watchlists,
+    # ^ for fetching all watchlists on startup
+)
 from resources.abc import (
     ApiTokenDict,
     MessageableGuildChannel,
@@ -33,7 +30,11 @@ from resources.customs import (
     Bot,
     ProgressBar,
 )
-from resources.utils import debug, codec_options, DebugColor
+from resources.utils import (
+    DebugColor,
+    codec_options,
+    debug,
+)
 
 program_start = datetime.now().astimezone()  # startup time after local imports
 BOT_VERSION = "2.4.2"

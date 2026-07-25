@@ -1,31 +1,28 @@
 import typing
 
 import discord
-import discord.ext.commands as commands
+from discord.ext import commands
 
 from extensions.settings.objects import (
     AttributeKeys,
     ModuleKeys,
 )
-from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from extensions.starboard.local_starboard import (
+    add_to_local_starboard,
+    delete_from_local_starboard,
+    get_original_message_info,
+    get_starboard_message_id,
+    is_starboard_message,
+    parse_starboard_message,
+)
 from resources.abc import (
     GuildMessage,
     MessageableGuildChannel,
     get_or_fetch_messageable_guild_channel,
 )
-from resources.utils.utils import log_to_guild
-# ^ to log starboard addition/removal
-
-from extensions.starboard.local_starboard import (
-    add_to_local_starboard,
-    delete_from_local_starboard,
-    parse_starboard_message,
-    get_starboard_message_id,
-    is_starboard_message,
-    get_original_message_info,
-)
-
+from resources.checks import MissingAttributesCheckFailure
+from resources.customs import Bot
+from resources.utils.utils import log_to_guild  # to log starboard addition/removal
 
 starboard_message_ids_marked_for_deletion = []
 

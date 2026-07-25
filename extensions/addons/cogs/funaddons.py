@@ -1,21 +1,20 @@
 import random
-import typing
-# ^ for dice rolls (/roll) and selecting a random staff
+
+# for dice rolls (/roll) and selecting a random staff
 #  interaction wait time
+import typing
 from typing import TypeVar
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
-from discord import Interaction
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.addons.roll import generate_roll
 from extensions.help.cogs import send_help_menu
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.abc import GuildMessage
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
-
-from extensions.settings.objects import ModuleKeys, AttributeKeys
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -269,7 +268,7 @@ class FunAddons(commands.Cog):
 
     @staticmethod
     async def roll_simple(
-            itx: Interaction[Bot],
+            itx: discord.Interaction[Bot],
             dice: int,
             faces: int,
             mod: int | None,
@@ -283,7 +282,7 @@ class FunAddons(commands.Cog):
 
     @staticmethod
     async def roll_advanced(
-            itx: Interaction[Bot],
+            itx: discord.Interaction[Bot],
             advanced: str,
             public: bool,
     ) -> None:

@@ -1,10 +1,9 @@
 import typing
-from typing import Any
 
 import aiohttp
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.settings.objects import (
     ModuleKeys,
@@ -13,8 +12,9 @@ from resources.abc import MessageableGuildChannel
 from resources.checks import module_enabled_check
 from resources.checks.command_checks import is_in_dms, module_not_disabled_check
 from resources.customs import Bot
-from resources.utils.utils import log_to_guild  # to log add_poll_reactions
-
+from resources.utils.utils import (
+    log_to_guild,  # to log add_poll_reactions
+)
 
 MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
 
@@ -503,7 +503,7 @@ class OtherAddons(commands.Cog):
             itx: discord.Interaction[Bot],
             message_id_str: str,
     ) -> tuple[
-            list[Any],
+            list[typing.Any],
             discord.Message | None,
     ]:
         errors = []

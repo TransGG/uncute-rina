@@ -1,13 +1,13 @@
 import typing
-
 from datetime import datetime
+
 import discord
 
-from resources.customs import Bot
 from extensions.settings.objects import ServerAttributes
-
+from resources.customs import Bot
 
 # region create thread
+
 
 async def _create_starter_message(
         channel: discord.TextChannel,

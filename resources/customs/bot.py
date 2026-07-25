@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import discord  # for main discord bot functionality
-import discord.ext.commands as commands
-import discord.app_commands as app_commands
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-# ^ for scheduling Reminders
-from datetime import datetime
-# ^ for startup and crash logging, and Reminders
+from datetime import datetime  # for startup and crash logging, and Reminders
 from typing import TYPE_CHECKING, Any
+
+import discord  # for main discord bot functionality
 import motor.core as motorcore  # for typing
-from pymongo.database import Database as PyMongoDatabase
-# ^ for MongoDB database typing
+from apscheduler.schedulers.asyncio import (
+    AsyncIOScheduler,  # for scheduling Reminders
+)
+from discord import app_commands
+from discord.ext import commands
+from pymongo.database import (
+    Database as PyMongoDatabase,  # for MongoDB database typing
+)
 
 from extensions.settings.objects import (
     EnabledModules,

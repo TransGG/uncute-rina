@@ -1,11 +1,12 @@
-import discord
 from typing import cast
 
-from resources.customs import Bot
+import discord
 
 from extensions.reminders.objects import (
-    ReminderDict, DatabaseData  # for typechecking only
+    DatabaseData,
+    ReminderDict,  # for typechecking only
 )
+from resources.customs import Bot
 
 
 async def get_user_reminders(

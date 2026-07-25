@@ -7,9 +7,12 @@ from resources.abc import (
 )
 from resources.customs import Bot
 from resources.pymongo import (
-    remove_data, DatabaseKeys, add_data, get_data, get_all_data
+    DatabaseKeys,
+    add_data,
+    get_all_data,
+    get_data,
+    remove_data,
 )
-
 
 GuildId = int
 StarboardMessageId = int

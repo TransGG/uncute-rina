@@ -1,37 +1,32 @@
-from typing import Callable
+from collections.abc import Callable
 
 import discord
-import discord.ext.commands as commands
-import discord.app_commands as app_commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 from extensions.customvcs.utils import (
-    is_vc_custom,
     edit_permissionoverwrite,
+    is_vc_custom,
+    is_vc_table_owner,
+    is_vctable_authorized,
+    is_vctable_locked,
+    is_vctable_muted,
+    is_vctable_participant,
+    is_vctable_speaker,
 )
-from extensions.settings.objects import ModuleKeys, AttributeKeys
-
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.abc import GuildInteraction
 from resources.checks import (
-    module_enabled_check,
     MissingAttributesCheckFailure,
     is_staff,
     # ^ to prevent people in vc-tables from muting staff.
+    module_enabled_check,
 )
 from resources.customs import Bot
 from resources.utils.discord_utils import get_member_or_filter
-from resources.utils.utils import log_to_guild
-# ^ to log custom vc changes
+from resources.utils.utils import log_to_guild  # to log custom vc changes
 from resources.views.generics import GenericTwoButtonView
-from extensions.customvcs.utils import (
-    is_vctable_locked,
-    is_vctable_speaker,
-    is_vctable_muted,
-    is_vctable_authorized,
-    is_vctable_participant,
-    is_vc_table_owner,
-)
-
 
 # Owner       = Connection perms (and speaking perms)
 # Speaker     = Speaking perms

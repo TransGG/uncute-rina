@@ -1,20 +1,19 @@
-from datetime import datetime, timezone
 import re  # to find all emojis used in someone's message
 import sys  # for integer max value: sys.maxsize
-import motor.core as motorcore  # for typing
-from pymongo import DESCENDING
+from datetime import datetime, timezone
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import motor.core as motorcore  # for typing
+from discord import app_commands
+from discord.ext import commands
+from pymongo import DESCENDING
 
 from extensions.emojistats.database_dicts import EmojiStatsData
+from extensions.emojistats.emojisendsource import EmojiSendSource
 from extensions.reminders.objects.emoji_animate_type import EmojiAnimateType
 from resources.abc import GuildInteraction
-from resources.customs import Bot
 from resources.checks import not_in_dms_check
-
-from extensions.emojistats.emojisendsource import EmojiSendSource
+from resources.customs import Bot
 
 
 async def _add_to_emoji_data(
