@@ -92,6 +92,7 @@ class NameUsage(
                     else:
                         parts: list[str] = []
                         match = 1
+                        cropped_section = section
                         while match:
                             match = re.search(
                                 r"[A-Z][a-z]*[A-Z]",
@@ -100,25 +101,25 @@ class NameUsage(
                             )
                             if match:
                                 caps = match.span()[1] - 1
-                                parts.append(section[:caps])
-                                section = section[caps:]
+                                parts.append(cropped_section[:caps])
+                                cropped_section = cropped_section[caps:]
                         if len(parts) != 0:
                             for part in parts:
                                 add(part)
-                            add(section)
+                            add(cropped_section)
                         else:
-                            add(section)
+                            add(cropped_section)
 
             for section in member_sections:
-                section = section.lower()
-                if section in ["the", "any", "not"]:
+                section_lower = section.lower()
+                if section_lower in ["the", "any", "not"]:
                     continue
-                if len(section) < 3:
+                if len(section_lower) < 3:
                     continue
-                if section in sections:
-                    sections[section] += 1
+                if section_lower in sections:
+                    sections[section_lower] += 1
                 else:
-                    sections[section] = 1
+                    sections[section_lower] = 1
 
         section_tuples = sorted(
             sections.items(), key=lambda x: x[1], reverse=True)

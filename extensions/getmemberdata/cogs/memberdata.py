@@ -364,11 +364,11 @@ class MemberData(commands.Cog):
         events: dict[float, int] = {}
         # group timestamps into 'accuracy'-sized buckets.
         for time in column:
-            time = int(time / accuracy) * accuracy
-            if time in events:
-                events[time] += 1
+            rounded_time = int(time / accuracy) * accuracy
+            if rounded_time in events:
+                events[rounded_time] += 1
             else:
-                events[time] = 1
+                events[rounded_time] = 1
         return events
 
     @staticmethod

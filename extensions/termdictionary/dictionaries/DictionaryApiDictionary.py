@@ -24,8 +24,8 @@ def _format_page_sections(
 ) -> dict[str, list[str]]:
     page_sections: dict[str, list[str]] = {}
     for part_of_speech, definitions in meanings.items():
-        part_of_speech = part_of_speech.capitalize()
-        page_sections[part_of_speech] = definitions
+        capitalized_part = part_of_speech.capitalize()
+        page_sections[capitalized_part] = definitions
     if synonyms:
         page_sections["Synonyms"] = [", ".join(synonyms)]
     if antonyms:

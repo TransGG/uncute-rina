@@ -210,10 +210,10 @@ class VcTables(
         # region Parse vctable owners
         added_owners = [user]
         added_owner_ids = []
-        for mention in owner_list:
-            if mention == "":
+        for mention_raw in owner_list:
+            if mention_raw == "":
                 continue
-            mention: str = mention.strip()
+            mention: str = mention_raw.strip()
             if not (mention[0:2] == "<@" and mention[-1] == ">"):
                 warning = (
                     f"Note: You didn't give a good list of VcTable owners, "
