@@ -1,4 +1,5 @@
 import pytest
+
 from extensions.addons.cogs.funaddons import _product_of_list
 
 

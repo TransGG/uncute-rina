@@ -42,7 +42,7 @@ class TodoList(commands.Cog):
                 )
                 return
             if len(todo) > 500:
-                itx.response.send_message(
+                await itx.response.send_message(
                     "I.. don't think having such a big to-do message is gonna "
                     "be very helpful..",
                     ephemeral=True,

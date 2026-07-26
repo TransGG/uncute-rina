@@ -18,6 +18,9 @@ def _make_vclog_embed(
         to_channel: discord.VoiceChannel | discord.StageChannel,
         user: discord.Member | discord.User
 ) -> discord.Embed:
+    if not isinstance(user, discord.Member):
+        raise TypeError("User is not a member of a server!")
+
     if mode == "Move":
         embed: discord.Embed = discord.Embed(
             description=f"**{user.name}#{user.discriminator}** moved from "
@@ -251,7 +254,7 @@ class TestingCog(commands.GroupCog, name="testing"):
     @is_staff_check
     async def send_vc_log_test(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: str,
             from_channel: discord.VoiceChannel | discord.StageChannel | None = None,
             to_channel: discord.VoiceChannel | discord.StageChannel | None = None,

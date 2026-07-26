@@ -17,7 +17,7 @@ class DictionaryAPISendPageModal(
         self.timeout = timeout
         self.max_page = max_page
         self.line: int | None = None
-        self.question_text = discord.ui.TextInput(
+        self.question_text: discord.ui.TextInput = discord.ui.TextInput(
             label='Entry index',
             placeholder=f"[A number from 0 to {max_page} ]",
             # style=discord.TextStyle.short,
@@ -25,9 +25,10 @@ class DictionaryAPISendPageModal(
         )
         self.add_item(self.question_text)
 
-    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+    async def on_submit(
             self,
-            itx: discord.Interaction[Bot]
+            itx: discord.Interaction[Bot]  # type: ignore
+            # (Interaction vs. Interaction[Bot])
     ) -> None:
         try:
             self.line = int(self.question_text.value)

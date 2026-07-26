@@ -15,6 +15,7 @@ from .errors import (
 from .permissions import is_admin, is_staff
 
 if typing.TYPE_CHECKING:
+    # noinspection protected-member
     from discord.app_commands.commands import CommandCallback, GroupT, P, T
 
     from resources.customs import Bot

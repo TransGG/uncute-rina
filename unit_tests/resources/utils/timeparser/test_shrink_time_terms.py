@@ -6,11 +6,11 @@ from resources.utils.timeparser import TimeParser, TIMETERMS
 # region Correct functionality
 def test_parse_simple() -> None:
     # Arrange
-    terms = [
+    terms: list[tuple[float | int, str]] = [
         (200, "days"),
         (199, "seconds"),
     ]
-    expected = [
+    expected: list[tuple[float | int, str]] = [
         (200, "d"),
         (199, "s"),
     ]
@@ -24,7 +24,7 @@ def test_parse_simple() -> None:
 def test_parse_all() -> None:
     # Arrange
     expected_values = []
-    terms = []
+    terms: list[tuple[float | int, str]] = []
     for unit in TIMETERMS:
         for term in TIMETERMS[unit]:
             terms.append((1, term))

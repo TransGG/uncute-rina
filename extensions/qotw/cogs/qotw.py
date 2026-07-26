@@ -57,7 +57,7 @@ class QOTW(commands.Cog):
 
         await itx.response.defer(ephemeral=True)
 
-        def reaction_role_lambda(attrs: ServerAttributes) -> discord.Role:
+        def reaction_role_lambda(attrs: ServerAttributes) -> discord.TextChannel | None:
             # this one is kinda silly...
             # but it only sends the message, and then removes it immediately after,
             # so it doesn't really matter that this is mentioning a channel instead of a role.
@@ -68,7 +68,8 @@ class QOTW(commands.Cog):
             itx.client,
             (itx.user, qotw_channel, question),
             f"QOTW-{question[:50]}",
-            reaction_role_lambda,
+            reaction_role_lambda,  # type: ignore[arg-type]
+            # ^ See function definition comment
             AttributeKeys.qotw_suggestions_channel,
             emojis=[discord.PartialEmoji.from_str(emoji)
                     for emoji in ("⬆️", "⬇️")]

@@ -2,6 +2,7 @@ import typing
 
 import discord
 
+from resources.abc import GuildInteraction
 from resources.customs import Bot
 
 
@@ -26,7 +27,7 @@ class WatchlistReasonModal(discord.ui.Modal):
     def __init__(
             self,
             add_to_watchlist_func: typing.Callable[
-                [discord.Interaction[Bot], discord.User | discord.Member,
+                [GuildInteraction[Bot], discord.User | discord.Member,
                  str, str | None, str],
                 typing.Coroutine[typing.Any, typing.Any, None]],
             title: str,
@@ -35,14 +36,14 @@ class WatchlistReasonModal(discord.ui.Modal):
             timeout: float | None = None
     ) -> None:
         super().__init__(title=title[:45], timeout=timeout)
-        self.value = None
+        self.value: int | None = None
         # self.timeout = timeout
         # self.title = title
         self.user = reported_user
         self.message = message
         self.add_to_watchlist_func = add_to_watchlist_func
 
-        self.reason_text = discord.ui.TextInput(
+        self.reason_text: discord.ui.TextInput = discord.ui.TextInput(
             label=f'Reason for reporting {reported_user}'[:45],
             placeholder="not required but recommended",
             style=discord.TextStyle.paragraph,
@@ -50,8 +51,20 @@ class WatchlistReasonModal(discord.ui.Modal):
         )
         self.add_item(self.reason_text)
 
-    async def on_submit(self, itx: discord.Interaction[Bot]) -> None:
+    async def on_submit(
+            self,
+            itx: discord.Interaction[Bot],  # type: ignore[override]
+            # (Interaction vs Interaction[Bot])
+    ) -> None:
         self.value = 1
+        if itx.guild is None:
+            await itx.response.send_message(
+                "Something went wrong! Your modal did not seem to be sent in a server!",
+                ephemeral=True,
+            )
+            return
+        itx = typing.cast(GuildInteraction[Bot], itx)
+
         await self.add_to_watchlist_func(
             itx,
             self.user,

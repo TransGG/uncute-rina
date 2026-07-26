@@ -1,7 +1,7 @@
 import json
 import math
 from datetime import datetime
-from typing import override
+import typing
 
 import aiohttp
 import discord
@@ -53,7 +53,7 @@ class UrbanDictionary(DictionaryBase):
             reverse=True  # sort from highest to lowest
         )
 
-        pages = []
+        pages: list[discord.Embed] = []
         for result in data:
             embed = discord.Embed(
                 title=f"__{result['word'].capitalize()}__",
@@ -94,7 +94,7 @@ class UrbanDictionary(DictionaryBase):
         data: dict[str, list[UrbanDictionaryEntry]] = json.loads(response_api)
         return data['list']  # empty responses have {"list":[]}
 
-    @override
+    @typing.override
     async def get_autocomplete(self, current: str) -> set[str]:
         data = await self._get_api_response(current)
         if len(data) == 0:
@@ -105,10 +105,9 @@ class UrbanDictionary(DictionaryBase):
             terms.add(result["word"].capitalize() + self.term_suffix)
         return terms
 
-    @override
+    @typing.override
     async def construct_response(self, term: str) -> None:
-        if term.endswith(self.term_suffix):
-            term = term[:-len(self.term_suffix)]
+        term = term.removesuffix(self.term_suffix)
         data = await self._get_api_response(term)
         if len(data) == 0:
             return
@@ -116,7 +115,7 @@ class UrbanDictionary(DictionaryBase):
         self._pages = self._get_urban_dictionary_pages(data)
         self.has_response = True
 
-    @override
+    @typing.override
     async def send_response(
             self,
             itx: discord.Interaction[Bot],
@@ -149,7 +148,7 @@ class UrbanDictionary(DictionaryBase):
             # message was deleted?
             pass
 
-    @override
+    @typing.override
     async def handle_no_response(
             self,
             itx: discord.Interaction[Bot],

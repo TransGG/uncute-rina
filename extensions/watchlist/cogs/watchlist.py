@@ -313,7 +313,7 @@ async def _add_to_watchlist(
         + different_author_warning,
         allowed_mentions=discord.AllowedMentions.none())
 
-    if message_id is not None:
+    if reported_message is not None:  # message_id is None
         reported_message_data_message = await thread.send(
             f"Reported message: {reported_message.author.mention}"
             f"(`{reported_message.author.id}`) - {reported_message.jump_url}",
@@ -477,8 +477,13 @@ class WatchList(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        if not self.client.is_module_enabled(
-                message.guild, ModuleKeys.watchlist):
+        if (
+                message.guild is None  # for linter
+                or not self.client.is_module_enabled(
+                    message.guild,
+                    ModuleKeys.watchlist
+                )
+        ):
             return
         guild_attributes = self.client.get_guild_attributes(message.guild)
         staff_logs_category = guild_attributes.staff_logs_category
@@ -522,9 +527,7 @@ class WatchList(commands.Cog):
                         reported_user_id = int(reported_user_str)
                         break
 
-                    if field.value.startswith("> "):
-                        # remove the `> quote` markdown
-                        field.value = field.value[2:]
+                    field.value = field.value.removeprefix("> ")
                     # from "%<@x>%", take "x"
                     reported_user_str = (field
                                          .value
@@ -534,22 +537,20 @@ class WatchList(commands.Cog):
                         reported_user_id = int(reported_user_str)
                         break
                     else:
-                        raise Exception("User id was not an id!")
+                        raise ValueError("User id was not an id!")
         if reported_user_id is None:
-            raise Exception(
+            raise ValueError(
                 "Badeline sent an embed in the staff logs category but it "
                 "didn't contain any \"user\" field!"
             )
 
         watchlist_thread_id = get_watchlist(
             watchlist_channel.guild.id, reported_user_id)
-        on_watchlist: bool = watchlist_thread_id is not None
 
-        if on_watchlist:
-            thread = \
-                await watchlist_channel.guild.fetch_channel(
-                    watchlist_thread_id
-                )
+        if watchlist_thread_id is not None:  # user is on watchlist
+            thread = await watchlist_channel.guild.fetch_channel(
+                watchlist_thread_id,
+            )
             assert isinstance(thread, discord.Thread), \
                 f"Watchlist was not a thread! {type(thread)}"
             # ^ fetch, to retrieve (archived) thread.

@@ -1,15 +1,14 @@
+import asyncio
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
-from datetime import datetime, timedelta, timezone
-import asyncio
-
-from unit_tests.utils.object import CustomObject
-
-from extensions.reminders.objects.reminderobject import _parse_reminder_time
 from extensions.reminders.exceptions import (
     TimestampParseException,
     # UnixTimestampInPastException, MalformedISODateTimeException
 )
+from extensions.reminders.objects.reminderobject import _parse_reminder_time
+from unit_tests.utils.object import CustomObject
 
 
 # region Helper functions
@@ -212,7 +211,7 @@ def test_exception_iso_time_timezone() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_ymd() -> None:
@@ -224,7 +223,7 @@ def test_exception_american_format_ymd() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_dmy() -> None:
@@ -236,7 +235,7 @@ def test_exception_american_format_dmy() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_with_t_ymd() -> None:
@@ -248,7 +247,7 @@ def test_exception_american_format_with_t_ymd() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_american_format_with_t_dmy() -> None:
@@ -260,7 +259,7 @@ def test_exception_american_format_with_t_dmy() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_malformed_year() -> None:
@@ -272,7 +271,7 @@ def test_malformed_year() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_malformed_year_month() -> None:
@@ -284,7 +283,7 @@ def test_malformed_year_month() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_iso_date_timeshort() -> None:  # no timezone
@@ -302,7 +301,7 @@ def test_exception_iso_date_timeshort() -> None:  # no timezone
         #  the strftime, and as such the code should run into an
         #  exception.
         # This exception must be handled by the command in the Cog instead.
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_iso_date_timelong() -> None:  # no timezone
@@ -317,7 +316,7 @@ def test_exception_iso_date_timelong() -> None:  # no timezone
     with pytest.raises(TimestampParseException):
         # same as test_..._timeshort(), but using %H instead of %I. This
         #  means the time will be padded to 2 characters.
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_iso_date() -> None:
@@ -336,7 +335,7 @@ def test_exception_iso_date() -> None:
         # Todo: handle this nicer, make these tests parameter-based,
         #  and add tests for _handle_reminder_timestamp_parsing and
         #  _validate_timestamp_format.
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_12_hour_clock() -> None:
@@ -348,7 +347,7 @@ def test_exception_12_hour_clock() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 
 def test_exception_12_hour_clock_timezone() -> None:
@@ -360,6 +359,6 @@ def test_exception_12_hour_clock_timezone() -> None:
 
     # Assert
     with pytest.raises(TimestampParseException):
-        reminder_time, _, _ = asyncio.run(func)
+        _, _, _ = asyncio.run(func)
 
 # endregion Malformed input

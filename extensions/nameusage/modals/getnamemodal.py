@@ -13,7 +13,7 @@ class GetNameModal(discord.ui.Modal, title="Search page with word"):
         self.pages: list[str] = pages
         self.page: int | None = None
         self.return_interaction: discord.Interaction[Bot] | None = None
-        self.question_text = discord.ui.TextInput(
+        self.question_text: discord.ui.TextInput = discord.ui.TextInput(
             label='What word to look up in the server name list?',
             placeholder="The word you want to look up",
             # style=discord.TextStyle.short,
@@ -21,9 +21,10 @@ class GetNameModal(discord.ui.Modal, title="Search page with word"):
         )
         self.add_item(self.question_text)
 
-    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+    async def on_submit(
             self,
-            itx: discord.Interaction[Bot]
+            itx: discord.Interaction[Bot]  # type: ignore
+            # (Interaction vs. Interaction[Bot])
     ) -> None:
         word = self.question_text.value.lower()
         for page_id in range(len(self.pages)):

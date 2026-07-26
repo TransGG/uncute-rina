@@ -42,7 +42,11 @@ def _get_vctable_members_with_predicate(
     ],
 ) -> list[str]:
     return [
-        target.mention
+        (
+            target.mention
+            if hasattr(target, "mention")
+            else f"<#{target.id}>"
+        )
         for target in channel.overwrites
         if (predicate(channel, target)
             and isinstance(target.id, discord.Member))
@@ -1099,11 +1103,13 @@ class VcTables(
             )
             for member in channel.members:
                 # member has no owner or speaking perms, move to same vc?
-                if member in channel.overwrites:
-                    if (is_vc_table_owner(channel, member)
-                            or is_vctable_speaker(channel, member)):
-                        # todo: rename vctable/vc_table to be consistent
-                        continue
+                if (
+                        member in channel.overwrites
+                        and (is_vc_table_owner(channel, member)
+                             or is_vctable_speaker(channel, member))
+                ):
+                    # todo: rename vctable/vc_table to be consistent
+                    continue
                 await member.move_to(channel)
             cmd_speaker = itx.client.get_command_mention("vctable speaker")
             await itx.edit_original_response(

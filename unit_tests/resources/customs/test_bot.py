@@ -18,13 +18,15 @@ def fake_api_token_dictionary() -> ApiTokenDict:
 
 def default_bot() -> Bot:
     intents = discord.Intents.default()
+    # noinspection dunder-slots
     intents.members = True
+    # noinspection dunder-slots
     intents.message_content = True
     bot = Bot(
         fake_api_token_dictionary(),
         "0.0.0.0",
-        rina_db=None,
-        async_rina_db=None,
+        rina_db=None,  # type: ignore[arg-type]
+        async_rina_db=None,  # type: ignore[arg-type]
         intents=intents,
         command_prefix="/!\"@:\\#",
         # case_insensitive=True,
@@ -90,7 +92,7 @@ def make_command(
 
     return discord.app_commands.AppCommand(
         data=command_data,  # type: ignore[arg-type]
-        state=None,
+        state=None,  # type: ignore[arg-type]
     )
 
 

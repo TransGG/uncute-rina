@@ -104,7 +104,7 @@ class EmojiStats(commands.Cog):
                                           .split(":"))
 
             assert emoji_id.isdecimal(), (
-                f"Emoji `{emoji}` should have a numeric emoji id, but it "
+                f"Emoji `{emoji.string}` should have a numeric emoji id, but it "
                 f"is `{emoji_id}` instead!"
             )
             # should be decimal due to regex
@@ -248,14 +248,10 @@ class EmojiStats(commands.Cog):
             }
         }
 
-        if max_results > 50:
-            max_results = 50
-        if used_max < 0:
-            used_max = 0
-        if msg_max < 0:
-            msg_max = 0
-        if react_max < 0:
-            react_max = 0
+        max_results = min(max_results, 50)
+        used_max = max(used_max, 0)
+        msg_max = max(msg_max, 0)
+        react_max = max(react_max, 0)
 
         if msg_max != sys.maxsize:
             # only limit query on '_UsedCount' if you want to limit for it.

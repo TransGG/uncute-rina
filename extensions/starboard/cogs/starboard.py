@@ -115,7 +115,7 @@ async def _send_starboard_message(
         timestamp=message.created_at  # this, or datetime.now()
     )
     msg_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
-    embed.add_field(name="Source", value=f"[Jump!]({msg_link})")
+    embed_field_value = f"[Jump!]({msg_link})"
     embed.set_footer(text=f"{message.id}")
     name = getattr(message.author, "nick", None) or message.author.name
     embed.set_author(
@@ -123,13 +123,8 @@ async def _send_starboard_message(
         url=f"https://original.poster/{message.author.id}/",
         icon_url=message.author.display_avatar.url
     )
-    embed_list: list[discord.Embed] = []
+    embed_list: list[discord.Embed] = [embed]
     for attachment in message.attachments:
-        # The type checker doesn't seem to pick up that the embeds have been
-        #  created manually, and are manually given a `value` attribute.
-        assert embed.fields[0].value is not None
-        assert embed_list[0].fields[0].value is not None
-
         if attachment.content_type is not None:
             if attachment.content_type.split("/")[0] == "image":
                 # attachment is an image or GIF
@@ -145,40 +140,16 @@ async def _send_starboard_message(
                     embed.set_image(url=attachment.url)
                     embed_list.append(embed)
             else:
-                if len(embed_list) == 0:
-                    embed.set_field_at(
-                        0,
-                        name=embed.fields[0].name,
-                        value=embed.fields[0].value
-                        + f"\n\n(⚠️ +1 Unknown attachment "
-                          f"({attachment.content_type}))"
-                    )
-                else:
-                    embed_list[0].set_field_at(
-                        0,
-                        name=embed_list[0].fields[0].name,
-                        value=embed_list[0].fields[0].value
-                        + f"\n\n(⚠️ +1 Unknown attachment "
-                          f"({attachment.content_type}))")
+                embed_field_value += (f"\n\n(⚠️ +1 Unknown attachment "
+                                      f"({attachment.content_type}))")
         else:
             # if it is neither an image, video, application, nor
             #  recognised file type:
-            if len(embed_list) == 0:
-                embed.set_field_at(
-                    0,
-                    name=embed.fields[0].name,
-                    value=embed.fields[0].value
-                    + "\n\n(💔 +1 Unrecognized attachment type)"
-                )
-            else:
-                embed_list[0].set_field_at(
-                    0,
-                    name=embed_list[0].fields[0].name,
-                    value=embed_list[0].fields[0].value
-                    + "\n\n(💔 +1 Unrecognized attachment type)"
-                )
-    if len(embed_list) == 0:
-        embed_list.append(embed)
+            embed_field_value += "\n\n(💔 +1 Unrecognized attachment type)"
+
+    # The embed reference should still link to the embed in the list,
+    #  so we can just add the field at the end and have it update in the list/message.
+    embed.add_field(name="Source", value=embed_field_value)
 
     # Add new starboard msg
     msg = await starboard_channel.send(
@@ -261,7 +232,7 @@ async def _update_starboard_message_score(
                     star_reacter_ids.append(user.id)
 
     star_stat = len(star_reacter_ids)
-    if getattr(client.user, "id") in star_reacter_ids:
+    if getattr(client.user, "id", None) in star_reacter_ids:
         star_stat -= 1
 
     for reaction in star_msg.reactions:
@@ -632,7 +603,7 @@ class Starboard(commands.Cog):
                 f'message by reacting with the :x: emoji.\n'
                 f'\n'
                 f"In this case, the user reacted with a "
-                f"'{repr(payload.emoji)}' emoji"
+                f"'{payload.emoji!r}' emoji"
             )
             return
 
@@ -643,7 +614,7 @@ class Starboard(commands.Cog):
                 return
 
             # fetch original message, so we can get the original author.
-            starboard_original_message: discord.Message | None = \
+            starboard_original_message: GuildMessage | None = \
                 await _fetch_starboard_original_message(
                     self.client, message, starboard_emoji)
             if (starboard_original_message is not None
@@ -661,8 +632,10 @@ class Starboard(commands.Cog):
 
             if is_starboard_message(payload.guild_id, payload.message_id):
                 await _update_starboard_message_score(
-                    self.client, message.guild.id,
-                    message, starboard_original_message,
+                    self.client,
+                    message.guild.id,
+                    message,
+                    starboard_original_message,
                     starboard_emoji,
                     downvote_init_value,
                 )
