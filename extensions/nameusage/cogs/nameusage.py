@@ -151,10 +151,10 @@ class NameUsage(
     )
     @app_commands.describe(name="What specific name are you looking for?")
     @app_commands.choices(search_type=[
-        discord.app_commands.Choice(name='usernames', value=1),
-        discord.app_commands.Choice(name='nicknames', value=2),
-        discord.app_commands.Choice(name='Search both nicknames and usernames',
-                                    value=3),
+        discord.app_commands.Choice(name='Usernames', value=1),
+        discord.app_commands.Choice(name='Global display names', value=2),
+        discord.app_commands.Choice(name='Server nicknames', value=3),
+        discord.app_commands.Choice(name='Search usernames, global display names, and server nicknames', value=4),
     ])
     @not_in_dms_check
     async def nameusage_name(
@@ -165,28 +165,31 @@ class NameUsage(
             public: bool = False,
     ) -> None:
         await itx.response.defer(ephemeral=not public)
+        search_key = name.lower()
         count = 0
         type_string = ""
         if search_type == 1:  # usernames
             for member in itx.guild.members:
-                if name.lower() in member.name.lower():
+                if search_key in member.name.lower():
                     count += 1
             type_string = "username"
-        elif search_type == 2:  # nicknames
+        elif search_type == 2: # global display names
             for member in itx.guild.members:
-                if member.nick is not None:
-                    if name.lower() in member.nick.lower():
-                        count += 1
-            type_string = "nickname"
-        elif search_type == 3:  # usernames and nicknames
-            for member in itx.guild.members:
-                if member.nick is not None:
-                    if (name.lower() in member.nick.lower()
-                            or name.lower() in member.name.lower()):
-                        count += 1
-                elif name.lower() in member.name.lower():
+                if member.global_name is not None and search_key in member.global_name.lower():
                     count += 1
-            type_string = "username or nickname"
+            type_string = "global display name"
+        elif search_type == 3: # server nicknames
+            for member in itx.guild.members:
+                if member.nick is not None and search_key in member.nick.lower():
+                    count += 1
+            type_string = "server nicknames"
+        elif search_type == 4: # usernames + global display names + nicknames
+            for member in itx.guild.members:
+                if (search_key in member.name.lower()
+                        or member.global_name is not None and search_key in member.global_name.lower()
+                        or member.nick is not None and search_key in member.nick.lower()):
+                    count += 1
+            type_string = "username, global display name, or server nickname"
         await itx.followup.send(
             f"I found {count} {'person' if count == 1 else 'people'} "
             f"with '{name.lower()}' in their {type_string}",
