@@ -19,8 +19,9 @@ name_blacklist = {
 
 class NameUsageSearchMode(Enum):
     usernames = 1
-    nicknames = 2
-    nicknames_and_usernames = 3
+    global_name = 2
+    nicknames = 3
+    all = 4
 
 
 class NameUsageSearchModeTransformer(app_commands.Transformer[Bot]):
@@ -30,12 +31,14 @@ class NameUsageSearchModeTransformer(app_commands.Transformer[Bot]):
     @property
     def choices(self) -> list[app_commands.Choice[int | float | str]] | None:
         return [
-            discord.app_commands.Choice(name='Search most-used usernames',
+            discord.app_commands.Choice(name='Usernames',
                                         value=NameUsageSearchMode.usernames.value),
-            discord.app_commands.Choice(name='Search most-used nicknames',
+            discord.app_commands.Choice(name='Global display names',
+                                        value=NameUsageSearchMode.global_name.value),
+            discord.app_commands.Choice(name='Nicknames',
                                         value=NameUsageSearchMode.nicknames.value),
-            discord.app_commands.Choice(name='Search nicks and usernames',
-                                        value=NameUsageSearchMode.nicknames_and_usernames.value),
+            discord.app_commands.Choice(name='Search usernames, global display names, and server nicknames',
+                                        value=NameUsageSearchMode.all.value),
         ]
 
 
@@ -44,12 +47,19 @@ def _get_member_name(member: discord.Member, mode: NameUsageSearchMode) -> set[s
     match mode:
         case NameUsageSearchMode.usernames:
             name_sections = _split_name(member.name)
+        case NameUsageSearchMode.global_name:
+            if member.global_name is not None:
+                name_sections = _split_name(member.global_name)
+            else:
+                name_sections = set()
         case NameUsageSearchMode.nicknames:
             if member.nick is None:
                 return None
             name_sections = _split_name(member.nick)
-        case NameUsageSearchMode.nicknames_and_usernames:
+        case NameUsageSearchMode.all:
             name_sections = _split_name(member.name)
+            if member.global_name is not None:
+                name_sections.union(_split_name(member.global_name))
             if member.nick is not None:
                 name_sections.union(_split_name(member.nick))
     return name_sections
@@ -155,9 +165,12 @@ class NameUsage(
         section_counts = _get_name_usage_sections(itx.guild.members, mode)
         pages = _get_gettop_embed_pages(section_counts)
 
-        mode_text = ("usernames" if mode == NameUsageSearchMode.usernames
-                     else "nicknames" if mode == NameUsageSearchMode.nicknames
-                     else "usernames and nicknames")
+        mode_text = {
+            NameUsageSearchMode.usernames: "usernames",
+            NameUsageSearchMode.global_name: "global names",
+            NameUsageSearchMode.nicknames: "nicknames",
+            NameUsageSearchMode.all: "user/nick/global names"
+        }[mode]
         embed_title = f'Most-used {mode_text} leaderboard!'
 
         view = GetTopPageView(pages, embed_title, timeout=60)
@@ -172,45 +185,47 @@ class NameUsage(
         description="See how often different names occur in this server"
     )
     @app_commands.describe(name="What specific name are you looking for?")
-    @app_commands.choices(search_type=[
-        discord.app_commands.Choice(name='usernames', value=1),
-        discord.app_commands.Choice(name='nicknames', value=2),
-        discord.app_commands.Choice(name='Search both nicknames and usernames',
-                                    value=3),
-    ])
     @not_in_dms_check
     async def nameusage_name(
             self,
             itx: GuildInteraction[Bot],
             name: str,
-            search_type: int,
+            search_type: app_commands.Transform[NameUsageSearchMode, NameUsageSearchModeTransformer],
             public: bool = False,
     ) -> None:
         await itx.response.defer(ephemeral=not public)
+        search_key = name.lower()
         count = 0
         type_string = ""
         match NameUsageSearchMode(search_type):
             case NameUsageSearchMode.usernames:
-                type_string = "username"
                 for member in itx.guild.members:
-                    if name.lower() in member.name.lower():
+                    if search_key in member.name.lower():
                         count += 1
+                type_string = "username"
+            case NameUsageSearchMode.global_name:
+                for member in itx.guild.members:
+                    if (member.global_name is not None
+                            and search_key in member.global_name.lower()):
+                        count += 1
+                type_string = "global display name"
             case NameUsageSearchMode.nicknames:
-                type_string = "nickname"
                 for member in itx.guild.members:
                     if (member.nick is not None
-                            and name.lower() in member.nick.lower()):
+                            and search_key in member.nick.lower()):
                         count += 1
-            case NameUsageSearchMode.nicknames_and_usernames:
-                type_string = "username or nickname"
+                type_string = "nickname"
+            case NameUsageSearchMode.all:
                 for member in itx.guild.members:
-                    if member.nick is not None:
-                        if (name.lower() in member.nick.lower()
-                                or name.lower() in member.name.lower()):
-                            count += 1
-                    elif name.lower() in member.name.lower():
+                    if (
+                        search_key in member.name.lower()
+                        or (member.global_name is not None
+                            and search_key in member.global_name.lower())
+                        or (member.nick is not None
+                            and search_key in member.nick.lower())
+                    ):
                         count += 1
-
+                type_string = "username, global display name, or server nickname"
         await itx.followup.send(
             f"I found {count} {'person' if count == 1 else 'people'} "
             f"with '{name.lower()}' in their {type_string}",
