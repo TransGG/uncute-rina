@@ -77,7 +77,6 @@ class CustomTag:
 
     async def send_to_channel(self, channel: discord.abc.Messageable) -> None:
         await channel.send(embed=self.embed)
-        return
 
     async def send(
             self,
@@ -176,7 +175,6 @@ class CustomTag:
 
         await itx.response.send_message(
             "", embed=self.embed, view=view, ephemeral=True)
-        return
 
 
 # region Tags
@@ -215,7 +213,6 @@ async def send_enabling_embeds_info(
         itx: GuildInteraction[Bot], public: bool, anonymous: bool,
 ) -> None:
     """Helper to send enabling embeds tag."""
-    itx.followup: discord.Webhook  # type: ignore
     if not isinstance(itx.channel, discord.abc.Messageable):
         raise TypeError(f"channel was not messageable (got: {type(itx.channel)})")
 

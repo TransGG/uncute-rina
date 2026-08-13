@@ -1,7 +1,6 @@
 import re  # to remove pronouns from user-/nicknames and split names at capital letters.
 import typing
 from enum import Enum
-from typing import Any
 
 import discord
 from discord import app_commands
@@ -104,7 +103,7 @@ def _get_name_usage_sections(
     return section_counts
 
 
-def _get_gettop_embed_pages(sections: dict[str, int]) -> list[Any]:
+def _get_gettop_embed_pages(sections: dict[str, int]) -> list[typing.Any]:
     section_tuples = sorted(
         sections.items(), key=lambda x: x[1], reverse=True)
     pages = []

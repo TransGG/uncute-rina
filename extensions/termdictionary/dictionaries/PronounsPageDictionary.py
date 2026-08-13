@@ -234,7 +234,6 @@ class PronounsPageDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
         if (not self.has_response
                 or self._result_str is None
                 or self._term is None):
@@ -273,8 +272,6 @@ class PronounsPageDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             term: str
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
-
         if self._character_overflow:
             if self._result_str is None:
                 raise ValueError("_result_str was None")

@@ -124,8 +124,10 @@ class HelpCommand(commands.Cog):
     def __init__(self) -> None:
         pass
 
-    @app_commands.command(name="help",
-                          description="A help command to learn more about me!")
+    @app_commands.command(
+        name="help",
+        description="A help command to learn more about me!",
+    )
     @app_commands.describe(page="What page do you want to jump to? (useful "
                                 "if sharing commands)")
     @app_commands.autocomplete(page=_help_page_autocomplete)

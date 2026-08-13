@@ -36,6 +36,8 @@ CategoryChannelId = int
 MessageableChannelId = int
 MessageChannel = discord.TextChannel | discord.Thread
 
+type TypeKinda = type | typing.TypeAliasType | types.UnionType
+
 
 async def parse_id_generic(
         get_object_function: Callable[
@@ -67,11 +69,11 @@ def get_attribute_type(attribute_key: str) -> tuple[
     attribute_types: dict[str, type] = \
         typing.get_type_hints(ServerAttributes)
     attribute_in_list = False
-    type_queue = []
+    type_queue: list[TypeKinda | None] = []
     if attribute_key not in ServerAttributes.__annotations__:
         return set(), False
 
-    attribute_type: type | None = attribute_types[attribute_key]
+    attribute_type: TypeKinda | list[TypeKinda] | types.GenericAlias | None = attribute_types[attribute_key]
 
     if isinstance(attribute_type, list):
         attribute_in_list = True

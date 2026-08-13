@@ -197,8 +197,8 @@ def _update_results_from_id[T](
             raise AttributeError(f"Expected potential_obj to have an id and name but it did not! {dir(potential_obj)}")
         if potential_obj is not None and pred(potential_obj):
             results.add(app_commands.Choice[str](
-                name=potential_obj.name,
-                value=str(potential_obj.id))
+                name=potential_obj.name,  # type: ignore[attr-defined]
+                value=str(potential_obj.id))  # type: ignore[attr-defined]
             )
 
 

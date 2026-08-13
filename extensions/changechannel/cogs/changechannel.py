@@ -56,7 +56,7 @@ class ChangeChannel(commands.Cog):
                     )
                     return
 
-        response = await itx.response.defer(ephemeral=False)
+        response: discord.InteractionCallbackResponse[Bot] | None = await itx.response.defer(ephemeral=False)
         if response is None or response.resource is None:
             await itx.followup.send(
                 "Something went wrong! I couldn't retrieve the jump url "

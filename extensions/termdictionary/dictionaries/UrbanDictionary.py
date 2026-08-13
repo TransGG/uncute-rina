@@ -1,7 +1,7 @@
 import json
 import math
-from datetime import datetime
 import typing
+from datetime import datetime
 
 import aiohttp
 import discord

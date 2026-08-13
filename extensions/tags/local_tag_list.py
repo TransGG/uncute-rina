@@ -25,9 +25,9 @@ def get_tag(
 
     :return: A tag object or ``None`` if no tag with this name is found.
     """
-    if guild_id in local_tag_list:
-        if tag_name in local_tag_list[guild_id]:
-            return local_tag_list[guild_id][tag_name]
+    if (guild_id in local_tag_list
+            and tag_name in local_tag_list[guild_id]):
+        return local_tag_list[guild_id][tag_name]
     return None
 
 

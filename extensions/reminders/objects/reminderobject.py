@@ -253,8 +253,8 @@ async def _handle_reminder_timestamp_parsing(
         }
         query = ("Since a date format doesn't tell me what time you want "
                  "the reminder, you can pick a time yourself:")
-        for option in options:
-            timestamp_str = f"<t:{int(options[option].timestamp())}:F>"
+        for option, option_time in options.items():
+            timestamp_str = f"<t:{int(option_time.timestamp())}:F>"
             query += f"\n  `{option}.` {timestamp_str}"
         view = TimeOfDaySelection(list(options))
         await itx.response.send_message(query, view=view, ephemeral=True)

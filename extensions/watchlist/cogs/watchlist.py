@@ -397,12 +397,12 @@ async def _add_to_watchlist(
         )
 
 
-@app_commands.context_menu(name="Add user to watchlist")
+@app_commands.context_menu(name="Add user to watchlist")  # type: ignore[arg-type] # GroupT not supported
 @is_staff_check
 @module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_user(
         itx: GuildInteraction[Bot],
-        user: discord.User,
+        user: discord.User | discord.Member,
 ) -> None:
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
@@ -414,7 +414,7 @@ async def watchlist_ctx_user(
     await itx.response.send_modal(watchlist_reason_modal)
 
 
-@app_commands.context_menu(name="Add msg to watchlist")
+@app_commands.context_menu(name="Add msg to watchlist")  # type: ignore[arg-type] # GroupT not supported
 @is_staff_check
 @module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_message(

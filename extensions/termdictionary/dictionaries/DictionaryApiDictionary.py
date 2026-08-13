@@ -138,7 +138,6 @@ class DictionaryApiDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
         if (not self.has_response
                 or self._view is None
                 or self._embed is None):
@@ -167,7 +166,6 @@ class DictionaryApiDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             term: str
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
         await itx.followup.send(
             f"I didn't find any results for '{term}' on dictionaryapi.dev!",
             ephemeral=True,

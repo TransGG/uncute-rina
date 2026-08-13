@@ -62,17 +62,19 @@ def extract_id_and_name(
     return channel_id, channel_name
 
 
+class VcActivityEvent(typing.NamedTuple):
+    embed_timestamp: float
+    user_data: tuple[int, str]
+    joined_channel_data: tuple[int, str] | None
+    left_channel_data: tuple[int, str] | None
+
+
 async def _get_vc_activity(
         voice_log_channel: discord.abc.Messageable,
         min_time: float,
         max_time: float,
         msg_limit: int
-) -> list[tuple[
-    float,
-    tuple[int, str],
-    tuple[int, str] | None,
-    tuple[int, str] | None
-]]:
+) -> list[VcActivityEvent]:
     """
     Retrieve the most recent voice channel activity from the logger
     channel and convert into neat string.
@@ -91,12 +93,7 @@ async def _get_vc_activity(
     """
     # todo: holy moly this function is 250 lines.
     # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
-    output: list[tuple[
-        float,
-        tuple[int, str],
-        tuple[int, str] | None,
-        tuple[int, str] | None]
-    ] = []
+    output: list[VcActivityEvent] = []
 
     async for message in voice_log_channel.history(
             after=datetime.fromtimestamp(min_time, tz=timezone.utc),
@@ -311,8 +308,12 @@ async def _get_vc_activity(
                 current_channel = (int(current_channel_data[0]),
                                    current_channel_data[1])
 
-            data = (event_timestamp, event_user,
-                    previous_channel, current_channel)
+            data = VcActivityEvent(
+                event_timestamp,
+                event_user,
+                previous_channel,
+                current_channel,
+            )
             output.append(data)
 
     return output
@@ -393,12 +394,7 @@ def _make_bar_graph(
 
 
 def _format_data_for_graph(
-        events: list[tuple[
-            float,
-            tuple[int, str],
-            tuple[int, str] | None,
-            tuple[int, str] | None
-        ]],  # todo: make type variable
+        events: list[VcActivityEvent],
         max_time: float,
         min_time: float,
         select_user_ids: list[str],
@@ -609,7 +605,7 @@ class VCLogReader(commands.Cog):
             #  joined or left during the given time frame] will still be
             #  plotted on the graph.
             for member in voice_channel.members:
-                events.append((
+                events.append(VcActivityEvent(
                     current_time,
                     (member.id, member.name),
                     (voice_channel.id, voice_channel.name),
