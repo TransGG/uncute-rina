@@ -1,7 +1,38 @@
+[tool.mypy]
+disable_error_code=["import-untyped", "no-redef"]
+implicit_optional=true
+allow_redefinition_new=true
+local_partial_types=true
+allow_redefinition=true
+
+[tool.flake8]
+max-line-length=119
+exclude=[
+    ".git",
+    "venv",
+    ".venv",
+    "rina_docs",
+]
+
+[tool.coverage.run]
+omit=[
+    "*/unit_tests/*",
+    "*/__init__.py",
+    "*/module.py",
+]
+
+
+[tool.pytest.ini_options]
+pythonpath="."
+filterwarnings=["ignore::DeprecationWarning:discord.player"]
+# Only necessary in python 3.12. discord.py imports `audioop-lts` in python 3.13 resolving this DeprecationWarning.
+
+[tool.ruff]
 exclude = [".venv", "unit_tests"]
 line-length=119
 target-version="py314"
-[lint]
+
+[tool.ruff.lint]
 select = [
     "ANN", # Type annotations would take wayyy too long to do properly  # HA YOU THOUGHT (I only spent 2 hours TwT)
     "ASYNC", # Async bugs
@@ -61,6 +92,25 @@ select = [
     "unsorted-dunder-all", "unsorted-dunder-slots", "unsorted-imports", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
     "redefined-loop-name", # Allow reassigning in loops
     "assert", # We should not use asserts (throw exceptions instead!), as optimized environments disable them
+
+#    "multiple-starts-ends-with",
+#    "needless-bool",
+#    "explicit-f-string-type-conversion",
+#    "if-stmt-min-max",
+#    "dict-index-missing-items",
+#    "collapsible-if",
+#    "unsorted-imports",
+#    "unnecessary-generator-set",
+#    "pytest-duplicate-parametrize-test-cases",
+#    "function-call-in-default-argument",
+#    "dict-index-missing-items",
+#    "slice-to-remove-prefix-or-suffix",
+##    "non-unique-enums",
+#    "blind-except",
+#    "invalid-module-name",
+#    "unintentional-type-annotation",
+#    "unnecessary-placeholder",
+#    "datetime-min-max",
 ]
 
 ignore = [
