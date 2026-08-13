@@ -9,18 +9,6 @@ allow_redefinition=true
 module = "extensions.termdictionary.dictionaries.custom_dictionary"
 ignore_errors = true
 
-[[tool.mypy.overrides]]
-module = "resources.utils.discord_utils"
-disable_error_code=[
-    "misc",
-    "return-value"
-]
-ignore_errors = true
-
-#[[tool.mypy.overrides]]
-#module = "extensions.testing_commands.cogs.testingcommands"
-#ignore_errors = true
-
 [tool.flake8]
 max-line-length=119
 exclude=[

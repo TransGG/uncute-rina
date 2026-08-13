@@ -100,7 +100,7 @@ class CustomDictionary(DictionaryBase):
             term: str
     ) -> None:
         if is_staff(itx, itx.user):
-            cmd_define = itx.client.get_command_mention_(
+            cmd_define = itx.client.get_command_mention_with_args(
                 "dictionary_staff define",
                 term=term,
                 definition=" ",

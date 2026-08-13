@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 
 def send_channel_or_interaction(
         itx: discord.Interaction,
-) -> typing.Callable[
+) -> typing.Callable[  # type: ignore[misc]
         [...],
         typing.Coroutine[
             typing.Any,
@@ -54,7 +54,9 @@ def send_channel_or_interaction(
     return try_send_message
 
 
-def send_or_followup(itx: discord.Interaction) -> typing.Callable[
+def send_or_followup(
+        itx: discord.Interaction
+) -> typing.Callable[  # type: ignore[misc]
         [...],
         typing.Coroutine[
             typing.Any,
@@ -66,7 +68,7 @@ def send_or_followup(itx: discord.Interaction) -> typing.Callable[
 ]:
     if itx.response.is_done():
         return itx.followup.send
-    return itx.response.send_message
+    return itx.response.send_message  # type: ignore[return-value]
 
 
 async def get_member_or_filter(
