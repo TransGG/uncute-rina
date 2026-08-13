@@ -10,7 +10,7 @@ from extensions.termdictionary.utils import simplify
 from resources.checks.permissions import is_staff
 from resources.customs import Bot
 
-from .DictionaryBase import DictionaryBase
+from .dictionary_base import DictionaryBase
 
 
 class CustomDictionary(DictionaryBase):
@@ -69,7 +69,6 @@ class CustomDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
         if self._result_str is None:
             raise ValueError("_result_str was None")
 

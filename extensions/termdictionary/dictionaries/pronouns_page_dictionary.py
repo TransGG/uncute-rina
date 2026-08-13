@@ -8,7 +8,7 @@ import discord
 from extensions.termdictionary.utils import simplify
 from resources.customs import Bot
 
-from .DictionaryBase import DictionaryBase
+from .dictionary_base import DictionaryBase
 from .objects import PronounsPageEntry
 
 

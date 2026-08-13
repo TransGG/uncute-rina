@@ -31,7 +31,6 @@ class DictionaryBase(metaclass=ABCMeta):
          autocomplete suggestions should be generated.
         :return: A set of possible autocomplete suggestions.
         """
-        pass
 
     @abstractmethod
     async def construct_response(self, term: str) -> None:
@@ -42,7 +41,6 @@ class DictionaryBase(metaclass=ABCMeta):
          Use :py:attr:has_response: to see if a response could be
          constructed. If so, run :py:meth:`send_response`.
         """
-        pass
 
     @abstractmethod
     async def send_response(
@@ -55,7 +53,6 @@ class DictionaryBase(metaclass=ABCMeta):
         :param itx: The interaction to respond to.
         :param public: Whether the response should be sent publicly.
         """
-        pass
 
     @abstractmethod
     async def handle_no_response(
@@ -75,4 +72,3 @@ class DictionaryBase(metaclass=ABCMeta):
         :param itx: The interaction to respond to.
         :return: None.
         """
-        pass

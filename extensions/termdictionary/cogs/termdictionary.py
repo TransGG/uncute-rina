@@ -11,7 +11,7 @@ from extensions.termdictionary.dictionaries import (
     DictionaryBase,
     PronounsPageDictionary,
 )
-from extensions.termdictionary.dictionaries.UrbanDictionary import (
+from extensions.termdictionary.dictionaries.urban_dictionary import (
     UrbanDictionary,
 )
 from extensions.termdictionary.dictionary_sources import DictionarySources

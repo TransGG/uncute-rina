@@ -8,12 +8,12 @@ __all__ = [
     "term_page_to_embed",
 ]
 
-from .CustomDictionaryEntry import CustomDictionaryEntry
-from .DictionaryApiEntry import (
+from .custom_dictionary_entry import CustomDictionaryEntry
+from .dictionary_api_entry import (
     DetailedTermPage,
     DictionaryApiEntry,
     get_term_lines,
     term_page_to_embed,
 )
-from .PronounsPageEntry import PronounsPageEntry
-from .UrbanDictionaryEntry import UrbanDictionaryEntry
+from .pronouns_page_entry import PronounsPageEntry
+from .urban_dictionary_entry import UrbanDictionaryEntry

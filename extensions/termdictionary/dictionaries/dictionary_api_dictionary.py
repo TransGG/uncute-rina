@@ -5,7 +5,7 @@ from typing import override
 import aiohttp
 import discord
 
-from extensions.termdictionary.dictionaries.DictionaryBase import DictionaryBase
+from extensions.termdictionary.dictionaries.dictionary_base import DictionaryBase
 from extensions.termdictionary.dictionaries.objects import (
     DetailedTermPage,
     DictionaryApiEntry,

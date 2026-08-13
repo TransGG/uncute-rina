@@ -158,7 +158,6 @@ class UrbanDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             term: str
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
         await itx.followup.send(
             f"I didn't find any results for '{term}' on urbandictionary.com",
             ephemeral=True,
