@@ -161,10 +161,8 @@ class StickerStats(commands.Cog):
             }
         }
 
-        if max_results > 50:
-            max_results = 50
-        if used_max < 0:
-            used_max = 0
+        max_results = min(max_results, 50)
+        used_max = max(used_max, 0)
         if used_max != sys.maxsize:
             # Only limit query on '_UsedCount' if the user wants to
             #  put a limit on it. Some entries don't have a value for

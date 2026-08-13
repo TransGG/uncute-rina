@@ -77,6 +77,9 @@ def test_embed_lengths() -> None:
 def test_aliases_for_each_help_page() -> None:
     assert len(aliases) == len(help_pages)  # all pages have an alias
 
+    for alias_page in aliases:
+        assert alias_page in help_pages, alias_page
+
 
 def test_each_alias_list_is_not_empty() -> None:
     empty_alias_lists = []

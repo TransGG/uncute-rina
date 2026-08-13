@@ -143,7 +143,6 @@ class NameUsage(
             itx: GuildInteraction[Bot],
             mode: int
     ) -> None:
-        # todo: split this function into multiple smaller functions
         await itx.response.defer(ephemeral=True)
         section_counts = _get_name_usage_sections(itx.guild.members, NameUsageSearchMode(mode))
         pages = _get_gettop_embed_pages(section_counts)

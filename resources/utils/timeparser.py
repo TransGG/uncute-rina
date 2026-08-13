@@ -99,8 +99,8 @@ class TimeParser:
         for unit_index in range(len(time_units)):
             # use index instead of iterating tuples in list because of
             #  the tuple component reassignment 3 lines down.
-            for timeterm in TIMETERMS:
-                if time_units[unit_index][1] in TIMETERMS[timeterm]:
+            for timeterm, aliases in TIMETERMS.items():
+                if time_units[unit_index][1] in aliases:
                     time_units[unit_index] = (time_units[unit_index][0],
                                               timeterm)
                     # tuple does not support item assignment
@@ -116,7 +116,7 @@ class TimeParser:
     @staticmethod
     def parse_date(
             time_string: str,
-            start_date: datetime = datetime.now().astimezone()
+            start_date: datetime | None = None
     ) -> datetime:
         """
         Helper function to turn strings like "3d5h10min4seconds" to a
@@ -134,6 +134,9 @@ class TimeParser:
          contains unrecognised datetime units; or if the "year" unit
          exceeds 3999 or if the "day" offset exceeds 1500000.
         """
+        if start_date is None:
+            start_date = datetime.now().astimezone()
+
         # - "next thursday at 3pm"
         # - "tomorrow"
         # + "in 3 days"

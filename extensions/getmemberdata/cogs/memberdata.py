@@ -325,10 +325,8 @@ class MemberData(commands.Cog):
                 results[event_label] = {}
             else:
                 time_list = sorted(column)
-                if min_time > time_list[0]:
-                    min_time = time_list[0]
-                if max_time < time_list[-1]:
-                    max_time = time_list[-1]
+                min_time = min(min_time, time_list[0])
+                max_time = max(max_time, time_list[-1])
         return results, max_time, min_time, totals, warning
 
     @staticmethod
@@ -345,8 +343,8 @@ class MemberData(commands.Cog):
         # We don't need to know what user 'triggered' this event,
         #  unless 'doubles' is True.
         column: list[float] = []
-        for member in events:
-            for time in events[member]:
+        for member_events in events.values():
+            for time in member_events:
                 # If a user's join time is within the
                 #  requested lower/upper bounds (note: see 'accuracy' variable),
                 #  then append it.
@@ -422,9 +420,12 @@ class MemberData(commands.Cog):
         ] = {
             "time": list(results_nullable["joined"])
         }
-        for y in results_nullable:
-            y: MemberDataType
-            d[y] = [results_nullable[y][i] for i in results_nullable[y]]
+        for data_type, timestamp_count_dict in results_nullable.items():
+            data_type: MemberDataType
+            d[data_type] = [
+                timestamp_count_dict[i]
+                for i in timestamp_count_dict
+            ]
 
         df = pd.DataFrame(data=d)  # can raise ValueError
 

@@ -57,17 +57,16 @@ def _check_awawa_reaction(
     if "b" not in msg_content and "w" not in msg_content:
         return False
 
-    if len(msg_content) > 5 and (msg_content.startswith("aba")
-                                 or msg_content.startswith("awa")):
+    if len(msg_content) > 5 and (msg_content.startswith(("aba", "awa"))):
         # check if the message content is /(ab|aw)+a/i
         replaced = msg_content.replace("ab", "").replace("aw", "")
         if replaced == "a":
             return True
 
-    if len(msg_content) > 9 and msg_content.startswith("a"):
-        return True
-
-    return False
+    return (
+        len(msg_content) > 9
+        and msg_content.startswith("a")
+    )
 
 
 def _get_dice_roll_output(
@@ -160,8 +159,7 @@ class FunAddons(commands.Cog):
                      and message.channel.parent == 987358841245151262)
                     # ^ <#welcome-verify>
                     or channel_name is None
-                    or channel_name.startswith('ticket-')
-                    or channel_name.startswith('closed-')
+                    or channel_name.startswith(('ticket-', 'closed-'))
                     or channel_category is None
                     # <#Bulletin Board>, <#Moderation Logs>,
                     # <#Verifier Archive>, <#Events>,

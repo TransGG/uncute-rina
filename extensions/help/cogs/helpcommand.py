@@ -69,19 +69,21 @@ async def _help_page_autocomplete(  # ruff: ignore[unused-async]
 
     user_is_staff = is_admin(itx, itx.user)
 
-    if current.isdecimal():
-        current_page: int | None = None
-        try:
-            current_page = int(current)
-        except ValueError:
-            pass
+    current_page = int(current) if current.isdecimal() else None
 
-        if current_page is not None and current_page in aliases.keys():
-            if (user_is_staff
-                    or not help_pages[current_page].get("staff_only", False)):
-                results.append(app_commands.Choice[int](
-                    name=aliases[current_page][0], value=current_page))
-                return results
+    if (
+            current_page in aliases
+            and current_page in help_pages
+            # ^ unnecessary: in aliases == in help_pages, verified by unit tests
+            and (
+                user_is_staff
+                or not help_pages[current_page].get("staff_only", False)
+                # ^ page is publicly available (not staff_only)
+            )
+    ):
+        results.append(app_commands.Choice[int](
+            name=aliases[current_page][0], value=current_page))
+        return results
 
     # search aliases
     for page in aliases:

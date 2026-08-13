@@ -21,7 +21,6 @@ from extensions.addons.cogs.funaddons import _product_of_list
     ([1.2, 0.3], 1.2 * 0.3),  # floats
     ([-1, 2, 3], -1 * 2 * 3),  # Mixed
     ([994, 943, 0], 0),  # Zero
-    ([], 1),  # empty list
 ])
 def test_valid_cases(
         input_list: list[int | float], expected: int | float

@@ -386,9 +386,8 @@ async def parse_as_datetime_string(
     time_passed = distance - creation_time
     if time_passed > timedelta(days=365 * 3999):
         raise ValueError(
-            "I don't think I can remind you `{}` years into "
-            "the future..."
-            .format(time_passed.days // 365.2425)
+            f"I don't think I can remind you "
+            f"`{time_passed.days // 365.2425}` years into the future..."
         )
     return distance, itx
 

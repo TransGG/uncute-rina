@@ -439,7 +439,7 @@ class CrashHandling(commands.Cog):
 
         try:
             msg = f"    Executor details: {itx.user} ({itx.user.id})\n"
-        except Exception as ex:
+        except AttributeError as ex:
             msg = (f"    Executor details: couldn't get interaction "
                    f"details: {repr(ex)}\n")
             #   f"    command: {error.command}\n" + \

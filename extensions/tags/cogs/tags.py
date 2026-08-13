@@ -1,5 +1,5 @@
 # to make report tag auto-trigger at most once every 15 minutes
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import discord
 from discord import app_commands
@@ -44,7 +44,7 @@ type TagId = str
 
 # To prevent excessive spamming when multiple people mention staff.
 #  A sort of cooldown
-report_message_reminder = datetime.min
+report_message_reminder = datetime.min.replace(tzinfo=UTC)
 
 
 def get_tags_recursively(
@@ -200,7 +200,7 @@ class TagFunctions(commands.Cog):
 
         if any(staff_role_mentions in message.content
                for staff_role_mentions in staff_role_mentions):
-            time_now = datetime.now()
+            time_now = datetime.now(tz=UTC)
             if time_now - report_message_reminder > timedelta(minutes=15):
                 tag = create_report_info_tag(ticket_channel)
                 await tag.send_to_channel(message.channel)

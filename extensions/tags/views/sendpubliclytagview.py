@@ -34,8 +34,6 @@ class SendPubliclyTagView(discord.ui.View):
             itx: discord.Interaction[Bot],
             _: discord.ui.Button,
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
-
         if self.tag.report_to_staff:
             public_footer = (
                 "Note: If you believe that this command was misused or "

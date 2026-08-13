@@ -159,8 +159,8 @@ def _has_name_or_id(
     if not hasattr(obj, "id") or not hasattr(obj, "name"):
         raise AttributeError("Expected object to have an id or a name")
     return (
-        current.lower() in getattr(obj, "name").lower()
-        or str(getattr(obj, "id")).startswith(current)
+        current.lower() in obj.name.lower()
+        or str(obj.id).startswith(current)
     )
 
 
@@ -278,12 +278,14 @@ async def _value_autocomplete(  # ruff: ignore[unused-async]
         if str in attribute_type and len(current) > 0:
             # leave as is
             results.add(app_commands.Choice[str](name=current, value=current))
-        if int in attribute_type:
+        if (
+                int in attribute_type
+                and current.isdecimal()
+        ):
             # leave as is, if it's a number (otherwise don't suggest anything)
-            if current.isdecimal():
-                results.add(
-                    app_commands.Choice[str](name=current, value=current)
-                )
+            results.add(
+                app_commands.Choice[str](name=current, value=current)
+            )
 
         if len(results) == 0:
             attribute_type_names = ','.join(
