@@ -587,8 +587,8 @@ class WatchList(commands.Cog):
             thread = await watchlist_channel.guild.fetch_channel(
                 watchlist_thread_id,
             )
-            assert isinstance(thread, discord.Thread), \
-                f"Watchlist was not a thread! {type(thread)}"
+            if not isinstance(thread, discord.Thread):
+                raise TypeError(f"Watchlist was not a thread! {type(thread)}")
             # ^ fetch, to retrieve (archived) thread.
             await message.forward(thread)
 

@@ -74,9 +74,8 @@ class DictionaryapiPageview(PageView):
         send_one_modal = DictionaryAPISendPageModal(max_page_index)
         await itx.response.send_modal(send_one_modal)
         await send_one_modal.wait()
-        if not send_one_modal.succeeded:
+        if not send_one_modal.succeeded or send_one_modal.line is None:
             return
-        assert send_one_modal.line is not None
 
         term: str = self.pages[self.page][0]
         page: tuple[str, str] = term_lines[send_one_modal.line]

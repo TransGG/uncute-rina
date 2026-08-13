@@ -70,7 +70,8 @@ class CustomDictionary(DictionaryBase):
             public: bool
     ) -> None:
         itx.followup: discord.Webhook  # type: ignore
-        assert self._result_str is not None
+        if self._result_str is None:
+            raise ValueError("_result_str was None")
 
         if self._character_overflow:
             self._result_str = (

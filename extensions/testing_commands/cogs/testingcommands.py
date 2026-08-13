@@ -281,8 +281,17 @@ class TestingCog(commands.GroupCog, name="testing"):
             )
             return
 
-        assert from_channel is not None and to_channel is not None
+        if from_channel is None or to_channel is None:
+            raise ValueError(
+                f"from_channel or to_channel was None "
+                f"(from {from_channel is None}, to {to_channel is None})",
+            )
         embed = _make_vclog_embed(mode, from_channel, to_channel, user)
+
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message("I can't send messages in this channel!")
+            return
+
         await itx.channel.send(embed=embed)
 
         await itx.response.send_message("Sent.", ephemeral=True)

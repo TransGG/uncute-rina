@@ -1,5 +1,6 @@
 exclude = [".venv", "unit_tests"]
 line-length=119
+target-version="py314"
 [lint]
 select = [
     "ANN", # Type annotations would take wayyy too long to do properly  # HA YOU THOUGHT (I only spent 2 hours TwT)
@@ -59,13 +60,13 @@ select = [
     "PTH", # pathlib still technically works
     "unsorted-dunder-all", "unsorted-dunder-slots", "unsorted-imports", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
     "redefined-loop-name", # Allow reassigning in loops
+    "assert", # We should not use asserts (throw exceptions instead!), as optimized environments disable them
 ]
 
 ignore = [
     "unused-noqa", # different linters have different noqa triggers so aren't always 'unused'.
     "shebang-missing-executable-file",
     # Things we should probably do
-    "assert", # We should not use asserts (throw exceptions instead!), as optimized environments disable them
 
     # Style stuff that's bad, but won't cause issues
 

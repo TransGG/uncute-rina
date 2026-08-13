@@ -114,8 +114,8 @@ class CustomTag:
             anonymous: bool,
             report_to_staff: bool
     ) -> None:
-        assert isinstance(itx.channel, discord.abc.Messageable), \
-            type(itx.channel)
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            raise TypeError(f"Expected channel to be Messageable! (got: {type(itx.channel)})")
         self.send_channel = itx.channel
         if not anonymous:
             await itx.response.send_message(embed=self.embed)
@@ -216,7 +216,8 @@ async def send_enabling_embeds_info(
 ) -> None:
     """Helper to send enabling embeds tag."""
     itx.followup: discord.Webhook  # type: ignore
-    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
+    if not isinstance(itx.channel, discord.abc.Messageable):
+        raise TypeError(f"channel was not messageable (got: {type(itx.channel)})")
 
     txt = ("**Enabling Embeds**\n"
            "Embeds are a neat feature in discord that let you preview "

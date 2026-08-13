@@ -147,11 +147,12 @@ async def _get_channel_if_owner(
     if channel is None:
         # Don't send any messages, the function already does this.
         return None
-    assert isinstance(itx.user, discord.Member), (
-        f"Expected _get_current_voice_channel to filter itx.user to "
-        f"a discord.Member, but it turns out it is still of type "
-        f"{type(itx.user)}!"
-    )
+    if not isinstance(itx.user, discord.Member):
+        raise TypeError(
+            f"Expected _get_current_voice_channel to filter itx.user to "
+            f"a discord.Member, but it turns out it is still of type "
+            f"{type(itx.user).__name__}!"
+        )
 
     if not is_vc_table_owner(channel, itx.user):
         if not from_event:
@@ -265,13 +266,14 @@ class VcTables(
         user_vc = await _get_current_voice_channel(itx, "create VcTable")
         if user_vc is None:
             return
-        assert (user_vc.category is not None
-                and user.voice is not None
-                and user.voice.channel is not None), (
-            "Expected _get_current_voice_channel to handle incorrect "
-            "situations, but one of the requirements was still None!"
-            + str([user_vc.category, user.voice])
-        )
+        if (user_vc.category is None
+                or user.voice is None
+                or user.voice.channel is None):
+            raise ValueError(
+                "Expected _get_current_voice_channel to handle incorrect "
+                "situations, but one of the requirements was still None!"
+                + str([user_vc.category, user.voice, getattr(user.voice, "channel", -1)])
+            )
 
         if name == user_vc.name and name is not None:  # Test None for typer
             warning += (
@@ -385,9 +387,10 @@ class VcTables(
         channel = await _get_channel_if_owner(itx, "disband VcTable")
         if channel is None:
             return
-        assert channel.category is not None, (
-            "Assumed owned custom vc was in a category, but it wasn't!"
-        )
+        if channel.category is None:
+            raise ValueError(
+                "Assumed owned custom vc was in a category, but it wasn't!"
+            )
         # reset overrides
         await channel.edit(overwrites=channel.category.overwrites)
         # update every user's permissions

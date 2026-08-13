@@ -26,7 +26,9 @@ async def _choose_and_send_compliment(
         compliment_type: str,
         async_rina_db: motor.core.AgnosticDatabase
 ) -> None:
-    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
+    if not isinstance(itx.channel, discord.abc.Messageable):
+        raise TypeError(f"Channel was not messageable (got: {type(itx.channel)})")
+
     # todo: split function into multiple functions
     quotes = {
         "fem_quotes": [
@@ -193,7 +195,9 @@ async def _send_confirm_gender_modal(
         itx: discord.Interaction[Bot],
         user: discord.User | discord.Member
 ) -> None:
-    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
+    if not isinstance(itx.channel, discord.abc.Messageable):
+        raise TypeError(f"Channel was not messageable (got: {type(itx.channel)})")
+
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(

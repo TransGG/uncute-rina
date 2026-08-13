@@ -95,11 +95,12 @@ class DictionaryApiDictionary(DictionaryBase):
                 # should be a list of entries
                 return None
 
-            assert type(data) is list, (
-                f"Expected the response data to be of type `list` but it was "
-                f"{type(data)} instead!\n"
-                f"Data: {data}"
-            )
+            if not isinstance(data, list):
+                raise TypeError(
+                    f"Expected the response data to be of type `list` but it was "
+                    f"{type(data)} instead!\n"
+                    f"Data: {data}"
+                )
             return data
         except json.decoder.JSONDecodeError:
             return None
@@ -138,9 +139,13 @@ class DictionaryApiDictionary(DictionaryBase):
             public: bool
     ) -> None:
         itx.followup: discord.Webhook  # type: ignore
-        assert (self.has_response
-                and self._view is not None
-                and self._embed is not None)
+        if (not self.has_response
+                or self._view is None
+                or self._embed is None):
+            raise ValueError(
+                f"has_response was false or _view or _embed was None! "
+                f"({not self.has_response}, {self._view is None}, {self._embed is None})",
+            )
 
         if public:
             self._view.delete_extra_buttons()

@@ -176,7 +176,13 @@ class DevRequest(commands.Cog):
         if not self.client.is_module_enabled(
                 payload.guild_id, ModuleKeys.dev_requests):
             return
-        assert payload.guild_id is not None
+        if payload.guild_id is None:
+            raise ValueError(
+                f"message guild was None! "
+                f"(channel: {payload.channel_id}, "
+                f"message_id: {payload.message_id}, "
+                f"author: {payload.message_author_id})",
+            )
         dev_request_channel: discord.TextChannel | None = \
             self.client.get_guild_attributes(
                 payload.guild_id).developer_request_channel

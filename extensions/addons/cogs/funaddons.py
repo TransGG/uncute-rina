@@ -212,7 +212,12 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.headpat_reactions):
-            assert message.guild is not None  # implicit in is_module_enabled
+            if message.guild is None:
+                # implicit in is_module_enabled
+                raise TypeError(
+                    f"Expected message to have a guild but it was None instead! "
+                    f"Guild: {message.guild}, channel: {message.channel}, id: {message.id}",
+                )
             message = typing.cast(GuildMessage, message)
             headpat_emoji = self.client.get_guild_attributes(
                 message.guild).headpat_emoji
@@ -225,7 +230,12 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.awawawa_reactions):
-            assert message.guild is not None  # implicit in is_module_enabled
+            if message.guild is None:
+                # implicit in is_module_enabled
+                raise TypeError(
+                    f"Expected message to have a guild but it was None instead! "
+                    f"Guild: {message.guild}, channel: {message.channel}, id: {message.id}",
+                )
             awawawa_emoji: discord.Emoji | None
             awawawa_emoji = self.client.get_guild_attributes(
                 message.guild).awawawa_emoji

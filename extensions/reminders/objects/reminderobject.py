@@ -264,8 +264,12 @@ async def _handle_reminder_timestamp_parsing(
                 content="Reminder creation menu timed out.", view=None)
             raise ReminderTimeSelectionMenuTimeOut()
 
-        assert (view.value is not None
-                and view.return_interaction is not None)
+        if (view.value is None
+                or view.return_interaction is None):
+            raise ValueError(
+                f"View was None or return interaction was None! "
+                f"(view: {view is None}, itx: {view.return_interaction is None})",
+            )
         await itx.edit_original_response(view=None)
         distance = options[view.value]
         itx = view.return_interaction
@@ -416,10 +420,11 @@ async def _parse_reminder_time(
     """  # todo: update docstring exceptions
     # Parse reminder input to get a datetime for the reminder scheduler
     creation_time = itx.created_at  # utc
-    assert creation_time.tzinfo == timezone.utc, (
-        "Expected discord to provide a timezone of UTC, but it was "
-        f"`{creation_time.tzinfo.__str__()}` instead!"
-    )
+    if creation_time.tzinfo != timezone.utc:
+        raise ValueError(
+            "Expected discord to provide a timezone of UTC, but it was "
+            f"`{creation_time.tzinfo.__str__()}` instead!"
+        )
     # ^ it is timezone-aware, in utc
     distance: datetime
     possible_timestamp_datetime = (reminder_datetime

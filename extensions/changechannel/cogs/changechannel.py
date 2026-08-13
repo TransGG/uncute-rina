@@ -66,10 +66,11 @@ class ChangeChannel(commands.Cog):
             )
             return
 
-        assert isinstance(response.resource, discord.InteractionMessage), (
-            "The response resource wasn't an InteractionMessage (but instead "
-            "an InteractionCallbackActivityInstance, probably)!"
-        )
+        if not isinstance(response.resource, discord.InteractionMessage):
+            raise TypeError(
+                f"The response resource wasn't an InteractionMessage, but "
+                f"'{response.resource.__class__.__name__}'!"
+            )
 
         target = await destination.send(
             f"Conversation was moved from {response.resource.jump_url} "

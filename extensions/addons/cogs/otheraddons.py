@@ -460,8 +460,8 @@ class OtherAddons(commands.Cog):
                 ephemeral=True
             )
             return
-        assert upvote_emoji is not None
-        assert downvote_emoji is not None
+        if upvote_emoji is None or downvote_emoji is None:
+            raise TypeError("Upvote emoji or downvote emoji were None!")
 
         try:
             await itx.response.send_message("Adding emojis...", ephemeral=True)

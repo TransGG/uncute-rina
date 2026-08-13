@@ -47,8 +47,11 @@ def ellipsize_string(text: str, max_length: int) -> str:
     :param text: The text to check length for.
     :param max_length: The maximum length the string may be.
     :return: A string with perhaps added ellipses.
+    :raise ValueError: If the max_length parameter is less than 3:
+     Can't replace text with "..." and achieve fewer than 3 characters.
     """
-    assert max_length >= 3
+    if max_length < 3:
+        raise ValueError("Can't ellipsize text to a size less than 3!")
     if len(text) > max_length:
         return text[:max_length - 3] + "..."
     return text

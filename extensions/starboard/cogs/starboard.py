@@ -317,15 +317,15 @@ async def _fetch_starboard_and_original_messages(
         if isinstance(original_message_channel, int):
             fetched_channel = await get_or_fetch_messageable_guild_channel(
                 client, original_message_channel)
-            assert isinstance(
-                fetched_channel, MessageableGuildChannel.__value__), (
-                f"Expected the fetched channel of the original message "
-                f"channel to be of one of the MessagebleGuildChannel union "
-                f"values ({MessageableGuildChannel.__value__}), but it was "
-                f"{type(fetched_channel)}` instead!\n"
-                f"Channel id: {original_message_channel}`"
-                f"Fetched: {fetched_channel}"
-            )
+            if not isinstance(fetched_channel, MessageableGuildChannel.__value__):
+                raise TypeError(
+                    f"Expected the fetched channel of the original message "
+                    f"channel to be of one of the MessagebleGuildChannel union "
+                    f"values ({MessageableGuildChannel.__value__}), but it was "
+                    f"{type(fetched_channel)}` instead!\n"
+                    f"Channel id: {original_message_channel}`"
+                    f"Fetched: {fetched_channel}"
+                )
             channel = typing.cast(
                 MessageableGuildChannel, fetched_channel)
         elif original_message_channel is None:
@@ -520,7 +520,8 @@ async def fetch_message_from_channel(
     # The payload's guild is used to check if starboard is enabled.
     # Therefore, the original message must also be in a guild
     # (hence GuildMessage).
-    assert message.guild is not None
+    if message.guild is None:
+        raise ValueError("Expected the guild to have a value but it was None instead.")
     message = typing.cast(GuildMessage, message)
     return message
 
@@ -716,7 +717,8 @@ class Starboard(commands.Cog):
         if not self.client.is_module_enabled(message_payload.guild_id,
                                              ModuleKeys.starboard):
             return
-        assert message_payload.guild_id is not None
+        if message_payload.guild_id is None:
+            raise ValueError("Expected the guild id to have a value but it was None instead.")
 
         guild_attributes = self.client.get_guild_attributes(
             message_payload.guild_id)

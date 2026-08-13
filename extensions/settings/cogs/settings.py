@@ -156,7 +156,8 @@ def _list_has_subclass(
 def _has_name_or_id(
         obj: object, current: str
 ) -> bool:
-    assert hasattr(obj, "id") and hasattr(obj, "name")
+    if not hasattr(obj, "id") or not hasattr(obj, "name"):
+        raise AttributeError("Expected object to have an id or a name")
     return (
         current.lower() in getattr(obj, "name").lower()
         or str(getattr(obj, "id")).startswith(current)
@@ -192,7 +193,8 @@ def _update_results_from_id[T](
 ) -> None:
     if current.isdecimal():
         potential_obj = id_func(int(current))
-        assert hasattr(potential_obj, "id") and hasattr(potential_obj, "name")
+        if not hasattr(potential_obj, "id") or not hasattr(potential_obj, "name"):
+            raise AttributeError(f"Expected potential_obj to have an id and name but it did not! {dir(potential_obj)}")
         if potential_obj is not None and pred(potential_obj):
             results.add(app_commands.Choice[str](
                 name=potential_obj.name,
@@ -420,10 +422,11 @@ async def _handle_settings_attribute(
             # Check if the given server or one of its parents has this server
             #  marked as a parent already.
             # noinspection PyStringConversionWithoutDunderMethod
-            assert isinstance(database_value, int), (
-                f"Expected the database value to be of type `int` but it was "
-                f"{type(database_value)} instead: {database_value}"
-            )
+            if not isinstance(database_value, int):
+                raise TypeError(
+                    f"Expected the database value to be of type `int` but it was "
+                    f"{type(database_value).__name__} instead: {database_value}"
+                )
             has_current_server, parent_server_id = _has_guild_as_parent(
                 itx.client, itx.guild, database_value)
             if has_current_server:
@@ -449,7 +452,8 @@ async def _handle_settings_attribute(
             else:
                 # if guild has no info yet
                 items = []
-            assert isinstance(items, list)
+            if not isinstance(items, list):
+                raise TypeError(f"items was not a list (got: {type(items)})")
 
             if database_value in items:
                 await itx.followup.send(
@@ -498,11 +502,12 @@ async def _handle_settings_attribute(
             # confirm if expected attribute type also matches the given
             #  attribute type
             expected_modify_mode = get_attribute_autocomplete_mode(setting)
-            assert expected_modify_mode is not None
-            # It shouldn't be None because `setting` is already in
-            #  `attribute_keys` from ServerAttributes, and the function
-            #  checks keys of ServerAttributeIds, which should be
-            #  identical.
+            if expected_modify_mode is None:
+                raise ValueError("expected_modify_mode was None")
+                # It shouldn't be None because `setting` is already in
+                #  `attribute_keys` from ServerAttributes, and the function
+                #  checks keys of ServerAttributeIds, which should be
+                #  identical.
 
             await itx.followup.send(
                 f"This attribute cannot be changed with this mode "
@@ -577,7 +582,6 @@ def _has_guild_as_parent(
         if parent_server_id == guild.id:
             has_current_server = True
             break
-        assert parent_server_id is not None  # the IDE type checker is kinda dumb...
         parent_server: discord.Guild | None = client.get_guild_attributes(
             parent_server_id).parent_server
         parent_server_id = None

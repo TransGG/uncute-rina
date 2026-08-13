@@ -15,7 +15,8 @@ class AEGISPingReactionsAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.aegis_ping_reactions):
             return
-        assert message.guild is not None
+        if message.guild is None:
+            raise ValueError(f"message guild was None! (channel: {message.channel}, id: {message.id})")
         aegis_ping_role = self.client.get_guild_attributes(
             message.guild).aegis_ping_role
         if aegis_ping_role is None:

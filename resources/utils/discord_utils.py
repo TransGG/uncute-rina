@@ -39,11 +39,15 @@ def send_channel_or_interaction(
             | discord.Message
             | None
     ):
-        assert itx.channel is not None
-        assert isinstance(itx.channel, discord.abc.Messageable)
+        """
+        A function to try sending a message to a channel publicly if available,
+        or otherwise following up or replying to the interation publicly.
 
+        :raise TypeError: if itx.channel is not sendable
+        """
         try:
-            return await itx.channel.send(*args, **kwargs)
+            return await itx.channel.send(*args, **kwargs)  # type: ignore[union-attr]
+            # itx.channel is already checked in parent function ^
         except discord.Forbidden:
             return await send_or_followup(itx)(*args, **kwargs)
 

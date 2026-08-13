@@ -253,7 +253,8 @@ def _extract_assumption(assumption: WolframAssumption) -> str | None:
         #  a list of 1 value instead.
         assumption["values"] = [assumption_values]
 
-    assert isinstance(assumption["values"], list)
+    if not isinstance(assumption["values"], list):
+        raise TypeError(f"Assumption values key was not a list! (got: {type(assumption['values'])} instead)")
 
     for value_index, value in enumerate(assumption["values"]):
         word_id = str(value_index + 1)

@@ -158,9 +158,9 @@ def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
                          f"Expected format: {expected_format}.")
 
     color_values = [int(i) for i in color_value_strings]
-    assert len(color_values) == 3, (
-        f"Expected 3 color values, got {len(color_values)} instead!"
-    )
+    if len(color_values) != 3:
+        # should never happen
+        raise ValueError(f"Expected 3 color values, got {len(color_values)} instead!")
 
     if not all(0 <= i <= 255 for i in color_values):
         raise ValueError(f"Your color values must be a number "
@@ -181,7 +181,8 @@ class TagFunctions(commands.Cog):
         global report_message_reminder
         if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
             return
-        assert message.guild is not None
+        if message.guild is None:
+            raise ValueError("Expected the guild to have a value but it was None instead.")
 
         if message.author.bot:
             return
@@ -345,7 +346,8 @@ class TagFunctions(commands.Cog):
                     # interaction aborted
                     return
                 itx = create_tag_modal.return_interaction
-                assert itx.guild is not None
+                if itx.guild is None:
+                    raise ValueError("Expected the guild to have a value but it was None instead.")
                 try:
                     color_tuple, description, report_to_staff, title = \
                         self._parse_tag_information(create_tag_modal, itx)
@@ -380,7 +382,8 @@ class TagFunctions(commands.Cog):
                     # interaction aborted
                     return
                 itx = edit_tag_modal.return_interaction
-                assert itx.guild is not None
+                if itx.guild is None:
+                    raise ValueError("Expected the guild to have a value but it was None instead.")
                 try:
                     color_tuple, description, report_to_staff, title = self._parse_tag_information(
                         edit_tag_modal, itx

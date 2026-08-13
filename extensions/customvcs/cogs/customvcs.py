@@ -36,10 +36,11 @@ async def _reset_voice_channel_permissions_if_vctable(
         This function does not check if the channel is actually a
         custom voice channel.
     """
-    assert voice_channel.category is not None, (
-        "Couldn't reset voice channel permissions of custom VC because "
-        "the channel was not in a category."
-    )
+    if voice_channel.category is None:
+        raise ValueError(
+            "Couldn't reset voice channel permissions of custom VC because "
+            "the channel was not in a category."
+        )
     # if VcTable, reset ownership; and all owners leave:
     #  reset all perms
     if len(voice_channel.overwrites) <= len(
@@ -295,7 +296,8 @@ async def _get_voice_channel(
             ephemeral=True,
         )
         return None
-    assert isinstance(channel, discord.VoiceChannel)
+    if not isinstance(channel, discord.VoiceChannel):
+        raise TypeError(f"Channel was not a voice channel (got: {type(channel)})")
 
     if (
         channel.category is None
@@ -414,7 +416,8 @@ class CustomVcs(commands.Cog):
         if result is None:
             return
         channel, user = result
-        assert channel.category is not None
+        if channel.category is None:
+            raise TypeError(f"Channel {channel.id} has no category")
 
         warning = ""
 
@@ -462,7 +465,8 @@ class CustomVcs(commands.Cog):
                 user_limit: int | Missing,
                 rename: str | Missing,
         ) -> None:
-            assert not (isinstance(user_limit, Missing) and isinstance(rename, Missing))
+            if isinstance(user_limit, Missing) or isinstance(rename, Missing):
+                raise TypeError(f"User limit or rename value was None! (user: {user_limit}, rename: {rename})")
 
             if isinstance(rename, Missing):
                 if not isinstance(user_limit, Missing):

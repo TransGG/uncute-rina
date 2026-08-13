@@ -121,8 +121,12 @@ class UrbanDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        assert (self.has_response
-                and self._pages is not None)
+        if (not self.has_response
+                or self._pages is None):
+            raise ValueError(
+                f"has_response was false or _pages was None! "
+                f"({not self.has_response}, {self._pages is None})",
+            )
 
         if public:
             # Remove public defer message to instead send this reply

@@ -577,21 +577,24 @@ class ServerSettings:
             # Mostly validation before casting it.
             # Todo: more graceful handling of errors:
             #  Can throw AttributeError and AssertionError
-            assert isinstance(key, str), f"Key `{key}` was not a string!"
+            if not isinstance(key, str):
+                raise TypeError(f"Key `{key}` was not a string!")
             expected_type = ServerAttributes.__annotations__[key]
             if (
                     type(expected_type) is list
                     or typing.get_origin(expected_type) is list
             ):
-                assert type(val) is list and val is not None, (
-                    f"Value for `{key}` should be a list, but it was "
-                    f"{type(val)} instead!"
-                )
+                if val is None or not isinstance(val, list):
+                    raise ValueError(
+                        f"Value for `{key}` should be a list, but it was "
+                        f"{type(val)} instead!"
+                    )
             else:
-                assert type(val) is not list, (
-                    f"Value for `{key}` should be `{expected_type}`, but it "
-                    f"was `{type(val)}` instead: {val}!"
-                )
+                if isinstance(val, list):
+                    raise TypeError(
+                        f"Value for `{key}` should be `{expected_type}`, but it "
+                        f"was `{type(val)}` instead: {val}!"
+                    )
             setattr(parsed_attributes, key, val)
 
         for attribute_key, attribute_value in attribute_ids.items():
@@ -605,11 +608,12 @@ class ServerSettings:
                         parsed_values.append(parsed_value)
                 set_attribute(attribute_key, parsed_values)
             else:
-                assert isinstance(attribute_value, (str, int, type(None))), (
-                    f"Expected attribute {attribute_key} to have value type str "
-                    f"or int, but `{attribute_value}` was of type "
-                    f"`{type(attribute_value)}`"
-                )
+                if not isinstance(attribute_value, (str, int, type(None))):
+                    raise TypeError(
+                        f"Expected attribute {attribute_key} to have value type str "
+                        f"or int, but `{attribute_value}` was of type "
+                        f"`{type(attribute_value)}`"
+                    )
                 parsed_value = await parse_attribute(
                     client, guild, attribute_key, attribute_value,
                     invalid_arguments=invalid_arguments)
