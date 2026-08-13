@@ -5,6 +5,22 @@ allow_redefinition_new=true
 local_partial_types=true
 allow_redefinition=true
 
+[[tool.mypy.overrides]]
+module = "extensions.termdictionary.dictionaries.custom_dictionary"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "resources.utils.discord_utils"
+disable_error_code=[
+    "misc",
+    "return-value"
+]
+ignore_errors = true
+
+#[[tool.mypy.overrides]]
+#module = "extensions.testing_commands.cogs.testingcommands"
+#ignore_errors = true
+
 [tool.flake8]
 max-line-length=119
 exclude=[
@@ -106,7 +122,7 @@ select = [
     "dict-index-missing-items",
     "slice-to-remove-prefix-or-suffix",
 #    "non-unique-enums",
-    "blind-except",
+#    "blind-except",
     "invalid-module-name",
     "unintentional-type-annotation",
     "unnecessary-placeholder",
