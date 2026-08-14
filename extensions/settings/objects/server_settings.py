@@ -159,13 +159,6 @@ async def parse_attribute(
         typing.Coroutine[None, None, GuildAttributeType | None]
     ]] = set()
 
-    def wrap[T](
-            sync_function: Callable[[int], T]
-    ) -> Callable[[int], typing.Coroutine[None, None, T]]:
-        async def inner(arg: int) -> T:  # ruff: ignore[unused-async]
-            return sync_function(arg)
-        return inner
-
     if is_attribute_type(discord.Guild):
         funcs.add(client.get_guild)
     if is_attribute_type(discord.abc.GuildChannel):
@@ -234,6 +227,13 @@ async def parse_attribute(
         attribute_value_id = int(attribute_value)
     except ValueError:
         return None
+
+    def wrap[T](
+            sync_function: Callable[[int], T]
+    ) -> Callable[[int], typing.Coroutine[None, None, T]]:
+        async def inner(arg: int) -> T:  # ruff: ignore[unused-async]
+            return sync_function(arg)
+        return inner
 
     parsed_attribute = None
     for func in funcs:

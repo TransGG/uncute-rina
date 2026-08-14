@@ -230,8 +230,13 @@ def start_app() -> None:
 
     # this can probably be done better
     # region Client events
+    bot_loaded = False
+
     @client.event
     async def on_ready() -> None:
+        if bot_loaded:
+            debug("Reconnected bot.", color=DebugColor.green)
+            return
         # noinspection PyStringConversionWithoutDunderMethod
         text = (f"Logged in as {client.user}, in version {version} "
                 f"(in {datetime.now().astimezone() - program_start})")

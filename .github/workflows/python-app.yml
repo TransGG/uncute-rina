@@ -50,7 +50,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with mypy
         run: |
-          mypy main.py
+          mypy .
 
   pytest:
     runs-on: ubuntu-latest
