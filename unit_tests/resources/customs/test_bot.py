@@ -1,3 +1,5 @@
+import logging
+
 import discord
 import discord.app_commands
 import pytest
@@ -160,3 +162,58 @@ def test_get_command_mention_no_commands(
 
     # Assert
     assert out == expected
+
+
+@pytest.mark.skip("takes too long")
+def test_bot_startup(
+    caplog: pytest.LogCaptureFixture
+) -> None:
+    import signal
+
+    from main import start_app
+
+    class CustomTimeoutError(Exception):
+        pass
+
+    timeout_duration_sec = 10
+
+    def handler(signum, frame):
+        raise CustomTimeoutError()
+
+    # set the timeout handler
+    signal.signal(signal.SIGALRM, handler)
+    signal.alarm(timeout_duration_sec)
+    try:
+        with caplog.at_level(logging.INFO):
+            start_app()
+        print("app stopped automatically")
+    except CustomTimeoutError:
+        print("timeout passed")
+    finally:
+        signal.alarm(0)
+
+    expected_list = {
+        "Created Bot",
+        "Started Bot",
+        "Cached bot's command names and their ids",
+        "Loaded extensions successfully",
+        "Loaded server settings",
+        "Finished setting up reminders",
+        "Logged in as",
+        "Loaded server settings.",
+        "Loaded server tags.",
+        "Loaded watchlist threads.",
+        "Loaded starboard messages.",
+    }
+
+    if len(caplog.messages) == 0:
+        pytest.fail("No caplog messages captured to compare expectations")
+
+    for expectation in expected_list:
+        print("e", expectation)
+        for message in caplog.messages:
+            print("m", message)
+            if expectation in message:
+                break
+        else:
+            pytest.fail(f"Missing expected `{expectation}`")

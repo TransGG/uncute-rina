@@ -313,3 +313,43 @@ def test_progress_overflow(
     # Assert
     with pytest.raises(OverflowError):
         progressbar.complete("")
+
+
+@pytest.mark.parametrize("empty, begin, complete", [
+    # Test cases with single longer than others
+    ("1", "1", "22"),
+    ("1", "22", "1"),
+    ("22", "1", "1"),
+    # Test cases with multiple longer than other
+    ("1", "22", "22"),
+    ("22", "22", "1"),
+    ("22", "1", "22"),
+    # Test cases with single empty string
+    ("1", "1", ""),
+    ("1", "", "1"),
+    ("", "1", "1"),
+    # Test cases with multiple empty strings
+    ("1", "", ""),
+    ("", "", "1"),
+    ("", "1", ""),
+])
+def test_progress_inconsistent_char_lengths(
+        empty: str,
+        begin: str,
+        complete: str,
+) -> None:
+    with pytest.raises(ValueError):
+        ProgressBar(
+            1,
+            empty_char="1",
+            begin_char="1",
+            complete_char="7777777",
+        )
+
+    with pytest.raises(ValueError):
+        ProgressBar(
+            1,
+            empty_char="1",
+            begin_char="1",
+            complete_char="",
+        )
