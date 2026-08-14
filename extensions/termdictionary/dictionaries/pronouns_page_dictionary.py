@@ -1,13 +1,14 @@
-import discord
-
-import aiohttp
 import json
 import re  # to parse and remove https:/pronouns.page/ in-text page linking
 from typing import override
 
-from .DictionaryBase import DictionaryBase
-from resources.customs import Bot
+import aiohttp
+import discord
+
 from extensions.termdictionary.utils import simplify
+from resources.customs import Bot
+
+from .dictionary_base import DictionaryBase
 from .objects import PronounsPageEntry
 
 
@@ -233,10 +234,13 @@ class PronounsPageDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
-        assert (self.has_response
-                and self._result_str is not None
-                and self._term is not None)
+        if (not self.has_response
+                or self._result_str is None
+                or self._term is None):
+            raise ValueError(
+                f"has_response was false or _result_str or _term was None! "
+                f"({not self.has_response}, {self._result_str is None}, {self._term is None})",
+            )
         msg_length = len(self._result_str)
         if msg_length > 1999:
             more_info_link = ("https://en.pronouns.page/dictionary/terminology"
@@ -268,10 +272,9 @@ class PronounsPageDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             term: str
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
-
         if self._character_overflow:
-            assert self._result_str is not None
+            if self._result_str is None:
+                raise ValueError("_result_str was None")
 
             await itx.followup.send(
                 self._result_str[:2000],

@@ -1,19 +1,15 @@
-from __future__ import annotations
-
 import typing
 
 import discord
-from typing import TYPE_CHECKING
 
-
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from resources.abc import GuildInteraction
     from resources.customs import Bot
 
 
 def send_channel_or_interaction(
         itx: discord.Interaction,
-) -> typing.Callable[
+) -> typing.Callable[  # type: ignore[misc]
         [...],
         typing.Coroutine[
             typing.Any,
@@ -41,18 +37,24 @@ def send_channel_or_interaction(
             | discord.Message
             | None
     ):
-        assert itx.channel is not None
-        assert isinstance(itx.channel, discord.abc.Messageable)
+        """
+        A function to try sending a message to a channel publicly if available,
+        or otherwise following up or replying to the interation publicly.
 
+        :raise TypeError: if itx.channel is not sendable
+        """
         try:
-            return await itx.channel.send(*args, **kwargs)
+            return await itx.channel.send(*args, **kwargs)  # type: ignore[union-attr]
+            # itx.channel is already checked in parent function ^
         except discord.Forbidden:
             return await send_or_followup(itx)(*args, **kwargs)
 
     return try_send_message
 
 
-def send_or_followup(itx: discord.Interaction) -> typing.Callable[
+def send_or_followup(
+        itx: discord.Interaction
+) -> typing.Callable[  # type: ignore[misc]
         [...],
         typing.Coroutine[
             typing.Any,
@@ -64,7 +66,7 @@ def send_or_followup(itx: discord.Interaction) -> typing.Callable[
 ]:
     if itx.response.is_done():
         return itx.followup.send
-    return itx.response.send_message
+    return itx.response.send_message  # type: ignore[return-value]
 
 
 async def get_member_or_filter(

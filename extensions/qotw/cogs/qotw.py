@@ -1,20 +1,20 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.qotw.utils import create_thread
 from extensions.settings.objects import (
-    ModuleKeys,
     AttributeKeys,
+    ModuleKeys,
     ServerAttributes,
-)
-from resources.checks import (
-    module_enabled_check,
-    MissingAttributesCheckFailure
 )
 from resources.abc import (
     GuildInteraction,
     MessageableGuildChannel,
+)
+from resources.checks import (
+    MissingAttributesCheckFailure,
+    module_enabled_check,
 )
 from resources.customs import Bot
 from resources.utils.utils import get_mod_ticket_channel
@@ -57,7 +57,7 @@ class QOTW(commands.Cog):
 
         await itx.response.defer(ephemeral=True)
 
-        def reaction_role_lambda(attrs: ServerAttributes) -> discord.Role:
+        def reaction_role_lambda(attrs: ServerAttributes) -> discord.TextChannel | None:
             # this one is kinda silly...
             # but it only sends the message, and then removes it immediately after,
             # so it doesn't really matter that this is mentioning a channel instead of a role.
@@ -68,7 +68,8 @@ class QOTW(commands.Cog):
             itx.client,
             (itx.user, qotw_channel, question),
             f"QOTW-{question[:50]}",
-            reaction_role_lambda,
+            reaction_role_lambda,  # type: ignore[arg-type]
+            # ^ See function definition comment
             AttributeKeys.qotw_suggestions_channel,
             emojis=[discord.PartialEmoji.from_str(emoji)
                     for emoji in ("⬆️", "⬇️")]

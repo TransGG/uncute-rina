@@ -7,13 +7,13 @@ from resources.customs import Bot
 
 
 class CreateTagModal(discord.ui.Modal):
-    embed_title = discord.ui.TextInput(
+    embed_title: discord.ui.TextInput = discord.ui.TextInput(
         label='Title',
         placeholder='Title of the tag embed...',
         max_length=256,
     )
 
-    description = discord.ui.TextInput(
+    description: discord.ui.TextInput = discord.ui.TextInput(
         label='Description',
         style=discord.TextStyle.long,
         placeholder='Description of the tag embed...\n'
@@ -23,14 +23,14 @@ class CreateTagModal(discord.ui.Modal):
         #  up to 4000 characters in modal text fields :I
     )
 
-    report_to_staff = discord.ui.TextInput(
+    report_to_staff: discord.ui.TextInput = discord.ui.TextInput(
         label='Report anonymous usage to staff',
         placeholder='Boolean: True or False',
         min_length=4,
         max_length=5,
     )
 
-    color = discord.ui.TextInput(
+    color: discord.ui.TextInput = discord.ui.TextInput(
         label='Color (RGB)',
         placeholder='Embed color, E.g. "255,255,255"',
         required=False,
@@ -43,9 +43,10 @@ class CreateTagModal(discord.ui.Modal):
 
         self.return_interaction: GuildInteraction[Bot] | None = None
 
-    async def on_submit(  # type: ignore (Interaction vs. Interaction[Bot])
+    async def on_submit(
             self,
-            itx: discord.Interaction[Bot]
+            itx: discord.Interaction[Bot]  # type: ignore[override]
+            # (Interaction vs. Interaction[Bot])
     ) -> None:
         if itx.guild is None:
             await itx.response.send_message(
@@ -58,6 +59,7 @@ class CreateTagModal(discord.ui.Modal):
             )
             return
 
-        assert itx.guild is not None
+        if itx.guild is None:
+            raise ValueError("Expected the guild to have a value but it was None instead.")
         guild_itx = typing.cast(GuildInteraction[Bot], itx)
         self.return_interaction = guild_itx

@@ -1,10 +1,9 @@
 import typing
-from typing import Any
 
 import aiohttp
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.settings.objects import (
     ModuleKeys,
@@ -13,8 +12,9 @@ from resources.abc import MessageableGuildChannel
 from resources.checks import module_enabled_check
 from resources.checks.command_checks import is_in_dms, module_not_disabled_check
 from resources.customs import Bot
-from resources.utils.utils import log_to_guild  # to log add_poll_reactions
-
+from resources.utils.utils import (
+    log_to_guild,  # to log add_poll_reactions
+)
 
 MaybeEmoji = discord.Emoji | discord.PartialEmoji | None
 
@@ -212,12 +212,12 @@ async def _unit_autocomplete(  # ruff: ignore[unused-async]
     options = options[itx.namespace.mode]
     if itx.namespace.mode == "currency":
         return [app_commands.Choice[str](name=option, value=option)
-                for option in options.keys()
+                for option in options
                 if option.lower().startswith(current.lower())
                 ][:10]
     else:
         return [app_commands.Choice[str](name=option, value=option)
-                for option in options.keys()
+                for option in options
                 if current.lower() in option.lower()
                 ][:25]
 
@@ -233,14 +233,19 @@ async def _role_autocomplete(  # ruff: ignore[unused-async]
         1126160553145020460: ("Hide Politics channel role", "NPA"),  # NPA
         1126160612620243044: ("Hide Venting channel role", "NVA")  # NVA
     }
-    options = []
+    options = [
+        role.id
+        for role in itx.user.roles
+        if (
+            role.id in role_options
+            and (
+                current.lower() in role_options[role.id][0].lower()
+                or current.lower() in role_options[role.id][1].lower()
+            )
+        )
+    ]
 
-    for role in itx.user.roles:
-        if role.id in role_options:
-            if (current.lower() in role_options[role.id][0].lower()
-                    or current.lower() in role_options[role.id][1].lower()):
-                options.append(role.id)
-    if options:
+    if len(options) > 0:
         return [
             app_commands.Choice[str](
                 name=role_options[role_id][0],
@@ -455,8 +460,8 @@ class OtherAddons(commands.Cog):
                 ephemeral=True
             )
             return
-        assert upvote_emoji is not None
-        assert downvote_emoji is not None
+        if upvote_emoji is None or downvote_emoji is None:
+            raise TypeError("Upvote emoji or downvote emoji were None!")
 
         try:
             await itx.response.send_message("Adding emojis...", ephemeral=True)
@@ -503,7 +508,7 @@ class OtherAddons(commands.Cog):
             itx: discord.Interaction[Bot],
             message_id_str: str,
     ) -> tuple[
-            list[Any],
+            list[typing.Any],
             discord.Message | None,
     ]:
         errors = []

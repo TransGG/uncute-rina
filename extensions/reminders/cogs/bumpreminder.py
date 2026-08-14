@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta
 
 import discord
-import discord.ext.commands as commands
-
-from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.checks import MissingAttributesCheckFailure
-from resources.customs import Bot
+from discord.ext import commands
 
 from extensions.reminders.objects import BumpReminderObject
+from extensions.settings.objects import AttributeKeys, ModuleKeys
+from resources.checks import MissingAttributesCheckFailure
+from resources.customs import Bot
 
 
 class BumpReminder(commands.Cog):

@@ -1,18 +1,17 @@
-from __future__ import annotations
-
 import typing
-from typing import TYPE_CHECKING
-from datetime import timezone, datetime
+from datetime import datetime, timezone
 
 import discord
 
-from resources.views.generics import create_simple_button
-from resources.customs import Bot
-
 from extensions.reminders.utils import get_user_reminders
+from resources.customs import Bot
+from resources.views.generics import create_simple_button
 
-if TYPE_CHECKING:
-    from extensions.reminders.objects import ReminderObject, ReminderDict
+if typing.TYPE_CHECKING:
+    from extensions.reminders.objects import (
+        ReminderDict,
+        ReminderObject,
+    )
 
 
 class CopyReminder(discord.ui.View):

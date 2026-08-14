@@ -1,37 +1,32 @@
-from typing import Callable
+from collections.abc import Callable
 
 import discord
-import discord.ext.commands as commands
-import discord.app_commands as app_commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 from extensions.customvcs.utils import (
-    is_vc_custom,
     edit_permissionoverwrite,
+    is_vc_custom,
+    is_vc_table_owner,
+    is_vctable_authorized,
+    is_vctable_locked,
+    is_vctable_muted,
+    is_vctable_participant,
+    is_vctable_speaker,
 )
-from extensions.settings.objects import ModuleKeys, AttributeKeys
-
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.abc import GuildInteraction
 from resources.checks import (
-    module_enabled_check,
     MissingAttributesCheckFailure,
     is_staff,
     # ^ to prevent people in vc-tables from muting staff.
+    module_enabled_check,
 )
 from resources.customs import Bot
 from resources.utils.discord_utils import get_member_or_filter
-from resources.utils.utils import log_to_guild
-# ^ to log custom vc changes
+from resources.utils.utils import log_to_guild  # to log custom vc changes
 from resources.views.generics import GenericTwoButtonView
-from extensions.customvcs.utils import (
-    is_vctable_locked,
-    is_vctable_speaker,
-    is_vctable_muted,
-    is_vctable_authorized,
-    is_vctable_participant,
-    is_vc_table_owner,
-)
-
 
 # Owner       = Connection perms (and speaking perms)
 # Speaker     = Speaking perms
@@ -47,7 +42,11 @@ def _get_vctable_members_with_predicate(
     ],
 ) -> list[str]:
     return [
-        target.mention
+        (
+            target.mention
+            if hasattr(target, "mention")
+            else f"<#{target.id}>"
+        )
         for target in channel.overwrites
         if (predicate(channel, target)
             and isinstance(target.id, discord.Member))
@@ -148,11 +147,12 @@ async def _get_channel_if_owner(
     if channel is None:
         # Don't send any messages, the function already does this.
         return None
-    assert isinstance(itx.user, discord.Member), (
-        f"Expected _get_current_voice_channel to filter itx.user to "
-        f"a discord.Member, but it turns out it is still of type "
-        f"{type(itx.user)}!"
-    )
+    if not isinstance(itx.user, discord.Member):
+        raise TypeError(
+            f"Expected _get_current_voice_channel to filter itx.user to "
+            f"a discord.Member, but it turns out it is still of type "
+            f"{type(itx.user).__name__}!"
+        )
 
     if not is_vc_table_owner(channel, itx.user):
         if not from_event:
@@ -215,10 +215,10 @@ class VcTables(
         # region Parse vctable owners
         added_owners = [user]
         added_owner_ids = []
-        for mention in owner_list:
-            if mention == "":
+        for mention_raw in owner_list:
+            if mention_raw == "":
                 continue
-            mention: str = mention.strip()
+            mention: str = mention_raw.strip()
             if not (mention[0:2] == "<@" and mention[-1] == ">"):
                 warning = (
                     f"Note: You didn't give a good list of VcTable owners, "
@@ -266,13 +266,14 @@ class VcTables(
         user_vc = await _get_current_voice_channel(itx, "create VcTable")
         if user_vc is None:
             return
-        assert (user_vc.category is not None
-                and user.voice is not None
-                and user.voice.channel is not None), (
-            "Expected _get_current_voice_channel to handle incorrect "
-            "situations, but one of the requirements was still None!"
-            + str([user_vc.category, user.voice])
-        )
+        if (user_vc.category is None
+                or user.voice is None
+                or user.voice.channel is None):
+            raise ValueError(
+                "Expected _get_current_voice_channel to handle incorrect "
+                "situations, but one of the requirements was still None!"
+                + str([user_vc.category, user.voice, getattr(user.voice, "channel", -1)])
+            )
 
         if name == user_vc.name and name is not None:  # Test None for typer
             warning += (
@@ -386,9 +387,10 @@ class VcTables(
         channel = await _get_channel_if_owner(itx, "disband VcTable")
         if channel is None:
             return
-        assert channel.category is not None, (
-            "Assumed owned custom vc was in a category, but it wasn't!"
-        )
+        if channel.category is None:
+            raise ValueError(
+                "Assumed owned custom vc was in a category, but it wasn't!"
+            )
         # reset overrides
         await channel.edit(overwrites=channel.category.overwrites)
         # update every user's permissions
@@ -1104,11 +1106,13 @@ class VcTables(
             )
             for member in channel.members:
                 # member has no owner or speaking perms, move to same vc?
-                if member in channel.overwrites:
-                    if (is_vc_table_owner(channel, member)
-                            or is_vctable_speaker(channel, member)):
-                        # todo: rename vctable/vc_table to be consistent
-                        continue
+                if (
+                        member in channel.overwrites
+                        and (is_vc_table_owner(channel, member)
+                             or is_vctable_speaker(channel, member))
+                ):
+                    # todo: rename vctable/vc_table to be consistent
+                    continue
                 await member.move_to(channel)
             cmd_speaker = itx.client.get_command_mention("vctable speaker")
             await itx.edit_original_response(

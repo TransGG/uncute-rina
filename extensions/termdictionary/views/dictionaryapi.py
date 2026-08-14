@@ -3,13 +3,12 @@ from typing import override
 import discord
 
 from extensions.termdictionary.dictionaries.objects import (
+    get_term_lines,
     term_page_to_embed,
-    get_term_lines
 )
 from extensions.termdictionary.modals import DictionaryAPISendPageModal
 from resources.customs import Bot
 from resources.views.generics import PageView
-
 
 DetailedTermPage = tuple[str, dict[str, list[str]]]
 
@@ -75,9 +74,8 @@ class DictionaryapiPageview(PageView):
         send_one_modal = DictionaryAPISendPageModal(max_page_index)
         await itx.response.send_modal(send_one_modal)
         await send_one_modal.wait()
-        if not send_one_modal.succeeded:
+        if not send_one_modal.succeeded or send_one_modal.line is None:
             return
-        assert send_one_modal.line is not None
 
         term: str = self.pages[self.page][0]
         page: tuple[str, str] = term_lines[send_one_modal.line]

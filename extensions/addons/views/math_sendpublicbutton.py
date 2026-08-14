@@ -6,7 +6,7 @@ from resources.customs import Bot
 class SendPublicButtonMath(discord.ui.View):
     def __init__(self, timeout: float = 180) -> None:
         super().__init__()
-        self.value = None
+        self.value: int | None = None
         self.timeout = timeout
 
     @discord.ui.button(label='Send Publicly', style=discord.ButtonStyle.gray)
@@ -23,7 +23,10 @@ class SendPublicButtonMath(discord.ui.View):
             )
             return
 
-        await itx.response.edit_message(content="Sent successfully!")
+        await itx.response.edit_message(
+            content="Sent successfully!",
+            view=None,
+        )
         cmd_math = itx.client.get_command_mention("math")
         await itx.followup.send(
             f"**{itx.user.mention} shared a {cmd_math} output:**\n"

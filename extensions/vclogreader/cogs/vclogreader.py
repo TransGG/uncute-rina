@@ -1,22 +1,26 @@
-from datetime import datetime, timezone, \
-    timedelta  # to plot and sort voice chat logs
-
-import matplotlib.pyplot as plt
-import pandas as pd  # to plot voice channel timeline graph
 import typing
+from datetime import (
+    datetime,
+    timedelta,  # to plot and sort voice chat logs
+    timezone,
+)
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import matplotlib.pyplot as plt
+import pandas as pd  # to plot voice channel timeline graph
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.settings.objects import AttributeKeys, ModuleKeys
-from resources.abc import GuildInteraction
-from resources.checks import is_staff_check, MissingAttributesCheckFailure, \
-    module_enabled_check  # cuz it's a staff command
-from resources.customs import Bot
-
-from extensions.vclogreader.vcloggraphdata import VcLogGraphData
 from extensions.vclogreader.customvoicechannel import CustomVoiceChannel
+from extensions.vclogreader.vcloggraphdata import VcLogGraphData
+from resources.abc import GuildInteraction
+from resources.checks import (
+    MissingAttributesCheckFailure,
+    is_staff_check,
+    module_enabled_check,  # cuz it's a staff command
+)
+from resources.customs import Bot
 from resources.utils import debug
 
 channel_separator_table = str.maketrans({"<": "", "#": "", ">": ""})
@@ -41,7 +45,8 @@ def extract_id_and_name(
      the channel information.
     :return: A tuple of the extracted id and name.
     """
-    assert embed.fields[field_number].value is not None
+    if embed.fields[field_number].value is None:
+        raise ValueError(f"`embed.fields[{field_number}].value` was None!")
     # split "<#234567> (Channel Name)" to "234567"
     channel_id = (
         embed.fields[field_number].value  # type: ignore[union-attr]
@@ -57,17 +62,19 @@ def extract_id_and_name(
     return channel_id, channel_name
 
 
+class VcActivityEvent(typing.NamedTuple):
+    embed_timestamp: float
+    user_data: tuple[int, str]
+    joined_channel_data: tuple[int, str] | None
+    left_channel_data: tuple[int, str] | None
+
+
 async def _get_vc_activity(
         voice_log_channel: discord.abc.Messageable,
         min_time: float,
         max_time: float,
         msg_limit: int
-) -> list[tuple[
-    float,
-    tuple[int, str],
-    tuple[int, str] | None,
-    tuple[int, str] | None
-]]:
+) -> list[VcActivityEvent]:
     """
     Retrieve the most recent voice channel activity from the logger
     channel and convert into neat string.
@@ -86,12 +93,7 @@ async def _get_vc_activity(
     """
     # todo: holy moly this function is 250 lines.
     # list of [(username, user_id), (joined_channel_id), (left_channel_id)]
-    output: list[tuple[
-        float,
-        tuple[int, str],
-        tuple[int, str] | None,
-        tuple[int, str] | None]
-    ] = []
+    output: list[VcActivityEvent] = []
 
     async for message in voice_log_channel.history(
             after=datetime.fromtimestamp(min_time, tz=timezone.utc),
@@ -184,15 +186,16 @@ async def _get_vc_activity(
                 # edit: Some actions, such as server-deafening another
                 #  user, give a different log message.
                 if len(embed.fields) == 0:
-                    raise Exception("Embed has no fields!")
+                    raise ValueError("Embed has no fields!")
                 else:
-                    assert embed.fields[0].value is not None
+                    if embed.fields[0].value is None:
+                        raise ValueError(f"embed.fields[0].value is None! msg link {message.jump_url}")
                     if len(embed.fields[0].value.split("#", 1)) < 2:
-                        raise Exception(
+                        raise ValueError(
                             f"First embed field '{embed.fields[0].value}' "
                             f"does not have hashtags for its ID!"
                         )
-                    raise Exception(
+                    raise ValueError(
                         f"Embed field '{embed.fields[0].value}' has some "
                         f"other error or something D:"
                     )
@@ -236,7 +239,8 @@ async def _get_vc_activity(
                 )
 
             # remove the ```ini\n  ...   ``` from the embed field
-            assert embed.fields[-1].value is not None
+            if embed.fields[-1].value is None:
+                raise ValueError("embed.fields[-1].value was None")
             id_data = (embed.fields[-1]
                        .value
                        .replace("```ini", "")[:-3]
@@ -265,7 +269,8 @@ async def _get_vc_activity(
                         f"'User', 'Old', 'New', or 'Channel')")
             user_data.append(username)
 
-            assert embed.timestamp is not None
+            if embed.timestamp is None:
+                raise ValueError(f"embed.timestamp was None, {message.id}")
             event_timestamp = embed.timestamp.timestamp()
 
             id_integer_test: list[tuple[bool, str]] = [
@@ -303,8 +308,12 @@ async def _get_vc_activity(
                 current_channel = (int(current_channel_data[0]),
                                    current_channel_data[1])
 
-            data = (event_timestamp, event_user,
-                    previous_channel, current_channel)
+            data = VcActivityEvent(
+                event_timestamp,
+                event_user,
+                previous_channel,
+                current_channel,
+            )
             output.append(data)
 
     return output
@@ -385,12 +394,7 @@ def _make_bar_graph(
 
 
 def _format_data_for_graph(
-        events: list[tuple[
-            float,
-            tuple[int, str],
-            tuple[int, str] | None,
-            tuple[int, str] | None
-        ]],  # todo: make type variable
+        events: list[VcActivityEvent],
         max_time: float,
         min_time: float,
         select_user_ids: list[str],
@@ -509,7 +513,8 @@ class VCLogReader(commands.Cog):
             )
 
         # type checkers are very stupid.
-        assert prompt_channel is None or isinstance(prompt_channel, discord.VoiceChannel)
+        if prompt_channel is not None and not isinstance(prompt_channel, discord.VoiceChannel):
+            raise TypeError(f"prompt_channel was not a voice channel! (got: {type(prompt_channel)})")
         voice_channel = prompt_channel
 
         if voice_channel is None:
@@ -526,7 +531,8 @@ class VCLogReader(commands.Cog):
             )
             warning = ("Warning: This channel is not a voice channel, "
                        "or has been deleted!\n\n")
-        assert voice_channel is not None
+        if voice_channel is None:
+            raise ValueError("voice channel was None!")
 
         vc_activity_logs_channel: discord.abc.Messageable | None
         vc_activity_logs_channel = itx.client.get_guild_attributes(
@@ -599,7 +605,7 @@ class VCLogReader(commands.Cog):
             #  joined or left during the given time frame] will still be
             #  plotted on the graph.
             for member in voice_channel.members:
-                events.append((
+                events.append(VcActivityEvent(
                     current_time,
                     (member.id, member.name),
                     (voice_channel.id, voice_channel.name),

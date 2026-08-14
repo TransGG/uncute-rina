@@ -1,16 +1,13 @@
-
-import discord
-
-import aiohttp
-from datetime import datetime
 import json
 import math
-from typing import override
+import typing
+from datetime import datetime
+
+import aiohttp
+import discord
 
 from extensions.termdictionary.dictionaries import DictionaryBase
-from extensions.termdictionary.dictionaries.objects import (
-    UrbanDictionaryEntry
-)
+from extensions.termdictionary.dictionaries.objects import UrbanDictionaryEntry
 from extensions.termdictionary.views import UrbanDictionaryPageView
 from resources.customs import Bot
 
@@ -56,7 +53,7 @@ class UrbanDictionary(DictionaryBase):
             reverse=True  # sort from highest to lowest
         )
 
-        pages = []
+        pages: list[discord.Embed] = []
         for result in data:
             embed = discord.Embed(
                 title=f"__{result['word'].capitalize()}__",
@@ -97,7 +94,7 @@ class UrbanDictionary(DictionaryBase):
         data: dict[str, list[UrbanDictionaryEntry]] = json.loads(response_api)
         return data['list']  # empty responses have {"list":[]}
 
-    @override
+    @typing.override
     async def get_autocomplete(self, current: str) -> set[str]:
         data = await self._get_api_response(current)
         if len(data) == 0:
@@ -108,10 +105,9 @@ class UrbanDictionary(DictionaryBase):
             terms.add(result["word"].capitalize() + self.term_suffix)
         return terms
 
-    @override
+    @typing.override
     async def construct_response(self, term: str) -> None:
-        if term.endswith(self.term_suffix):
-            term = term[:-len(self.term_suffix)]
+        term = term.removesuffix(self.term_suffix)
         data = await self._get_api_response(term)
         if len(data) == 0:
             return
@@ -119,14 +115,18 @@ class UrbanDictionary(DictionaryBase):
         self._pages = self._get_urban_dictionary_pages(data)
         self.has_response = True
 
-    @override
+    @typing.override
     async def send_response(
             self,
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        assert (self.has_response
-                and self._pages is not None)
+        if (not self.has_response
+                or self._pages is None):
+            raise ValueError(
+                f"has_response was false or _pages was None! "
+                f"({not self.has_response}, {self._pages is None})",
+            )
 
         if public:
             # Remove public defer message to instead send this reply
@@ -152,13 +152,12 @@ class UrbanDictionary(DictionaryBase):
             # message was deleted?
             pass
 
-    @override
+    @typing.override
     async def handle_no_response(
             self,
             itx: discord.Interaction[Bot],
             term: str
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
         await itx.followup.send(
             f"I didn't find any results for '{term}' on urbandictionary.com",
             ephemeral=True,

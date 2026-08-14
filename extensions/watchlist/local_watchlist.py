@@ -1,11 +1,14 @@
-from motor.core import AgnosticDatabase
 import discord
+from motor.core import AgnosticDatabase
 
 from resources.pymongo.database_keys import DatabaseKeys
 from resources.pymongo.guild_customs_manager import (
-    add_data, remove_data, get_data, get_all_data, remove_guild_data
+    add_data,
+    get_all_data,
+    get_data,
+    remove_data,
+    remove_guild_data,
 )
-
 
 local_watchlist: dict[int, dict[int, int]] = {}
 watchlist_loaded = False
@@ -34,9 +37,11 @@ def get_watchlist(
     """
     if not watchlist_loaded:
         raise WatchlistNotLoadedException()
-    if guild_id in local_watchlist:
-        if user_id in local_watchlist[guild_id]:
-            return local_watchlist[guild_id][user_id]
+    if (
+            guild_id in local_watchlist
+            and user_id in local_watchlist[guild_id]
+    ):
+        return local_watchlist[guild_id][user_id]
     return None
 
 
@@ -205,10 +210,16 @@ async def refetch_watchlist_threads(
     :return: A list of threads whose starter message could not be fetched.
     """
     # delete all watchlist data for this guild and its watchlist guild
-    await remove_guild_data(async_rina_db, guild.id,
-                            DatabaseKeys.watchlist)
-    await remove_guild_data(async_rina_db, watch_channel.guild.id,
-                            DatabaseKeys.watchlist)
+    await remove_guild_data(
+        async_rina_db,
+        guild.id,
+        DatabaseKeys.watchlist,
+    )
+    await remove_guild_data(
+        async_rina_db,
+        watch_channel.guild.id,
+        DatabaseKeys.watchlist,
+    )
     local_watchlist[watch_channel.guild.id] = {}
 
     # store reference to dict into a shorter variable

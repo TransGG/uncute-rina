@@ -1,7 +1,10 @@
 import discord
-import discord.ext.commands as commands
+from discord.ext import commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
+from extensions.settings.objects import (
+    AttributeKeys,
+    ModuleKeys,
+)
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs.bot import Bot
 
@@ -105,7 +108,8 @@ class StaffPollsChannelAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.polls_only_channel):
             return
-        assert message.guild is not None
+        if message.guild is None:
+            raise ValueError("Expected the guild to have a value but it was None instead.")
 
         # Can raise discord.Forbidden if:
         # - Missing `Manage Messages` to delete non-poll messages.

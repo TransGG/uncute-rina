@@ -1,5 +1,6 @@
-import discord
 from datetime import datetime, timedelta
+
+import discord
 
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import MissingAttributesCheckFailure

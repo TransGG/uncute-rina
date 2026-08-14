@@ -1,7 +1,7 @@
 import typing
 
 import discord
-import discord.ext.commands as commands
+from discord.ext import commands
 
 from extensions.qotw.utils import create_thread
 from extensions.settings.objects import (
@@ -50,10 +50,11 @@ class BanAppealReactionsAddon(commands.Cog):
         field_name = appeal_embed.fields[1].name
         field_value = appeal_embed.fields[1].value
         # get appeal person's username (expected username)
-        assert field_name is not None, (
-            f"Expected the webhook to send an embed with field names but the "
-            f"field with value `{field_value}` had a name of `{field_name}`!"
-        )
+        if field_name is None:
+            raise ValueError(
+                f"Expected the webhook to send an embed with field names but the "
+                f"field with value `{field_value}` had a name of `{field_name}`!"
+            )
         platform_field_name = field_name.lower()
         if "reddit username" in platform_field_name:
             platform = "reddit"

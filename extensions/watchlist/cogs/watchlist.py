@@ -1,28 +1,29 @@
+# to get embed send time for embed because cool (serves no real purpose)
 from datetime import datetime
-# ^ to get embed send time for embed because cool (serves no real purpose)
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
-from discord import RawThreadDeleteEvent
+from discord import RawThreadDeleteEvent, app_commands
+from discord.ext import commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
-from resources.abc import GuildInteraction
-from resources.customs import Bot
-from resources.checks.permissions import is_staff
-# ^ to check role in _add_to_watchlist, as backup
-from resources.checks import (
-    is_staff_check, module_enabled_check, MissingAttributesCheckFailure
-)  # the cog is pretty much only intended for staff use
-
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from extensions.watchlist.local_watchlist import (
+    WatchlistNotLoadedException,
     create_watchlist,
+    get_user_id_from_watchlist,
     get_watchlist,
     remove_watchlist,
-    get_user_id_from_watchlist,
-    WatchlistNotLoadedException,
 )
 from extensions.watchlist.modals import WatchlistReasonModal
+from resources.abc import GuildInteraction
+from resources.checks import (
+    MissingAttributesCheckFailure,
+    is_staff_check,
+    module_enabled_check,
+)  # the cog is pretty much only intended for staff use
+from resources.checks.permissions import (
+    is_staff,  # to check role in _add_to_watchlist, as backup
+)
+from resources.customs import Bot
 
 
 def _parse_watchlist_string_message_id(
@@ -52,6 +53,68 @@ def _parse_watchlist_string_message_id(
         msg_id = int(message_id)  # raises ValueError
         allow_different_report_author = True
     return msg_id, allow_different_report_author
+
+
+async def _get_reported_message(
+        itx: GuildInteraction[Bot],
+        user: discord.Member | discord.User,
+        message_id: int,
+        allow_different_report_author: bool
+) -> discord.Message | None:
+    if itx.channel is None:
+        await itx.response.send_message(
+            "I don't think you sent this in a channel, so I can't "
+            "find the message id either!",
+            ephemeral=True,
+        )
+        return None
+    elif not isinstance(itx.channel, discord.abc.Messageable):
+        await itx.followup.send(
+            "This channel does not contain any messages, so I can't find "
+            "your mentioned message in here either!",
+            ephemeral=True,
+        )
+        return None
+
+    try:
+        reported_message = await itx.channel.fetch_message(message_id)
+    except discord.Forbidden:
+        await itx.followup.send(
+            "Forbidden: I do not have permission to see that message.",
+            ephemeral=True,
+        )
+        return None
+    except discord.NotFound:
+        await itx.followup.send(
+            "NotFound: I could not find that message. Make sure you ran "
+            "this command in the same channel as the one where the "
+            "message id came from.",
+            ephemeral=True,
+        )
+        return None
+    except discord.HTTPException:
+        await itx.followup.send(
+            "HTTPException: Something went wrong while trying to fetch "
+            "the message.",
+            ephemeral=True,
+        )
+        raise
+
+    if (reported_message.author.id != user.id
+            and not allow_different_report_author):
+        author_info = (f"(message author: {reported_message.author}, "
+                       f"mentioned user: {user})\n")
+        await itx.followup.send(
+            ":warning: The given message didn't match the mentioned "
+            "user!\n"
+            + author_info
+            + "If you want to use this message anyway, add "
+              "\" | overwrite\" after the message id\n"
+              "(example: \"1817305029878989603 | overwrite\")",
+            ephemeral=True
+        )
+        return None
+    return reported_message
 
 
 async def _create_uncool_watchlist_thread(
@@ -108,6 +171,46 @@ async def _create_uncool_watchlist_thread(
     return msg, thread
 
 
+async def _get_or_create_watchlist_thread(
+        itx: GuildInteraction[Bot],
+        user: discord.Member | discord.User,
+        watch_channel: discord.TextChannel,
+        watchlist_thread_id: int | None,
+) -> tuple[discord.Message, discord.Thread]:
+    if watchlist_thread_id is not None:  # already on watchlist
+        # fetch thread, in case the thread was archived (not in cache)
+        thread: discord.Thread = await watch_channel.guild.fetch_channel(
+            watchlist_thread_id)  # type: ignore
+
+        # fetch message the thread is attached to (fetch, in case msg
+        #  is not in cache)
+        msg = await watch_channel.fetch_message(watchlist_thread_id)
+        # link back to that original message with the existing thread.
+        await msg.reply(
+            content=f"Someone added {user.mention} (`{user.id}`) to the "
+                    f"watchlist.\n"
+                    f"Since they were already on this list, here's a reply "
+                    f"to the original thread.\n"
+                    f"May this serve as a warning for this user.",
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+    else:
+        msg, thread = await _create_uncool_watchlist_thread(
+            itx.client,
+            user,
+            watch_channel,
+        )
+        # (thread.id would be the same as msg.id, because of
+        #  discord structure)
+        await create_watchlist(
+            itx.client.async_rina_db,
+            watch_channel.guild.id,
+            user.id,
+            thread.id
+        )
+    return msg, thread
+
+
 async def _update_uncool_watchlist_embed(
         jump_url: str,
         reported_message_info: str,
@@ -132,6 +235,29 @@ async def _update_uncool_watchlist_embed(
     )
     # embed.set_footer(text="")
     await msg.edit(embed=embed)
+
+
+def _get_reported_message_info(
+        reported_message: discord.Message,
+        allow_different_report_author: bool,
+) -> str:
+    different_report_author_info = ""
+    if allow_different_report_author:
+        different_report_author_info = \
+            f" (message by {reported_message.author.mention})"
+
+    reported_message_info = (
+        f"\n\n[Reported Message]({reported_message.jump_url})"
+        f"{different_report_author_info}\n"
+        f">>> {reported_message.content}\n"
+    )
+
+    if reported_message.attachments:
+        reported_message_info += (
+            f"(:newspaper: Contains "
+            f"{len(reported_message.attachments)} attachments)\n"
+        )
+    return reported_message_info
 
 
 async def _add_to_watchlist(
@@ -195,115 +321,30 @@ async def _add_to_watchlist(
 
     # get message that supports the report / report reason
     reported_message: discord.Message | None = None  # to make IDE happy
-    if message_id is None:
-        reported_message_info = ""
-    else:
-        if itx.channel is None:
-            await itx.response.send_message(
-                "I don't think you sent this in a channel, so I can't "
-                "find the message id either!",
-                ephemeral=True,
-            )
-            return
-        elif not isinstance(itx.channel, discord.abc.Messageable):
-            await itx.followup.send(
-                "This channel does not contain any messages, so I can't find "
-                "your mentioned message in here either!",
-                ephemeral=True,
-            )
-            return
-
-        try:
-            reported_message = await itx.channel.fetch_message(message_id)
-        except discord.Forbidden:
-            await itx.followup.send(
-                "Forbidden: I do not have permission to see that message.",
-                ephemeral=True,
-            )
-            return
-        except discord.NotFound:
-            await itx.followup.send(
-                "NotFound: I could not find that message. Make sure you ran "
-                "this command in the same channel as the one where the "
-                "message id came from.",
-                ephemeral=True,
-            )
-            return
-        except discord.HTTPException:
-            await itx.followup.send(
-                "HTTPException: Something went wrong while trying to fetch "
-                "the message.",
-                ephemeral=True,
-            )
-            raise
-
-        if (reported_message.author.id != user.id
-                and not allow_different_report_author):
-            author_info = (f"(message author: {reported_message.author}, "
-                           f"mentioned user: {user})\n")
-            await itx.followup.send(
-                ":warning: The given message didn't match the mentioned "
-                "user!\n"
-                + author_info
-                + "If you want to use this message anyway, add "
-                  "\" | overwrite\" after the message id\n"
-                  "(example: \"1817305029878989603 | overwrite\")",
-                ephemeral=True
-            )
-            return
-
-        different_report_author_info = ""
-        if allow_different_report_author:
-            different_report_author_info = \
-                f" (message by {reported_message.author.mention})"
-
-        reported_message_info = (
-            f"\n\n[Reported Message]({reported_message.jump_url})"
-            f"{different_report_author_info}\n"
-            f">>> {reported_message.content}\n"
+    reported_message_info = ""
+    if message_id is not None:
+        reported_message = await _get_reported_message(
+            itx,
+            user,
+            message_id,
+            allow_different_report_author,
         )
-
-        if reported_message.attachments:
-            reported_message_info += (
-                f"(:newspaper: Contains "
-                f"{len(reported_message.attachments)} attachments)\n"
-            )
+        if reported_message is None:
+            return
+        reported_message_info = _get_reported_message_info(
+            reported_message,
+            allow_different_report_author,
+        )
 
     watchlist_thread_id = get_watchlist(watch_channel.guild.id, user.id)
-    already_on_watchlist = watchlist_thread_id is not None
-
-    if already_on_watchlist:
-        assert watchlist_thread_id is not None  # mypy bad
-        # fetch thread, in case the thread was archived (not in cache)
-        thread: discord.Thread = await watch_channel.guild.fetch_channel(
-            watchlist_thread_id)  # type: ignore
-
-        # fetch message the thread is attached to (fetch, in case msg
-        #  is not in cache)
-        msg = await watch_channel.fetch_message(watchlist_thread_id)
-        # link back to that original message with the existing thread.
-        await msg.reply(
-            content=f"Someone added {user.mention} (`{user.id}`) to the "
-                    f"watchlist.\n"
-                    f"Since they were already on this list, here's a reply "
-                    f"to the original thread.\n"
-                    f"May this serve as a warning for this user.",
-            allowed_mentions=discord.AllowedMentions.none(),
-        )
-    else:
-        msg, thread = await _create_uncool_watchlist_thread(
-            itx.client, user, watch_channel)
-        # (thread.id would be the same as msg.id, because of
-        #  discord structure)
-        await create_watchlist(
-            itx.client.async_rina_db,
-            watch_channel.guild.id,
-            user.id,
-            thread.id
-        )
+    msg, thread = await _get_or_create_watchlist_thread(
+        itx,
+        user,
+        watch_channel,
+        watchlist_thread_id,
+    )
 
     # Send a plaintext version of the reason, and copy a link to it
-
     different_author_warning = ""
     if allow_different_report_author:
         different_author_warning = " (mentioned message author below)"
@@ -312,31 +353,27 @@ async def _add_to_watchlist(
         + different_author_warning,
         allowed_mentions=discord.AllowedMentions.none())
 
-    if message_id is not None:
-        reported_message_data_message = await thread.send(
+    # send messages in watchlist thread
+    if reported_message is not None:  # message_id is None
+        await thread.send(
             f"Reported message: {reported_message.author.mention}"
             f"(`{reported_message.author.id}`) - {reported_message.jump_url}",
             allowed_mentions=discord.AllowedMentions.none(),
         )
         await thread.send(f">>> {reported_message.content}",
                           allowed_mentions=discord.AllowedMentions.none())
-
-        if not reason and not copyable_version:
-            copyable_version = reported_message_data_message
-
     await thread.send(f"Reported by: {itx.user.mention} (`{itx.user.id}`)",
                       allowed_mentions=discord.AllowedMentions.none())
 
     reason = reason.replace("\\n", "\n")
     if reason:
-        c = await thread.send(
+        await thread.send(
             f"Reason: {reason}"[:2000],
             allowed_mentions=discord.AllowedMentions.none()
         )
-        if copyable_version is None:
-            copyable_version = c
 
-    if already_on_watchlist:
+    # send status reply to user
+    if watchlist_thread_id is not None:  # already on watchlist
         await itx.followup.send(
             warning
             + ":white_check_mark: Successfully added your watchlist reason."
@@ -360,12 +397,12 @@ async def _add_to_watchlist(
         )
 
 
-@app_commands.context_menu(name="Add user to watchlist")
+@app_commands.context_menu(name="Add user to watchlist")  # type: ignore[arg-type] # GroupT not supported
 @is_staff_check
 @module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_user(
         itx: GuildInteraction[Bot],
-        user: discord.User,
+        user: discord.User | discord.Member,
 ) -> None:
     watchlist_reason_modal = WatchlistReasonModal(
         _add_to_watchlist,
@@ -377,7 +414,7 @@ async def watchlist_ctx_user(
     await itx.response.send_modal(watchlist_reason_modal)
 
 
-@app_commands.context_menu(name="Add msg to watchlist")
+@app_commands.context_menu(name="Add msg to watchlist")  # type: ignore[arg-type] # GroupT not supported
 @is_staff_check
 @module_enabled_check(ModuleKeys.watchlist)
 async def watchlist_ctx_message(
@@ -476,8 +513,13 @@ class WatchList(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        if not self.client.is_module_enabled(
-                message.guild, ModuleKeys.watchlist):
+        if (
+                message.guild is None  # for linter
+                or not self.client.is_module_enabled(
+                    message.guild,
+                    ModuleKeys.watchlist
+                )
+        ):
             return
         guild_attributes = self.client.get_guild_attributes(message.guild)
         staff_logs_category = guild_attributes.staff_logs_category
@@ -521,9 +563,7 @@ class WatchList(commands.Cog):
                         reported_user_id = int(reported_user_str)
                         break
 
-                    if field.value.startswith("> "):
-                        # remove the `> quote` markdown
-                        field.value = field.value[2:]
+                    field.value = field.value.removeprefix("> ")
                     # from "%<@x>%", take "x"
                     reported_user_str = (field
                                          .value
@@ -533,24 +573,22 @@ class WatchList(commands.Cog):
                         reported_user_id = int(reported_user_str)
                         break
                     else:
-                        raise Exception("User id was not an id!")
+                        raise ValueError("User id was not an id!")
         if reported_user_id is None:
-            raise Exception(
+            raise ValueError(
                 "Badeline sent an embed in the staff logs category but it "
                 "didn't contain any \"user\" field!"
             )
 
         watchlist_thread_id = get_watchlist(
             watchlist_channel.guild.id, reported_user_id)
-        on_watchlist: bool = watchlist_thread_id is not None
 
-        if on_watchlist:
-            thread = \
-                await watchlist_channel.guild.fetch_channel(
-                    watchlist_thread_id
-                )
-            assert isinstance(thread, discord.Thread), \
-                f"Watchlist was not a thread! {type(thread)}"
+        if watchlist_thread_id is not None:  # user is on watchlist
+            thread = await watchlist_channel.guild.fetch_channel(
+                watchlist_thread_id,
+            )
+            if not isinstance(thread, discord.Thread):
+                raise TypeError(f"Watchlist was not a thread! {type(thread)}")
             # ^ fetch, to retrieve (archived) thread.
             await message.forward(thread)
 

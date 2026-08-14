@@ -3,17 +3,19 @@ from typing import override
 import aiohttp
 import discord
 
+from extensions.termdictionary.dictionaries.objects import (
+    CustomDictionaryEntry,
+)
+from extensions.termdictionary.utils import simplify
 from resources.checks.permissions import is_staff
 from resources.customs import Bot
-from .DictionaryBase import DictionaryBase
-from extensions.termdictionary.dictionaries.objects import \
-    CustomDictionaryEntry
-from extensions.termdictionary.utils import simplify
+
+from .dictionary_base import DictionaryBase
 
 
 class CustomDictionary(DictionaryBase):
-    def __init__(self, client: aiohttp.ClientSession) -> None:
-        super().__init__(client)
+    def __init__(self, session: aiohttp.ClientSession) -> None:
+        super().__init__(session)
         self._result_str: str | None = None
         self._long_line: bool = False
         self._character_overflow: bool = False
@@ -67,8 +69,8 @@ class CustomDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
-        assert self._result_str is not None
+        if self._result_str is None:
+            raise ValueError("_result_str was None")
 
         if self._character_overflow:
             self._result_str = (
@@ -98,7 +100,7 @@ class CustomDictionary(DictionaryBase):
             term: str
     ) -> None:
         if is_staff(itx, itx.user):
-            cmd_define = itx.client.get_command_mention_(
+            cmd_define = itx.client.get_command_mention_with_args(
                 "dictionary_staff define",
                 term=term,
                 definition=" ",

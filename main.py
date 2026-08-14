@@ -1,31 +1,27 @@
 #!/usr/bin/env python3
-import typing
-from typing import Any
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-# ^ for periodic timers
-from datetime import datetime  # for startup and crash logging
 import json  # for loading the API keys file
 import logging  # to set logging level to not DEBUG and hide unnecessary logs
-import motor.motor_asyncio as motorasync
-# ^ for making Mongo run asynchronously (during api calls)
-import motor.core as motorcore  # for typing
-import os  # for creating outputs/ directory
-from pymongo.database import Database as PyMongoDatabase
-# ^ for MongoDB database typing
-from pymongo import MongoClient
+import pathlib  # for creating outputs/ directory
 import traceback
+import typing
+from datetime import datetime  # for startup and crash logging
 
 import discord  # for main discord bot functionality
+import motor.core as motorcore  # for typing
+import motor.motor_asyncio as motorasync  # for making Mongo run asynchronously (during api calls)
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # ^ for periodic timers
+from pymongo import MongoClient  # for MongoDB database typing
+from pymongo.database import Database as PyMongoDatabase
 
-from extensions.reminders.objects import \
-    relaunch_ongoing_reminders
+from extensions.reminders.objects import relaunch_ongoing_reminders
 from extensions.settings.objects import ServerSettings
 from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
-from extensions.watchlist.local_watchlist import fetch_all_watchlists
-# ^ for fetching all watchlists on startup
-
+from extensions.watchlist.local_watchlist import (
+    fetch_all_watchlists,
+    # ^ for fetching all watchlists on startup
+)
 from resources.abc import (
     ApiTokenDict,
     MessageableGuildChannel,
@@ -34,10 +30,14 @@ from resources.customs import (
     Bot,
     ProgressBar,
 )
-from resources.utils import debug, codec_options, DebugColor
+from resources.utils import (
+    DebugColor,
+    codec_options,
+    debug,
+)
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.4.2"
+BOT_VERSION = "2.5.0"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
@@ -109,7 +109,7 @@ def get_token_data() -> tuple[
     """
     load_progress.begin("Loading api keys...")
     try:
-        with open("api_keys.json", "r", encoding="utf-8") as f:
+        with pathlib.Path("api_keys.json").open("r", encoding="utf-8") as f:
             api_keys = json.loads(f.read())
         bot_token: str = api_keys['Discord']
         missing_tokens, tokens = _filter_api_keys(api_keys)
@@ -140,7 +140,7 @@ def get_token_data() -> tuple[
 
 def _filter_api_keys(
         api_keys: dict[str, typing.Any],
-) -> tuple[list[str], dict[str, Any]]:
+) -> tuple[list[str], dict[str, typing.Any]]:
     tokens = {}
     missing_tokens: list[str] = []
     for key in ApiTokenDict.__annotations__:
@@ -166,8 +166,8 @@ def get_version() -> str:
     load_progress.begin("Loading version...")
     file_version = BOT_VERSION.split(".")
     try:
-        os.makedirs("outputs", exist_ok=True)
-        with open("outputs/version.txt", "r", encoding="utf-8") as f:
+        pathlib.Path("outputs").mkdir(exist_ok=True, parents=True)
+        with pathlib.Path("outputs/version.txt").open("r", encoding="utf-8") as f:
             rina_version = f.read().split(".")
     except FileNotFoundError:
         rina_version = ["0"] * len(file_version)
@@ -180,7 +180,7 @@ def get_version() -> str:
     else:
         rina_version[-1] = str(int(rina_version[-1]) + 1)
     rina_version = '.'.join(rina_version)
-    with open("outputs/version.txt", "w", encoding="utf-8") as f:
+    with pathlib.Path("outputs/version.txt").open("w", encoding="utf-8") as f:
         f.write(f"{rina_version}")
     load_progress.complete("Loaded version", newline=False)
     return rina_version
@@ -230,8 +230,14 @@ def start_app() -> None:
 
     # this can probably be done better
     # region Client events
+    bot_loaded = False
+
     @client.event
     async def on_ready() -> None:
+        if bot_loaded:
+            debug("Reconnected bot.", color=DebugColor.green)
+            return
+        # noinspection PyStringConversionWithoutDunderMethod
         text = (f"Logged in as {client.user}, in version {version} "
                 f"(in {datetime.now().astimezone() - program_start})")
         try:
@@ -310,6 +316,7 @@ def start_app() -> None:
             extension_load_progress.begin(f"Loading {EXTENSIONS[extID]}")
             await client.load_extension(
                 "extensions." + EXTENSIONS[extID] + ".module")
+        # noinspection PyStringConversionWithoutDunderMethod
         start_progress.complete(
             f"Loaded extensions successfully (in "
             f"{datetime.now().astimezone() - extension_loading_start_time})"

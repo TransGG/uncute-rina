@@ -1,7 +1,6 @@
-from __future__ import annotations
-import discord
-
 from typing import TYPE_CHECKING
+
+import discord
 
 if TYPE_CHECKING:
     from resources.customs import Bot

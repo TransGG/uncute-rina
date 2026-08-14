@@ -1,43 +1,41 @@
-from datetime import datetime, timedelta
-# ^ to make report tag auto-trigger at most once every 15 minutes
+# to make report tag auto-trigger at most once every 15 minutes
+from datetime import UTC, datetime, timedelta
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.help.cogs import send_help_menu
 from extensions.settings.objects import ModuleKeys
 from extensions.tags.database_tag_object import DatabaseTagObject
 from extensions.tags.local_tag_list import (
     create_tag,
-    remove_tag,
-    get_tags,
     get_tag,
+    get_tags,
+    remove_tag,
 )
 from extensions.tags.modals.create_tag import CreateTagModal
 from extensions.tags.modals.edit_tag import EditTagModal
 from extensions.tags.tag_manage_modes import TagMode
+from extensions.tags.tags import (
+    CustomTag,
+    create_report_info_tag,
+    tag_info_dict,
+)
 from resources.abc import (
     GuildInteraction,
     MessageableGuildChannel,
 )
 from resources.checks import (
-    module_enabled_check,
     is_admin_check,
+    module_enabled_check,
 )
 from resources.customs import Bot
 from resources.utils import (
-    replace_string_command_mentions,
     get_mod_ticket_channel,
     # ^ for ticket channel id in Report tag
+    replace_string_command_mentions,
 )
-
-from extensions.tags.tags import (
-    tag_info_dict,
-    create_report_info_tag,
-    CustomTag,
-)
-
 
 # for use in CustomTag.send()
 type TagName = str  # Correctly-capitalized tag name
@@ -46,7 +44,7 @@ type TagId = str
 
 # To prevent excessive spamming when multiple people mention staff.
 #  A sort of cooldown
-report_message_reminder = datetime.min
+report_message_reminder = datetime.min.replace(tzinfo=UTC)
 
 
 def get_tags_recursively(
@@ -133,7 +131,7 @@ async def _tag_manage_autocomplete(  # ruff: ignore[unused-async]
         tag_objects = get_tags(itx.guild.id)
         return [
             app_commands.Choice[str](name=key, value=key)
-            for key in tag_objects.keys()
+            for key in tag_objects
             if current.lower() in key.lower()
         ]
     return []
@@ -154,15 +152,15 @@ def _parse_embed_color_input(color: str) -> tuple[int, int, int]:
         raise ValueError("You need to provide 3 color values "
                          "separated by commas: `255, 255, 255`")
     if not all(i.isdecimal() for i in color_value_strings):
-        expected_format = "255,255,255".split(",")
+        expected_format = "255,255,255"
         raise ValueError(f"Your color values must be numbers. "
                          f"Interpreted colors: {color_value_strings}. "
                          f"Expected format: {expected_format}.")
 
     color_values = [int(i) for i in color_value_strings]
-    assert len(color_values) == 3, (
-        f"Expected 3 color values, got {len(color_values)} instead!"
-    )
+    if len(color_values) != 3:
+        # should never happen
+        raise ValueError(f"Expected 3 color values, got {len(color_values)} instead!")
 
     if not all(0 <= i <= 255 for i in color_values):
         raise ValueError(f"Your color values must be a number "
@@ -183,7 +181,8 @@ class TagFunctions(commands.Cog):
         global report_message_reminder
         if not self.client.is_module_enabled(message.guild, ModuleKeys.tags):
             return
-        assert message.guild is not None
+        if message.guild is None:
+            raise ValueError("Expected the guild to have a value but it was None instead.")
 
         if message.author.bot:
             return
@@ -201,7 +200,7 @@ class TagFunctions(commands.Cog):
 
         if any(staff_role_mentions in message.content
                for staff_role_mentions in staff_role_mentions):
-            time_now = datetime.now()
+            time_now = datetime.now(tz=UTC)
             if time_now - report_message_reminder > timedelta(minutes=15):
                 tag = create_report_info_tag(ticket_channel)
                 await tag.send_to_channel(message.channel)
@@ -240,7 +239,7 @@ class TagFunctions(commands.Cog):
         if tag_name == "help":
             await itx.response.send_message(
                 "List of tags currently available to send:\n"
-                + '\n'.join(["- " + i[0] for i in tag_ids]),
+                + '\n'.join(sorted("- " + i[0] for i in tag_ids)),
                 ephemeral=True,
             )
             return
@@ -267,7 +266,7 @@ class TagFunctions(commands.Cog):
             tag_data = get_tag(itx.guild.id, tag[1])
             if tag_data is None:
                 # Tag from a child server
-                original_guild_id, original_tag_name = tag[1].split("-")
+                original_guild_id, original_tag_name = tag[1].split("-", 1)
                 tag_data = get_tag(int(original_guild_id), original_tag_name)
             if tag_data is None:
                 raise NotImplementedError(f"Tag '{tag}' not found.")
@@ -317,7 +316,7 @@ class TagFunctions(commands.Cog):
     ) -> None:
         server_tags: set[str] = {
             i[0] for i in _get_enabled_tag_ids(itx, recursive=False)
-            if i not in tag_info_dict.keys()
+            if i not in tag_info_dict
         }
 
         match TagMode(mode):
@@ -347,7 +346,8 @@ class TagFunctions(commands.Cog):
                     # interaction aborted
                     return
                 itx = create_tag_modal.return_interaction
-                assert itx.guild is not None
+                if itx.guild is None:
+                    raise ValueError("Expected the guild to have a value but it was None instead.")
                 try:
                     color_tuple, description, report_to_staff, title = \
                         self._parse_tag_information(create_tag_modal, itx)
@@ -382,7 +382,8 @@ class TagFunctions(commands.Cog):
                     # interaction aborted
                     return
                 itx = edit_tag_modal.return_interaction
-                assert itx.guild is not None
+                if itx.guild is None:
+                    raise ValueError("Expected the guild to have a value but it was None instead.")
                 try:
                     color_tuple, description, report_to_staff, title = self._parse_tag_information(
                         edit_tag_modal, itx

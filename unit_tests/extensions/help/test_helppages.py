@@ -1,11 +1,15 @@
+import typing
+
 import pytest
 
-from unit_tests.utils.object import CustomObject
-from unit_tests.utils import get_embed_issues
-
 from extensions.help.helppage import HelpPage
-from extensions.help.helppages import help_pages, aliases
+from extensions.help.helppages import aliases, help_pages
 from extensions.help.utils import generate_help_page_embed
+from unit_tests.utils import get_embed_issues
+from unit_tests.utils.object import CustomObject
+
+if typing.TYPE_CHECKING:
+    from resources.customs.bot import Bot
 
 
 def test_help_pages_integer_key() -> None:
@@ -50,13 +54,13 @@ def test_help_pages_attributes() -> None:
 
 def test_embed_lengths() -> None:
     # Arrange
-    fake_client = CustomObject()
+    fake_client: Bot = CustomObject()  # type: ignore[assignment]
 
-    def fake_get_command_mention(cmd: str) -> str:
+    def fake_get_command_mention(command_string: str) -> str:
         fake_id = "0" * 19  # discord ids are roughly this length, I guess?
-        return f"</{cmd}:{fake_id}>"
+        return f"</{command_string}:{fake_id}>"
 
-    fake_client.get_command_mention = fake_get_command_mention
+    fake_client.get_command_mention = fake_get_command_mention   # type: ignore[method-assign]
 
     for page_number, helppage in help_pages.items():
         page_embed = generate_help_page_embed(
@@ -72,6 +76,9 @@ def test_embed_lengths() -> None:
 
 def test_aliases_for_each_help_page() -> None:
     assert len(aliases) == len(help_pages)  # all pages have an alias
+
+    for alias_page in aliases:
+        assert alias_page in help_pages, alias_page
 
 
 def test_each_alias_list_is_not_empty() -> None:

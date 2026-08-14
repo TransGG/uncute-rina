@@ -1,8 +1,7 @@
 from extensions.help.helppage import HelpPage
+from extensions.settings.objects import AttributeKeys
 
 __all__ = ['FIRST_PAGE', 'aliases', "help_pages"]
-
-from extensions.settings.objects import AttributeKeys
 
 
 help_pages: dict[int, HelpPage] = {

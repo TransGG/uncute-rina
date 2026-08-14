@@ -118,7 +118,6 @@ def debug(
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     logger = logging.getLogger()
     # print = logger.info
-    if end.endswith("\n"):
-        end = end[:-2]
+    end = end.removesuffix("\n")
     logger.info(f"{time}{text}{DebugColor.default.value}"
                 + end.replace('\r', '\033[F'))

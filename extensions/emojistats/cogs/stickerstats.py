@@ -1,11 +1,11 @@
-from datetime import datetime, timezone
 import sys  # for integer max value: sys.maxsize
-import motor.core as motorcore  # for typing
-from pymongo import DESCENDING
+from datetime import datetime, timezone
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import motor.core as motorcore  # for typing
+from discord import app_commands
+from discord.ext import commands
+from pymongo import DESCENDING
 
 from extensions.emojistats.database_dicts import StickerStatsData
 from resources.abc import GuildInteraction
@@ -161,10 +161,8 @@ class StickerStats(commands.Cog):
             }
         }
 
-        if max_results > 50:
-            max_results = 50
-        if used_max < 0:
-            used_max = 0
+        max_results = min(max_results, 50)
+        used_max = max(used_max, 0)
         if used_max != sys.maxsize:
             # Only limit query on '_UsedCount' if the user wants to
             #  put a limit on it. Some entries don't have a value for

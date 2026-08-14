@@ -18,7 +18,7 @@ def _parse_dice_roll(query: str) -> tuple[int, int | None]:
             _parse_number("faces", parts[1])
         )
     else:
-        assert len(parts) == 1, (
+        assert len(parts) == 1, (  # ruff: ignore[assert]
             f"Expected the dice roll to have 1 part, but it had "
             f"{len(parts)} instead: {parts}"
         )

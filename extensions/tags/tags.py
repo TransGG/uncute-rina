@@ -1,5 +1,5 @@
 import typing
-from typing import Callable
+from collections.abc import Callable
 
 import discord
 
@@ -8,18 +8,19 @@ from extensions.settings.objects import (
     ModuleKeys,
 )
 from extensions.tags.views import SendPubliclyTagView
-
 from resources.abc import (
     GuildInteraction,
     MessageableGuildChannel,
 )
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
-from resources.utils.utils import get_mod_ticket_channel
-# ^ for ticket channel id in Report tag
-from resources.utils.utils import log_to_guild
-# ^ for logging when people send tags anonymously (in case someone
-#  abuses the anonymity)
+from resources.utils.utils import (
+    get_mod_ticket_channel,
+    # ^ for ticket channel id in Report tag
+    log_to_guild,
+    # ^ for logging when people send tags anonymously
+    #  (in case someone abuses the anonymity)
+)
 
 
 class CustomTag:
@@ -76,7 +77,6 @@ class CustomTag:
 
     async def send_to_channel(self, channel: discord.abc.Messageable) -> None:
         await channel.send(embed=self.embed)
-        return
 
     async def send(
             self,
@@ -113,8 +113,8 @@ class CustomTag:
             anonymous: bool,
             report_to_staff: bool
     ) -> None:
-        assert isinstance(itx.channel, discord.abc.Messageable), \
-            type(itx.channel)
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            raise TypeError(f"Expected channel to be Messageable! (got: {type(itx.channel)})")
         self.send_channel = itx.channel
         if not anonymous:
             await itx.response.send_message(embed=self.embed)
@@ -175,7 +175,6 @@ class CustomTag:
 
         await itx.response.send_message(
             "", embed=self.embed, view=view, ephemeral=True)
-        return
 
 
 # region Tags
@@ -214,8 +213,8 @@ async def send_enabling_embeds_info(
         itx: GuildInteraction[Bot], public: bool, anonymous: bool,
 ) -> None:
     """Helper to send enabling embeds tag."""
-    itx.followup: discord.Webhook  # type: ignore
-    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
+    if not isinstance(itx.channel, discord.abc.Messageable):
+        raise TypeError(f"channel was not messageable (got: {type(itx.channel)})")
 
     txt = ("**Enabling Embeds**\n"
            "Embeds are a neat feature in discord that let you preview "

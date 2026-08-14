@@ -1,22 +1,19 @@
+# \/ for sleep(0.1) to prevent blocking:
+#  allow discord and other processes to send a heartbeat and function.
 import asyncio
-# for sleep(0.1) to prevent blocking: allow discord and other processes
-#  to send a heartbeat and function.
-from datetime import datetime, timezone
-from typing import Literal
-
-import matplotlib.pyplot as plt
-import pandas as pd  # for graphing member joins/leaves/verifications
-from motor.core import AgnosticDatabase
 import typing
+from datetime import datetime, timezone
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import matplotlib.pyplot as plt
+import pandas as pd  # for graphing member joins/leaves/verifications
+from discord import app_commands
+from discord.ext import commands
+from motor.core import AgnosticDatabase
 
 from resources.abc import GuildInteraction
 from resources.checks import not_in_dms_check
 from resources.customs import Bot
-
 
 type MemberDataType = typing.Literal[
     "joined",
@@ -273,13 +270,13 @@ class MemberData(commands.Cog):
             doubles: bool,
     ) -> tuple[
         dict[
-            Literal["joined", "left", "left unverified", "left verified", "verified"],
+            typing.Literal["joined", "left", "left unverified", "left verified", "verified"],
             dict[float, int],
         ],
         float,
         float,
         dict[
-            Literal["joined", "left", "left unverified", "left verified", "verified"],
+            typing.Literal["joined", "left", "left unverified", "left verified", "verified"],
             int,
         ],
         str
@@ -328,10 +325,8 @@ class MemberData(commands.Cog):
                 results[event_label] = {}
             else:
                 time_list = sorted(column)
-                if min_time > time_list[0]:
-                    min_time = time_list[0]
-                if max_time < time_list[-1]:
-                    max_time = time_list[-1]
+                min_time = min(min_time, time_list[0])
+                max_time = max(max_time, time_list[-1])
         return results, max_time, min_time, totals, warning
 
     @staticmethod
@@ -348,8 +343,8 @@ class MemberData(commands.Cog):
         # We don't need to know what user 'triggered' this event,
         #  unless 'doubles' is True.
         column: list[float] = []
-        for member in events:
-            for time in events[member]:
+        for member_events in events.values():
+            for time in member_events:
                 # If a user's join time is within the
                 #  requested lower/upper bounds (note: see 'accuracy' variable),
                 #  then append it.
@@ -367,11 +362,11 @@ class MemberData(commands.Cog):
         events: dict[float, int] = {}
         # group timestamps into 'accuracy'-sized buckets.
         for time in column:
-            time = int(time / accuracy) * accuracy
-            if time in events:
-                events[time] += 1
+            rounded_time = int(time / accuracy) * accuracy
+            if rounded_time in events:
+                events[rounded_time] += 1
             else:
-                events[time] = 1
+                events[rounded_time] = 1
         return events
 
     @staticmethod
@@ -425,9 +420,12 @@ class MemberData(commands.Cog):
         ] = {
             "time": list(results_nullable["joined"])
         }
-        for y in results_nullable:
-            y: MemberDataType
-            d[y] = [results_nullable[y][i] for i in results_nullable[y]]
+        for data_type, timestamp_count_dict in results_nullable.items():
+            data_type: MemberDataType
+            d[data_type] = [
+                timestamp_count_dict[i]
+                for i in timestamp_count_dict
+            ]
 
         df = pd.DataFrame(data=d)  # can raise ValueError
 
@@ -481,7 +479,7 @@ class MemberData(commands.Cog):
     @staticmethod
     async def _format_event_stats(
             totals: dict[
-                Literal["joined", "left", "left unverified", "left verified", "verified"],
+                typing.Literal["joined", "left", "left unverified", "left verified", "verified"],
                 int
             ],
     ) -> str:

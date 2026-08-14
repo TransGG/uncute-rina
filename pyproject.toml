@@ -1,6 +1,42 @@
+[tool.mypy]
+disable_error_code=["import-untyped", "no-redef"]
+implicit_optional=true
+allow_redefinition_new=true
+local_partial_types=true
+allow_redefinition=true
+
+[[tool.mypy.overrides]]
+module = "extensions.termdictionary.dictionaries.custom_dictionary"
+ignore_errors = true
+
+[tool.flake8]
+max-line-length=119
+exclude=[
+    ".git",
+    "venv",
+    ".venv",
+    "rina_docs",
+]
+
+[tool.coverage.run]
+omit=[
+    "*/unit_tests/*",
+    "*/__init__.py",
+    "*/module.py",
+]
+
+
+[tool.pytest.ini_options]
+pythonpath="."
+filterwarnings=["ignore::DeprecationWarning:discord.player"]
+# Only necessary in python 3.12. discord.py imports `audioop-lts` in python 3.13 resolving this DeprecationWarning.
+
+[tool.ruff]
 exclude = [".venv", "unit_tests"]
 line-length=119
-[lint]
+target-version="py314"
+
+[tool.ruff.lint]
 select = [
     "ANN", # Type annotations would take wayyy too long to do properly  # HA YOU THOUGHT (I only spent 2 hours TwT)
     "ASYNC", # Async bugs
@@ -54,24 +90,44 @@ select = [
 
     # Weird tests for characters that look similar
     "ambiguous-unicode-character-string",
-    "ambiguous-unicode-character-comment"
+    "ambiguous-unicode-character-comment",
+    "blanket-noqa", # Blanket disabling lints isn't great
+    "PTH", # pathlib still technically works
+    "unsorted-dunder-all", "unsorted-dunder-slots", "unsorted-imports", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
+    "redefined-loop-name", # Allow reassigning in loops
+    "assert", # We should not use asserts (throw exceptions instead!), as optimized environments disable them
+
+    "multiple-starts-ends-with",
+    "needless-bool",
+    "explicit-f-string-type-conversion",
+    "if-stmt-min-max",
+    "dict-index-missing-items",
+    "collapsible-if",
+    "unsorted-imports",
+    "unnecessary-generator-set",
+    "pytest-duplicate-parametrize-test-cases",
+    "function-call-in-default-argument",
+    "dict-index-missing-items",
+    "slice-to-remove-prefix-or-suffix",
+#    "non-unique-enums",
+#    "blind-except",
+    "invalid-module-name",
+    "unintentional-type-annotation",
+    "unnecessary-placeholder",
+    "datetime-min-max",
+    "runtime-import-in-type-checking-block",
 ]
 
 ignore = [
-    # Things we should probably do
-    "assert", # We should not use asserts, as some environments disable them  # IMO pretty silly idea
-    "blanket-noqa",
-    "unused-noqa", # Blanket disabling lints isn't great
+    "unused-noqa", # different linters have different noqa triggers so aren't always 'unused'.
     "shebang-missing-executable-file",
+    # Things we should probably do
 
     # Style stuff that's bad, but won't cause issues
-    "PTH", # pathlib still technically works
 
     # Ignoring these more permanently
     "suspicious-non-cryptographic-random-usage", # We don't need a CSPRNG anywhere, right?
-#    "unsorted-dunder-all", "unsorted-dunder-slots", "unsorted-imports", # Sorted inputs are nice, but not *needed*  # "\_('-')_/" i did it anyway :)
 #    "suppressible-exception", "if-else-block-instead-of-if-exp", "yoda-conditions", # No suppressing exceptions. Use ternary operator; don't use yoda conditions.
-    "redefined-loop-name", # Allow reassigning in loops
     "global-statement", # We seem to be choosing to use globals
     "line-contains-todo", # Too much TODO
 #    "collection-literal-concatenation", # [*a, *b] is apparently faster than a + b, but it's not *that* important

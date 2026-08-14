@@ -1,9 +1,8 @@
 import discord
 
+from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 from resources.customs import Bot
 from resources.utils.utils import log_to_guild
-
-from extensions.customvcs.channel_rename_tracker import try_store_vc_rename
 
 
 async def _try_change_name_or_limit(

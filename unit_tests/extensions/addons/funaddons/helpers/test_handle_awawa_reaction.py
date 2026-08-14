@@ -1,6 +1,7 @@
-import pytest
 from unittest import mock
+
 import discord
+import pytest
 
 from extensions.addons.cogs.funaddons import _check_awawa_reaction
 

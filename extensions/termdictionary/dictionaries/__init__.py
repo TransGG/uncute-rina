@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 
-from .CustomDictionary import CustomDictionary
-from .DictionaryApiDictionary import DictionaryApiDictionary
-from .DictionaryBase import DictionaryBase
-from .PronounsPageDictionary import PronounsPageDictionary
+from .custom_dictionary import CustomDictionary
+from .dictionary_api_dictionary import DictionaryApiDictionary
+from .dictionary_base import DictionaryBase
+from .pronouns_page_dictionary import PronounsPageDictionary

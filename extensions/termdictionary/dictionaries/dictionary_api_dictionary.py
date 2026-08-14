@@ -1,19 +1,18 @@
-import discord
+import json
+import urllib.parse
+from typing import override
 
 import aiohttp
-import json
-from typing import override
-import urllib.parse
+import discord
 
-from resources.customs import Bot
-from extensions.termdictionary.dictionaries.DictionaryBase import \
-    DictionaryBase
+from extensions.termdictionary.dictionaries.dictionary_base import DictionaryBase
 from extensions.termdictionary.dictionaries.objects import (
+    DetailedTermPage,
     DictionaryApiEntry,
-    DetailedTermPage, term_page_to_embed
+    term_page_to_embed,
 )
 from extensions.termdictionary.views import DictionaryapiPageview
-
+from resources.customs import Bot
 
 CompressedApiData = list[tuple[str, dict[str, list[str]], str, str, str]]
 
@@ -25,8 +24,8 @@ def _format_page_sections(
 ) -> dict[str, list[str]]:
     page_sections: dict[str, list[str]] = {}
     for part_of_speech, definitions in meanings.items():
-        part_of_speech = part_of_speech.capitalize()
-        page_sections[part_of_speech] = definitions
+        capitalized_part = part_of_speech.capitalize()
+        page_sections[capitalized_part] = definitions
     if synonyms:
         page_sections["Synonyms"] = [", ".join(synonyms)]
     if antonyms:
@@ -96,11 +95,12 @@ class DictionaryApiDictionary(DictionaryBase):
                 # should be a list of entries
                 return None
 
-            assert type(data) is list, (
-                f"Expected the response data to be of type `list` but it was "
-                f"{type(data)} instead!\n"
-                f"Data: {data}"
-            )
+            if not isinstance(data, list):
+                raise TypeError(
+                    f"Expected the response data to be of type `list` but it was "
+                    f"{type(data)} instead!\n"
+                    f"Data: {data}"
+                )
             return data
         except json.decoder.JSONDecodeError:
             return None
@@ -138,10 +138,13 @@ class DictionaryApiDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             public: bool
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
-        assert (self.has_response
-                and self._view is not None
-                and self._embed is not None)
+        if (not self.has_response
+                or self._view is None
+                or self._embed is None):
+            raise ValueError(
+                f"has_response was false or _view or _embed was None! "
+                f"({not self.has_response}, {self._view is None}, {self._embed is None})",
+            )
 
         if public:
             self._view.delete_extra_buttons()
@@ -163,7 +166,6 @@ class DictionaryApiDictionary(DictionaryBase):
             itx: discord.Interaction[Bot],
             term: str
     ) -> None:
-        itx.followup: discord.Webhook  # type: ignore
         await itx.followup.send(
             f"I didn't find any results for '{term}' on dictionaryapi.dev!",
             ephemeral=True,

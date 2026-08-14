@@ -1,5 +1,5 @@
 import discord
-import discord.ext.commands as commands
+from discord.ext import commands
 
 from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.checks import MissingAttributesCheckFailure
@@ -15,7 +15,8 @@ class AnonReportsReactionsAddon(commands.Cog):
         if not self.client.is_module_enabled(
                 message.guild, ModuleKeys.anonymous_report_reactions):
             return
-        assert message.guild is not None
+        if message.guild is None:
+            raise ValueError(f"message guild was None! (channel: {message.channel}, id: {message.id})")
         anon_reports_webhook_id = self.client.get_guild_attributes(
             message.guild).anonymous_reports_webhook_id
         if anon_reports_webhook_id is None:

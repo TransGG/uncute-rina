@@ -1,6 +1,5 @@
-from resources.customs.bot import Bot
-
 from extensions.help.cogs import HelpCommand
+from resources.customs.bot import Bot
 
 
 async def setup(client: Bot) -> None:

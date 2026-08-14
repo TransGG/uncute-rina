@@ -1,19 +1,17 @@
-from __future__ import annotations
-# ^ for logging, to show log time; and for parsetime
 from typing import TYPE_CHECKING
 
 import discord
 
+from extensions.settings.objects import server_settings
 from extensions.settings.objects.attribute_keys import AttributeKeys
-import extensions.settings.objects.server_settings as server_settings
-
 from resources.abc import (
-    MessageableGuildChannel,
     GuildInteraction,
+    MessageableGuildChannel,
 )
-from resources.checks.errors import MissingAttributesCheckFailure
 from resources.checks.command_checks import is_in_dms
-from .debug import debug, DebugColor
+from resources.checks.errors import MissingAttributesCheckFailure
+
+from .debug import DebugColor, debug
 
 if TYPE_CHECKING:
     from resources.customs import Bot

@@ -1,23 +1,21 @@
+# random compliment from list, random user pronouns from their role list, and random keyboard mash.
 import random
 import typing
 
-# ^ random compliment from list, random user pronouns from their role
-#  list, and random keyboard mash.
-
-import motor.core
-
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import motor.core
+from discord import app_commands
+from discord.ext import commands
 
+from extensions.compliments.views import ConfirmPronounsView
 from extensions.settings.objects import ModuleKeys
 from resources.checks.command_checks import module_not_disabled_check
 from resources.customs import Bot
-from resources.utils.utils import log_to_guild
-# ^ to warn when bot can't add headpat reaction (typically because
-#  user blocked Rina)
-
-from extensions.compliments.views import ConfirmPronounsView
+from resources.utils.utils import (
+    log_to_guild,
+    # ^ to warn when bot can't add headpat reaction
+    #  (typically because user blocked Rina)
+)
 
 type ComplimentBlackboardType = typing.Literal["personal_list", "list"]
 
@@ -28,7 +26,9 @@ async def _choose_and_send_compliment(
         compliment_type: str,
         async_rina_db: motor.core.AgnosticDatabase
 ) -> None:
-    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
+    if not isinstance(itx.channel, discord.abc.Messageable):
+        raise TypeError(f"Channel was not messageable (got: {type(itx.channel)})")
+
     # todo: split function into multiple functions
     quotes = {
         "fem_quotes": [
@@ -195,7 +195,9 @@ async def _send_confirm_gender_modal(
         itx: discord.Interaction[Bot],
         user: discord.User | discord.Member
 ) -> None:
-    assert isinstance(itx.channel, discord.abc.Messageable), type(itx.channel)
+    if not isinstance(itx.channel, discord.abc.Messageable):
+        raise TypeError(f"Channel was not messageable (got: {type(itx.channel)})")
+
     # Define a simple View that gives us a confirmation menu
     view = ConfirmPronounsView(timeout=60)
     await itx.response.send_message(

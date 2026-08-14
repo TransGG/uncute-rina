@@ -1,6 +1,6 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from resources.customs import Bot
 
@@ -42,7 +42,7 @@ class TodoList(commands.Cog):
                 )
                 return
             if len(todo) > 500:
-                itx.response.send_message(
+                await itx.response.send_message(
                     "I.. don't think having such a big to-do message is gonna "
                     "be very helpful..",
                     ephemeral=True,

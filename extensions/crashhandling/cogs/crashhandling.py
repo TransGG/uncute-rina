@@ -1,9 +1,7 @@
-from datetime import datetime, timedelta, timezone
+import sys  # to stop the program (and automatically restart, thanks to pterodactyl)
 import traceback  # for crash logging
 import typing  # for on_error type annotations .Any
-import sys
-# ^ to stop the program (and automatically restart, thanks to
-#  pterodactyl)
+from datetime import datetime, timedelta, timezone
 
 import discord
 from discord import app_commands
@@ -12,14 +10,13 @@ from discord.ext import commands
 from resources.abc import MessageableGuildChannel
 from resources.checks import (
     CommandDoesNotSupportDMsCheckFailure,
-    ModuleNotEnabledCheckFailure,
-    MissingAttributesCheckFailure,
     InsufficientPermissionsCheckFailure,
+    MissingAttributesCheckFailure,
+    ModuleNotEnabledCheckFailure,
     is_admin,
 )
 from resources.customs import Bot
 from resources.utils import debug, log_to_guild
-
 
 appcommanderror_cooldown: datetime = datetime.fromtimestamp(0, timezone.utc)
 commanderror_cooldown: datetime = datetime.fromtimestamp(0, timezone.utc)
@@ -442,7 +439,7 @@ class CrashHandling(commands.Cog):
 
         try:
             msg = f"    Executor details: {itx.user} ({itx.user.id})\n"
-        except Exception as ex:
+        except AttributeError as ex:
             msg = (f"    Executor details: couldn't get interaction "
                    f"details: {repr(ex)}\n")
             #   f"    command: {error.command}\n" + \

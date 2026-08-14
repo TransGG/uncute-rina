@@ -1,34 +1,42 @@
-from __future__ import annotations
-import typing  # for typing.cast and TYPE_CHECKING
+import typing
 
 import discord
-import discord.ext.commands as commands
-import discord.app_commands as app_commands
-
-from resources.checks import (
-    is_admin_check,
-    module_enabled_check,
-    MissingAttributesCheckFailure,
-    CommandDoesNotSupportDMsCheckFailure,
-)
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.help.cogs import send_help_menu
+from extensions.settings.objects import (
+    AttributeKeys,
+    EnabledModules,
+    ModeAutocomplete,
+    ModeAutocompleteTransformer,
+    ModuleKeys,
+    ServerAttributeIds,
+    ServerAttributes,
+    ServerSettings,
+    TypeAutocomplete,
+    TypeAutocompleteTransformer,
+    get_attribute_type,
+    parse_attribute,
+)
 from extensions.settings.objects.server_settings import ParseError
 from extensions.watchlist.local_watchlist import refetch_watchlist_threads
-from extensions.settings.objects import (
-    ServerSettings, ServerAttributes, ServerAttributeIds, EnabledModules,
-    TypeAutocomplete, ModeAutocomplete,
-    parse_attribute, get_attribute_type, AttributeKeys, ModuleKeys
-)
 from resources.abc import GuildInteraction
-
-
-if typing.TYPE_CHECKING:
-    from resources.customs import Bot
-
+from resources.checks import (
+    CommandDoesNotSupportDMsCheckFailure,
+    MissingAttributesCheckFailure,
+    is_admin_check,
+    module_enabled_check,
+)
+from resources.customs import Bot
 
 attribute_type_single_value = [ModeAutocomplete.set, ModeAutocomplete.delete]
 attribute_type_list = [ModeAutocomplete.add, ModeAutocomplete.remove]
+
+
+class NameIdObject(typing.Protocol):
+    name: str
+    id: int
 
 
 def get_attribute_autocomplete_mode(
@@ -51,23 +59,25 @@ def get_attribute_autocomplete_mode(
 async def _setting_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501 # ruff: ignore[noqa-comments]
+    type_option: TypeAutocomplete | None = None
+    if itx.namespace.type in TypeAutocomplete:
+        type_option = TypeAutocomplete(itx.namespace.type)
 
-    if itx.namespace.type == TypeAutocomplete.help.value:
+    if type_option == TypeAutocomplete.help:
         return [
             app_commands.Choice[str](
                 name="For a list of attributes/modules, leave `mode` empty.",
                 value="-"
             ),
         ]
-    elif itx.namespace.type == TypeAutocomplete.module.value:
+    elif type_option == TypeAutocomplete.module:
         module_keys = EnabledModules.__annotations__
         return [
             app_commands.Choice[str](name=key, value=key)
             for key in module_keys
             if current.lower() in key.lower()
         ][:10]
-    elif itx.namespace.type == TypeAutocomplete.attribute.value:
+    elif type_option == TypeAutocomplete.attribute:
         attribute_id_keys = ServerAttributeIds.__annotations__
         return [
             app_commands.Choice[str](name=key, value=key)
@@ -82,19 +92,20 @@ async def _setting_autocomplete(  # ruff: ignore[unused-async]
 async def _mode_autocomplete(  # ruff: ignore[unused-async]
         itx: discord.Interaction[Bot], current: str
 ) -> list[app_commands.Choice[str]]:
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501 # ruff: ignore[noqa-comments]
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501 # ruff: ignore[noqa-comments]
-
     types = [ModeAutocomplete.view]
 
-    if itx.namespace.type == TypeAutocomplete.help.value:
+    type_option: TypeAutocomplete | None = None
+    if itx.namespace.type in TypeAutocomplete:
+        type_option = TypeAutocomplete(itx.namespace.type)
+
+    if type_option == TypeAutocomplete.help:
         return [
             app_commands.Choice[str](
                 name="For a list of attributes/modules, leave `mode` empty.",
                 value="-",
             ),
         ]
-    elif itx.namespace.type == TypeAutocomplete.module.value:
+    elif type_option == TypeAutocomplete.module:
         if itx.namespace.setting in EnabledModules.__annotations__:
             types += [ModeAutocomplete.enable, ModeAutocomplete.disable]
             return [
@@ -105,7 +116,7 @@ async def _mode_autocomplete(  # ruff: ignore[unused-async]
             name="Invalid setting given.",
             value=ModeAutocomplete.invalid.value,
         )]
-    elif itx.namespace.type == TypeAutocomplete.attribute.value:
+    elif type_option == TypeAutocomplete.attribute:
         if itx.namespace.setting is None:
             return [app_commands.Choice[str](
                 name="No setting given. Please give a value for the "
@@ -148,28 +159,27 @@ def _list_has_subclass(
 
 
 def _has_name_or_id(
-        obj: object, current: str
+        obj: NameIdObject, current: str
 ) -> bool:
-    assert hasattr(obj, "id") and hasattr(obj, "name")
     return (
-        current.lower() in getattr(obj, "name").lower()
-        or str(getattr(obj, "id")).startswith(current)
+        current.lower() in obj.name.lower()
+        or str(obj.id).startswith(current)
     )
 
 
 def _update_results_from_iterable(
         results: set[app_commands.Choice[str]],
-        iterable: typing.Sequence[object],
+        iterable: typing.Sequence[NameIdObject],
         current: str,
-        pred: typing.Callable[[object], bool] = lambda _: True
+        pred: typing.Callable[[NameIdObject], bool] = lambda _: True
 ) -> None:
     max_iterations = 20
     for obj in iterable:
         if _has_name_or_id(obj, current) and pred(obj):
             results.add(
                 app_commands.Choice[str](
-                    name=getattr(obj, "name"),
-                    value=str(getattr(obj, "id")),
+                    name=obj.name,
+                    value=str(obj.id),
                 )
             )
 
@@ -186,11 +196,12 @@ def _update_results_from_id[T](
 ) -> None:
     if current.isdecimal():
         potential_obj = id_func(int(current))
-        assert hasattr(potential_obj, "id") and hasattr(potential_obj, "name")
+        if not hasattr(potential_obj, "id") or not hasattr(potential_obj, "name"):
+            raise AttributeError(f"Expected potential_obj to have an id and name but it did not! {dir(potential_obj)}")
         if potential_obj is not None and pred(potential_obj):
             results.add(app_commands.Choice[str](
-                name=potential_obj.name,
-                value=str(potential_obj.id))
+                name=potential_obj.name,  # type: ignore[attr-defined]
+                value=str(potential_obj.id))  # type: ignore[attr-defined]
             )
 
 
@@ -200,10 +211,6 @@ async def _value_autocomplete(  # ruff: ignore[unused-async]
 ) -> list[app_commands.Choice[str]]:
     if itx.guild is None:
         raise CommandDoesNotSupportDMsCheckFailure()
-    itx.namespace.type = typing.cast(str | None, itx.namespace.type)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501 # ruff: ignore[noqa-comments]
-    itx.namespace.mode = typing.cast(str | None, itx.namespace.mode)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501 # ruff: ignore[noqa-comments]
-    itx.namespace.setting = typing.cast(str | None, itx.namespace.setting)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501 # ruff: ignore[noqa-comments]
-    itx.namespace.value = typing.cast(str | None, itx.namespace.value)  # type: ignore[attr-defined] # pyright: ignore [reportAttributeAccessIssue] # noqa: E501 # ruff: ignore[noqa-comments]
     if itx.namespace.type == TypeAutocomplete.help.value:
         return [
             app_commands.Choice[str](
@@ -270,12 +277,14 @@ async def _value_autocomplete(  # ruff: ignore[unused-async]
         if str in attribute_type and len(current) > 0:
             # leave as is
             results.add(app_commands.Choice[str](name=current, value=current))
-        if int in attribute_type:
+        if (
+                int in attribute_type
+                and current.isdecimal()
+        ):
             # leave as is, if it's a number (otherwise don't suggest anything)
-            if current.isdecimal():
-                results.add(
-                    app_commands.Choice[str](name=current, value=current)
-                )
+            results.add(
+                app_commands.Choice[str](name=current, value=current)
+            )
 
         if len(results) == 0:
             attribute_type_names = ','.join(
@@ -321,6 +330,7 @@ async def _handle_settings_attribute(
     """
     attribute_keys = ServerAttributes.__annotations__
 
+    # check if (required) nullable parameters are None
     if setting is None:
         await itx.response.send_message(
             ("Here is a list of attributes you can set:\n"
@@ -330,7 +340,6 @@ async def _handle_settings_attribute(
             ephemeral=True
         )
         return
-
     if modify_mode is None:
         await itx.response.send_message("You didn't set a mode!\n" + help_str,
                                         ephemeral=True)
@@ -351,11 +360,48 @@ async def _handle_settings_attribute(
         )
         return
 
-    await itx.response.defer(ephemeral=True)  # defer before any database calls
+    # validate value of Mode
+    annotations = ServerAttributes.__annotations__
+    if setting not in annotations:
+        raise KeyError(f"expected {setting} in server attributes annotations! {annotations}")
+    expected_type = annotations[setting]
+    if (
+            (type(expected_type) is list
+             or typing.get_origin(expected_type) is list)
+            and modify_mode not in (ModeAutocomplete.view, ModeAutocomplete.add, ModeAutocomplete.remove)
+    ):
+        await itx.response.send_message(
+            f"The attribute you are trying to edit is a list, and you should only "
+            f"view the data or add or remove from the list. The option you picked ({modify_mode.value.__str__()}) "
+            f"is neither.\n"
+            f"Set and Delete options are only used for non-list settings. "
+            f"Enable and Disable options are only used for modules, not for server attributes.\n"
+            f"Perhaps you ran the command incorrectly or changed the setting after setting a mode.",
+            ephemeral=True,
+        )
+        return
+    elif (
+            modify_mode not in (ModeAutocomplete.view, ModeAutocomplete.set, ModeAutocomplete.remove)
+    ):
+        await itx.response.send_message(
+            f"The attribute you are trying to edit is a single value (not a list), and you should only "
+            f"view the data or set or delete the value. The option you picked ({modify_mode.value.__str__()}) "
+            f"is neither.\n"
+            f"Add and Remove options are only used for list settings. "
+            f"Enable and Disable options are only used for modules, not for server attributes.\n"
+            f"Perhaps you ran the command incorrectly or changed the setting after setting a mode.",
+            ephemeral=True,
+        )
+        return
+
+    # defer before any database calls
+    await itx.response.defer(ephemeral=True)
 
     if modify_mode == ModeAutocomplete.view:
-        entry = await ServerSettings.get_entry(itx.client.async_rina_db,
-                                               itx.guild.id)
+        entry = await ServerSettings.get_entry(
+            itx.client.async_rina_db,
+            itx.guild.id,
+        )
         if entry is None:
             await itx.followup.send(
                 f"This server has no data for '{setting}' yet.",
@@ -414,10 +460,11 @@ async def _handle_settings_attribute(
             # Check if the given server or one of its parents has this server
             #  marked as a parent already.
             # noinspection PyStringConversionWithoutDunderMethod
-            assert isinstance(database_value, int), (
-                f"Expected the database value to be of type `int` but it was "
-                f"{type(database_value)} instead: {database_value}"
-            )
+            if not isinstance(database_value, int):
+                raise TypeError(
+                    f"Expected the database value to be of type `int` but it was "
+                    f"{type(database_value).__name__} instead: {database_value}"
+                )
             has_current_server, parent_server_id = _has_guild_as_parent(
                 itx.client, itx.guild, database_value)
             if has_current_server:
@@ -436,14 +483,17 @@ async def _handle_settings_attribute(
                 itx.client.async_rina_db, itx.guild.id, setting, database_value
             )
         elif modify_mode == ModeAutocomplete.add:
-            result = await ServerSettings.get_entry(
-                itx.client.async_rina_db, itx.guild.id)
-            if result is not None:
-                items: list[int] = result["attribute_ids"].get(setting, [])  # type: ignore[assignment]
-            else:
+            entry = await ServerSettings.get_entry(
+                itx.client.async_rina_db,
+                itx.guild.id,
+            )
+            if entry is None:
                 # if guild has no info yet
-                items = []
-            assert isinstance(items, list)
+                items: list[int] = []
+            else:
+                items: list[int] = entry["attribute_ids"].get(setting, [])  # type: ignore[assignment]
+            if not isinstance(items, list):
+                raise TypeError(f"items was not a list (got: {type(items).__name__})")
 
             if database_value in items:
                 await itx.followup.send(
@@ -457,14 +507,16 @@ async def _handle_settings_attribute(
             await ServerSettings.set_attribute(
                 itx.client.async_rina_db, itx.guild.id, setting, items)
         elif modify_mode == ModeAutocomplete.remove:
-            result = await ServerSettings.get_entry(
-                itx.client.async_rina_db, itx.guild.id)
-            if result is not None:
-                items = result["attribute_ids"].get(
-                    setting, [])  # type: ignore
-            else:
+            entry = await ServerSettings.get_entry(
+                itx.client.async_rina_db,
+                itx.guild.id,
+            )
+            if entry is None:
                 # if guild has no info yet
                 items = []
+            else:
+                items = entry["attribute_ids"].get(
+                    setting, [])  # type: ignore
 
             if not items:  # empty list
                 await itx.followup.send(
@@ -492,15 +544,16 @@ async def _handle_settings_attribute(
             # confirm if expected attribute type also matches the given
             #  attribute type
             expected_modify_mode = get_attribute_autocomplete_mode(setting)
-            assert expected_modify_mode is not None
-            # It shouldn't be None because `setting` is already in
-            #  `attribute_keys` from ServerAttributes, and the function
-            #  checks keys of ServerAttributeIds, which should be
-            #  identical.
+            if expected_modify_mode is None:
+                raise ValueError("expected_modify_mode was None")
+                # It shouldn't be None because `setting` is already in
+                #  `attribute_keys` from ServerAttributes, and the function
+                #  checks keys of ServerAttributeIds, which should be
+                #  identical.
 
             await itx.followup.send(
                 f"This attribute cannot be changed with this mode "
-                f"('{modify_mode.value}')\n"
+                f"('{modify_mode.value.__str__()}')\n"
                 f"It must be one of the following: "
                 + ', '.join([f"'{m.value}'" for m in expected_modify_mode]),
                 # [enum.a, enum.b, enum.c] -> "'a', 'b', 'c'"
@@ -571,7 +624,6 @@ def _has_guild_as_parent(
         if parent_server_id == guild.id:
             has_current_server = True
             break
-        assert parent_server_id is not None  # the IDE type checker is kinda dumb...
         parent_server: discord.Guild | None = client.get_guild_attributes(
             parent_server_id).parent_server
         parent_server_id = None
@@ -792,33 +844,29 @@ class SettingsCog(commands.Cog):
     async def settings(
             self,
             itx: GuildInteraction[Bot],
-            setting_type: str,
+            setting_type: app_commands.Transform[TypeAutocomplete, TypeAutocompleteTransformer],
             setting: str | None = None,
-            mode: str | None = None,
+            mode: app_commands.Transform[ModeAutocomplete, ModeAutocompleteTransformer] | None = None,
             value: str | None = None,
     ) -> None:
         cmd_help = itx.client.get_command_mention_with_args(
             "help", page="900")
         help_str = f"Use {cmd_help} for more info."
 
-        try:
-            modify_mode: ModeAutocomplete | None = None
-            if mode is not None:
-                modify_mode = ModeAutocomplete(mode)
-        except ValueError:
+        if mode == ModeAutocomplete.invalid:
             await itx.response.send_message("This is not a valid mode. "
                                             + help_str, ephemeral=True)
             return
 
-        if setting_type == TypeAutocomplete.help.value:
+        if setting_type == TypeAutocomplete.help:
             await send_help_menu(itx, requested_page=900)
 
-        elif setting_type == TypeAutocomplete.attribute.value:
+        elif setting_type == TypeAutocomplete.attribute:
             await _handle_settings_attribute(
-                itx, help_str, setting, modify_mode, value)
+                itx, help_str, setting, mode, value)
 
-        elif setting_type == TypeAutocomplete.module.value:
-            await _handle_settings_module(itx, help_str, setting, modify_mode)
+        elif setting_type == TypeAutocomplete.module:
+            await _handle_settings_module(itx, help_str, setting, mode)
         else:
             await itx.followup.send(
                 "That is not a valid type. Please use the options "

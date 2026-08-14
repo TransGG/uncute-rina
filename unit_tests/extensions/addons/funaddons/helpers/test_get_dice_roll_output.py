@@ -1,6 +1,8 @@
-import pytest
-from unittest import mock
 import random
+from unittest import mock
+
+import pytest
+
 from extensions.addons.cogs.funaddons import _get_dice_roll_output
 
 
@@ -19,7 +21,7 @@ from extensions.addons.cogs.funaddons import _get_dice_roll_output
 def test_get_dice_roll_output_short(
         dice: int,
         faces: int,
-        mod: int | float | None,
+        mod: float | None,
         expected: str
 ) -> None:
     with mock.patch.object(random, 'randint', return_value=1):
@@ -29,16 +31,22 @@ def test_get_dice_roll_output_short(
 
 
 @pytest.mark.parametrize("dice, faces, mod, expected", [
-    (10000, 10000, None,
-        "You rolled 10,000 dice with 10,000 faces:\n"
-        "With this many numbers, I've simplified it a little. "
-        "You rolled `10,000`.\n"
-        "You rolled '1'x10000"),
+    (
+        10000,
+        10000,
+        None,
+        (
+            "You rolled 10,000 dice with 10,000 faces:\n"
+            "With this many numbers, I've simplified it a little. "
+            "You rolled `10,000`.\n"
+            "You rolled '1'x10000"
+        ),
+    ),
 ])
 def test_get_dice_roll_output_long_short(
         dice: int,
         faces: int,
-        mod: int | float | None,
+        mod: float | None,
         expected: str
 ) -> None:
     with mock.patch.object(random, 'randint', return_value=1):
@@ -81,11 +89,11 @@ def test_get_dice_roll_output_long_long() -> None:
     # It just compresses it into '1'x1 etc. for 1 to 100
     # But doesn't compress it further because it's just barely long enough.
 
-    def get_random_output(dice, faces):
+    def get_random_output(_dice, _faces):
         nonlocal random_output
         random_output += 1
         return random_output
 
     with mock.patch.object(random, 'randint', side_effect=get_random_output):
-        output, too_long = _get_dice_roll_output(dice, faces, mod)
+        _output, too_long = _get_dice_roll_output(dice, faces, mod)
         assert too_long is True

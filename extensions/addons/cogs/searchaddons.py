@@ -2,29 +2,26 @@ import json  # to read API json responses
 
 import aiohttp  # to read api calls
 import aiohttp.client_exceptions
-
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
-
-from extensions.addons.wolframresult import (
-    WolframResult,
-    WolframQueryResult,
-    WolframPod,
-    WolframAssumption,
-)
-from resources.customs import Bot
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.addons.equaldexregion import EqualDexRegion
 from extensions.addons.views.equaldex_additionalinfo import (
-    EqualDexAdditionalInfo
+    EqualDexAdditionalInfo,
 )
 from extensions.addons.views.math_sendpublicbutton import (
-    SendPublicButtonMath
+    SendPublicButtonMath,
 )
-from resources.utils import debug, DebugColor
+from extensions.addons.wolframresult import (
+    WolframAssumption,
+    WolframPod,
+    WolframQueryResult,
+    WolframResult,
+)
+from resources.customs import Bot
+from resources.utils import DebugColor, debug
 from resources.utils.stringhelper import ellipsize_string
-
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -74,10 +71,10 @@ def format_wolfram_success_output(
     if data_count <= error_or_nodata:
         return (
             False,
-            "There was no data for your answer!\n"
-            "It seems all your answers had an error or were "
-            "'nodata entries', meaning you might need to try a "
-            "different query to get an answer to your question!"
+            ("There was no data for your answer!\n"
+             "It seems all your answers had an error or were "
+             "'nodata entries', meaning you might need to try a "
+             "different query to get an answer to your question!")
         )
 
     assumptions = _format_wolfram_assumptions(data)
@@ -256,7 +253,8 @@ def _extract_assumption(assumption: WolframAssumption) -> str | None:
         #  a list of 1 value instead.
         assumption["values"] = [assumption_values]
 
-    assert isinstance(assumption["values"], list)
+    if not isinstance(assumption["values"], list):
+        raise TypeError(f"Assumption values key was not a list! (got: {type(assumption['values'])} instead)")
 
     for value_index, value in enumerate(assumption["values"]):
         word_id = str(value_index + 1)
@@ -270,12 +268,11 @@ def _extract_assumption(assumption: WolframAssumption) -> str | None:
 
     if "template" in assumption:
         template: str = assumption["template"]
-        for replacer in assumption_data:
+        for match, replacement in assumption_data.items():
             template = template.replace(
-                replacer, assumption_data[replacer]
+                match, replacement
             )
-        if template.endswith("."):
-            template = template[:-1]
+        template = template.removesuffix(".")
         return template + "?"
     else:
         template: str = (
@@ -435,8 +432,8 @@ class SearchAddons(commands.Cog):
             "<b>": "**",
             r"<\/b>": "**"
         }
-        for key in jsonizing_table:
-            response_api = response_api.replace(key, jsonizing_table[key])
+        for match, replacement in jsonizing_table.items():
+            response_api = response_api.replace(match, replacement)
         data = json.loads(response_api)
         return data, response.status
 

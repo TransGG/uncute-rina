@@ -1,4 +1,5 @@
 import pytest
+
 from extensions.addons.cogs.funaddons import _simplify_roll_output
 
 

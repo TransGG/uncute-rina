@@ -1,9 +1,8 @@
 import discord
 
+from extensions.help.helppage import HelpPage
 from resources.customs import Bot
 from resources.utils.stringhelper import replace_string_command_mentions
-
-from extensions.help.helppage import HelpPage
 
 
 def generate_help_page_embed(
@@ -75,9 +74,10 @@ def get_nearest_help_pages_from_page(
             min_index -= 1
         while max_index not in pages:
             max_index += 1
-        assert min_index != max_index, (
-            f"'min_index' ({min_index}) and 'max_index' ({max_index}) should "
-            f"point to the two nearest help pages to 'page' ({page}), being "
-            f"the same implies the page was in-range in the first place."
-        )
+        if min_index == max_index:
+            raise ValueError(
+                f"'min_index' ({min_index}) and 'max_index' ({max_index}) should "
+                f"point to the two nearest help pages to 'page' ({page}), being "
+                f"the same implies the page was in-range in the first place."
+            )
         return min_index, max_index

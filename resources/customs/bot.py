@@ -1,30 +1,27 @@
-from __future__ import annotations
+from datetime import datetime  # for startup and crash logging, and Reminders
+from typing import Any
 
 import discord  # for main discord bot functionality
-import discord.ext.commands as commands
-import discord.app_commands as app_commands
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-# ^ for scheduling Reminders
-from datetime import datetime
-# ^ for startup and crash logging, and Reminders
-from typing import TYPE_CHECKING, Any
 import motor.core as motorcore  # for typing
-from pymongo.database import Database as PyMongoDatabase
-# ^ for MongoDB database typing
+from apscheduler.schedulers.asyncio import (
+    AsyncIOScheduler,  # for scheduling Reminders
+)
+from discord import app_commands
+from discord.ext import commands
+from pymongo.database import (
+    Database as PyMongoDatabase,  # for MongoDB database typing
+)
 
 from extensions.settings.objects import (
     EnabledModules,
     ServerAttributes,
+    ServerSettings,
 )
 from extensions.settings.objects.server_attributes import default_server_attributes
 from resources.abc import (
     ApiTokenDict,
     MessageableGuildChannel,
 )
-
-if TYPE_CHECKING:
-    from extensions.settings.objects import ServerSettings
 
 
 class Bot(commands.Bot):
@@ -166,7 +163,7 @@ class Bot(commands.Bot):
 
         unset_keys = [
             key
-            for key in ServerAttributes.__annotations__.keys()
+            for key in ServerAttributes.__annotations__
             if (
                 getattr(attributes, key, None) is None
                 or getattr(attributes, key, None) == []

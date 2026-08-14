@@ -1,5 +1,6 @@
 import discord
 
+# noinspection protected-member
 from discord._types import ClientT
 
 

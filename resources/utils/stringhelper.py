@@ -1,7 +1,4 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
-
 
 if TYPE_CHECKING:
     from resources.customs import Bot
@@ -28,8 +25,7 @@ def replace_string_command_mentions(text: str, client: Bot) -> str:
         command_start_index = text.index("%%")
         command_end_index = text.index("%%", command_start_index + 2)
         command_string = text[command_start_index + 2: command_end_index]
-        if command_string.startswith("/"):
-            command_string = command_string[1:]
+        command_string = command_string.removeprefix("/")
 
         text = (text[:command_start_index]
                 + client.get_command_mention(command_string)
@@ -48,8 +44,11 @@ def ellipsize_string(text: str, max_length: int) -> str:
     :param text: The text to check length for.
     :param max_length: The maximum length the string may be.
     :return: A string with perhaps added ellipses.
+    :raise ValueError: If the max_length parameter is less than 3:
+     Can't replace text with "..." and achieve fewer than 3 characters.
     """
-    assert max_length >= 3
+    if max_length < 3:
+        raise ValueError("Can't ellipsize text to a size less than 3!")
     if len(text) > max_length:
         return text[:max_length - 3] + "..."
     return text

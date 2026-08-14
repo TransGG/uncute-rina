@@ -1,17 +1,16 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
-from resources.customs import Bot
-from resources.checks import is_admin
-from resources.utils.stringhelper import replace_string_command_mentions
-
-from extensions.help.helppages import help_pages, aliases, FIRST_PAGE
+from extensions.help.helppages import FIRST_PAGE, aliases, help_pages
 from extensions.help.utils import (
+    generate_help_page_embed,
     get_nearest_help_pages_from_page,
-    generate_help_page_embed
 )
 from extensions.help.views.helppage import HelpPageView
+from resources.checks import is_admin
+from resources.customs import Bot
+from resources.utils.stringhelper import replace_string_command_mentions
 
 
 async def send_help_menu(
@@ -70,19 +69,21 @@ async def _help_page_autocomplete(  # ruff: ignore[unused-async]
 
     user_is_staff = is_admin(itx, itx.user)
 
-    if current.isdecimal():
-        current_page: int | None = None
-        try:
-            current_page = int(current)
-        except ValueError:
-            pass
+    current_page = int(current) if current.isdecimal() else None
 
-        if current_page is not None and current_page in aliases.keys():
-            if (user_is_staff
-                    or not help_pages[current_page].get("staff_only", False)):
-                results.append(app_commands.Choice[int](
-                    name=aliases[current_page][0], value=current_page))
-                return results
+    if (
+            current_page in aliases
+            and current_page in help_pages
+            # ^ unnecessary: in aliases == in help_pages, verified by unit tests
+            and (
+                user_is_staff
+                or not help_pages[current_page].get("staff_only", False)
+                # ^ page is publicly available (not staff_only)
+            )
+    ):
+        results.append(app_commands.Choice[int](
+            name=aliases[current_page][0], value=current_page))
+        return results
 
     # search aliases
     for page in aliases:
@@ -125,8 +126,10 @@ class HelpCommand(commands.Cog):
     def __init__(self) -> None:
         pass
 
-    @app_commands.command(name="help",
-                          description="A help command to learn more about me!")
+    @app_commands.command(
+        name="help",
+        description="A help command to learn more about me!",
+    )
     @app_commands.describe(page="What page do you want to jump to? (useful "
                                 "if sharing commands)")
     @app_commands.autocomplete(page=_help_page_autocomplete)

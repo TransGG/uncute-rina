@@ -1,21 +1,20 @@
 import random
-import typing
-# ^ for dice rolls (/roll) and selecting a random staff
+
+# for dice rolls (/roll) and selecting a random staff
 #  interaction wait time
+import typing
 from typing import TypeVar
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
-from discord import Interaction
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.addons.roll import generate_roll
 from extensions.help.cogs import send_help_menu
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.abc import GuildMessage
 from resources.checks import MissingAttributesCheckFailure
 from resources.customs import Bot
-
-from extensions.settings.objects import ModuleKeys, AttributeKeys
 
 STAFF_CONTACT_CHECK_WAIT_MIN = 5000
 STAFF_CONTACT_CHECK_WAIT_MAX = 7500
@@ -58,17 +57,16 @@ def _check_awawa_reaction(
     if "b" not in msg_content and "w" not in msg_content:
         return False
 
-    if len(msg_content) > 5 and (msg_content.startswith("aba")
-                                 or msg_content.startswith("awa")):
+    if len(msg_content) > 5 and (msg_content.startswith(("aba", "awa"))):
         # check if the message content is /(ab|aw)+a/i
         replaced = msg_content.replace("ab", "").replace("aw", "")
         if replaced == "a":
             return True
 
-    if len(msg_content) > 9 and msg_content.startswith("a"):
-        return True
-
-    return False
+    return (
+        len(msg_content) > 9
+        and msg_content.startswith("a")
+    )
 
 
 def _get_dice_roll_output(
@@ -161,8 +159,7 @@ class FunAddons(commands.Cog):
                      and message.channel.parent == 987358841245151262)
                     # ^ <#welcome-verify>
                     or channel_name is None
-                    or channel_name.startswith('ticket-')
-                    or channel_name.startswith('closed-')
+                    or channel_name.startswith(('ticket-', 'closed-'))
                     or channel_category is None
                     # <#Bulletin Board>, <#Moderation Logs>,
                     # <#Verifier Archive>, <#Events>,
@@ -213,7 +210,12 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.headpat_reactions):
-            assert message.guild is not None  # implicit in is_module_enabled
+            if message.guild is None:
+                # implicit in is_module_enabled
+                raise TypeError(
+                    f"Expected message to have a guild but it was None instead! "
+                    f"Guild: {message.guild}, channel: {message.channel}, id: {message.id}",
+                )
             message = typing.cast(GuildMessage, message)
             headpat_emoji = self.client.get_guild_attributes(
                 message.guild).headpat_emoji
@@ -226,7 +228,12 @@ class FunAddons(commands.Cog):
 
         if self.client.is_module_enabled(
                 message.guild, ModuleKeys.awawawa_reactions):
-            assert message.guild is not None  # implicit in is_module_enabled
+            if message.guild is None:
+                # implicit in is_module_enabled
+                raise TypeError(
+                    f"Expected message to have a guild but it was None instead! "
+                    f"Guild: {message.guild}, channel: {message.channel}, id: {message.id}",
+                )
             awawawa_emoji: discord.Emoji | None
             awawawa_emoji = self.client.get_guild_attributes(
                 message.guild).awawawa_emoji
@@ -269,7 +276,7 @@ class FunAddons(commands.Cog):
 
     @staticmethod
     async def roll_simple(
-            itx: Interaction[Bot],
+            itx: discord.Interaction[Bot],
             dice: int,
             faces: int,
             mod: int | None,
@@ -283,7 +290,7 @@ class FunAddons(commands.Cog):
 
     @staticmethod
     async def roll_advanced(
-            itx: Interaction[Bot],
+            itx: discord.Interaction[Bot],
             advanced: str,
             public: bool,
     ) -> None:

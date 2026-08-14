@@ -1,20 +1,23 @@
-from __future__ import annotations
+import types
+import typing
+from collections.abc import Callable
+from enum import Enum
 
 import discord
-from enum import Enum
 import motor.core
-import typing
-from typing import Callable
-import types
 
 from resources.abc import MessageableGuildChannel
-from resources.utils.debug import debug, DebugColor
+from resources.utils.debug import (
+    DebugColor,
+    debug,
+)
+
+from .enabled_modules import EnabledModules
+from .server_attribute_ids import ServerAttributeIds
 from .server_attributes import (
     GuildAttributeType,
     ServerAttributes,
 )
-from .server_attribute_ids import ServerAttributeIds
-from .enabled_modules import EnabledModules
 
 if typing.TYPE_CHECKING:
     from resources.customs import Bot
@@ -30,6 +33,8 @@ VoiceChannelId = int
 CategoryChannelId = int
 MessageableChannelId = int
 MessageChannel = discord.TextChannel | discord.Thread
+
+type TypeKinda = type | typing.TypeAliasType | types.UnionType
 
 
 async def parse_id_generic(
@@ -62,11 +67,11 @@ def get_attribute_type(attribute_key: str) -> tuple[
     attribute_types: dict[str, type] = \
         typing.get_type_hints(ServerAttributes)
     attribute_in_list = False
-    type_queue = []
+    type_queue: list[TypeKinda | None] = []
     if attribute_key not in ServerAttributes.__annotations__:
         return set(), False
 
-    attribute_type: type | None = attribute_types[attribute_key]
+    attribute_type: TypeKinda | list[TypeKinda] | types.GenericAlias | None = attribute_types[attribute_key]
 
     if isinstance(attribute_type, list):
         attribute_in_list = True
@@ -154,13 +159,6 @@ async def parse_attribute(
         typing.Coroutine[None, None, GuildAttributeType | None]
     ]] = set()
 
-    def wrap[T](
-            sync_function: Callable[[int], T]
-    ) -> Callable[[int], typing.Coroutine[None, None, T]]:
-        async def inner(arg: int) -> T:  # ruff: ignore[unused-async]
-            return sync_function(arg)
-        return inner
-
     if is_attribute_type(discord.Guild):
         funcs.add(client.get_guild)
     if is_attribute_type(discord.abc.GuildChannel):
@@ -229,6 +227,13 @@ async def parse_attribute(
         attribute_value_id = int(attribute_value)
     except ValueError:
         return None
+
+    def wrap[T](
+            sync_function: Callable[[int], T]
+    ) -> Callable[[int], typing.Coroutine[None, None, T]]:
+        async def inner(arg: int) -> T:  # ruff: ignore[unused-async]
+            return sync_function(arg)
+        return inner
 
     parsed_attribute = None
     for func in funcs:
@@ -572,21 +577,24 @@ class ServerSettings:
             # Mostly validation before casting it.
             # Todo: more graceful handling of errors:
             #  Can throw AttributeError and AssertionError
-            assert isinstance(key, str), f"Key `{key}` was not a string!"
+            if not isinstance(key, str):
+                raise TypeError(f"Key `{key}` was not a string!")
             expected_type = ServerAttributes.__annotations__[key]
             if (
                     type(expected_type) is list
                     or typing.get_origin(expected_type) is list
             ):
-                assert type(val) is list and val is not None, (
-                    f"Value for `{key}` should be a list, but it was "
-                    f"{type(val)} instead!"
-                )
+                if val is None or not isinstance(val, list):
+                    raise ValueError(
+                        f"Value for `{key}` should be a list, but it was "
+                        f"{type(val)} instead!"
+                    )
             else:
-                assert type(val) is not list, (
-                    f"Value for `{key}` should be `{expected_type}`, but it "
-                    f"was `{type(val)}` instead: {val}!"
-                )
+                if isinstance(val, list):
+                    raise TypeError(
+                        f"Value for `{key}` should be `{expected_type}`, but it "
+                        f"was `{type(val)}` instead: {val}!"
+                    )
             setattr(parsed_attributes, key, val)
 
         for attribute_key, attribute_value in attribute_ids.items():
@@ -600,11 +608,12 @@ class ServerSettings:
                         parsed_values.append(parsed_value)
                 set_attribute(attribute_key, parsed_values)
             else:
-                assert isinstance(attribute_value, (str, int, type(None))), (
-                    f"Expected attribute {attribute_key} to have value type str "
-                    f"or int, but `{attribute_value}` was of type "
-                    f"`{type(attribute_value)}`"
-                )
+                if not isinstance(attribute_value, (str, int, type(None))):
+                    raise TypeError(
+                        f"Expected attribute {attribute_key} to have value type str "
+                        f"or int, but `{attribute_value}` was of type "
+                        f"`{type(attribute_value)}`"
+                    )
                 parsed_value = await parse_attribute(
                     client, guild, attribute_key, attribute_value,
                     invalid_arguments=invalid_arguments)

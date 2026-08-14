@@ -1,26 +1,37 @@
-from __future__ import annotations
+import typing
 
 import discord
 from discord import app_commands
-from typing import TYPE_CHECKING, Any
 
-from .permissions import is_staff, is_admin
+from resources.abc import GuildInteraction
+
+from .command_checks import is_in_dms
 from .errors import (
     CommandDoesNotSupportDMsCheckFailure,
-    InsufficientPermissionsCheckFailure
+    InsufficientPermissionsCheckFailure,
 )
-from .command_checks import is_in_dms
+from .permissions import is_admin, is_staff
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
+    # noinspection protected-member
+    from discord.app_commands.commands import CommandCallback, GroupT, P, T
+
     from resources.customs import Bot
 
-    from discord.app_commands.commands import (
-        CommandCallback, GroupT, P, T,
+    GuildCommandCallback = (
+        typing.Callable[
+            typing.Concatenate[GroupT, GuildInteraction[Bot], P],
+            typing.Coroutine[None, None, T],
+        ]
+        | typing.Callable[
+            typing.Concatenate[GuildInteraction[Bot], P],
+            typing.Coroutine[None, None, T],
+        ]
     )
 
 
 def is_staff_check(
-        func: CommandCallback[Any, ..., Any]
+        func: GuildCommandCallback[GroupT, P, T]
 ) -> CommandCallback[GroupT, P, T]:
     def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
@@ -42,11 +53,11 @@ def is_staff_check(
         raise InsufficientPermissionsCheckFailure("User is not staff")
 
     app_commands.check(decor_check)(func)
-    return func
+    return func  # type: ignore[return-value]
 
 
 def is_admin_check(
-        func: CommandCallback[Any, ..., Any]
+        func: GuildCommandCallback[GroupT, P, T]
 ) -> CommandCallback[GroupT, P, T]:
     def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
@@ -68,4 +79,4 @@ def is_admin_check(
         raise InsufficientPermissionsCheckFailure("User is not admin")
 
     app_commands.check(decor_check)(func)
-    return func
+    return func  # type: ignore[return-value]

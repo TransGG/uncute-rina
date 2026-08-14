@@ -1,10 +1,9 @@
-from resources.customs.bot import Bot
-
 from extensions.message_reactions.cogs import (
     AEGISPingReactionsAddon,
     AnonReportsReactionsAddon,
-    BanAppealReactionsAddon
+    BanAppealReactionsAddon,
 )
+from resources.customs.bot import Bot
 
 
 async def setup(client: Bot) -> None:

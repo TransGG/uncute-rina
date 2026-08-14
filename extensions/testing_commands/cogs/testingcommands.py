@@ -1,15 +1,13 @@
 from datetime import datetime
-import random
 
 import discord
+from discord import app_commands
 from discord.ext import commands
-import discord.app_commands as app_commands
 
 from extensions.settings.objects import AttributeKeys
 from resources.abc import GuildInteraction
 from resources.checks import MissingAttributesCheckFailure, is_staff_check
 from resources.customs import Bot
-from resources.views.generics import PageView, create_simple_button
 
 
 def _make_vclog_embed(
@@ -18,6 +16,9 @@ def _make_vclog_embed(
         to_channel: discord.VoiceChannel | discord.StageChannel,
         user: discord.Member | discord.User
 ) -> discord.Embed:
+    if not isinstance(user, discord.Member):
+        raise TypeError("User is not a member of a server!")
+
     if mode == "Move":
         embed: discord.Embed = discord.Embed(
             description=f"**{user.name}#{user.discriminator}** moved from "
@@ -146,75 +147,9 @@ class TestingCog(commands.GroupCog, name="testing"):
             if hasattr(child_channel, "send"):
                 channel = child_channel
         if channel is None:
-            raise IOError("staff logs category doesn't contain any channels.")
+            raise OSError("staff logs category doesn't contain any channels.")
 
         await channel.send(embed=embed)
-
-    @app_commands.command(name="send_pageview_test",
-                          description="Send a test embed with page buttons")
-    @app_commands.describe(page_count="The amount of pages to send/test")
-    @is_staff_check
-    async def send_pageview_test_embed(
-            self,
-            itx: GuildInteraction[Bot],
-            page_count: app_commands.Range[int, 1, 10000] = 40
-    ) -> None:
-        def get_chars(length: int) -> str:
-            letters = ("abcdefghijklmnopqrstuvwxyz"
-                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                       "0123456789+/   ")
-            return (''.join(random.choice(letters)
-                            for _ in range(length))
-                    ).strip()
-
-        async def update_test_page(
-                itx1: discord.Interaction[Bot],
-                view1: PageView,
-        ) -> None:
-            embed = view1.pages[view1.page]
-            await itx1.response.edit_message(
-                content="updated a" + str(view1.page),
-                embed=embed,
-                view=view1
-            )
-
-        pages = []
-        for page_index in range(page_count):  # embeds
-            e = discord.Embed(
-                color=discord.Color.from_hsv(random.random(), 0.40, 0.100),
-                title=get_chars(random.randint(15, 40)),
-                description=get_chars(60)
-            )
-            for _ in range(0, 4):  # embed fields
-                e.add_field(
-                    name=get_chars(random.randint(10, 30)),
-                    value=get_chars(random.randint(20, 60)),
-                    inline=False
-                )
-            e.set_footer(text=f"{page_index + 1}/{page_count}")
-            pages.append(e)
-
-        async def go_to_page_button_callback(
-                itx1: discord.Interaction[Bot]
-        ) -> None:
-            # view: PageView = view
-            await itx1.response.send_message(
-                f"This embed has {view.max_page_index + 1} pages!")
-
-        go_to_page_button = create_simple_button(
-            "🔢",
-            discord.ButtonStyle.blurple,
-            go_to_page_button_callback,
-            label_is_emoji=True
-        )
-        view = PageView(
-            0,
-            len(pages),
-            update_test_page,
-            appended_buttons=[go_to_page_button]
-        )
-        await itx.response.send_message(
-            "Sending this cool embed...", embed=pages[0], view=view)
 
     @app_commands.command(name="send_srmod_appeal_test",
                           description="Send a test embed of a ban appeal")
@@ -225,6 +160,10 @@ class TestingCog(commands.GroupCog, name="testing"):
             itx: GuildInteraction[Bot],
             username: str
     ) -> None:
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message("I can't send in this channel!", ephemeral=True)
+            return
+
         embed: discord.Embed = discord.Embed(title="New Ban Appeal")
         embed.add_field(name="Which of the following are you appealing?",
                         value="Discord Ban")
@@ -251,7 +190,7 @@ class TestingCog(commands.GroupCog, name="testing"):
     @is_staff_check
     async def send_vc_log_test(
             self,
-            itx: discord.Interaction[Bot],
+            itx: GuildInteraction[Bot],
             mode: str,
             from_channel: discord.VoiceChannel | discord.StageChannel | None = None,
             to_channel: discord.VoiceChannel | discord.StageChannel | None = None,
@@ -278,8 +217,17 @@ class TestingCog(commands.GroupCog, name="testing"):
             )
             return
 
-        assert from_channel is not None and to_channel is not None
+        if from_channel is None or to_channel is None:
+            raise ValueError(
+                f"from_channel or to_channel was None "
+                f"(from {from_channel is None}, to {to_channel is None})",
+            )
         embed = _make_vclog_embed(mode, from_channel, to_channel, user)
+
+        if not isinstance(itx.channel, discord.abc.Messageable):
+            await itx.response.send_message("I can't send messages in this channel!")
+            return
+
         await itx.channel.send(embed=embed)
 
         await itx.response.send_message("Sent.", ephemeral=True)

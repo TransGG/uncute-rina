@@ -1,5 +1,5 @@
+from extensions.addons.cogs import FunAddons, OtherAddons, SearchAddons
 from resources.customs.bot import Bot
-from extensions.addons.cogs import OtherAddons, FunAddons, SearchAddons
 
 
 async def setup(client: Bot) -> None:

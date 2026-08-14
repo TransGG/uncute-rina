@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-
 recently_renamed_vcs: dict[int, list[datetime]] = {}  # make your own vcs!
 VOICE_CHANNEL_RENAME_RATELIMIT = 2
 

@@ -1,8 +1,8 @@
-from motor.core import AgnosticDatabase, AgnosticCursor
-from typing import TypedDict, TypeVar
+from typing import TypedDict
 
-from .utils import encode_field, decode_field
+from motor.core import AgnosticCursor, AgnosticDatabase
 
+from .utils import decode_field, encode_field
 
 # Database format (a list of the following):
 # {
@@ -14,22 +14,20 @@ from .utils import encode_field, decode_field
 # - Each guild_id is unique.
 # - Every entry that has a 'guild_id' key should also contain a 'data' key.
 
-
-V = TypeVar('V')
-GuildEntryData = dict[str, V]
+type GuildEntryData[V] = dict[str, V]
 
 
-class CustomGuildEntry(TypedDict):
+class CustomGuildEntry[T](TypedDict):
     guild_id: str
-    data: GuildEntryData
+    data: GuildEntryData[T]
 
 
-async def add_data(
+async def add_data[T](
         async_rina_db: AgnosticDatabase,
         guild_id: int,
         database_name: str,
         key: str,
-        value: object,
+        value: T,
 ) -> tuple[bool, bool]:
     """
     Add data into a key for the given guild.
@@ -101,11 +99,11 @@ async def remove_guild_data(
     return result.deleted_count > 0
 
 
-async def update_data(
+async def update_data[T](
         async_rina_db: AgnosticDatabase,
         guild_id: int,
         database_name: str,
-        data: GuildEntryData,
+        data: GuildEntryData[T],
 ) -> tuple[bool, bool]:
     """
     Store data for the given guild.
@@ -129,11 +127,11 @@ async def update_data(
     return result.modified_count > 0, result.did_upsert
 
 
-async def get_data(
+async def get_data[T](
         async_rina_db: AgnosticDatabase,
         guild_id: int,
         database_name: str,
-) -> GuildEntryData | None:
+) -> GuildEntryData[T] | None:
     """
     Fetch data for the given guild.
 
@@ -146,7 +144,7 @@ async def get_data(
     """
     collection = async_rina_db[database_name]
     query = {"guild_id": guild_id}
-    result: CustomGuildEntry | None = await collection.find_one(query)
+    result: CustomGuildEntry[T] | None = await collection.find_one(query)
 
     if result is None:
         return None
@@ -154,10 +152,10 @@ async def get_data(
     return decoded_data
 
 
-async def get_all_data(
+async def get_all_data[T](
         async_rina_db: AgnosticDatabase,
         database_name: str,
-) -> dict[int, GuildEntryData]:
+) -> dict[int, GuildEntryData[T]]:
     """
     Fetch data for all guilds.
 
@@ -168,11 +166,11 @@ async def get_all_data(
      their data.
     """
     collection = async_rina_db[database_name]
-    results: AgnosticCursor[CustomGuildEntry] = collection.find()
+    results: AgnosticCursor[CustomGuildEntry[T]] = collection.find()
 
     data = {}
     async for result in results:
-        result: CustomGuildEntry
+        result: CustomGuildEntry[T]
         guild_id = result["guild_id"]
         result_data = result.get("data", {})
         decoded_data = {decode_field(k): v for k, v in result_data.items()}

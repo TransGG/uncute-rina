@@ -1,13 +1,13 @@
 import typing
-
 from datetime import datetime
+
 import discord
 
-from resources.customs import Bot
 from extensions.settings.objects import ServerAttributes
-
+from resources.customs import Bot
 
 # region create thread
+
 
 async def _create_starter_message(
         channel: discord.TextChannel,
@@ -202,7 +202,8 @@ async def ping_open_threads(
      return a boolean indicating whether the thread should be pinged.
     :param ping_message: The message to send to each pinged thread.
     """
-    assert itx.response.is_done()  # should have been deferred already
+    if not itx.response.is_done():
+        raise ValueError("Interaction should have been deferred already!")
     await itx.followup.send(
         "`[+  ]`: Fetching cached threads.",
         ephemeral=True

@@ -1,6 +1,5 @@
-from resources.customs.bot import Bot
-
 from extensions.crashhandling.cogs import CrashHandling
+from resources.customs.bot import Bot
 
 
 async def setup(client: Bot) -> None:

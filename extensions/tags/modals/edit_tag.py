@@ -41,6 +41,7 @@ class EditTagModal(CreateTagModal):
             )
             return
 
-        assert itx.guild is not None
+        if itx.guild is None:
+            raise ValueError("Expected the guild to have a value but it was None instead.")
         guild_itx = typing.cast(GuildInteraction[Bot], itx)
         self.return_interaction = guild_itx

@@ -1,24 +1,26 @@
-from datetime import datetime, timedelta
-# ^ for /delete_week_selfies (within 7 days), and /version startup
-#  time parsing to discord unix <t:1234:F>
+from datetime import (
+    datetime,
+    timedelta,
+    # ^ for /delete_week_selfies (within 7 days), and /version startup
+    #  time parsing to discord unix <t:1234:F>
+)
+
 import aiohttp  # to fetch from GitHub and see Rina is running latest version
-
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
-from extensions.settings.objects import ModuleKeys, AttributeKeys
+from extensions.settings.objects import AttributeKeys, ModuleKeys
 from resources.abc import GuildInteraction
 from resources.checks import (
-    is_staff_check,
-    module_enabled_check,
     MissingAttributesCheckFailure,
     is_staff,
+    is_staff_check,
     # ^ to check if messages in the selfies channel were sent by staff
+    module_enabled_check,
 )
 from resources.customs import Bot
-from resources.utils.utils import log_to_guild
-# ^ logging when a staff command is used
+from resources.utils.utils import log_to_guild  # logging when a staff command is used
 
 
 class StaffAddons(commands.Cog):

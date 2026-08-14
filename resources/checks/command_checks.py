@@ -1,21 +1,29 @@
-from __future__ import annotations
+import typing
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import discord
-import discord.app_commands as app_commands
-from typing import TYPE_CHECKING, Any, Callable
+from discord import app_commands
 
+from resources.abc import GuildInteraction
 from resources.checks.errors import (
+    CommandDoesNotSupportDMsCheckFailure,
     ModuleNotEnabledCheckFailure,
-    CommandDoesNotSupportDMsCheckFailure
 )
 
-
 if TYPE_CHECKING:
+    # noinspection protected-member
+    from discord.app_commands.commands import CommandCallback, GroupT, P, T
+
     from resources.customs import Bot
 
-    from discord.app_commands.commands import (
-        CommandCallback, GroupT, P, T,
-    )
+    GuildCommandCallback = typing.Callable[
+        typing.Concatenate[GroupT, GuildInteraction[Bot], P],
+        typing.Coroutine[None, None, T]
+    ] | typing.Callable[
+        typing.Concatenate[GuildInteraction[Bot], P],
+        typing.Coroutine[None, None, T]
+    ]
 
 
 def is_in_dms(guild: discord.Guild | int | None) -> bool:
@@ -29,9 +37,11 @@ def is_in_dms(guild: discord.Guild | int | None) -> bool:
 
 
 def module_enabled_check(
-        module_key: str
-) -> Callable[[CommandCallback[Any, ..., Any]],
-              CommandCallback[GroupT, P, T]]:
+    module_key: str,
+) -> Callable[
+    [GuildCommandCallback[GroupT, P, T]],
+    CommandCallback[GroupT, P, T],
+]:
     """
     A check to check if a module is enabled.
 
@@ -59,16 +69,16 @@ def module_enabled_check(
         raise ModuleNotEnabledCheckFailure(module_key)
 
     def decor_check1(
-            func: CommandCallback[Any, ..., Any]
+            func: GuildCommandCallback[GroupT, P, T]
     ) -> CommandCallback[GroupT, P, T]:
         app_commands.check(decor_check)(func)
-        return func
+        return func  # type: ignore[return-value]
 
     return decor_check1
 
 
 def not_in_dms_check(
-        func: CommandCallback[Any, ..., Any]
+        func: GuildCommandCallback[GroupT, P, T]
 ) -> CommandCallback[GroupT, P, T]:
     def decor_check(itx: discord.Interaction[Bot]) -> bool:
         """
@@ -85,13 +95,13 @@ def not_in_dms_check(
         return True
 
     app_commands.check(decor_check)(func)
-    return func
+    return func  # type: ignore[return-value]
 
 
 def module_not_disabled_check(
         module_key: str
 ) -> Callable[
-        [CommandCallback[Any, ..., Any]],
+        [GuildCommandCallback[GroupT, P, T]],
         CommandCallback[GroupT, P, T]
 ]:
     """
@@ -119,4 +129,4 @@ def module_not_disabled_check(
         if itx.client.is_module_enabled(itx.guild, module_key):
             return True
         raise ModuleNotEnabledCheckFailure(module_key)
-    return app_commands.check(decor_check)
+    return app_commands.check(decor_check)  # type: ignore[return-value]

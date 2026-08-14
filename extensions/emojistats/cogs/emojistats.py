@@ -1,20 +1,19 @@
-from datetime import datetime, timezone
 import re  # to find all emojis used in someone's message
 import sys  # for integer max value: sys.maxsize
-import motor.core as motorcore  # for typing
-from pymongo import DESCENDING
+from datetime import datetime, timezone
 
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+import motor.core as motorcore  # for typing
+from discord import app_commands
+from discord.ext import commands
+from pymongo import DESCENDING
 
 from extensions.emojistats.database_dicts import EmojiStatsData
+from extensions.emojistats.emojisendsource import EmojiSendSource
 from extensions.reminders.objects.emoji_animate_type import EmojiAnimateType
 from resources.abc import GuildInteraction
-from resources.customs import Bot
 from resources.checks import not_in_dms_check
-
-from extensions.emojistats.emojisendsource import EmojiSendSource
+from resources.customs import Bot
 
 
 async def _add_to_emoji_data(
@@ -104,10 +103,11 @@ class EmojiStats(commands.Cog):
                                           .replace(">", "")
                                           .split(":"))
 
-            assert emoji_id.isdecimal(), (
-                f"Emoji `{emoji}` should have a numeric emoji id, but it "
-                f"is `{emoji_id}` instead!"
-            )
+            if not emoji_id.isdecimal():
+                raise ValueError(
+                    f"Emoji `{emoji.string}` should have a numeric emoji id, but it "
+                    f"is `{emoji_id}` instead!"
+                )
             # should be decimal due to regex
 
             animated = (animated.split("<")[-1] == "a")
@@ -249,14 +249,10 @@ class EmojiStats(commands.Cog):
             }
         }
 
-        if max_results > 50:
-            max_results = 50
-        if used_max < 0:
-            used_max = 0
-        if msg_max < 0:
-            msg_max = 0
-        if react_max < 0:
-            react_max = 0
+        max_results = min(max_results, 50)
+        used_max = max(used_max, 0)
+        msg_max = max(msg_max, 0)
+        react_max = max(react_max, 0)
 
         if msg_max != sys.maxsize:
             # only limit query on '_UsedCount' if you want to limit for it.

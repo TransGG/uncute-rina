@@ -1,12 +1,11 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
+from extensions.settings.objects import ModuleKeys
 from resources.abc import GuildInteraction
 from resources.checks import module_enabled_check
 from resources.customs import Bot
-
-from extensions.settings.objects import ModuleKeys
 
 
 class ChangeChannel(commands.Cog):
@@ -57,7 +56,7 @@ class ChangeChannel(commands.Cog):
                     )
                     return
 
-        response = await itx.response.defer(ephemeral=False)
+        response: discord.InteractionCallbackResponse[Bot] | None = await itx.response.defer(ephemeral=False)
         if response is None or response.resource is None:
             await itx.followup.send(
                 "Something went wrong! I couldn't retrieve the jump url "
@@ -67,10 +66,11 @@ class ChangeChannel(commands.Cog):
             )
             return
 
-        assert isinstance(response.resource, discord.InteractionMessage), (
-            "The response resource wasn't an InteractionMessage (but instead "
-            "an InteractionCallbackActivityInstance, probably)!"
-        )
+        if not isinstance(response.resource, discord.InteractionMessage):
+            raise TypeError(
+                f"The response resource wasn't an InteractionMessage, but "
+                f"'{response.resource.__class__.__name__}'!"
+            )
 
         target = await destination.send(
             f"Conversation was moved from {response.resource.jump_url} "

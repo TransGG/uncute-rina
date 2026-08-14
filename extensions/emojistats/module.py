@@ -1,6 +1,5 @@
-from resources.customs.bot import Bot
-
 from extensions.emojistats.cogs import EmojiStats, StickerStats
+from resources.customs.bot import Bot
 
 
 async def setup(client: Bot) -> None:

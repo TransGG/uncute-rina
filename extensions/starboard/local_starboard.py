@@ -7,9 +7,12 @@ from resources.abc import (
 )
 from resources.customs import Bot
 from resources.pymongo import (
-    remove_data, DatabaseKeys, add_data, get_data, get_all_data
+    DatabaseKeys,
+    add_data,
+    get_all_data,
+    get_data,
+    remove_data,
 )
-
 
 GuildId = int
 StarboardMessageId = int
@@ -63,8 +66,11 @@ async def import_starboard_messages(
         # Json keys can't be integers, so starboard_msg.id will turn
         # into a string.
         await add_data(
-            async_rina_db, starboard_channel.guild.id, DatabaseKeys.starboard,
-            str(starboard_msg.id), database_data
+            async_rina_db,
+            starboard_channel.guild.id,
+            DatabaseKeys.starboard,
+            str(starboard_msg.id),
+            database_data,
         )
 
     return local_starboard_index
@@ -82,8 +88,11 @@ async def fetch_starboard_messages(
     :return: A dictionary mapping starboard message ids a tuple of its
      original message's channel id and message id.
     """
-    data: dict[str, DatabaseData] | None
-    data = await get_data(async_rina_db, guild_id, DatabaseKeys.starboard)
+    data: dict[str, DatabaseData] | None = await get_data(
+        async_rina_db,
+        guild_id,
+        DatabaseKeys.starboard,
+    )
     if data is None:
         return {}
 
@@ -254,8 +263,13 @@ async def add_to_local_starboard(
                      original_msg.id)
     # Json keys can't be integers, so starboard_msg.id will turn
     # into a string.
-    await add_data(async_rina_db, guild_id, DatabaseKeys.starboard,
-                   str(starboard_msg.id), database_data)
+    await add_data(
+        async_rina_db,
+        guild_id,
+        DatabaseKeys.starboard,
+        str(starboard_msg.id),
+        database_data,
+    )
 
 
 async def delete_from_local_starboard(
@@ -272,8 +286,12 @@ async def delete_from_local_starboard(
      data to delete.
     """
     local_starboard_index.get(guild_id, {}).pop(starboard_message_id, None)
-    await remove_data(async_rina_db, guild_id, DatabaseKeys.starboard,
-                      str(starboard_message_id))
+    await remove_data(
+        async_rina_db,
+        guild_id,
+        DatabaseKeys.starboard,
+        str(starboard_message_id),
+    )
 
 
 def is_starboard_message(guild_id: int, starboard_message_id: int) -> bool:

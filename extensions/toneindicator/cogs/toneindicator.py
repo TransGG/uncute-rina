@@ -1,10 +1,9 @@
 import discord
-import discord.app_commands as app_commands
-import discord.ext.commands as commands
+from discord import app_commands
+from discord.ext import commands
 
 from extensions.toneindicator.searchmode import SearchMode
 from resources.customs import Bot
-
 
 tone_indicators: dict[str, list[str]] = {
     "excited": ["/!", "/exc"],
@@ -248,10 +247,11 @@ def _handle_tag_definition(
         if shortened_string in definition.replace("-", ""):
             overlaps = _get_overlaps_from_acronyms(acronyms)
             acronyms_or_overlap = set()
-            for tag in tone_indicators[definition]:
-                if tag in overlaps:
-                    tag += " `[!]`"
-                acronyms_or_overlap.add(tag)
+            for tag in acronyms:
+                maybe_modified_tag = tag
+                if maybe_modified_tag in overlaps:
+                    maybe_modified_tag += " `[!]`"
+                acronyms_or_overlap.add(maybe_modified_tag)
             if not any_overlaps:
                 any_overlaps = bool(overlaps)
             results.append(

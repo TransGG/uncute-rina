@@ -1,28 +1,31 @@
-from __future__ import annotations
-
+# \/ to create new reminder task that runs immediately
+#  (from a not-async ReminderObject __init__ function)
 import asyncio
-# to create new reminder task that runs immediately (from a
-#  not-async ReminderObject __init__ function)
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 import discord
 from discord import Interaction
 
-from resources.utils import TimeParser
-
 from extensions.reminders.exceptions import (
-    UnixTimestampInPastException,
-    TimestampParseException,
     ReminderTimeSelectionMenuTimeOut,
+    TimestampParseException,
+    UnixTimestampInPastException,
 )
-from extensions.reminders.objects import (
-    ReminderDict, TimestampFormats, DatabaseData
+from extensions.reminders.objects.reminderdict import (
+    DatabaseData,
+    ReminderDict,
+)
+from extensions.reminders.objects.timestampformats import (
+    TimestampFormats,
 )
 from extensions.reminders.utils import get_user_reminders
 from extensions.reminders.views import (
-    CopyReminder, ShareReminder, TimeOfDaySelection
+    CopyReminder,
+    ShareReminder,
+    TimeOfDaySelection,
 )
+from resources.utils import TimeParser
 
 if TYPE_CHECKING:
     from resources.customs import Bot
@@ -248,8 +251,8 @@ async def _handle_reminder_timestamp_parsing(
         }
         query = ("Since a date format doesn't tell me what time you want "
                  "the reminder, you can pick a time yourself:")
-        for option in options:
-            timestamp_str = f"<t:{int(options[option].timestamp())}:F>"
+        for option, option_time in options.items():
+            timestamp_str = f"<t:{int(option_time.timestamp())}:F>"
             query += f"\n  `{option}.` {timestamp_str}"
         view = TimeOfDaySelection(list(options))
         await itx.response.send_message(query, view=view, ephemeral=True)
@@ -259,8 +262,12 @@ async def _handle_reminder_timestamp_parsing(
                 content="Reminder creation menu timed out.", view=None)
             raise ReminderTimeSelectionMenuTimeOut()
 
-        assert (view.value is not None
-                and view.return_interaction is not None)
+        if (view.value is None
+                or view.return_interaction is None):
+            raise ValueError(
+                f"View was None or return interaction was None! "
+                f"(view: {view is None}, itx: {view.return_interaction is None})",
+            )
         await itx.edit_original_response(view=None)
         distance = options[view.value]
         itx = view.return_interaction
@@ -377,9 +384,8 @@ async def parse_as_datetime_string(
     time_passed = distance - creation_time
     if time_passed > timedelta(days=365 * 3999):
         raise ValueError(
-            "I don't think I can remind you `{}` years into "
-            "the future..."
-            .format(time_passed.days // 365.2425)
+            f"I don't think I can remind you "
+            f"`{time_passed.days // 365.2425}` years into the future..."
         )
     return distance, itx
 
@@ -411,10 +417,11 @@ async def _parse_reminder_time(
     """  # todo: update docstring exceptions
     # Parse reminder input to get a datetime for the reminder scheduler
     creation_time = itx.created_at  # utc
-    assert creation_time.tzinfo == timezone.utc, (
-        "Expected discord to provide a timezone of UTC, but it was "
-        f"`{creation_time.tzinfo.__str__()}` instead!"
-    )
+    if creation_time.tzinfo != timezone.utc:
+        raise ValueError(
+            "Expected discord to provide a timezone of UTC, but it was "
+            f"`{creation_time.tzinfo.__str__()}` instead!"
+        )
     # ^ it is timezone-aware, in utc
     distance: datetime
     possible_timestamp_datetime = (reminder_datetime

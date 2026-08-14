@@ -8,7 +8,7 @@ class ConfirmPronounsView(discord.ui.View):
         super().__init__()
         # Use the value to track which button was pressed
         # todo: make self.value (pronouns: she/her, he/him, ...) an enum.
-        self.value = None
+        self.value: str | None = None
         self.timeout = timeout
 
     @discord.ui.button(label='She/Her', style=discord.ButtonStyle.green)
