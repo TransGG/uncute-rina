@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 # \/ to create new reminder task that runs immediately
 #  (from a not-async ReminderObject __init__ function)
 import asyncio

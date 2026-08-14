@@ -1,5 +1,3 @@
-from __future__ import annotations  # for logging, to show log time; and for parsetime
-
 from typing import TYPE_CHECKING
 
 import discord

@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-import typing  # for typing.cast and TYPE_CHECKING
+import typing  # for typing.cast
 
 import discord
 from discord import app_commands
@@ -28,10 +26,7 @@ from resources.checks import (
     is_admin_check,
     module_enabled_check,
 )
-
-if typing.TYPE_CHECKING:
-    from resources.customs import Bot
-
+from resources.customs import Bot
 
 attribute_type_single_value = [ModeAutocomplete.set, ModeAutocomplete.delete]
 attribute_type_list = [ModeAutocomplete.add, ModeAutocomplete.remove]

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from datetime import datetime  # for startup and crash logging, and Reminders
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import discord  # for main discord bot functionality
 import motor.core as motorcore  # for typing
@@ -17,15 +15,13 @@ from pymongo.database import (
 from extensions.settings.objects import (
     EnabledModules,
     ServerAttributes,
+    ServerSettings,
 )
 from extensions.settings.objects.server_attributes import default_server_attributes
 from resources.abc import (
     ApiTokenDict,
     MessageableGuildChannel,
 )
-
-if TYPE_CHECKING:
-    from extensions.settings.objects import ServerSettings
 
 
 class Bot(commands.Bot):

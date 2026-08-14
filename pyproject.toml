@@ -115,6 +115,7 @@ select = [
     "unintentional-type-annotation",
     "unnecessary-placeholder",
     "datetime-min-max",
+    "runtime-import-in-type-checking-block",
 ]
 
 ignore = [
