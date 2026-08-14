@@ -18,27 +18,27 @@ name_blacklist = {
 
 
 class NameUsageSearchMode(Enum):
-    usernames = 1
-    global_name = 2
-    nicknames = 3
-    all = 4
+    usernames = "usernames"
+    global_names = "global_names"
+    nicknames = "nicknames"
+    all = "all"
 
 
 class NameUsageSearchModeTransformer(app_commands.Transformer[Bot]):
-    async def transform(self, itx: discord.Interaction[Bot], value: int, /) -> NameUsageSearchMode:
+    async def transform(self, itx: discord.Interaction[Bot], value: str, /) -> NameUsageSearchMode:
         return NameUsageSearchMode(value)
 
     @property
     def choices(self) -> list[app_commands.Choice[int | float | str]] | None:
         return [
             discord.app_commands.Choice(name='Usernames',
-                                        value=NameUsageSearchMode.usernames.value),
+                                        value=str(NameUsageSearchMode.usernames.value)),
             discord.app_commands.Choice(name='Global display names',
-                                        value=NameUsageSearchMode.global_name.value),
+                                        value=str(NameUsageSearchMode.global_names.value)),
             discord.app_commands.Choice(name='Nicknames',
-                                        value=NameUsageSearchMode.nicknames.value),
-            discord.app_commands.Choice(name='Search usernames, global display names, and server nicknames',
-                                        value=NameUsageSearchMode.all.value),
+                                        value=str(NameUsageSearchMode.nicknames.value)),
+            discord.app_commands.Choice(name='Usernames, global display names, and server nicknames',
+                                        value=str(NameUsageSearchMode.all.value)),
         ]
 
 
@@ -47,7 +47,7 @@ def _get_member_name(member: discord.Member, mode: NameUsageSearchMode) -> set[s
     match mode:
         case NameUsageSearchMode.usernames:
             name_sections = _split_name(member.name)
-        case NameUsageSearchMode.global_name:
+        case NameUsageSearchMode.global_names:
             if member.global_name is not None:
                 name_sections = _split_name(member.global_name)
             else:
@@ -167,7 +167,7 @@ class NameUsage(
 
         mode_text = {
             NameUsageSearchMode.usernames: "usernames",
-            NameUsageSearchMode.global_name: "global names",
+            NameUsageSearchMode.global_names: "global names",
             NameUsageSearchMode.nicknames: "nicknames",
             NameUsageSearchMode.all: "user/nick/global names"
         }[mode]
@@ -182,19 +182,19 @@ class NameUsage(
 
     @app_commands.command(
         name="name",
-        description="See how often different names occur in this server"
+        description="See how often a name or text occurs in this server"
     )
-    @app_commands.describe(name="What specific name are you looking for?")
+    @app_commands.describe(text="What specific name or text are you looking for?")
     @not_in_dms_check
     async def nameusage_name(
             self,
             itx: GuildInteraction[Bot],
-            name: str,
+            text: str,
             search_type: app_commands.Transform[NameUsageSearchMode, NameUsageSearchModeTransformer],
             public: bool = False,
     ) -> None:
         await itx.response.defer(ephemeral=not public)
-        search_key = name.lower()
+        search_key = text.lower()
         count = 0
         type_string = ""
         match NameUsageSearchMode(search_type):
@@ -203,7 +203,7 @@ class NameUsage(
                     if search_key in member.name.lower():
                         count += 1
                 type_string = "username"
-            case NameUsageSearchMode.global_name:
+            case NameUsageSearchMode.global_names:
                 for member in itx.guild.members:
                     if (member.global_name is not None
                             and search_key in member.global_name.lower()):
@@ -228,6 +228,6 @@ class NameUsage(
                 type_string = "username, global display name, or server nickname"
         await itx.followup.send(
             f"I found {count} {'person' if count == 1 else 'people'} "
-            f"with '{name.lower()}' in their {type_string}",
+            f"with '{text.lower()}' in any section of their {type_string}",
             ephemeral=not public,
         )
