@@ -5,19 +5,17 @@ from discord import app_commands
 from discord.ext import commands
 
 from extensions.help.cogs import send_help_menu
-from extensions.settings.autocomplete_modes import (
-    ModeAutocomplete,
-    ModeAutocompleteTransformer,
-    TypeAutocomplete,
-    TypeAutocompleteTransformer,
-)
 from extensions.settings.objects import (
     AttributeKeys,
     EnabledModules,
+    ModeAutocomplete,
+    ModeAutocompleteTransformer,
     ModuleKeys,
     ServerAttributeIds,
     ServerAttributes,
     ServerSettings,
+    TypeAutocomplete,
+    TypeAutocompleteTransformer,
     get_attribute_type,
     parse_attribute,
 )

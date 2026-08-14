@@ -3,8 +3,6 @@ from enum import Enum
 import discord
 from discord import app_commands
 
-from resources.customs import Bot
-
 
 class TypeAutocomplete(Enum):
     help = "Help"
@@ -12,8 +10,8 @@ class TypeAutocomplete(Enum):
     module = "Module"
 
 
-class TypeAutocompleteTransformer(app_commands.Transformer[Bot]):
-    async def transform(self, itx: discord.Interaction[Bot], value: str, /) -> TypeAutocomplete:
+class TypeAutocompleteTransformer(app_commands.Transformer):
+    async def transform(self, itx: discord.Interaction, value: str, /) -> TypeAutocomplete:
         return TypeAutocomplete(value)
 
 
@@ -28,8 +26,8 @@ class ModeAutocomplete(Enum):
     invalid = "-"
 
 
-class ModeAutocompleteTransformer(app_commands.Transformer[Bot]):
-    async def transform(self, itx: discord.Interaction[Bot], value: str, /) -> ModeAutocomplete:
+class ModeAutocompleteTransformer(app_commands.Transformer):
+    async def transform(self, itx: discord.Interaction, value: str, /) -> ModeAutocomplete:
         if value in ModeAutocomplete:
             return ModeAutocomplete(value)
         return ModeAutocomplete.invalid
