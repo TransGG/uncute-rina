@@ -192,6 +192,7 @@ class StaffAddons(commands.Cog):
                 f"than 7 days!",
                 ephemeral=False
             )
+        await itx.delete_original_response()  # remove "Attempting to delete" ephemeral message
 
     @app_commands.command(name="version", description="Get bot version")
     async def get_bot_version(self, itx: discord.Interaction[Bot]) -> None:
