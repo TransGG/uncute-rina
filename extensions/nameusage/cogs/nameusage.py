@@ -23,6 +23,22 @@ class NameUsageSearchMode(Enum):
     nicknames_and_usernames = 3
 
 
+class NameUsageSearchModeTransformer(app_commands.Transformer[Bot]):
+    async def transform(self, itx: discord.Interaction[Bot], value: int, /) -> NameUsageSearchMode:
+        return NameUsageSearchMode(value)
+
+    @property
+    def choices(self) -> list[app_commands.Choice[int | float | str]] | None:
+        return [
+            discord.app_commands.Choice(name='Search most-used usernames',
+                                        value=NameUsageSearchMode.usernames.value),
+            discord.app_commands.Choice(name='Search most-used nicknames',
+                                        value=NameUsageSearchMode.nicknames.value),
+            discord.app_commands.Choice(name='Search nicks and usernames',
+                                        value=NameUsageSearchMode.nicknames_and_usernames.value),
+        ]
+
+
 def _get_member_name(member: discord.Member, mode: NameUsageSearchMode) -> set[str] | None:
     # get list of names
     match mode:
@@ -129,26 +145,18 @@ class NameUsage(
         name="gettop",
         description="See how often different names occur in this server"
     )
-    @app_commands.choices(mode=[
-        discord.app_commands.Choice(name='Search most-used usernames',
-                                    value=NameUsageSearchMode.usernames.value),
-        discord.app_commands.Choice(name='Search most-used nicknames',
-                                    value=NameUsageSearchMode.nicknames.value),
-        discord.app_commands.Choice(name='Search nicks and usernames',
-                                    value=NameUsageSearchMode.nicknames_and_usernames.value),
-    ])
     @not_in_dms_check
     async def nameusage_gettop(
             self,
             itx: GuildInteraction[Bot],
-            mode: int
+            mode: app_commands.Transform[NameUsageSearchMode, NameUsageSearchModeTransformer]
     ) -> None:
         await itx.response.defer(ephemeral=True)
-        section_counts = _get_name_usage_sections(itx.guild.members, NameUsageSearchMode(mode))
+        section_counts = _get_name_usage_sections(itx.guild.members, mode)
         pages = _get_gettop_embed_pages(section_counts)
 
-        mode_text = ("usernames" if mode == 1
-                     else "nicknames" if mode == 2
+        mode_text = ("usernames" if mode == NameUsageSearchMode.usernames
+                     else "nicknames" if mode == NameUsageSearchMode.nicknames
                      else "usernames and nicknames")
         embed_title = f'Most-used {mode_text} leaderboard!'
 
