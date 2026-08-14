@@ -1,4 +1,5 @@
 from datetime import (
+    UTC,
     datetime,
     timedelta,
     # ^ for /delete_week_selfies (within 7 days), and /version startup
@@ -113,7 +114,7 @@ class StaffAddons(commands.Cog):
             )
             return
 
-        time_now = int(datetime.now().timestamp())  # get time in unix
+        time_now = datetime.now(UTC)
 
         output = "Attempting deletion...\n"
 
@@ -136,16 +137,16 @@ class StaffAddons(commands.Cog):
                         - timedelta(days=6, hours=23, minutes=30)),
                 oldest_first=True
         ):
-            message_date = int(message.created_at.timestamp())
+            message_date = message.created_at
             if ("[info]" in message.content.lower()
                     and is_staff(itx, message.author)):
                 continue
-            if time_now - message_date > 14 * 86400:
+            if time_now - message_date > timedelta(days=13, hours=23, minutes=30):
                 # 14 days, too old to remove by bulk
                 message_delete_count += 1
                 await message.delete()
-            elif time_now - message_date > 7 * 86400:
-                # 7 days ; technically redundant due to loop's
+            elif time_now - message_date > timedelta(days=7):
+                # older than 7 days ; technically redundant due to loop's
                 #  "before" kwarg, but better safe than sorry
                 queued_message_deletions.append(message)
                 if message_delete_count - feedback_output_count_status >= 50:
