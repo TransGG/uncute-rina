@@ -197,7 +197,7 @@ def test_bot_startup(
         "Started Bot",
         "Cached bot's command names and their ids",
         "Loaded extensions successfully",
-        "Loaded server settings",
+        "Loaded simple client variables",
         "Finished setting up reminders",
         "Logged in as",
         "Loaded server settings.",

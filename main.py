@@ -16,6 +16,7 @@ from pymongo.database import Database as PyMongoDatabase
 
 from extensions.reminders.objects import relaunch_ongoing_reminders
 from extensions.settings.objects import ServerSettings
+from extensions.staffaddons.utils import start_selfies_delete_scheduler
 from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
 from extensions.watchlist.local_watchlist import (
@@ -37,7 +38,7 @@ from resources.utils import (
 )
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.5.0"
+BOT_VERSION = "2.5.1"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
@@ -171,8 +172,6 @@ def get_version() -> str:
             rina_version = f.read().split(".")
     except FileNotFoundError:
         rina_version = ["0"] * len(file_version)
-    # if testing, which environment are you in?
-    # 1: private dev server; 2: public dev server (TransPlace [Copy])
     for v in range(len(file_version)):
         if int(file_version[v]) > int(rina_version[v]):
             rina_version = [*file_version, "0"]
@@ -248,11 +247,15 @@ def start_app() -> None:
         await client.log_channel.send(
             f":white_check_mark: **Started Rina** in version {version}")
 
-        post_startup_progress = ProgressBar(4)
+        post_startup_progress = ProgressBar(5)
 
         post_startup_progress.begin("Loading all server settings...")
         client.server_settings = await ServerSettings.fetch_all(client)
         post_startup_progress.complete("Loaded server settings.")
+
+        post_startup_progress.begin("Starting selfies delete scheduler...")
+        start_selfies_delete_scheduler(client)
+        post_startup_progress.complete("Started selfies delete scheduler")
 
         post_startup_progress.begin("Loading all server tags...")
         try:
@@ -321,7 +324,7 @@ def start_app() -> None:
             f"Loaded extensions successfully (in "
             f"{datetime.now().astimezone() - extension_loading_start_time})"
         )
-        start_progress.begin("Loading server settings...")
+        start_progress.begin("Loading simple client variables...")
         try:
             log_channel = await client.fetch_channel(988118678962860032)
         except discord.errors.Forbidden:
@@ -340,7 +343,7 @@ def start_app() -> None:
         # ^ or client.owner / client.owner_id :P
         # can't use the commented out code because Rina is owned by
         # someone else in the main server than the dev server (=not me).
-        start_progress.complete("Loaded server settings")
+        start_progress.complete("Loaded simple client variables")
         start_progress.begin("Restarting ongoing reminders...")
         await relaunch_ongoing_reminders(client)
         start_progress.complete("Finished setting up reminders")
