@@ -552,7 +552,7 @@ class WatchList(commands.Cog):
             #  response in this channel)
             return
 
-        reported_user_id: int | None = None
+        reported_user_ids: list[int] = []
         for embed in message.embeds:
             for field in embed.fields:
                 if field.name is None or field.value is None:
@@ -560,7 +560,7 @@ class WatchList(commands.Cog):
                 if field.name.lower() == "user":
                     reported_user_str = field.value.split("`")[1]
                     if reported_user_str.isdecimal():
-                        reported_user_id = int(reported_user_str)
+                        reported_user_ids.append(int(reported_user_str))
                         break
 
                     field.value = field.value.removeprefix("> ")
@@ -570,23 +570,39 @@ class WatchList(commands.Cog):
                                          .split(">", 1)[0]
                                          .split("@")[1])
                     if reported_user_str.isdecimal():
-                        reported_user_id = int(reported_user_str)
+                        reported_user_ids.append(int(reported_user_str))
                         break
                     else:
                         raise ValueError("User id was not an id!")
-        if reported_user_id is None:
+                if field.name.lower() == "affected users":
+                    reported_users = field.value.splitlines()
+                    for reported_user_str in reported_users:
+                        reported_user_str = (reported_user_str
+                                             .removeprefix("> ")  # remove quote text
+                                             # from "%<@x>%", take "x"
+                                             .split(">", 1)[0]
+                                             .split("@")[1])
+                        if reported_user_str.isdecimal():
+                            reported_user_ids.append(int(reported_user_str))
+                        else:
+                            raise ValueError("User id was not an id!")
+        if len(reported_user_ids) == 0:
             raise ValueError(
                 "Badeline sent an embed in the staff logs category but it "
-                "didn't contain any \"user\" field!"
+                "didn't contain any \"user\" or \"affected users\" fields!"
             )
 
-        watchlist_thread_id = get_watchlist(
-            watchlist_channel.guild.id, reported_user_id)
+        watchlist_thread_ids = [
+            watchlist_thread_id
+            for user_id in reported_user_ids
+            if (watchlist_thread_id := get_watchlist(
+                watchlist_channel.guild.id,
+                user_id,
+            ))
+        ]
 
-        if watchlist_thread_id is not None:  # user is on watchlist
-            thread = await watchlist_channel.guild.fetch_channel(
-                watchlist_thread_id,
-            )
+        for thread_id in watchlist_thread_ids:  # user is on watchlist
+            thread = await watchlist_channel.guild.fetch_channel(thread_id)
             if not isinstance(thread, discord.Thread):
                 raise TypeError(f"Watchlist was not a thread! {type(thread)}")
             # ^ fetch, to retrieve (archived) thread.

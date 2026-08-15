@@ -16,7 +16,7 @@ from pymongo.database import Database as PyMongoDatabase
 
 from extensions.reminders.objects import relaunch_ongoing_reminders
 from extensions.settings.objects import ServerSettings
-from extensions.staffaddons.utils import start_selfies_delete_scheduler
+from extensions.staffaddons.selfies import start_selfies_delete_scheduler
 from extensions.starboard.local_starboard import fetch_all_starboard_messages
 from extensions.tags.local_tag_list import fetch_all_tags
 from extensions.watchlist.local_watchlist import (
@@ -38,7 +38,7 @@ from resources.utils import (
 )
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.5.1"
+BOT_VERSION = "2.5.2"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
