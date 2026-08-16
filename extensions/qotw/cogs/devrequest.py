@@ -17,6 +17,7 @@ from resources.checks import (
     module_enabled_check,  # for dev request thread ping
 )
 from resources.customs import Bot
+from resources.utils import log_to_guild
 
 emoji_color_options = {
     "🔴": discord.Colour.from_rgb(r=255, g=100, b=100),
@@ -41,6 +42,7 @@ async def _devrequest_prefix_autocomplete(  # ruff: ignore[unused-async]
     prefixes: list[tuple[str, str]] = [
         (DevRequestPrefix.empty.value, DevRequestPrefix.empty_label.value)
     ]
+
     bot_prefixes = itx.client.get_guild_attributes(
         itx.guild).developer_request_bot_prefixes
     prefixes += sorted(
@@ -204,7 +206,22 @@ class DevRequest(commands.Cog):
             return
         if len(message.embeds) != 1:
             return
+        assert message.guild is not None, (  # ruff: ignore[assert]
+            f"Message {message.jump_url} had no guild but was in the dev request channel!"
+        )
         embed = message.embeds[0]
         embed.colour = emoji_color_options[payload.emoji.name]
         await message.edit(embed=embed)
+
+        if not message.channel.permissions_for(message.guild.me).manage_messages:
+            # See if I have perms to remove reactions
+            await log_to_guild(
+                self.client,
+                payload.guild_id,
+                f":warning: Error updating developer request embed in "
+                f"guild {dev_request_channel.guild.id} ({dev_request_channel.guild.name}): "
+                f"No permissions to remove reactions (manage messages) in "
+                f"{dev_request_channel.id} ({dev_request_channel.name})",
+            )
+            return
         await message.remove_reaction(payload.emoji.name, payload.member)
