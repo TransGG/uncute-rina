@@ -28,8 +28,8 @@ def get_selfies_channels(client: Bot) -> set[MessageableGuildChannel]:
     return {
         settings.attributes.selfies_channel
         for settings in client.server_settings.values()
-        if settings.attributes.selfies_channel is not None
-            and settings.enabled_modules["selfies_channel_deletion"]
+        if (settings.attributes.selfies_channel is not None
+            and settings.enabled_modules["selfies_channel_deletion"])
     }
 
 

@@ -576,8 +576,8 @@ class WatchList(commands.Cog):
                         raise ValueError("User id was not an id!")
                 if field.name.lower() == "affected users":
                     reported_users = field.value.splitlines()
-                    for reported_user_str in reported_users:
-                        reported_user_str = (reported_user_str
+                    for reported_user_field in reported_users:
+                        reported_user_str = (reported_user_field
                                              .removeprefix("> ")  # remove quote text
                                              # from "%<@x>%", take "x"
                                              .split(">", 1)[0]
