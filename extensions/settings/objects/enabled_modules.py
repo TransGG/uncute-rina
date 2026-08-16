@@ -1,36 +1,37 @@
-from typing import TypedDict
+import dataclasses
 
 from .attribute_keys import AttributeKeys
 
 
-class EnabledModules(TypedDict, total=False):
+@dataclasses.dataclass
+class EnabledModules:
     """
-    A dictionary of all toggleable bot modules.
+    A class of all toggleable bot modules.
 
     This is stored in the database and the client.
     """
-    starboard: bool
-    headpat_reactions: bool
-    awawawa_reactions: bool
-    poll_reactions: bool
-    compliments: bool
-    custom_vcs: bool
-    vc_tables: bool
-    qotw: bool
-    dev_requests: bool
-    bump_reminder: bool
-    selfies_channel_deletion: bool
-    tags: bool
-    custom_dictionary: bool
-    watchlist: bool
-    aegis_ping_reactions: bool
-    ban_appeal_reactions: bool
-    vc_log_reader: bool
-    remove_role_command: bool
-    report_tags_to_staff: bool
-    polls_only_channel: bool
-    change_channel: bool
-    anonymous_report_reactions: bool
+    starboard: bool = False
+    headpat_reactions: bool = False
+    awawawa_reactions: bool = False
+    poll_reactions: bool = False
+    compliments: bool = False
+    custom_vcs: bool = False
+    vc_tables: bool = False
+    qotw: bool = False
+    dev_requests: bool = False
+    bump_reminder: bool = False
+    selfies_channel_deletion: bool = False
+    tags: bool = False
+    custom_dictionary: bool = False
+    watchlist: bool = False
+    aegis_ping_reactions: bool = False
+    ban_appeal_reactions: bool = False
+    vc_log_reader: bool = False
+    remove_role_command: bool = False
+    report_tags_to_staff: bool = False
+    polls_only_channel: bool = False
+    change_channel: bool = False
+    anonymous_report_reactions: bool = False
 
 
 class ModuleKeys:

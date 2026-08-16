@@ -206,14 +206,11 @@ class DevRequest(commands.Cog):
             return
         if len(message.embeds) != 1:
             return
-        assert message.guild is not None, (  # ruff: ignore[assert]
-            f"Message {message.jump_url} had no guild but was in the dev request channel!"
-        )
         embed = message.embeds[0]
         embed.colour = emoji_color_options[payload.emoji.name]
         await message.edit(embed=embed)
 
-        if not message.channel.permissions_for(message.guild.me).manage_messages:
+        if not dev_request_channel.permissions_for(dev_request_channel.guild.me).manage_messages:
             # See if I have perms to remove reactions
             await log_to_guild(
                 self.client,

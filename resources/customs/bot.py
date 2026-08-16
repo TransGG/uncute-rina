@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import datetime  # for startup and crash logging, and Reminders
 from typing import Any
 
@@ -13,7 +14,6 @@ from pymongo.database import (
 )
 
 from extensions.settings.objects import (
-    EnabledModules,
     ServerAttributes,
     ServerSettings,
 )
@@ -213,15 +213,17 @@ class Bot(commands.Bot):
             return False
 
         modules = self.server_settings[guild_id].enabled_modules
+        module_names = {
+            field.name
+            for field in dataclasses.fields(modules)
+        }
 
         output: list[bool] = []
         for arg in args:
-            if arg in modules:
-                output.append(modules[arg])  # type: ignore
-            elif arg not in EnabledModules.__annotations__:
+            if arg not in module_names:
                 raise ValueError(f"Module '{arg}' is not a valid module!")
             else:
-                output.append(False)
+                output.append(getattr(modules, arg))
 
         if len(output) == 1:
             return output[0]
