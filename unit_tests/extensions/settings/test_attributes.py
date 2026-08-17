@@ -1,3 +1,5 @@
+import dataclasses
+
 import pytest
 
 import discord
@@ -145,7 +147,11 @@ def test_no_bad_module_names() -> None:
     invalid_names = []
 
     # Act
-    for enabled_module_key in EnabledModules.__annotations__:
+    module_names = {
+        field.name
+        for field in dataclasses.fields(EnabledModules)
+    }
+    for enabled_module_key in module_names:
         if "." in enabled_module_key or enabled_module_key.startswith("$"):
             invalid_names.append(enabled_module_key)
 
@@ -158,14 +164,11 @@ def test_no_bad_module_names() -> None:
 
 
 def test_all_modules_bools() -> None:
-    # Arrange
-    module_types = typing.get_type_hints(EnabledModules)
-    invalid_types = []
-
-    # Act
-    for module, module_type in module_types.items():
-        if module_type != bool:
-            invalid_types.append(module)
+    invalid_types = [
+        field.name
+        for field in dataclasses.fields(EnabledModules)
+        if field.type != bool
+    ]
 
     # Assert
     assert invalid_types == []

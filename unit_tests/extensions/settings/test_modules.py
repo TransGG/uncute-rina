@@ -1,10 +1,19 @@
+import dataclasses
+
 from extensions.settings.objects import EnabledModules, ModuleKeys
 
 
 def test_matching_keys() -> None:
     # Arrange
-    em = EnabledModules.__annotations__.keys()
-    emk = set(i for i in dir(ModuleKeys) if not i.startswith("_"))
+    em = {
+        field.name
+        for field in dataclasses.fields(EnabledModules)
+    }
+    emk = {
+        i
+        for i in dir(ModuleKeys)
+        if not i.startswith("_")
+    }
 
     # Assert
     assert set(em) == emk

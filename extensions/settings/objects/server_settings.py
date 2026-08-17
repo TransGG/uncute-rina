@@ -259,7 +259,7 @@ class ParseError(ValueError):
 
 class ServerSettingData(typing.TypedDict):
     guild_id: int
-    enabled_modules: EnabledModules
+    enabled_modules: dict[str, bool]
     attribute_ids: ServerAttributeIds
 
 
@@ -422,7 +422,7 @@ class ServerSettings:
         if "." in module or module.startswith("$"):
             raise ValueError(f"Parameters are not allowed to contain '.'"
                              f" or start with '$'! (parameter: '{module}')")
-        if module not in EnabledModules.__annotations__:
+        if not hasattr(EnabledModules, module):
             raise KeyError(f"'{module}' is not a valid Module.")
         if type(value) is not bool:
             raise TypeError(
@@ -516,9 +516,12 @@ class ServerSettings:
          be parsed.
         """
         guild_id = settings["guild_id"]
-        enabled_modules = settings.get("enabled_modules", {})
+        enabled_modules = EnabledModules(
+            # can raise TypeError if given unexpected keyword argument that isn't a module.
+            **settings.get("enabled_modules", {}),
+        )
         attribute_ids = ServerAttributeIds(
-            **settings.get("attribute_ids", {})
+            **settings.get("attribute_ids", {}),
         )
         guild, attributes = await ServerSettings.load_attributes(
             client, guild_id, attribute_ids

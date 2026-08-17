@@ -1,5 +1,5 @@
 # to get embed send time for embed because cool (serves no real purpose)
-from datetime import datetime
+from datetime import UTC, datetime
 
 import discord
 from discord import RawThreadDeleteEvent, app_commands
@@ -226,7 +226,7 @@ async def _update_uncool_watchlist_embed(
         description=f"{reason}{reported_message_info}\n"
                     f"\n"
                     f"[Jump to plain version]({jump_url})",
-        timestamp=datetime.now()
+        timestamp=datetime.now(tz=UTC)
     )
     embed.set_author(
         name=f"{user} - {user.display_name}",
@@ -576,8 +576,8 @@ class WatchList(commands.Cog):
                         raise ValueError("User id was not an id!")
                 if field.name.lower() == "affected users":
                     reported_users = field.value.splitlines()
-                    for reported_user_str in reported_users:
-                        reported_user_str = (reported_user_str
+                    for reported_user_field in reported_users:
+                        reported_user_str = (reported_user_field
                                              .removeprefix("> ")  # remove quote text
                                              # from "%<@x>%", take "x"
                                              .split(">", 1)[0]

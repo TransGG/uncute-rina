@@ -1,3 +1,4 @@
+import dataclasses
 import typing
 
 import discord
@@ -11,7 +12,6 @@ from extensions.settings.objects import (
     ModeAutocomplete,
     ModeAutocompleteTransformer,
     ModuleKeys,
-    ServerAttributeIds,
     ServerAttributes,
     ServerSettings,
     TypeAutocomplete,
@@ -71,21 +71,17 @@ async def _setting_autocomplete(  # ruff: ignore[unused-async]
             ),
         ]
     elif type_option == TypeAutocomplete.module:
-        module_keys = EnabledModules.__annotations__
-        return [
-            app_commands.Choice[str](name=key, value=key)
-            for key in module_keys
-            if current.lower() in key.lower()
-        ][:10]
+        fields = dataclasses.fields(EnabledModules)
     elif type_option == TypeAutocomplete.attribute:
-        attribute_id_keys = ServerAttributeIds.__annotations__
-        return [
-            app_commands.Choice[str](name=key, value=key)
-            for key in attribute_id_keys
-            if current.lower() in key.lower()
-        ][:10]
+        fields = dataclasses.fields(ServerAttributes)
     else:
         return []
+    return [
+        app_commands.Choice[str](name=key, value=key)
+        for field in fields
+        if (key := field.name)
+        if current.lower() in key.lower()
+    ][:10]
 
 
 @is_admin_check
@@ -106,7 +102,7 @@ async def _mode_autocomplete(  # ruff: ignore[unused-async]
             ),
         ]
     elif type_option == TypeAutocomplete.module:
-        if itx.namespace.setting in EnabledModules.__annotations__:
+        if itx.namespace.setting in dataclasses.fields(EnabledModules):
             types += [ModeAutocomplete.enable, ModeAutocomplete.disable]
             return [
                 app_commands.Choice[str](name=key.value, value=key.value)
@@ -646,12 +642,11 @@ async def _handle_settings_module(
     :param setting: The key of the attribute to change.
     :param modify_mode: The mode to use when modifying the attribute.
     """
-    module_keys = EnabledModules.__annotations__
-
+    module_names = {
+        field.name
+        for field in dataclasses.fields(EnabledModules)
+    }
     if setting is None:
-        disabled_modules = set(module_keys)
-        enabled_modules = set()
-
         if itx.client.server_settings is None:
             await itx.response.send_message(
                 "No settings have been loaded yet! Please wait a little bit, "
@@ -659,14 +654,17 @@ async def _handle_settings_module(
                 ephemeral=True,
             )
             return
-
         server_setting: ServerSettings | None = \
             itx.client.server_settings.get(itx.guild.id, None)
-        if server_setting:
-            for module, val in server_setting.enabled_modules.items():
-                if val:
-                    enabled_modules.add(module)
-        disabled_modules -= enabled_modules
+
+        enabled_modules = {
+            field.name
+            for field in dataclasses.fields(EnabledModules)
+            if (server_setting is not None
+                and getattr(server_setting.enabled_modules, field.name))  # value = module enabled
+        }
+        disabled_modules = module_names - enabled_modules
+
         enabled_modules_string = ((f"### Enabled:\n> "
                                    f"{', '.join(enabled_modules)}\n")
                                   if enabled_modules else "")
@@ -686,7 +684,7 @@ async def _handle_settings_module(
                                         ephemeral=True)
         return
 
-    if setting not in module_keys:
+    if setting not in module_names:
         await itx.response.send_message(
             "This is not a valid setting. Please choose one of the "
             "autocompleted settings after setting `type:Module`.\n"
