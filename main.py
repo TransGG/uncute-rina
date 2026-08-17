@@ -38,7 +38,7 @@ from resources.utils import (
 )
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.5.2"
+BOT_VERSION = "2.5.3"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
