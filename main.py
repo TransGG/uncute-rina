@@ -38,7 +38,7 @@ from resources.utils import (
 )
 
 program_start = datetime.now().astimezone()  # startup time after local imports
-BOT_VERSION = "2.5.3"
+BOT_VERSION = "2.5.4"
 
 # noinspection SpellCheckingInspection
 EXTENSIONS = [
@@ -233,6 +233,7 @@ def start_app() -> None:
 
     @client.event
     async def on_ready() -> None:
+        nonlocal bot_loaded
         if bot_loaded:
             debug("Reconnected bot.", color=DebugColor.green)
             return
@@ -295,6 +296,7 @@ def start_app() -> None:
             )
         else:
             post_startup_progress.complete("Loaded starboard messages.")
+            bot_loaded = True
 
     @client.event
     async def setup_hook() -> None:
