@@ -8,19 +8,32 @@ from resources.customs import Bot
 
 
 class EditTagModal(CreateTagModal):
+    tag_name: discord.ui.TextInput = discord.ui.TextInput(
+        label="Tag ID",
+        placeholder="id of the tag listed when searching",
+        max_length=256,
+    )
+
     def __init__(
             self,
+            tag_name: str,
             title: str,
             description: str,
             report_to_staff: bool,
             color: tuple[int, int, int],
     ) -> None:
+
+        self.tag_name.default = tag_name
         self.embed_title.default = title
         self.description.default = description
         self.report_to_staff.default = str(report_to_staff)
         self.color.default = f"{color[0]},{color[1]},{color[2]}"
 
         super().__init__()
+        self._children.append(self._children.pop(0))  # re-append embed title
+        self._children.append(self._children.pop(0))  # re-append embed description
+        self._children.append(self._children.pop(0))  # re-append report to staff
+        self._children.append(self._children.pop(0))  # re-append embed color
         self.title = "Editing a custom tag..."
 
         self.return_interaction: GuildInteraction[Bot] | None = None

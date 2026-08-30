@@ -371,6 +371,7 @@ class TagFunctions(commands.Cog):
                     return
 
                 edit_tag_modal = EditTagModal(
+                    tag_name=tag_name,
                     title=tag["title"],
                     description=tag["description"],
                     color=tag["color"],
@@ -391,10 +392,12 @@ class TagFunctions(commands.Cog):
                 except ValueError as ex:
                     await itx.response.send_message(ex, ephemeral=True)
                     return
+                new_tag_name = edit_tag_modal.tag_name.value
 
                 # Check everything is the same / if anything changed
                 if (
-                        title == tag["title"]
+                        new_tag_name == tag_name
+                        and title == tag["title"]
                         and description == tag["description"]
                         and color_tuple == tag["color"]
                         and report_to_staff == tag["report_to_staff"]
@@ -410,7 +413,7 @@ class TagFunctions(commands.Cog):
                 await create_tag(
                     itx.client.async_rina_db,
                     itx.guild,
-                    tag_name,
+                    new_tag_name,
                     title,
                     description,
                     color_tuple,
