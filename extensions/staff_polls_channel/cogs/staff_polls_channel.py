@@ -324,7 +324,6 @@ async def _handle_nonpoll_messages(
             "Tried forwarding poll result but the original had no poll data."
         )
 
-    await message.forward(original_message.thread)
     await _handle_forward_poll_result(  # can raise ValueError
         original_message.thread,
         original_message.poll,
