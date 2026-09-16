@@ -339,8 +339,8 @@ class VcTables(
 
         # endregion Apply permission overwrites for vctable owners
 
-        owner_taglist = ', '.join([f'<@{user_id}>'
-                                   for user_id in added_owners])
+        owner_taglist = ', '.join([f'{user.mention}'
+                                   for user in added_owners])
         cmd_owner = itx.client.get_command_mention("vctable about")
         await user_vc.send(
             f"CustomVC converted to VcTable\n"
