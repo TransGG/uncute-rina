@@ -220,10 +220,10 @@ async def _handle_custom_voice_channel_leave_events(
 
     if len(voice_channel.members) == 0:
         await _handle_delete_custom_vc(client, member, voice_channel)
-
-    # todo: move this to vctables cog
-    await _reset_voice_channel_permissions_if_vctable(
-        vctable_prefix, voice_channel)
+    else:
+        # todo: move this to vctables cog
+        await _reset_voice_channel_permissions_if_vctable(
+            vctable_prefix, voice_channel)
 
 
 def _get_customvc_edit_attributes(
