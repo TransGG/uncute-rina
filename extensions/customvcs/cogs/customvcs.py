@@ -311,9 +311,11 @@ async def _get_voice_channel(
         )
         return None
 
-    if is_vc_custom(
-        channel, vc_category, vc_hub, vc_blacklisted_channels, vc_blacklist_prefix
-    ) and not is_vc_table_owner(channel, itx.user):
+    if (
+            is_vc_custom(channel, vc_category, vc_hub, vc_blacklisted_channels, vc_blacklist_prefix)
+            and channel.name.startswith(vctable_prefix)
+            and not is_vc_table_owner(channel, itx.user)
+    ):
         await itx.response.send_message(
             "You are not an owner of this VC Table so cannot change the name or user limit.",
             ephemeral=True,
@@ -465,8 +467,8 @@ class CustomVcs(commands.Cog):
                 user_limit: int | Missing,
                 rename: str | Missing,
         ) -> None:
-            if isinstance(user_limit, Missing) or isinstance(rename, Missing):
-                raise TypeError(f"User limit or rename value was None! (user: {user_limit}, rename: {rename})")
+            if isinstance(user_limit, Missing) and isinstance(rename, Missing):
+                raise TypeError(f"User limit and rename value were None! (user: {user_limit}, rename: {rename})")
 
             if isinstance(rename, Missing):
                 if not isinstance(user_limit, Missing):
