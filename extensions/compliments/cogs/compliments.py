@@ -212,95 +212,6 @@ async def _send_confirm_gender_modal(
                                           client.async_rina_db)
 
 
-async def _rina_used_deflect_and_it_was_very_effective(
-        message: discord.Message
-) -> None:
-    """
-    Rina's secret superpower: deflecting compliments :>. Don't
-    question it.
-
-    :param message: The message to analyze for compliment
-     reflection purposes.
-    """
-    responses = [
-        "I'm not cute >_<",
-        "I'm not cute! I'm... Tough! Badass!",
-        "Nyaa~",
-        "Who? Me? No you're mistaken.",
-        "I very much deny the cuteness of someone like myself",
-        "I don't think so.",
-        "Haha. Good joke. Tell me another tomorrow",
-        "No, I'm !cute.",
-        ("[shocked] Wha- w. .. w what?? .. NOo? no im nott?\nwhstre you "
-         "tslking about?"),
-        ("Oh you were talking to me? I thought you were talking about "
-         "everyone else here,"),
-        "Maybe.. Maybe I am cute.",
-        "If the sun was dying, would you still think I was cute?",
-        "Awww. Thanks sweety, but you've got the wrong number",
-        ":joy: You *reaaally* think so? You've gotta be kidding me.",
-        ("If you're gonna be spamming this, .. maybe #general isn't the "
-         "best channel for that."),
-        ("Such nice weather outside, isn't it? What- you asked me a "
-         "question?\nNo you didn't, you're just talking to yourself."),
-        ("".join(random.choice("acefgilrsuwnop" * 3 + ";;  " * 2)
-                 for _ in range(random.randint(10, 25)))),
-        # 3:2 letters to symbols
-        ("Oh I heard about that! That's a way to get randomized passwords "
-         "from a transfem!"),
-        ("Cuties are not gender-specific. For example, my cat is a cutie!\n"
-         "Oh wait, species aren't the same as genders. Am I still a catgirl "
-         "then? Trans-species?"),
-        "...",
-        "Hey that's not how it works!",
-        "Hey my lie detector said you are lying.",
-        "No I am not cute",
-        "k",
-        ((getattr(message.author, 'nick', None) or message.author.name)
-         + ", stop lying >:C"),
-        "BAD!",
-        ("https://cdn.discordapp.com/emojis/920918513969950750.webp"
-         "?size=4096&quality=lossless"),
-        ("[Checks machine]; Huh? Is my lie detector broken? I should "
-         "fix that.."),
-    ]
-    femme_responses = [
-        "If you think I'm cute, then you must be uber-cute!!",
-        "Ehe, cutie what do u need help with?",
-        "You too!",
-        "No, you are <3",
-        "Nope. I doubt it. There's no way I can be as cute as you",
-        ("You gotta praise those around you as well. "
-         + (getattr(message.author, 'nick', None) or message.author.name)
-         + ", for example, is very cute."),
-        ("Oh by the way, did I say "
-         + (getattr(message.author, 'nick', None) or message.author.name)
-         + " was cute yet? I probably didn't. "
-         + (getattr(message.author, 'nick', None) or message.author.name)
-         + "? You're very cute"),
-        "You know I'm not a mirror, right?",
-        "*And the oscar for cutest responses goes to..  YOU!!*",
-        "You're also part of the cuties set",
-        ("Hey, you should be talking about yourself first! After all, how do "
-         "you keep up with being such a cutie all the time?")
-    ]
-    # check if user would like femme responses telling them they're cute
-    roles = getattr(message.author, 'roles', [])
-    for role in roles:
-        if role.name.lower() == "she/her":
-            responses += femme_responses
-    respond = random.choice(responses)
-    if respond == "BAD!":
-        await message.channel.send(
-            "https://cdn.discordapp.com/emojis/902351699182780468.gif?size=56&quality=lossless",
-            allowed_mentions=discord.AllowedMentions.none()
-        )
-    await message.channel.send(
-        respond,
-        allowed_mentions=discord.AllowedMentions.none()
-    )
-
-
 async def _add_to_blacklist(
         itx: discord.Interaction[Bot],
         db_location: ComplimentBlackboardType,
@@ -334,8 +245,7 @@ class Compliments(commands.Cog):
         self.client = client
 
     @staticmethod
-    def _contains_cuteness_assignment(msg: str) -> bool | None:
-        # todo: upgrade cute-call detection hardware
+    def _contains_called_uncute(msg: str) -> bool:
         return (
             ((("cute" in msg or "cutie" in msg or "adorable" in msg)
               and "not" in msg)
@@ -350,8 +260,8 @@ class Compliments(commands.Cog):
 
         if self.client.user.mention in message.content.split():
             msg = message.content.lower()
-            called_cute: bool | None = self._contains_cuteness_assignment(msg)
-            if called_cute:
+            called_uncute: bool = self._contains_called_uncute(msg)
+            if called_uncute:
                 try:
                     await message.add_reaction("<:this:960916817801535528>")
                 except (discord.HTTPException, discord.NotFound):
@@ -362,8 +272,6 @@ class Compliments(commands.Cog):
                          f"reaction to {message.jump_url}")
                     )
                     raise
-            elif called_cute is False:
-                await _rina_used_deflect_and_it_was_very_effective(message)
             elif any(x in msg for x in [
                 "can i have a pat",
                 "can i have a headpat",
